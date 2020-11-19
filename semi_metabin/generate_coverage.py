@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-def calculate_coverage(depth_file,threshold,edge = 75):
+def calculate_coverage(depth_file,threshold,edge=75):
     """
     Input is position depth file generated from mosdepth or bedtools genomecov
     """
@@ -14,7 +14,6 @@ def calculate_coverage(depth_file,threshold,edge = 75):
     data = pd.read_csv(depth_file, sep='\t', header=None)
     data.columns = ['contig', 'start', 'end', 'value']
     groupby = data.groupby('contig')
-
     for contig, contig_data in groupby:
         contig_data = contig_data.values
         depth_value = []
@@ -58,12 +57,13 @@ def calculate_coverage(depth_file,threshold,edge = 75):
     split_contig_list = np.array(split_contig_list).reshape(len(split_contig_list), 1)
     split_coverage = np.array(split_coverage).reshape(len(split_coverage), 1)
 
-    contig_cov = pd.DataFrame(np.concatenate((data_contig_list, coverage),axis=1))
-    contig_cov = contig_cov.set_index(0)
-    contig_cov.index.name = None
+    contig_cov = np.concatenate((data_contig_list, coverage),axis=1)
+    contig_cov = pd.DataFrame(data = contig_cov[:,1:],index = contig_cov[:,0],columns = ['cov'])
+    contig_cov['cov'] = contig_cov['cov'].astype('float')
 
-    split_contig_cov = pd.DataFrame(np.concatenate((split_contig_list, split_coverage), axis=1))
-    split_contig_cov = split_contig_cov.set_index(0)
-    split_contig_cov.index.name = None
+    split_contig_cov = np.concatenate((split_contig_list, split_coverage), axis=1)
+    split_contig_cov = pd.DataFrame(data = split_contig_cov[:,1:],index = split_contig_cov[:,0],columns = ['cov'])
+    split_contig_cov['cov'] = split_contig_cov['cov'].astype('float')
 
     return contig_cov , split_contig_cov
+
