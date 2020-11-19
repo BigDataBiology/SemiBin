@@ -403,7 +403,7 @@ def main(args=None):
 
         bin_result = pd.DataFrame(np.concatenate((np.array(namelist).reshape(len(namelist), 1), contig_labels.reshape(len(contig_labels), 1)), axis=1))
 
-        with atomic_write(os.path.join(out, '/bin_result.tsv') , overwrite=True) as ofile:
+        with atomic_write(os.path.join(out, 'bin_result.tsv') , overwrite=True) as ofile:
             bin_result.to_csv(ofile, sep='\t', index=False)
 
         #write to bins
