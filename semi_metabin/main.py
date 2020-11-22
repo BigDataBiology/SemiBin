@@ -18,6 +18,8 @@ from sklearn.ensemble import IsolationForest
 from atomicwrites import atomic_write
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+import shutil
+from sklearn.cluster import DBSCAN
 
 
 def parse_args(args):
@@ -69,6 +71,7 @@ def parse_args(args):
     return parser.parse_args()
 
 def validate_args(args):
+
     def except_file(f):
         if f is not None:
             if not os.path.exists(f):
@@ -81,6 +84,7 @@ def validate_args(args):
                 if not os.path.exists(depth_path):
                     sys.stderr.write(f"Error: Expected file '{depth_path}' does not exist\n")
                     sys.exit(1)
+
     except_file(args.contig_fasta)
     except_file_depth(args.contig_depth)
     except_file(args.cannot_link)
@@ -98,8 +102,32 @@ def get_threshold(contig_len):
         basepair_sum += contig_len[index]
         threshold = contig_len[index]
         index += 1
-    threshold = max(threshold , 5000)
+    threshold = max(threshold, 4000)
     return threshold
+
+def write_bins(namelist,contig_labels,output, contig_dict , recluster = False,origin_label=0):
+    res = {}
+    for i in range(len(namelist)):
+        if contig_labels[i] not in res and contig_labels[i] != -1:
+            res[contig_labels[i]] = []
+            res[contig_labels[i]].append(namelist[i])
+        if contig_labels[i] in res:
+            res[contig_labels[i]].append(namelist[i])
+
+    if not os.path.exists(output):
+        os.mkdir(output)
+
+    for label in res:
+        bin = []
+        for contig in res[label]:
+            rec = SeqRecord(Seq(str(contig_dict[contig])), id=contig, description='')
+            bin.append(rec)
+        if not recluster:
+            with atomic_write(os.path.join(output, 'bin.{}.fa'.format(label)), overwrite=True) as ofile:
+                SeqIO.write(bin, ofile, 'fasta')
+        else:
+            with atomic_write(os.path.join(output, 'recluster_{0}.bin.{1}.fa'.format(origin_label,label)), overwrite=True) as ofile:
+                SeqIO.write(bin, ofile, 'fasta')
 
 def main(args=None):
     if args is None:
@@ -380,13 +408,13 @@ def main(args=None):
         seed_index = []
         for temp in init_seed:
             seed_index.append(row_index.index(temp))
-
+        mapObj = dict(zip(namelist, range(len(namelist))))
         length_weight = [contig_length_dict[name] for name in namelist]
         x = torch.from_numpy(bin_data).to(device)
         embedding = model.embedding(x.float()).detach().cpu().numpy()
         seeds_embedding = embedding[seed_index]
         logger.info('Weighted kmeans clustering.')
-        kmeans = KMeans(n_clusters=num_bin, init=seeds_embedding, verbose=1)
+        kmeans = KMeans(n_clusters=num_bin, init=seeds_embedding)
         kmeans.fit(embedding, sample_weight=length_weight)
 
         logger.info('Remove outliers in bins with IsolationForest.')
@@ -407,26 +435,69 @@ def main(args=None):
             bin_result.to_csv(ofile, sep='\t', index=False)
 
         #write to bins
-        res = {}
-        for i in range(len(namelist)):
-            if contig_labels[i] not in res and contig_labels[i] != -1:
-                res[contig_labels[i]] = []
-                res[contig_labels[i]].append(namelist[i])
-            if contig_labels[i] in res:
-                res[contig_labels[i]].append(namelist[i])
+        write_bins(namelist,contig_labels,os.path.join(out,'output_bins'),contig_dict)
 
-        if not os.path.exists(os.path.join(out,'output_bins')):
-            os.mkdir(os.path.join(out,'output_bins'))
 
-        for label in res:
-            bin = []
-            for contig in res[label]:
-                rec = SeqRecord(Seq(str(contig_dict[contig])), id=contig, description='')
-                bin.append(rec)
-            with atomic_write(os.path.join(out,'output_bins','bin.{}.fa'.format(label)), overwrite=True) as ofile:
-                SeqIO.write(bin, ofile, 'fasta')
+        if args.checkm:
+            logger.info('Postprocess analysis using checkm.')
+            checkm_out = os.path.join(out,'checkm_out')
+            if not os.path.exists(checkm_out):
+                os.mkdir(checkm_out)
 
-        logger.info('Binning finished.')
+            checkm_result = os.path.join(out,'checkm_result.txt')
+            if not os.path.exists(checkm_result):
+                checkm_result_out = open(checkm_result,'w')
+
+                subprocess.check_call([
+                    'checkm',
+                    'lineage_wf',
+                    '-x','.fa',
+                    '-t',str(64),
+                    os.path.join(out,'output_bins'),
+                    checkm_out,
+                ]
+                    ,stdout=checkm_result_out)
+
+            SCG = []
+            good_bins = []
+            recluster_bins = []
+
+            with open(os.path.join(out,'checkm_result.txt')) as f:
+                for line in f:
+                    if line[0] == '-' or line[0] == '[':
+                        continue
+                    line = line.strip('\n').split('  ')
+                    line = [temp for temp in line if temp != '']
+                    line = [temp for temp in line if temp != ' ']
+                    SCG.append(line)
+            SCG = SCG[1:]
+            for bin_result in SCG:
+                if float(bin_result[11]) >= 50 and float(bin_result[12]) >= 30:
+                    recluster_bins.append(bin_result[0])
+                else:
+                    good_bins.append(bin_result[0])
+
+
+            if not os.path.exists(os.path.join(out,'output_recluster_bins')):
+                os.mkdir(os.path.join(out,'output_recluster_bins'))
+
+            for bin in good_bins:
+                shutil.copy(os.path.join(out,'output_bins',bin+'.fa'),os.path.join(out,'output_recluster_bins'))
+
+            logger.info('Reclustering bins with DBSCAN.')
+            for bin in recluster_bins:
+                contig_list = []
+                for seq_record in SeqIO.parse(os.path.join(out,'output_bins',bin+'.fa'), "fasta"):
+                    contig_list.append(seq_record.id)
+                contig_index = [mapObj[temp] for temp in contig_list]
+                re_bin_features = embedding[contig_index]
+                dbscan = DBSCAN(n_jobs=-1)
+                re_length_weight = [contig_length_dict[name] for name in contig_list]
+                dbscan.fit(re_bin_features,sample_weight=re_length_weight)
+                labels = dbscan.labels_
+                write_bins(contig_list, labels, os.path.join(out, 'output_recluster_bins'), contig_dict,recluster=True,origin_label=int(bin.split('.')[-1]))
+
+    logger.info('Binning finished.')
 
 
 
