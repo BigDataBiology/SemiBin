@@ -8,7 +8,7 @@ from .generate_coverage import calculate_coverage
 from  Bio import SeqIO
 import pandas as pd
 import subprocess
-from .semi_supervised_model import loss_function,unsupervised_feature_Dataset,feature_Dataset,Semi_encoding
+from .semi_supervised_model import loss_function,unsupervised_feature_Dataset,feature_Dataset,Semi_encoding_single,Semi_encoding_multiple
 from torch.utils.data import DataLoader
 import torch
 from torch.optim import lr_scheduler
@@ -18,8 +18,10 @@ from sklearn.ensemble import IsolationForest
 from atomicwrites import atomic_write
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+import math
 import shutil
 from sklearn.cluster import DBSCAN
+
 
 
 def parse_args(args):
@@ -98,7 +100,7 @@ def get_threshold(contig_len):
     whole_len = np.sum(contig_len)
     contig_len.sort(reverse = True)
     index = 0
-    while(basepair_sum / whole_len < 0.95):
+    while(basepair_sum / whole_len < 0.98):
         basepair_sum += contig_len[index]
         threshold = contig_len[index]
         index += 1
@@ -126,8 +128,10 @@ def write_bins(namelist,contig_labels,output, contig_dict , recluster = False,or
             with atomic_write(os.path.join(output, 'bin.{}.fa'.format(label)), overwrite=True) as ofile:
                 SeqIO.write(bin, ofile, 'fasta')
         else:
-            with atomic_write(os.path.join(output, 'recluster_{0}.bin.{1}.fa'.format(origin_label,label)), overwrite=True) as ofile:
-                SeqIO.write(bin, ofile, 'fasta')
+            if len(res[label]) >= 5:
+                with atomic_write(os.path.join(output, 'recluster_{0}.bin.{1}.fa'.format(origin_label,label)), overwrite=True) as ofile:
+                    SeqIO.write(bin, ofile, 'fasta')
+
 
 def main(args=None):
     if args is None:
@@ -153,7 +157,6 @@ def main(args=None):
 
     kmer_1000 = generate_kmer_features_from_fasta(args.contig_fasta,1000,4)
 
-    short_contig_bp = 0
     whole_contig_bp = 0
     contig_length_list = []
     contig_length_dict = {}
@@ -161,23 +164,11 @@ def main(args=None):
     for seq_record in SeqIO.parse(args.contig_fasta , "fasta"):
         contig_length_list.append(len(seq_record))
         whole_contig_bp += len(seq_record)
-        if len(seq_record) > 1000 and len(seq_record) <= 1500:
-            short_contig_bp += len(seq_record)
         contig_length_dict[str(seq_record.id).strip('')] = len((seq_record.seq))
         contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
 
-    # if considering contigs between 1000bp and 1500 bp in binning
-    if short_contig_bp / whole_contig_bp > 0.05:
-        is_short_binned = True
-    else:
-        is_short_binned = False
-
     # threshold for generating must link pairs
     threshold = get_threshold(contig_length_list)
-
-    if not is_short_binned:
-        logger.info('Generating kmer features from fasta file with threshold length 1500(do not bin contigs shorter than 1500).')
-        kmer_1500 = generate_kmer_features_from_fasta(args.contig_fasta, 1500, 4)
 
     logger.info('Generating kmer features for must link pair.')
     kmer_split = generate_kmer_features_from_fasta(args.contig_fasta,1000,4,split=True,threshold=threshold)
@@ -185,45 +176,61 @@ def main(args=None):
     logger.info('Calculating coverage for every sample.')
 
     # generating coverage for every contig and for must link pair
-    logger.info('Processing Sample{}'.format(1))
-    contig_cov , must_link_contig_cov = calculate_coverage(args.contig_depth[0],threshold)
+    is_combined = True if len(args.contig_depth) > 3 else False
 
-    if len(args.contig_depth) > 1:
-        for index_sample , depth_sample in enumerate(args.contig_depth):
-            if index_sample == 0:
-                continue
-            logger.info('Processing Sample{}'.format(index_sample + 1))
-            contig_cov_ , must_link_contig_cov_ = calculate_coverage(depth_sample,threshold)
-            contig_cov = pd.merge(contig_cov,contig_cov_,how='inner', on=None,
-                    left_index=True, right_index=True, sort=False, copy=True)
-            must_link_contig_cov = pd.merge(must_link_contig_cov,must_link_contig_cov_,how='inner', on=None,
-                    left_index=True, right_index=True, sort=False, copy=True)
+    if is_combined:
+        logger.info('Processing Sample{}'.format(1))
+        contig_cov , must_link_contig_cov = calculate_coverage(args.contig_depth[0],threshold,is_combined=is_combined)
+        if len(args.contig_depth) > 1:
+            for index_sample , depth_sample in enumerate(args.contig_depth):
+                if index_sample == 0:
+                    continue
+                logger.info('Processing Sample{}'.format(index_sample + 1))
+                contig_cov_ , must_link_contig_cov_ = calculate_coverage(depth_sample,threshold,is_combined=is_combined)
+                contig_cov = pd.merge(contig_cov,contig_cov_,how='inner', on=None,
+                        left_index=True, right_index=True, sort=False, copy=True)
+                must_link_contig_cov = pd.merge(must_link_contig_cov,must_link_contig_cov_,how='inner', on=None,
+                        left_index=True, right_index=True, sort=False, copy=True)
 
-    contig_cov = contig_cov.apply(lambda x: x+1e-5)
-    must_link_contig_cov = must_link_contig_cov.apply(lambda x: x+1e-5)
-    if len(args.contig_depth) == 1:
+        contig_cov = contig_cov.apply(lambda x: x+1e-5)
+        must_link_contig_cov = must_link_contig_cov.apply(lambda x: x+1e-5)
         contig_cov = contig_cov / 100
         must_link_contig_cov = must_link_contig_cov / 100
+        data_1000 = pd.merge(kmer_1000, contig_cov, how='inner', on=None,
+                             left_index=True, right_index=True, sort=False, copy=True)
+
+        data_split = pd.merge(kmer_split, must_link_contig_cov, how='inner', on=None,
+                              left_index=True, right_index=True, sort=False, copy=True)
     else:
-        contig_cov = contig_cov.div(contig_cov.sum(axis=0), axis=1)
-        contig_cov = contig_cov.div(contig_cov.sum(axis=1), axis=0)
+        logger.info('Processing Sample{}'.format(1))
+        contig_cov = calculate_coverage(args.contig_depth[0],threshold,is_combined=is_combined)
+        if len(args.contig_depth) > 1:
+            for index_sample , depth_sample in enumerate(args.contig_depth):
+                if index_sample == 0:
+                    continue
+                logger.info('Processing Sample{}'.format(index_sample + 1))
+                contig_cov_  = calculate_coverage(depth_sample,threshold,is_combined=is_combined)
+                contig_cov = pd.merge(contig_cov,contig_cov_,how='inner', on=None,
+                        left_index=True, right_index=True, sort=False, copy=True)
 
-        must_link_contig_cov = must_link_contig_cov.div(must_link_contig_cov.sum(axis=0), axis=1)
-        must_link_contig_cov = must_link_contig_cov.div(must_link_contig_cov.sum(axis=1), axis=0)
+        contig_cov = contig_cov.apply(lambda x: x+1e-5)
+        contig_cov[contig_cov < 1] = 0
+        contig_cov = contig_cov / 100
+        data_1000 = pd.merge(kmer_1000, contig_cov, how='inner', on=None,
+                             left_index=True, right_index=True, sort=False, copy=True)
+        data_split = kmer_split
 
-    data_1000 = pd.merge(kmer_1000,contig_cov,how='inner', on=None,
-                    left_index=True, right_index=True, sort=False, copy=True)
+    with atomic_write(os.path.join(out, 'data.csv'), overwrite=True) as ofile:
+        data_1000.to_csv(ofile)
 
-    data_split = pd.merge(kmer_split,must_link_contig_cov,how='inner', on=None,
-                    left_index=True, right_index=True, sort=False, copy=True)
-
-    if not is_short_binned:
-        data_1500 = pd.merge(kmer_1500,contig_cov,how='inner', on=None,
-                    left_index=True, right_index=True, sort=False, copy=True)
+    with atomic_write(os.path.join(out,'data_split.csv'), overwrite=True) as ofile:
+        data_split.to_csv(ofile)
 
     logger.info('Estimating number of bins using single-copy marker genes.')
-
-
+    data_1000 = pd.read_csv(os.path.join(out,'data.csv'),index_col=0)
+    print(data_1000)
+    data_split = pd.read_csv(os.path.join(out,'data_split.csv'),index_col=0)
+    print(data_split)
     contig_output = os.path.join(out,os.path.split(args.contig_fasta)[1] + '.frag')
     if not os.path.exists(contig_output + '.faa'):
         frag_out_log = open(contig_output + '.out','w')
@@ -257,7 +264,6 @@ def main(args=None):
 
 
     seed_1000_output = os.path.join(out,os.path.split(args.contig_fasta)[1] + '_1000.seed')
-    seed_1500_output = os.path.join(out,os.path.split(args.contig_fasta)[1] + '_1500.seed')
 
     if not os.path.exists(seed_1000_output):
         getmarker = os.path.split(__file__)[0] + '/test_getmarker.pl'
@@ -270,29 +276,11 @@ def main(args=None):
             ]
         )
 
-    if not is_short_binned:
-        if not os.path.exists(seed_1500_output):
-            getmarker = os.path.split(__file__)[0] + '/test_getmarker.pl'
-            subprocess.check_call(
-                ['perl', getmarker,
-                 hmm_output,
-                 args.contig_fasta,
-                 str(1501),
-                 seed_1500_output,
-                 ]
-            )
 
-    if is_short_binned:
-        seed_1000 = open(seed_1000_output).read().split('\n')
-        seed_1000 =  [contig for contig in seed_1000 if contig != '' ]
-        logger.info('The number of bins:{}'.format(len(seed_1000)))
-    else:
-        seed_1000 = open(seed_1000_output).read().split('\n')
-        seed_1000 =  [contig for contig in seed_1000 if contig != '' ]
-        seed_1500 = open(seed_1500_output).read().split('\n')
-        seed_1500 =  [contig for contig in seed_1500 if contig != '' ]
-        logger.info('The number of bins:{}'.format(len(seed_1500)))
 
+    seed_1000 = open(seed_1000_output).read().split('\n')
+    seed_1000 =  [contig for contig in seed_1000 if contig != '' ]
+    logger.info('The number of bins:{}'.format(len(seed_1000)))
     logger.info('Generate training data:')
 
     # generate two inputs
@@ -304,28 +292,36 @@ def main(args=None):
     cannot_link = pd.read_csv(args.cannot_link, sep=',',
                               header=None).values
 
+
     namelist = data_1000.index.tolist()
     mapObj = dict(zip(namelist, range(len(namelist))))
     train_data = data_1000.values
     train_data_must_link = data_split.values
 
+    if not is_combined:
+        train_data_input = train_data[:,0:136]
+        train_data_split_input = train_data_must_link
+    else:
+        train_data_input = train_data
+        train_data_split_input = train_data_must_link
+
     # can not link from contig annotation
     for link in cannot_link:
-        train_input_1.append(train_data[mapObj[link[0]]])
-        train_input_2.append(train_data[mapObj[link[1]]])
+        train_input_1.append(train_data_input[mapObj[link[0]]])
+        train_input_2.append(train_data_input[mapObj[link[1]]])
         train_labels.append(0)
 
     #can not link from bin seed
     for i in range(len(seed_1000)):
         for j in range(i+1,len(seed_1000)):
-            train_input_1.append(train_data[mapObj[seed_1000[i]]])
-            train_input_2.append(train_data[mapObj[seed_1000[j]]])
+            train_input_1.append(train_data_input[mapObj[seed_1000[i]]])
+            train_input_2.append(train_data_input[mapObj[seed_1000[j]]])
             train_labels.append(0)
 
     # must link from breaking up
     for i in range(0, len(train_data_must_link), 2):
-        train_input_1.append(train_data_must_link[i])
-        train_input_2.append(train_data_must_link[i + 1])
+        train_input_1.append(train_data_split_input[i])
+        train_input_2.append(train_data_split_input[i + 1])
         train_labels.append(1)
 
     logger.info('Number of must link pair:{}'.format(train_labels.count(1)))
@@ -337,7 +333,8 @@ def main(args=None):
     dataset = feature_Dataset(train_input_1,train_input_2,train_labels)
     train_loader = DataLoader(dataset=dataset, batch_size=args.batchsize, shuffle=True, num_workers=16)
 
-    unlabeled_x = train_data
+
+    unlabeled_x = train_data_input
     unlabeled_train_input1 = []
     unlabeled_train_input2 = []
     for i in range(len(unlabeled_x)):
@@ -351,7 +348,10 @@ def main(args=None):
     device = torch.device(
         "cuda" if torch.cuda.is_available() else "cpu")
 
-    model = Semi_encoding(train_data.shape[1]).to(device)
+    if is_combined:
+        model = Semi_encoding_multiple(train_data_input.shape[1]).to(device)
+    else:
+        model = Semi_encoding_single(train_data_input.shape[1]).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     scheduler = lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)
 
@@ -376,7 +376,7 @@ def main(args=None):
             model.train()
             unlabeled_train_input1 = unlabeled_train_input1.to(device)
             unlabeled_train_input2 = unlabeled_train_input2.to(device)
-            embedding1, embedding2 = model.forward(unlabeled_train_input1.float(), unlabeled_train_input2.float())
+            embedding1, embedding2 = model.forward(unlabeled_train_input1.float(), unlabeled_train_input1.float())
             decoder1, decoder2 = model.decoder(embedding1, embedding2)
             optimizer.zero_grad()
             loss = loss_function(embedding1.double(), embedding2.double(),
@@ -390,30 +390,32 @@ def main(args=None):
     logger.info('Training finished.')
     logger.info('Start binning...')
 
+
     with torch.no_grad():
         model.eval()
-        if is_short_binned:
-            namelist = data_1000.index.tolist()
-            row_index = data_1000._stat_axis.values.tolist()
-            bin_data = data_1000.values
-            init_seed = seed_1000
-            num_bin = len(seed_1000)
-        else:
-            namelist = data_1500.index.tolist()
-            row_index = data_1500._stat_axis.values.tolist()
-            bin_data = data_1500.values
-            init_seed = seed_1500
-            num_bin = len(seed_1500)
+        namelist = data_1000.index.tolist()
+        row_index = data_1000._stat_axis.values.tolist()
+        bin_data = data_1000.values
+        init_seed = seed_1000
+        num_bin = len(seed_1000)
 
         seed_index = []
         for temp in init_seed:
             seed_index.append(row_index.index(temp))
         mapObj = dict(zip(namelist, range(len(namelist))))
-        length_weight = [contig_length_dict[name] for name in namelist]
-        x = torch.from_numpy(bin_data).to(device)
+        length_weight = np.array([contig_length_dict[name] for name in namelist])
+        x = torch.from_numpy(train_data_input).to(device)
+        x_depth = bin_data[:,136:bin_data.shape[1]]
         embedding = model.embedding(x.float()).detach().cpu().numpy()
+        if not is_combined:
+            scaling = np.mean(embedding) / np.mean(x_depth)
+            base = 5
+
+            weight = 2 * base * math.ceil(scaling / base)
+            embedding = np.concatenate((embedding,x_depth * weight),axis=1)
         seeds_embedding = embedding[seed_index]
         logger.info('Weighted kmeans clustering.')
+
         kmeans = KMeans(n_clusters=num_bin, init=seeds_embedding)
         kmeans.fit(embedding, sample_weight=length_weight)
 
@@ -499,7 +501,7 @@ def main(args=None):
 
     logger.info('Binning finished.')
 
-
+    torch.save(model, os.path.join(out,'model.h5'))
 
 
 

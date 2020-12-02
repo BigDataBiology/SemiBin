@@ -3,11 +3,11 @@ from torch.nn import Linear,ReLU,LeakyReLU
 from torch import nn
 from torch.utils.data import Dataset,DataLoader
 
-class Semi_encoding(torch.nn.Module):
-    def __init__(self,input_feature):
-        super(Semi_encoding,self).__init__()
+class Semi_encoding_multiple(torch.nn.Module):
+    def __init__(self,num):
+        super(Semi_encoding_multiple,self).__init__()
         self.encoder1 = torch.nn.Sequential(
-            Linear(input_feature,512),
+            Linear(num,512),
             nn.BatchNorm1d(512),
             LeakyReLU(),
             nn.Dropout(0.2),
@@ -15,8 +15,9 @@ class Semi_encoding(torch.nn.Module):
             nn.BatchNorm1d(512),
             LeakyReLU(),
             nn.Dropout(0.2),
-            Linear(512,100)
+            Linear(512,100),
         )
+
 
         self.decoder1 = torch.nn.Sequential(
             Linear(100,512),
@@ -27,9 +28,10 @@ class Semi_encoding(torch.nn.Module):
             nn.BatchNorm1d(512),
             LeakyReLU(),
             nn.Dropout(0.2),
-            Linear(512,input_feature),
-            nn.Sigmoid(),
+            Linear(512,num),
+            nn.Sigmoid()
         )
+
 
     def forward(self,input1,input2):
         return self.encoder1(input1) , self.encoder1(input2)
@@ -39,6 +41,47 @@ class Semi_encoding(torch.nn.Module):
 
     def embedding(self,input):
         return self.encoder1(input)
+
+class Semi_encoding_single(torch.nn.Module):
+    def __init__(self,num):
+        super(Semi_encoding_single,self).__init__()
+        self.encoder1 = torch.nn.Sequential(
+            Linear(num,512),
+            nn.BatchNorm1d(512),
+            LeakyReLU(),
+            nn.Dropout(0.2),
+            Linear(512, 512),
+            nn.BatchNorm1d(512),
+            LeakyReLU(),
+            nn.Dropout(0.2),
+            Linear(512,100),
+            nn.Sigmoid()
+        )
+
+
+        self.decoder1 = torch.nn.Sequential(
+            Linear(100,512),
+            nn.BatchNorm1d(512),
+            LeakyReLU(),
+            nn.Dropout(0.2),
+            Linear(512, 512),
+            nn.BatchNorm1d(512),
+            LeakyReLU(),
+            nn.Dropout(0.2),
+            Linear(512,num),
+            nn.Sigmoid()
+        )
+
+
+    def forward(self,input1,input2):
+        return self.encoder1(input1) , self.encoder1(input2)
+
+    def decoder(self,input1,input2):
+        return self.decoder1(input1) , self.decoder1(input2)
+
+    def embedding(self,input):
+        return self.encoder1(input)
+
 
 
 def loss_function(embedding1,embedding2,label,raw_x_1,raw_x_2,decoder_x_1,decoder_x_2,is_label = True):
