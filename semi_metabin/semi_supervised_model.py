@@ -29,15 +29,15 @@ class Semi_encoding_multiple(torch.nn.Module):
             LeakyReLU(),
             nn.Dropout(0.2),
             Linear(512,num),
-            nn.Sigmoid()
+            nn.Sigmoid(),
         )
-
 
     def forward(self,input1,input2):
         return self.encoder1(input1) , self.encoder1(input2)
 
     def decoder(self,input1,input2):
         return self.decoder1(input1) , self.decoder1(input2)
+
 
     def embedding(self,input):
         return self.encoder1(input)
@@ -55,7 +55,7 @@ class Semi_encoding_single(torch.nn.Module):
             LeakyReLU(),
             nn.Dropout(0.2),
             Linear(512,100),
-            nn.Sigmoid()
+            #nn.Sigmoid(),
         )
 
 
@@ -69,8 +69,9 @@ class Semi_encoding_single(torch.nn.Module):
             LeakyReLU(),
             nn.Dropout(0.2),
             Linear(512,num),
-            nn.Sigmoid()
+            nn.Softmax(dim=1),
         )
+
 
 
     def forward(self,input1,input2):
@@ -78,6 +79,7 @@ class Semi_encoding_single(torch.nn.Module):
 
     def decoder(self,input1,input2):
         return self.decoder1(input1) , self.decoder1(input2)
+
 
     def embedding(self,input):
         return self.encoder1(input)
@@ -93,8 +95,8 @@ def loss_function(embedding1,embedding2,label,raw_x_1,raw_x_2,decoder_x_1,decode
 
     if is_label:
         supervised_loss = torch.mean(label * sqaure_pred + (1 - label) * margin_square)
-        unsupervised_loss = mse_loss(decoder_x_1,raw_x_1) + mse_loss(decoder_x_2,raw_x_2)
-        loss = 2 * supervised_loss + 0.01 * unsupervised_loss
+        unsupervised_loss = 0.5 * mse_loss(decoder_x_1,raw_x_1) + 0.5 * mse_loss(decoder_x_2,raw_x_2)
+        loss = supervised_loss + unsupervised_loss
         return loss,supervised_loss,unsupervised_loss
 
     else:
