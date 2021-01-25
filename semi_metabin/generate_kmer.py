@@ -62,4 +62,7 @@ def generate_kmer_features_from_fasta(fasta_file, length_threshold, kmer_len, sp
         composition_v[-1] -= 1
         composition_d[seq.id] = composition_v
     df = p.DataFrame.from_dict(composition_d, orient='index', dtype=float)
+
+    df = df.apply(lambda x: x + 1e-5)
+    df = df.div(df.sum(axis=1), axis=0)
     return df
