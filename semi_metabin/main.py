@@ -36,12 +36,15 @@ def parse_args(args):
     parser.add_argument('-d','--input-depth',
                         required=True,
                         nargs='*',
-                        help='Path to the input depth file(every position depth generated from mosdepth or bedtools genomecov).If mulptile samples binning ,                        you can input multiple files.',
+                        help='Path to the input depth file (every position depth generated from mosdepth or bedtools genomecov). '
+                            'If using multiple sample binning , you can input multiple files.',
                         dest='contig_depth',
                         default=None)
     parser.add_argument('-c','--cannot-link',
                         required=True,
-                        help='Path to the input can not link file generated from other additional biological information,one row for one can not link                               constraint.The file format:contig_1\tcontig_2.',
+                        help='Path to the input can not link file generated from other additional biological information, '
+                             'one row for each cannot link constraint. '
+                             'The file format: contig_1<TAB>contig_2.',
                         dest='cannot_link',
                         default=None)
     parser.add_argument('-o','--output',
@@ -52,7 +55,7 @@ def parse_args(args):
     parser.add_argument('--epoches',
                         required=False,
                         type=int,
-                        help='Epoches used in the training process.',
+                        help='Number of epoches used in the training process.',
                         dest='epoches',
                         default=20
     )
@@ -113,17 +116,14 @@ def get_threshold(contig_len):
     threshold = max(threshold, 4000)
     return threshold
 
-def write_bins(namelist,contig_labels,output, contig_dict , recluster = False,origin_label=0):
-    res = {}
-    for i in range(len(namelist)):
-        if contig_labels[i] not in res and contig_labels[i] != -1:
-            res[contig_labels[i]] = []
-            res[contig_labels[i]].append(namelist[i])
-        if contig_labels[i] in res:
-            res[contig_labels[i]].append(namelist[i])
+def write_bins(namelist, contig_labels, output, contig_dict, recluster=False, origin_label=0):
+    from collections import defaultdict
+    res = defaultdict(list)
+    for label,name in zip(contig_labels, namelist):
+        if label != -1:
+            res[label].append(name)
 
-    if not os.path.exists(output):
-        os.mkdir(output)
+    os.makedirs(output, exist_ok=True)
 
     for label in res:
         bin = []
@@ -227,10 +227,7 @@ def main(args=None):
     logger.addHandler(sh)
 
     out = args.output
-    if not os.path.exists(out):
-        os.mkdir(out)
-
-
+    os.makedirs(out, exist_ok=True)
 
     whole_contig_bp = 0
     contig_bp_2500 = 0
@@ -248,18 +245,15 @@ def main(args=None):
     # threshold for generating must link pairs
     threshold = get_threshold(contig_length_list)
 
-    if contig_bp_2500 / whole_contig_bp >= 0.05:
-        binned_short = False
-    else:
-        binned_short = True
+    binned_short = contig_bp_2500 / whole_contig_bp < 0.05
 
     #Processing input contig fasta file
     logger.info('Start generating kmer features from fasta file.')
     #if not os.path.exists(os.path.join(out, 'data.csv')):
-    if binned_short:
-        kmer_whole = generate_kmer_features_from_fasta(args.contig_fasta,1000,4)
-    else:
-        kmer_whole = generate_kmer_features_from_fasta(args.contig_fasta,2500,4)
+
+    kmer_whole = generate_kmer_features_from_fasta(args.contig_fasta,
+            1000 if binned_short else 2500,
+            4)
 
     logger.info('Generating kmer features for must link pair.')
     #if not os.path.exists(os.path.join(out,'data_split.csv')):
@@ -270,10 +264,7 @@ def main(args=None):
     # generating coverage for every contig and for must link pair
     n_sample = len(args.contig_depth)
 
-
-
-
-    is_combined = True if len(args.contig_depth) >= 5 else False
+    is_combined = n_sample >= 5
 
     if is_combined:
         logger.info('Processing Sample{}'.format(1))
