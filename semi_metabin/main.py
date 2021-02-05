@@ -36,12 +36,15 @@ def parse_args(args):
     parser.add_argument('-d','--input-depth',
                         required=True,
                         nargs='*',
-                        help='Path to the input depth file(every position depth generated from mosdepth or bedtools genomecov).If mulptile samples binning ,                        you can input multiple files.',
+                        help='Path to the input depth file (every position depth generated from mosdepth or bedtools genomecov). '
+                            'If using multiple sample binning , you can input multiple files.',
                         dest='contig_depth',
                         default=None)
     parser.add_argument('-c','--cannot-link',
                         required=True,
-                        help='Path to the input can not link file generated from other additional biological information,one row for one can not link                               constraint.The file format:contig_1\tcontig_2.',
+                        help='Path to the input can not link file generated from other additional biological information, '
+                             'one row for each cannot link constraint. '
+                             'The file format: contig_1<TAB>contig_2.',
                         dest='cannot_link',
                         default=None)
     parser.add_argument('-o','--output',
@@ -52,7 +55,7 @@ def parse_args(args):
     parser.add_argument('--epoches',
                         required=False,
                         type=int,
-                        help='Epoches used in the training process.',
+                        help='Number of epoches used in the training process.',
                         dest='epoches',
                         default=20
     )
