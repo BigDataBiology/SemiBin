@@ -1,8 +1,8 @@
 from os import path
 from setuptools import setup,find_packages
 
-exec(compile(open('semi_metabin/semi_metabin_version.py').read(),
-             'semi_metabin/semi_metabin_version.py', 'exec'))
+exec(compile(open('s3n2bin/s3n2bin_version.py').read(),
+             's3n2bin/s3n2bin_version.py', 'exec'))
 
 try:
     long_description = open('README.md', encoding='utf-8').read()
@@ -25,7 +25,7 @@ setup(name='semi_metabin',
       author='Shaojun Pan',
       author_email='shaojun1997777@gmail.com',
       license='MIT',
-      packages = ['semi_metabin'],
+      packages = ['s3n2bin'],
       install_requires=[
           'numpy',
           'Biopython',
@@ -35,9 +35,9 @@ setup(name='semi_metabin',
           'torch'
       ],
       package_data={
-          'semi_metabin': ['*.hmm','*.pl']},
+          's3n2bin': ['*.hmm','*.pl']},
       zip_safe=False,
       entry_points={
-            'console_scripts': ['semi-metabin=semi_metabin.main:main'],
+            'console_scripts': ['S3N2Bin=s3n2bin.main:main'],
       }
 )
