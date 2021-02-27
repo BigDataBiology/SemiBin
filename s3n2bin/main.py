@@ -36,7 +36,7 @@ def parse_args(args):
                         required=True,
                         help='Path to the input can not link file generated from other additional biological information,'
                              'one row for each can not link constraint.'
-                             'The file format: contig_1<TAB>contig_2.',
+                             'The file format: contig_1,contig_2.',
                         dest='cannot_link',
                         default=None)
     basic.add_argument('-o','--output',
