@@ -1,0 +1,9 @@
+site_name: "S3N2Bin"
+repo_url: "https://github.com/psj1997/Semi-supervised-siamese-neural-network-for-metagenomic-binning"
+
+nav:
+        - 'S3N2Bin': index.md
+        - 'Install': install.md
+        - 'Usage': usage.md
+        - 'Output' : output.md
+

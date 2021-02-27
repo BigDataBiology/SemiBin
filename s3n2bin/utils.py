@@ -5,6 +5,26 @@ from atomicwrites import atomic_write
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from  Bio import SeqIO
+import sys
+
+def validate_args(args):
+
+    def except_file(f):
+        if f is not None:
+            if not os.path.exists(f):
+                sys.stderr.write(f"Error: Expected file '{f}' does not exist\n")
+                sys.exit(1)
+
+    def except_file_bam(f):
+        if f is not None:
+            for bam_path in f:
+                if not os.path.exists(bam_path):
+                    sys.stderr.write(f"Error: Expected file '{bam_path}' does not exist\n")
+                    sys.exit(1)
+
+    except_file(args.contig_fasta)
+    except_file_bam(args.bams)
+    except_file(args.cannot_link)
 
 def get_threshold(contig_len):
     """
