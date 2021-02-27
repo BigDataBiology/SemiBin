@@ -1,5 +1,5 @@
 site_name: "S3N2Bin"
-repo_url: "https://github.com/psj1997/Semi-supervised-siamese-neural-network-for-metagenomic-binning"
+repo_url: "https://github.com/psj1997/S3N2Bin"
 
 nav:
         - 'S3N2Bin': index.md
