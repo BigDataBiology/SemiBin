@@ -1,4 +1,4 @@
-# $S^3N^2Bin$ (Semi-supervised Siamese Neural Network for metagenomic binning)
+# S<sup>3</sup>N<sup>2</sup>Bin (Semi-supervised Siamese Neural Network for metagenomic binning)
 
 [![License: MIT](https://anaconda.org/bioconda/gmgc-mapper/badges/license.svg)](https://anaconda.org/bioconda/gmgc-mapper)
 
