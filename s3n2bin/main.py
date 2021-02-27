@@ -1,25 +1,15 @@
 import argparse
 import os
 import sys
-import numpy as np
 import logging
 from .generate_kmer import generate_kmer_features_from_fasta
 from .generate_coverage import calculate_coverage
 from  Bio import SeqIO
-from .utils import validate_args,get_threshold,write_bins,cal_kl,cal_num_bins
+from .utils import validate_args,get_threshold
 import pandas as pd
-import subprocess
-from .semi_supervised_model import loss_function,unsupervised_feature_Dataset,feature_Dataset,Semi_encoding_single,Semi_encoding_multiple,train
-from torch.utils.data import DataLoader
+from .semi_supervised_model import train
 import torch
-from torch.optim import lr_scheduler
-from tqdm import tqdm
-from sklearn.cluster import KMeans
 from atomicwrites import atomic_write
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-import math
-import shutil
 from .cluster import cluster
 import warnings
 import multiprocessing

@@ -1,4 +1,4 @@
-# $S^3N^2Bin$
+#S<sup>3</sup>N<sup>2</sup>Bin
 
 
 

@@ -1,4 +1,4 @@
-# Output of $S^3N^2Bin$
+# Output of S<sup>3</sup>N<sup>2</sup>Bin
 
 
 
