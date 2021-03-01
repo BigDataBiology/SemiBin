@@ -9,22 +9,20 @@ import sys
 
 def validate_args(args):
 
-    def except_file(f):
+    def expect_file(f):
         if f is not None:
             if not os.path.exists(f):
                 sys.stderr.write(f"Error: Expected file '{f}' does not exist\n")
                 sys.exit(1)
 
-    def except_file_bam(f):
-        if f is not None:
-            for bam_path in f:
-                if not os.path.exists(bam_path):
-                    sys.stderr.write(f"Error: Expected file '{bam_path}' does not exist\n")
-                    sys.exit(1)
+    def expect_file_list(fs):
+        if fs is not None:
+            for f in fs:
+                expect_file(f)
 
-    except_file(args.contig_fasta)
-    except_file_bam(args.bams)
-    except_file(args.cannot_link)
+    expect_file(args.contig_fasta)
+    expect_file_list(args.bams)
+    expect_file(args.cannot_link)
 
 def get_threshold(contig_len):
     """

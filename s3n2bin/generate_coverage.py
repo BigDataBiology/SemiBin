@@ -33,7 +33,6 @@ def calculate_coverage(depth_file,threshold,edge=75,is_combined = False,contig_t
 
     depth_value = []
     depth_contig = None
-    num = 0
     for line in f:
         line_split = line.strip().split('\t')
         contig_name = line_split[0]

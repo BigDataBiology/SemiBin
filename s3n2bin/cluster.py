@@ -74,14 +74,12 @@ def cluster(model,data,device,max_edges,max_node,is_combined,logger,n_sample,con
     result = g.community_infomap(edge_weights=edges_weight,vertex_weights=length_weight)
     contig_labels = np.zeros(shape=(len(matrix)), dtype=np.int)
 
-    for i in range(len(result)):
-        temp = result[i]
-        for infomap_index in temp:
+    for i, r in enumerate(result):
+        for infomap_index in r:
             contig_labels[infomap_index] = i
 
     output_bin_path = os.path.join(out,'output_bins')
-    if not os.path.exists(output_bin_path):
-        os.mkdir(output_bin_path)
+    os.makedirs(output_bin_path, exist_ok=True)
 
     write_bins(namelist, contig_labels, output_bin_path, contig_dict)
     if not is_combined:
