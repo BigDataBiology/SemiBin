@@ -22,14 +22,8 @@ python setup.py install
 
 ## Generate Cannot-link contrains
 
-<<<<<<< HEAD
-  You can use [CAT](https://github.com/dutilh/CAT)(or other contig annotation tools) to get the taxonomic classifications of contigs. Then you can use the script `script/concatenate.py` to generate the cannot-link file(Format: contig_1,contig_2 ) that can be used in S<sup>3</sup>N<sup>2</sup>Bin. 
-=======
-You can use [CAT](https://github.com/dutilh/CAT) (or other contig annotation
-tools) to get taxonomic classifications of contigs. Then you can use the script
-`script/concatenate.py` to generate the cannot-link file(contig1, contig2)
+You can use [CAT](https://github.com/dutilh/CAT) (or other contig annotation tools) to get taxonomic classifications of contigs. Then you can use the script `script/concatenate.py` to generate the cannot-link file(contig1, contig2)
 that can be used in S<sup>3</sup>N<sup>2</sup>Bin.
->>>>>>> e13e3f1af9fe193110595b6e6ae58754eae568dd
 
 ```bash
 python script/concatenate.py -i CAT.out -c contig.fna -s sample-name -o output
@@ -43,11 +37,7 @@ python script/concatenate.py -i CAT.out -c contig.fna -s sample-name -o output
 S3N2Bin -i contig.fna -b *.bam -c cannot-link.txt -o output 
 ```
 
-<<<<<<< HEAD
-### Multi-samples binning(Must set -s parameter)
-=======
 ### Multiple samples binning (Must set `-s` parameter)
->>>>>>> e13e3f1af9fe193110595b6e6ae58754eae568dd
 
 ```bash
 S3N2Bin -i whole_contig.fna -b *.bam -c *.txt -s C -o output
