@@ -16,6 +16,10 @@ setup(name='semi_metabin',
       long_description = long_description,
       long_description_content_type = 'text/markdown',
       classifiers=[
+        'Development Status :: 2 - Pre-Alpha',
+        'Intended Audience :: Science/Research',
+        'Topic :: Scientific/Engineering :: Bio-Informatics',
+        'Topic :: Scientific/Engineering :: Artificial Intelligence',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
@@ -41,3 +45,4 @@ setup(name='semi_metabin',
             'console_scripts': ['S3N2Bin=s3n2bin.main:main'],
       }
 )
+
