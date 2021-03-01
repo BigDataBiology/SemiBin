@@ -25,9 +25,13 @@ S<sup>3</sup>N<sup>2</sup>Bin is a command line tool for metagenomic binning wit
 ### Basic commands
 
 * `-i/--input-fasta` : Path to the input contig fasta file(.fasta/.gz/.bz2).
+
 * `-b/--input-bam`: Path to the input bam files. If there are several samples, you can input several bam files.
+
 * `-c/--cannot-link`:  Path to the input cannot-link file generated from other additional biological information. One row for each cannot-link constraint.The file format: contig_1,contig_2.
+
 * `-o/--output`: Output directory (will be created if non-existent).
+
 * `-s/--separator`: Used when multi-samples binning to separete sample name and contig name.(None means using single sample and co-assemble binning)
 
 ### Optional commands
