@@ -18,6 +18,7 @@ def window(seq, n):
             next(el, None)
     return zip(*els)
 
+
 def generate_feature_mapping(kmer_len):
     BASE_COMPLEMENT = {"A": "T", "T": "A", "G": "C", "C": "G"}
     kmer_hash = {}
@@ -30,7 +31,9 @@ def generate_feature_mapping(kmer_len):
             counter += 1
     return kmer_hash, counter
 
-def generate_kmer_features_from_fasta(fasta_file, length_threshold, kmer_len, split = False,threshold = 0):
+
+def generate_kmer_features_from_fasta(
+        fasta_file, length_threshold, kmer_len, split=False, threshold=0):
     kmer_dict, nr_features = generate_feature_mapping(kmer_len)
     composition_d = OrderedDict()
     contig_lengths = OrderedDict()
@@ -41,9 +44,11 @@ def generate_kmer_features_from_fasta(fasta_file, length_threshold, kmer_len, sp
         for seq_record in SeqIO.parse(fasta_file, "fasta"):
             if len(seq_record) >= threshold:
                 half = int(len(seq_record.seq) / 2)
-                rec1 = SeqRecord(seq_record.seq[0:half], id=seq_record.id + '_1', description='')
+                rec1 = SeqRecord(
+                    seq_record.seq[0:half], id=seq_record.id + '_1', description='')
                 seq_list.append(rec1)
-                rec2 = SeqRecord(seq_record.seq[half:len(seq_record.seq)], id=seq_record.id + '_2', description='')
+                rec2 = SeqRecord(seq_record.seq[half:len(
+                    seq_record.seq)], id=seq_record.id + '_2', description='')
                 seq_list.append(rec2)
     for seq in seq_list:
         seq_len = len(seq)

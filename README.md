@@ -22,10 +22,14 @@ python setup.py install
 
 ## Generate Cannot-link contrains
 
+<<<<<<< HEAD
+  You can use [CAT](https://github.com/dutilh/CAT)(or other contig annotation tools) to get the taxonomic classifications of contigs. Then you can use the script `script/concatenate.py` to generate the cannot-link file(Format: contig_1,contig_2 ) that can be used in S<sup>3</sup>N<sup>2</sup>Bin. 
+=======
 You can use [CAT](https://github.com/dutilh/CAT) (or other contig annotation
 tools) to get taxonomic classifications of contigs. Then you can use the script
 `script/concatenate.py` to generate the cannot-link file(contig1, contig2)
 that can be used in S<sup>3</sup>N<sup>2</sup>Bin.
+>>>>>>> e13e3f1af9fe193110595b6e6ae58754eae568dd
 
 ```bash
 python script/concatenate.py -i CAT.out -c contig.fna -s sample-name -o output
@@ -33,19 +37,23 @@ python script/concatenate.py -i CAT.out -c contig.fna -s sample-name -o output
 
 ## Examples
 
-### Single sample/coassembly binning
+### Single sample/co-assembly binning
 
 ```bash
 S3N2Bin -i contig.fna -b *.bam -c cannot-link.txt -o output 
 ```
 
+<<<<<<< HEAD
+### Multi-samples binning(Must set -s parameter)
+=======
 ### Multiple samples binning (Must set `-s` parameter)
+>>>>>>> e13e3f1af9fe193110595b6e6ae58754eae568dd
 
 ```bash
 S3N2Bin -i whole_contig.fna -b *.bam -c *.txt -s C -o output
 ```
 
-#### Multiple samples binning pipeline
+#### Multi-samples binning pipeline
 
 (1) Concatenate all contigs from all samples together. Make sure that names of samples are unique and id for every contig is <sample_name><\separator><contig_id>. Concatenated contig format is:
 
@@ -74,6 +82,8 @@ ATGCAAAA
 
 (4) Run S<sup>3</sup>N<sup>2</sup>Bin.
 
+For more details, [read the docs](https://s3n2bin.readthedocs.io/en/latest/output/). 
+
 ## Output
 
 The output folder will contain
@@ -86,5 +96,7 @@ The output folder will contain
 
 4. Some intermediate files.
 
-For more details, read the docs.
+When single sample/co-assembly binning, reconstructed bins are in `output_recluster_bins` directory. When multi-samples binning, reconstructed bins from all samples are in `bins` directory. 
+
+For more details, [read the docs](https://s3n2bin.readthedocs.io/en/latest/output/). 
 
