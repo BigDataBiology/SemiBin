@@ -24,12 +24,8 @@ def validate_args(args):
 
     expect_file(args.contig_fasta)
     expect_file_list(args.bams)
-<<<<<<< HEAD
     expect_file_list(args.cannot_link)
 
-=======
-    expect_file(args.cannot_link)
->>>>>>> e13e3f1af9fe193110595b6e6ae58754eae568dd
 
 def get_threshold(contig_len):
     """

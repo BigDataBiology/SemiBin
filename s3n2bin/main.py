@@ -24,7 +24,6 @@ def parse_args(args):
                                      description='Semi-supervised siamese neural network for metagenomic binning')
 
     basic = parser.add_argument_group(title='Basic commands', description=None)
-<<<<<<< HEAD
     basic.add_argument('-i', '--input-fasta',
                        required=True,
                        help='Path to the input contig fasta file.',
@@ -67,47 +66,6 @@ def parse_args(args):
                           help='Number of subprocess used in processing bam files()',
                           dest='num_process',
                           default=0)
-=======
-    basic.add_argument('-i','--input-fasta',
-                        required=True,
-                        help='Path to the input contig fasta file.',
-                        dest='contig_fasta',
-                        default=None)
-    basic.add_argument('-b','--input-bam',
-                        required=True,
-                        nargs='*',
-                        help='Path to the input bam file.'
-                             'If using multiple samples binning, you can input multiple files.',
-                        dest='bams',
-                        default=None)
-    basic.add_argument('-c','--cannot-link',
-                        required=True,
-                        help='Path to the input cannot link file generated from other additional biological information,'
-                             'one row for each cannot link constraint.'
-                             'The file format: contig_1,contig_2.',
-                        dest='cannot_link',
-                        default=None)
-    basic.add_argument('-o','--output',
-                        required=True,
-                        help='Output directory (will be created if non-existent)',
-                        dest='output',
-                        default=None)
-    basic.add_argument('-s','--separator',
-                        required=False,
-                        type=str,
-                        help='Used when multiple samples binning to separate sample name and contig name. (None means single sample and coassemble binning)',
-                        dest='separator',
-                        default=None,
-                       )
-
-    optional = parser.add_argument_group(title='Optional commands', description=None)
-    optional.add_argument('-p','--processes',
-                        required=False,
-                        type=int,
-                        help='Number of CPUs used',
-                        dest='num_process',
-                        default=0)
->>>>>>> e13e3f1af9fe193110595b6e6ae58754eae568dd
 
     optional.add_argument('--epoches',
                           required=False,
