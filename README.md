@@ -1,8 +1,12 @@
 # S<sup>3</sup>N<sup>2</sup>Bin (Semi-supervised Siamese Neural Network for metagenomic binning)
 
 
+_NOTE_: This tool is still in development. You are welcome to try it out and
+feedback is appreciated, but expect some bugs/rapid changes until it
+stabilizes.
 
-Command tool for metagenomic binning with semi-supervised deep leaning using additional information from reference genomes.
+Command tool for metagenomic binning with semi-supervised deep learning using
+information from reference genomes.
 
 ## Install
 
@@ -18,7 +22,10 @@ python setup.py install
 
 ## Generate Cannot-link contrains
 
-  You can use [CAT](https://github.com/dutilh/CAT)(or other contig annotation tools) to get the taxonomic classifications of contigs. Then you can use the script `script/concatenate.py` to generate the cannot-link file(contig_1,contig_2 ) that can be used in S<sup>3</sup>N<sup>2</sup>Bin. 
+You can use [CAT](https://github.com/dutilh/CAT) (or other contig annotation
+tools) to get taxonomic classifications of contigs. Then you can use the script
+`script/concatenate.py` to generate the cannot-link file(contig1, contig2)
+that can be used in S<sup>3</sup>N<sup>2</sup>Bin.
 
 ```bash
 python script/concatenate.py -i CAT.out -c contig.fna -s sample-name -o output
@@ -32,7 +39,7 @@ python script/concatenate.py -i CAT.out -c contig.fna -s sample-name -o output
 S3N2Bin -i contig.fna -b *.bam -c cannot-link.txt -o output 
 ```
 
-### Multiple samples binning(Must set -s parameter)
+### Multiple samples binning (Must set `-s` parameter)
 
 ```bash
 S3N2Bin -i whole_contig.fna -b *.bam -c *.txt -s C -o output
@@ -63,7 +70,7 @@ ATGCAAAA
 
 (2) Map reads to the concatenated contig file to get the bam files.
 
-(3) Generate cannot-link files for every sample. The name of the cannot-link file is <sample_name>.txt. Make sure the sample name here is same to that in step(1).
+(3) Generate cannot-link files for every sample. The name of the cannot-link file should be <sample_name>.txt. Make sure the sample name here is same to that in step 1.
 
 (4) Run S<sup>3</sup>N<sup>2</sup>Bin.
 
@@ -77,7 +84,7 @@ The output folder will contain
 
 3. Output bins.
 
-4. Some intermediate files. 
+4. Some intermediate files.
 
 For more details, read the docs.
 

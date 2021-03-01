@@ -29,13 +29,13 @@ def parse_args(args):
                         required=True,
                         nargs='*',
                         help='Path to the input bam file.'
-                             'If using mulptile samples binning, you can input multiple files.',
+                             'If using multiple samples binning, you can input multiple files.',
                         dest='bams',
                         default=None)
     basic.add_argument('-c','--cannot-link',
                         required=True,
-                        help='Path to the input can not link file generated from other additional biological information,'
-                             'one row for each can not link constraint.'
+                        help='Path to the input cannot link file generated from other additional biological information,'
+                             'one row for each cannot link constraint.'
                              'The file format: contig_1,contig_2.',
                         dest='cannot_link',
                         default=None)
@@ -47,7 +47,7 @@ def parse_args(args):
     basic.add_argument('-s','--separator',
                         required=False,
                         type=str,
-                        help='Used when multiple samples binning to separete sample name and contig name.(None means single sample and coassemble binning)',
+                        help='Used when multiple samples binning to separate sample name and contig name. (None means single sample and coassemble binning)',
                         dest='separator',
                         default=None,
                        )
@@ -56,7 +56,7 @@ def parse_args(args):
     optional.add_argument('-p','--processes',
                         required=False,
                         type=int,
-                        help='Number of subprocess used in processing bam files()',
+                        help='Number of CPUs used',
                         dest='num_process',
                         default=0)
 
