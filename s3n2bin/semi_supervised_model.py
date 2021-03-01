@@ -94,11 +94,11 @@ def loss_function(embedding1,embedding2,label,raw_x_1,raw_x_2,decoder_x_1,decode
     relu = torch.nn.ReLU()
     mse_loss = torch.nn.MSELoss()
     d = torch.norm(embedding1-embedding2,p=2,dim=1)
-    sqaure_pred = torch.square(d)
+    square_pred = torch.square(d)
     margin_square = torch.square(relu(1-d))
 
     if is_label:
-        supervised_loss = torch.mean(label * sqaure_pred + (1 - label) * margin_square)
+        supervised_loss = torch.mean(label * square_pred + (1 - label) * margin_square)
         unsupervised_loss = 0.5 * mse_loss(decoder_x_1,raw_x_1) + 0.5 * mse_loss(decoder_x_2,raw_x_2)
         loss = supervised_loss + unsupervised_loss
         return loss,supervised_loss,unsupervised_loss
@@ -151,7 +151,7 @@ def train(out,contig_fasta,binned_short,logger,data,data_split,cannot_link,is_co
     train_input_2 = []
     train_labels = []
 
-    # can not link
+    # cannot link
     cannot_link = pd.read_csv(cannot_link, sep=',',
                               header=None).values
 
@@ -176,7 +176,7 @@ def train(out,contig_fasta,binned_short,logger,data,data_split,cannot_link,is_co
         train_input_2.append(train_data_input[mapObj[link[1]]])
         train_labels.append(0)
 
-    #can not link from bin seed
+    #cannot link from bin seed
     for i in range(len(seed)):
         for j in range(i+1,len(seed)):
             train_input_1.append(train_data_input[mapObj[seed[i]]])
