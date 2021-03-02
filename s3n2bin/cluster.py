@@ -98,11 +98,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
         for infomap_index in r:
             contig_labels[infomap_index] = i
 
-<<<<<<< HEAD
     output_bin_path = os.path.join(out, 'output_bins')
-=======
-    output_bin_path = os.path.join(out,'output_bins')
->>>>>>> e13e3f1af9fe193110595b6e6ae58754eae568dd
     os.makedirs(output_bin_path, exist_ok=True)
 
     write_bins(namelist, contig_labels, output_bin_path, contig_dict)
@@ -165,11 +161,6 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                 write_bins(contig_list, labels, os.path.join(out, 'output_recluster_bins'), contig_dict,
                            recluster=True, origin_label=int(bin.split('.')[-2]))
             else:
-<<<<<<< HEAD
-                shutil.copy(
-                    os.path.join(
-                        output_bin_path, bin), os.path.join(
-                        out, 'output_recluster_bins'))
-=======
-                shutil.copy(os.path.join(output_bin_path, bin), os.path.join(out, 'output_recluster_bins'))
->>>>>>> e13e3f1af9fe193110595b6e6ae58754eae568dd
+                shutil.copy(os.path.join(
+                    output_bin_path, bin), os.path.join(out, 'output_recluster_bins'))
+
