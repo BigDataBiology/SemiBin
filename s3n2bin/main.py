@@ -33,14 +33,14 @@ def parse_args(args):
                        required=True,
                        nargs='*',
                        help='Path to the input bam file.'
-                             'If using mulptile samples binning, you can input multiple files.',
+                             'If using multiple samples binning, you can input multiple files.',
                        dest='bams',
                        default=None)
     basic.add_argument('-c', '--cannot-link',
                        required=True,
                        nargs='*',
-                       help='Path to the input can not link file generated from other additional biological information,'
-                             'one row for each can not link constraint.'
+                       help='Path to the input cannot link file generated from other additional biological information,'
+                             'one row for each cannot link constraint.'
                              'The file format: contig_1,contig_2.',
                        dest='cannot_link',
                        default=None)
@@ -52,7 +52,7 @@ def parse_args(args):
     basic.add_argument('-s', '--separator',
                        required=False,
                        type=str,
-                       help='Used when multiple samples binning to separete sample name and contig name.'
+                       help='Used when multiple samples binning to separate sample name and contig name.'
                             '(None means single sample and coassemble binning)',
                        dest='separator',
                        default=None,
@@ -63,7 +63,7 @@ def parse_args(args):
     optional.add_argument('-p', '--processes',
                           required=False,
                           type=int,
-                          help='Number of subprocess used in processing bam files()',
+                          help='Number of CPUs used',
                           dest='num_process',
                           default=0)
 
@@ -214,6 +214,7 @@ def main(args=None):
 
         # generating coverage for every contig and for must link pair
         n_sample = len(args.bams)
+        print(n_sample)
         is_combined = n_sample >= 5
 
         if args.num_process != 0:
@@ -222,6 +223,7 @@ def main(args=None):
             pool = multiprocessing.Pool()
 
         bam_list = args.bams
+        print(bam_list)
         for bam_index in range(n_sample):
             pool.apply_async(
                 generate_cov,
@@ -329,16 +331,18 @@ def main(args=None):
                 contig_sample_list = []
                 rec = SeqRecord(seq_record.seq, id=contig_name, description='')
                 contig_sample_list.append(rec)
-            sample_list.append(sample_name)
+            if sample_name not in sample_list:
+                sample_list.append(sample_name)
             contig_length_list.append(len(seq_record))
-        if sample_list != []:
+        if contig_sample_list != []:
             SeqIO.write(contig_sample_list,
                         os.path.join(
                             out, 'samples', '{}.fasta'.format(flag_name)), 'fasta')
 
         threshold = get_threshold(contig_length_list)
         logger.info('Calculating coverage for every sample.')
-
+        print(sample_list)
+        print(len(sample_list))
         binning_threshold = {1000: [], 2500: []}
         for sample in sample_list:
             whole_contig_bp = 0
@@ -370,7 +374,8 @@ def main(args=None):
                                  threshold,
                                  is_combined,
                                  args.separator,
-                                 binning_threshold, logger
+                                 binning_threshold,
+                                 logger
                              ),
                              callback=_checkback)
         pool.close()
