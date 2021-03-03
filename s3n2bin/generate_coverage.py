@@ -16,6 +16,7 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
     f = open(depth_file)
 
     def process(depth_value, contig_name):
+        print(len(depth_value),contig_name)
         depth_value_ = depth_value[edge:len(depth_value) - edge]
         mean = np.mean(depth_value_)
         coverage.append(mean)
@@ -67,7 +68,14 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
             depth_value.extend([value] * length)
 
     if depth_value != []:
-        process(depth_value, depth_contig)
+        if sep is None:
+            cov_threshold = contig_threshold
+        else:
+            sample_name = depth_contig.split(sep)[0]
+            cov_threshold = 1000 if sample_name in binned_thre_dict[1000] else 2500
+        if len(depth_value) > cov_threshold:
+            process(depth_value, depth_contig)
+
     if is_combined:
         data_contig_list = np.expand_dims(np.array(data_contig_list), axis=1)
         coverage = np.expand_dims(np.array(coverage), axis=1)
@@ -94,3 +102,6 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
         contig_cov['mean'] = contig_cov['mean'].astype('float')
         contig_cov['var'] = contig_cov['var'].astype('float')
         return contig_cov
+
+if __name__ == '__main__':
+    calculate_coverage('/share/inspurStorage/home1/pansj/binning_result/CAMI1/Low_New_CAT/S3N2BIN_200/RL_S001__insert_270.mapped.sorted.bam_0_depth.txt',4000)

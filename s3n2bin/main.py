@@ -214,7 +214,6 @@ def main(args=None):
 
         # generating coverage for every contig and for must link pair
         n_sample = len(args.bams)
-        print(n_sample)
         is_combined = n_sample >= 5
 
         if args.num_process != 0:
@@ -223,7 +222,6 @@ def main(args=None):
             pool = multiprocessing.Pool()
 
         bam_list = args.bams
-        print(bam_list)
         for bam_index in range(n_sample):
             pool.apply_async(
                 generate_cov,
@@ -341,8 +339,7 @@ def main(args=None):
 
         threshold = get_threshold(contig_length_list)
         logger.info('Calculating coverage for every sample.')
-        print(sample_list)
-        print(len(sample_list))
+
         binning_threshold = {1000: [], 2500: []}
         for sample in sample_list:
             whole_contig_bp = 0
@@ -360,26 +357,26 @@ def main(args=None):
         is_combined = n_sample >= 5
         bam_list = args.bams
 
-        if args.num_process != 0:
-            pool = multiprocessing.Pool(args.num_process)
-        else:
-            pool = multiprocessing.Pool()
-
-        for bam_index in range(n_sample):
-            pool.apply_async(generate_cov_multiple,
-                             args=(
-                                 bam_list[bam_index],
-                                 bam_index,
-                                 os.path.join(out, 'samples'),
-                                 threshold,
-                                 is_combined,
-                                 args.separator,
-                                 binning_threshold,
-                                 logger
-                             ),
-                             callback=_checkback)
-        pool.close()
-        pool.join()
+        # if args.num_process != 0:
+        #     pool = multiprocessing.Pool(args.num_process)
+        # else:
+        #     pool = multiprocessing.Pool()
+        #
+        # for bam_index in range(n_sample):
+        #     pool.apply_async(generate_cov_multiple,
+        #                      args=(
+        #                          bam_list[bam_index],
+        #                          bam_index,
+        #                          os.path.join(out, 'samples'),
+        #                          threshold,
+        #                          is_combined,
+        #                          args.separator,
+        #                          binning_threshold,
+        #                          logger
+        #                      ),
+        #                      callback=_checkback)
+        # pool.close()
+        # pool.join()
 
         # Generate cov features for every sample
         data_cov = pd.read_csv(os.path.join(out, 'samples', '{}_data_cov.csv'.format(
@@ -446,7 +443,6 @@ def main(args=None):
 
         for sample in sample_list:
             logger.info('Clustering:{}'.format(sample))
-            print(cannot_link_dict[sample])
             output_path = os.path.join(out, 'samples', sample)
             sample_contig_fasta = os.path.join(
                 out, 'samples/{}.fasta'.format(sample))
