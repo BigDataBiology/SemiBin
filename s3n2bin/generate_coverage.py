@@ -16,7 +16,6 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
     f = open(depth_file)
 
     def process(depth_value, contig_name):
-        print(len(depth_value),contig_name)
         depth_value_ = depth_value[edge:len(depth_value) - edge]
         mean = np.mean(depth_value_)
         coverage.append(mean)
