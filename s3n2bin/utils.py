@@ -123,6 +123,7 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
                  str(1001),
                  seed_output,
                  ],
+                stdout=open('/dev/null', 'w'),
                 stderr=subprocess.DEVNULL,
             )
         else:

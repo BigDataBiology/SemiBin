@@ -7,8 +7,10 @@ from Bio import SeqIO
 import math
 import numpy as np
 import random
+import os
 
-def generate(cat_result):
+
+def generate_CAT(cat_result):
     must_link = []
     cannot_link_genus = []
     cannot_link_species = []
@@ -21,7 +23,7 @@ def generate(cat_result):
             continue
         genus1 = cat_result[i][2]
 
-        if type(genus1) == float:
+        if isinstance(genus1, float):
             if math.isnan(genus1):
                 continue
 
@@ -30,7 +32,7 @@ def generate(cat_result):
                 continue
 
             genus2 = cat_result[j][2]
-            if type(genus2) == float:
+            if isinstance(genus2, float):
                 if math.isnan(genus2):
                     continue
 
@@ -41,8 +43,6 @@ def generate(cat_result):
             genus_score2 = genus2.split(':')[-1]
             if float(genus_score1) <= 0.8 or float(genus_score2) <= 0.8:
                 continue
-            # genus_name1 = genus1.split(':')[0]
-            # genus_name2 = genus2.split(':')[0]
             genus_name1 = genus1.strip(':' + genus_score1)
             genus_name2 = genus2.strip(':' + genus_score2)
             if genus_name1 != genus_name2:
@@ -51,7 +51,7 @@ def generate(cat_result):
             else:
                 species1 = cat_result[i][3]
                 species2 = cat_result[j][3]
-                if type(species1) == float or type(species2) == float:
+                if isinstance(species1, float) or isinstance(species2, float):
                     if math.isnan(species1) or math.isnan(species2):
                         continue
 
@@ -59,16 +59,50 @@ def generate(cat_result):
                     continue
                 species_score1 = species1.split(':')[-1]
                 species_score2 = species2.split(':')[-1]
-                if float(species_score1) <= 0.95 or float(species_score2) <= 0.95:
+                if float(species_score1) <= 0.95 or float(
+                        species_score2) <= 0.95:
                     continue
                 species_name1 = species1.strip(':' + species_score1)
                 species_name2 = species2.strip(':' + species_score2)
                 if species_name1 != species_name2:
-                    cannot_link_species.append((cat_result[i][0], cat_result[j][0]))
+                    cannot_link_species.append(
+                        (cat_result[i][0], cat_result[j][0]))
                     num_species += 1
                 else:
                     must_link.append((cat_result[i][0], cat_result[j][0]))
     return must_link, cannot_link_genus, cannot_link_species
+
+
+def generate_mmseqs(mmseqs_file):
+    species_result = mmseqs_file[(mmseqs_file['rank_name'] == 'species') & (
+        mmseqs_file['score'] > 0.95)].values
+    genus_result = mmseqs_file[(mmseqs_file['rank_name'] == 'genus') & (
+        mmseqs_file['score'] > 0.80)].values
+
+    cannot_link_species = []
+    for i in range(len(species_result)):
+        for j in range(i + 1, len(species_result)):
+            if species_result[i][2] != species_result[j][2]:
+                cannot_link_species.append(
+                    (species_result[i][0], species_result[j][0]))
+
+    cannot_link_genus = []
+    for i in range(len(genus_result)):
+        for j in range(i + 1, len(genus_result)):
+            if genus_result[i][2] != genus_result[j][2]:
+                cannot_link_genus.append(
+                    (genus_result[i][0], genus_result[j][0]))
+
+    cannot_link_mix = []
+    for i in range(len(species_result)):
+        genus_name = species_result[i][4].split(';')[-2]
+        for j in range(len(genus_result)):
+            if genus_name != genus_result[j][2]:
+                cannot_link_mix.append(
+                    (species_result[i][0], genus_result[j][0]))
+
+    return cannot_link_species, cannot_link_genus, cannot_link_mix
+
 
 def get_threshold(contig_len):
     """
@@ -77,7 +111,7 @@ def get_threshold(contig_len):
     basepair_sum = 0
     threshold = 0
     whole_len = np.sum(contig_len)
-    contig_len.sort(reverse = True)
+    contig_len.sort(reverse=True)
     index = 0
     while(basepair_sum / whole_len < 0.98):
         basepair_sum += contig_len[index]
@@ -86,7 +120,8 @@ def get_threshold(contig_len):
     threshold = max(threshold, 4000)
     return threshold
 
-def generate_file(CAT_file,contig_file,output,sample):
+
+def generate_file(annotation_file, contig_file, output, sample, tool=None):
     whole_contig_bp = 0
     contig_bp_2500 = 0
     contig_length_list = []
@@ -107,65 +142,122 @@ def generate_file(CAT_file,contig_file,output,sample):
             namelist.append(seq_record.id)
         if len(seq_record) >= must_link_threshold:
             num_threshold += 1
+    os.makedirs(output, exist_ok=True)
 
-    cat_result = pd.read_csv(CAT_file,sep='\t')
-    cat_result = cat_result[['# contig', 'classification', 'genus', 'species']].values
-    cat_result_new = []
-    for temp in cat_result:
-        if temp[0] in namelist:
-            cat_result_new.append(temp)
-    must_link , cannot_link_genus,cannot_link_species = generate(cat_result_new)
+    if tool == 'CAT':
+        cat_result = pd.read_csv(annotation_file, sep='\t')
+        cat_result = cat_result[['# contig',
+                                 'classification', 'genus', 'species']]
+        cat_result = cat_result[cat_result['# contig'].isin(namelist)].values
 
+        _, cannot_link_genus, cannot_link_species = generate_CAT(
+            cat_result)
 
-    if len(cannot_link_genus) > 4000000:
-        if num_threshold * 1000 < 4000000:
-            cannot_link_genus = random.sample(cannot_link_genus, num_threshold * 1000)
+        if len(cannot_link_genus) > 4000000:
+            if num_threshold * 1000 < 4000000:
+                cannot_link_genus = random.sample(
+                    cannot_link_genus, num_threshold * 1000)
+            else:
+                cannot_link_genus = random.sample(cannot_link_genus, 4000000)
         else:
-            cannot_link_genus = random.sample(cannot_link_genus,4000000)
-    else:
-        if num_threshold * 1000 < len(cannot_link_genus):
-            cannot_link_genus = random.sample(cannot_link_genus, num_threshold * 1000)
+            if num_threshold * 1000 < len(cannot_link_genus):
+                cannot_link_genus = random.sample(
+                    cannot_link_genus, num_threshold * 1000)
+        out_text = open(output + '/{}.txt'.format(sample), 'w')
+        for cannot in cannot_link_species:
+            out_text.write(cannot[0] + ',' + cannot[1])
+            out_text.write('\n')
 
+        for cannot in cannot_link_genus:
+            out_text.write(cannot[0] + ',' + cannot[1])
+            out_text.write('\n')
 
-    if len(cannot_link_species) != 0:
-        cannot_link = np.concatenate((np.array(cannot_link_species), np.array(cannot_link_genus)), axis=0)
-    else:
-        cannot_link = np.array(cannot_link_genus)
+    if tool == 'mmseqs':
+        mmseqs_result = pd.read_csv(annotation_file, sep='\t', header=None)
+        mmseqs_result.columns = ['contig_name', 'taxon_ID', 'rank_name', 'scientific_name', 'temp_1', 'temp_2', 'temp_3',
+                                 'score', 'lineage']
+        mmseqs_result = mmseqs_result[[
+            'contig_name', 'rank_name', 'scientific_name', 'score', 'lineage']]
+        mmseqs_result = mmseqs_result[mmseqs_result['contig_name'].isin(
+            namelist)]
+        cannot_link_species, cannot_link_genus, cannot_link_mix = generate_mmseqs(
+            mmseqs_result)
+        num_whole_data = 1000 * num_threshold if 1000 * \
+            num_threshold < 4000000 else 4000000
+        num_mix = int(num_whole_data / 8)
+        num_genus = int(num_mix / 2)
+        num_species = num_whole_data - num_mix - num_genus
+        if len(cannot_link_mix) > num_mix:
+            cannot_link_mix = random.sample(cannot_link_mix, num_mix)
 
-    out_text = open(output+'/{}.txt'.format(sample), 'w')
-    for i in range(len(cannot_link)):
-        out_text.write(cannot_link[i][0] + ',' + cannot_link[i][1])
-        out_text.write('\n')
+        if len(cannot_link_genus) > num_genus:
+            cannot_link_genus = random.sample(cannot_link_genus, num_genus)
+
+        if len(cannot_link_species) > num_species:
+            cannot_link_species = random.sample(cannot_link_species, num_species)
+
+        out_text = open(output + '/{}.txt'.format(sample), 'w')
+        for cannot in cannot_link_species:
+            out_text.write(cannot[0] + ',' + cannot[1])
+            out_text.write('\n')
+
+        for cannot in cannot_link_genus:
+            out_text.write(cannot[0] + ',' + cannot[1])
+            out_text.write('\n')
+
+        for cannot in cannot_link_mix:
+            out_text.write(cannot[0] + ',' + cannot[1])
+            out_text.write('\n')
+
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate cannt-link constrains from the output of CAT")
+    parser = argparse.ArgumentParser(
+        description="Generate cannt-link constrains from the output of CAT")
     parser.add_argument('-i', '--input-file',
                         required=True,
                         help='Path to the input CAT output files.',
                         dest='input_files',
                         default=None)
-    parser.add_argument('-c','--contig-file',
+    parser.add_argument('-c', '--contig-file',
                         required=True,
                         help='Path to the contig fasta file corresponding to the CAT output file.',
                         dest='contig_file')
-    parser.add_argument('-s','--sample-name',
+    parser.add_argument('-s', '--sample-name',
                         required=True,
                         help='Sample name used in the output file when multiple samples binning',
                         dest='sample',
                         default=None)
-    parser.add_argument('-o','--output',
+    parser.add_argument('-o', '--output',
                         required=True,
                         help='Output directory (will be created if non-existent)',
                         dest='output',
                         default=None
                         )
+    parser.add_argument('--CAT',
+                        help='Input contig annotation from CAT',
+                        action='store_true',
+                        dest='CAT')
+    parser.add_argument('--mmseqs',
+                        help='Input contig annotation from mmseqs',
+                        action='store_true',
+                        dest='mmseqs')
+
     args = parser.parse_args()
-    generate_file(args.input_files,args.contig_file,args.sample,args.output)
+    if args.CAT:
+        generate_file(
+            args.input_files,
+            args.contig_file,
+            args.output,
+            args.sample,
+            tool='CAT')
+    if args.mmseqs:
+        generate_file(
+            args.input_files,
+            args.contig_file,
+            args.output,
+            args.sample,
+            tool='mmseqs')
 
 
 if __name__ == '__main__':
     main()
-
-
-
-
