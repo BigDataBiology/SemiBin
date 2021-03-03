@@ -102,5 +102,3 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
         contig_cov['var'] = contig_cov['var'].astype('float')
         return contig_cov
 
-if __name__ == '__main__':
-    calculate_coverage('/share/inspurStorage/home1/pansj/binning_result/CAMI1/Low_New_CAT/S3N2BIN_200/RL_S001__insert_270.mapped.sorted.bam_0_depth.txt',4000)
