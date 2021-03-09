@@ -2,7 +2,23 @@
 
 ## Generate cannot-link constrains
 
-You can use [CAT](https://github.com/dutilh/CAT)(or other contig annotation tools) to get the taxonomic classifications of contigs. Then you can use the script `script/concatenate.py` to generate the cannot-link file(Format: contig_1,contig_2 ) that can be used in S<sup>3</sup>N<sup>2</sup>Bin. 
+You can use  [mmseqs](https://github.com/soedinglab/MMseqs2) or [CAT](https://github.com/dutilh/CAT)(or other contig annotation tools) to get the taxonomic classifications of contigs. Then you can use the script `script/concatenate.py` to generate the cannot-link file(Format: contig_1,contig_2 ) that can be used in S<sup>3</sup>N<sup>2</sup>Bin. 
+
+Contig annotation with mmseqs(GTDB reference genomes)
+
+```bash
+mmseqs createdb contig.fasta contig_DB
+
+mmseqs taxonomy contig_DB GTDB taxonomyResult tmp
+
+mmseqs createtsv contig_DB taxonomyResult taxonomyResult.tsv
+```
+
+Generate cannot-link constrains
+
+```bash
+python script/concatenate.py -i taxonomyResult.tsv -c contig.fasta -s sample-name -o output --mmseqs
+```
 
 Contig annotation with CAT
 
@@ -15,7 +31,7 @@ CAT add_names CAT_output/CAT.contig2classification.txt -o CAT_output/CAT.out -t 
 Generate cannot-link constrains
 
 ```bash
-python script/concatenate.py -i CAT.out -c contig.fna -s sample-name -o output
+python script/concatenate.py -i CAT.out -c contig.fasta -s sample-name -o output --CAT
 ```
 
 ## Examples

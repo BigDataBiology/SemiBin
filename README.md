@@ -22,11 +22,19 @@ python setup.py install
 
 ## Generate Cannot-link contrains
 
-You can use [CAT](https://github.com/dutilh/CAT) (or other contig annotation tools) to get taxonomic classifications of contigs. Then you can use the script `script/concatenate.py` to generate the cannot-link file(contig1, contig2)
+You can use [mmseqs](https://github.com/soedinglab/MMseqs2) or [CAT](https://github.com/dutilh/CAT) (or other contig annotation tools) to get taxonomic classifications of contigs. Then you can use the script `script/concatenate.py` to generate the cannot-link file(contig1, contig2)
 that can be used in S<sup>3</sup>N<sup>2</sup>Bin.
 
+#### mmseqs
+
 ```bash
-python script/concatenate.py -i CAT.out -c contig.fna -s sample-name -o output
+python script/concatenate.py -i taxonomy.tsv -c contig.fna -s sample-name -o output --mmseqs
+```
+
+#### CAT
+
+```bash
+python script/concatenate.py -i CAT.out -c contig.fna -s sample-name -o output --CAT
 ```
 
 ## Examples
