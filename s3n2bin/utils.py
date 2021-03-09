@@ -26,6 +26,13 @@ def validate_args(args):
     expect_file_list(args.bams)
     expect_file_list(args.cannot_link)
 
+    if args.split_running:
+        if not os.path.exists(os.path.join(args.output, 'data.csv')) or not os.path.exists(
+                os.path.join(args.output, 'data_split.csv')):
+            sys.stderr.write(
+                f"Error: Expected file data.csv/data_split.csv does not exist\n")
+            sys.exit(1)
+
 
 def get_threshold(contig_len):
     """
