@@ -87,12 +87,28 @@ def parse_args(args):
                           help='The maximun number of edges that can be connected to one contig.',
                           dest='max_edges',
                           default=200)
+
     optional.add_argument('--max-node',
                           required=False,
                           type=float,
                           dest='max_node',
                           default=1,
                           help='Percentage of contigs that considered to be binned.')
+
+    optional.add_argument('--generate-data',
+                          help='Used when multi-samples binning.'
+                               'S3N2Bin will just generate datas(data.csv,data_split.csv) for training and clustering.',
+                          required=False,
+                          action='store_true',
+                          dest='generate_data'
+                          )
+    optional.add_argument('--split-run',
+                          help='Used when multi-samples binning after generating datas for training and clustering.'
+                               'With this command you can run S3N2Bin for one sample.',
+                          required=False,
+                          action='store_true',
+                          dest='split_running'
+                          )
 
     return parser.parse_args()
 
@@ -183,6 +199,10 @@ def main(args=None):
     multi_binning = False
     if args.separator is not None:
         multi_binning = True
+
+    if args.split_running:
+        multi_binning = False
+
     device = torch.device(
         "cuda" if torch.cuda.is_available() else "cpu")
 
@@ -207,66 +227,71 @@ def main(args=None):
                 '')] = len((seq_record.seq))
             contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
 
-        # threshold for generating must link pairs
-        threshold = get_threshold(contig_length_list)
         binned_short = contig_bp_2500 / whole_contig_bp < 0.05
-        logger.info('Calculating coverage for every sample.')
-
-        # generating coverage for every contig and for must link pair
         n_sample = len(args.bams)
         is_combined = n_sample >= 5
 
-        if args.num_process != 0:
-            pool = multiprocessing.Pool(args.num_process)
-        else:
-            pool = multiprocessing.Pool()
+        if not args.split_running:
+            # threshold for generating must link pairs
+            threshold = get_threshold(contig_length_list)
+            logger.info('Calculating coverage for every sample.')
 
-        bam_list = args.bams
-        for bam_index in range(n_sample):
-            pool.apply_async(
-                generate_cov,
-                args=(
-                    bam_list[bam_index],
-                    bam_index,
-                    out,
-                    threshold,
-                    is_combined,
-                    1000 if binned_short else 2500,
-                    logger,
-                ),
-                callback=_checkback)
-        pool.close()
-        pool.join()
+            # generating coverage for every contig and for must link pair
 
-        # Processing input contig fasta file
-        logger.info('Start generating kmer features from fasta file.')
-        kmer_whole = generate_kmer_features_from_fasta(
-            args.contig_fasta, 1000 if binned_short else 2500, 4)
-        kmer_split = generate_kmer_features_from_fasta(
-            args.contig_fasta, 1000, 4, split=True, threshold=threshold)
+            if args.num_process != 0:
+                pool = multiprocessing.Pool(args.num_process)
+            else:
+                pool = multiprocessing.Pool()
 
-        data = kmer_whole
-        data_split = kmer_split
+            bam_list = args.bams
+            for bam_index in range(n_sample):
+                pool.apply_async(
+                    generate_cov,
+                    args=(
+                        bam_list[bam_index],
+                        bam_index,
+                        out,
+                        threshold,
+                        is_combined,
+                        1000 if binned_short else 2500,
+                        logger,
+                    ),
+                    callback=_checkback)
+            pool.close()
+            pool.join()
 
-        for bam_index, bam_file in enumerate(bam_list):
-            cov = pd.read_csv(os.path.join(out, '{}_data_cov.csv'.format(
-                os.path.split(bam_file)[-1] + '_{}'.format(bam_index))), index_col=0)
-            data = pd.merge(data, cov, how='inner', on=None,
-                            left_index=True, right_index=True, sort=False, copy=True)
-            if is_combined:
-                cov_split = pd.read_csv(os.path.join(out, '{}_data_split_cov.csv'.format(
-                    os.path.split(bam_file)[-1] + '_{}'.format(bam_index))), index_col=0)
+            # Processing input contig fasta file
+            logger.info('Start generating kmer features from fasta file.')
+            kmer_whole = generate_kmer_features_from_fasta(
+                args.contig_fasta, 1000 if binned_short else 2500, 4)
+            kmer_split = generate_kmer_features_from_fasta(
+                args.contig_fasta, 1000, 4, split=True, threshold=threshold)
 
-                data_split = pd.merge(data_split, cov_split, how='inner', on=None,
-                                      left_index=True, right_index=True, sort=False, copy=True)
-        if not is_combined:
+            data = kmer_whole
             data_split = kmer_split
 
-        with atomic_write(os.path.join(out, 'data.csv'), overwrite=True) as ofile:
-            data.to_csv(ofile)
+            for bam_index, bam_file in enumerate(bam_list):
+                cov = pd.read_csv(os.path.join(out, '{}_data_cov.csv'.format(
+                    os.path.split(bam_file)[-1] + '_{}'.format(bam_index))), index_col=0)
+                data = pd.merge(data, cov, how='inner', on=None,
+                                left_index=True, right_index=True, sort=False, copy=True)
+                if is_combined:
+                    cov_split = pd.read_csv(os.path.join(out, '{}_data_split_cov.csv'.format(
+                        os.path.split(bam_file)[-1] + '_{}'.format(bam_index))), index_col=0)
 
-        with atomic_write(os.path.join(out, 'data_split.csv'), overwrite=True) as ofile:
-            data_split.to_csv(ofile)
+                    data_split = pd.merge(data_split, cov_split, how='inner', on=None,
+                                          left_index=True, right_index=True, sort=False, copy=True)
+            if not is_combined:
+                data_split = kmer_split
+
+            with atomic_write(os.path.join(out, 'data.csv'), overwrite=True) as ofile:
+                data.to_csv(ofile)
+
+            with atomic_write(os.path.join(out, 'data_split.csv'), overwrite=True) as ofile:
+                data_split.to_csv(ofile)
+        else:
+            data = pd.read_csv(os.path.join(out, 'data.csv'), index_col=0)
+            data_split = pd.read_csv(os.path.join(out,'data_split.csv'),index_col=0)
 
         model = train(
             out,
@@ -451,7 +476,8 @@ def main(args=None):
             contig_length_dict = {}
             contig_dict = {}
             for seq_record in SeqIO.parse(sample_contig_fasta, "fasta"):
-                contig_length_dict[str(seq_record.id).strip('')] = len((seq_record.seq))
+                contig_length_dict[str(seq_record.id).strip(
+                    '')] = len((seq_record.seq))
                 contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
 
             binned_short = True if sample in binning_threshold[1000] else False
@@ -481,19 +507,21 @@ def main(args=None):
             with atomic_write(os.path.join(output_path, 'data_split.csv'), overwrite=True) as ofile:
                 data_split.to_csv(ofile)
 
-            model = train(
-                output_path,
-                sample_contig_fasta,
-                binned_short,
-                logger,
-                data,
-                data_split,
-                cannot_link_dict[sample],
-                is_combined,
-                args.batchsize,
-                args.epoches,
-                device)
-            cluster(model,
+            if not args.generate_data:
+                model = train(
+                    output_path,
+                    sample_contig_fasta,
+                    binned_short,
+                    logger,
+                    data,
+                    data_split,
+                    cannot_link_dict[sample],
+                    is_combined,
+                    args.batchsize,
+                    args.epoches,
+                    device)
+                cluster(
+                    model,
                     data,
                     device,
                     args.max_edges,
@@ -506,16 +534,17 @@ def main(args=None):
                     contig_dict,
                     binned_short)
 
-        os.makedirs(os.path.join(out, 'bins'), exist_ok=True)
-        for sample in sample_list:
-            bin_file = os.listdir(os.path.join(
-                out, 'samples', sample, 'output_recluster_bins'))
-            for bin in bin_file:
-                original_path = os.path.join(
-                    out, 'samples', sample, 'output_recluster_bins', bin)
-                new_file = '{0}_{1}'.format(sample, bin)
-                new_path = os.path.join(out, 'bins', new_file)
-                shutil.copyfile(original_path, new_path)
+        if not args.generate_data:
+            os.makedirs(os.path.join(out, 'bins'), exist_ok=True)
+            for sample in sample_list:
+                bin_file = os.listdir(os.path.join(
+                    out, 'samples', sample, 'output_recluster_bins'))
+                for bin in bin_file:
+                    original_path = os.path.join(
+                        out, 'samples', sample, 'output_recluster_bins', bin)
+                    new_file = '{0}_{1}'.format(sample, bin)
+                    new_path = os.path.join(out, 'bins', new_file)
+                    shutil.copyfile(original_path, new_path)
 
     if __name__ == '__main__':
         warnings.filterwarnings('ignore')
