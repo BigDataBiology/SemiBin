@@ -195,7 +195,7 @@ def generate_file(annotation_file, contig_file, output, sample, tool=None):
         if len(cannot_link_species) > num_species:
             cannot_link_species = random.sample(cannot_link_species, num_species)
 
-        out_text = open(output + '/{}_cannot.txt'.format(sample), 'w')
+        out_text = open(output + '/{}.txt'.format(sample), 'w')
         for cannot in cannot_link_species:
             out_text.write(cannot[0] + ',' + cannot[1])
             out_text.write('\n')
