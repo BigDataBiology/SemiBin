@@ -101,3 +101,17 @@ ATGCAAAA
 S3N2Bin -i whole_contig.fna -b *.bam -c *.txt -s C -o output
 ```
 
+Running S<sup>3</sup>N<sup>2</sup>Bin for a large project in multi-samples binning mode will take a bit time when executed serially. You can set `--generate-data` and `--split-run` to manually run S<sup>3</sup>N<sup>2</sup>Bin parallel.
+
+Generate datas of every sample for training and clustering.
+
+```bash
+S3N2Bin -i whole_contig.fna -b *.bam -s C -o output --generate-data
+```
+
+Running S<sup>3</sup>N<sup>2</sup>Bin for every sample(`output` must contain data.csv and data_split.csv).
+
+```bash
+S3N2Bin -i sample.fna -b sample.bam -c sample.txt -o output/samples/sample --split-run
+```
+

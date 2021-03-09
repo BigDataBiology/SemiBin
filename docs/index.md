@@ -46,5 +46,9 @@ S<sup>3</sup>N<sup>2</sup>Bin is a command line tool for metagenomic binning wit
 
 * `--max-node`: Percentage of contigs that considered to be binned(default:1).
 
+* `--generate-data`: Used when multi-samples binning. S<sup>3</sup>N<sup>2</sup>Bin will output datas(data.csv,data_split.csv) for training and clustering.
+
+* `--split-run`: Used when multi-samples binning after generating datas for training and clustering. With this command you can run S3N2Bin parallelly on samples manually.
+
 	
 

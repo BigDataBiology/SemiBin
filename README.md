@@ -80,7 +80,7 @@ ATGCAAAA
 
 (4) Run S<sup>3</sup>N<sup>2</sup>Bin.
 
-For more details, [read the docs](https://s3n2bin.readthedocs.io/en/latest/usage/). 
+For more details(i.e. --split-run), [read the docs](https://s3n2bin.readthedocs.io/en/latest/usage/). 
 
 ## Output
 

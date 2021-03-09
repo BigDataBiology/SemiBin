@@ -37,7 +37,7 @@ def parse_args(args):
                        dest='bams',
                        default=None)
     basic.add_argument('-c', '--cannot-link',
-                       required=True,
+                       required=False,
                        nargs='*',
                        help='Path to the input cannot link file generated from other additional biological information,'
                              'one row for each cannot link constraint.'
@@ -97,14 +97,14 @@ def parse_args(args):
 
     optional.add_argument('--generate-data',
                           help='Used when multi-samples binning.'
-                               'S3N2Bin will just generate datas(data.csv,data_split.csv) for training and clustering.',
+                               'S3N2Bin will only generate datas(data.csv,data_split.csv) for training and clustering.',
                           required=False,
                           action='store_true',
                           dest='generate_data'
                           )
     optional.add_argument('--split-run',
                           help='Used when multi-samples binning after generating datas for training and clustering.'
-                               'With this command you can run S3N2Bin for one sample.',
+                               'With this command you can run S3N2Bin parallelly on samples manually.',
                           required=False,
                           action='store_true',
                           dest='split_running'

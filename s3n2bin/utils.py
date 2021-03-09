@@ -24,7 +24,8 @@ def validate_args(args):
 
     expect_file(args.contig_fasta)
     expect_file_list(args.bams)
-    expect_file_list(args.cannot_link)
+    if not args.generate_data:
+        expect_file_list(args.cannot_link)
 
     if args.split_running:
         if not os.path.exists(os.path.join(args.output, 'data.csv')) or not os.path.exists(
