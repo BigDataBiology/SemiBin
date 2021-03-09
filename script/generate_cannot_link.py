@@ -59,8 +59,7 @@ def generate_CAT(cat_result):
                     continue
                 species_score1 = species1.split(':')[-1]
                 species_score2 = species2.split(':')[-1]
-                if float(species_score1) <= 0.95 or float(
-                        species_score2) <= 0.95:
+                if float(species_score1) <= 0.95 or float(species_score2) <= 0.95:
                     continue
                 species_name1 = species1.strip(':' + species_score1)
                 species_name2 = species2.strip(':' + species_score2)
@@ -196,7 +195,7 @@ def generate_file(annotation_file, contig_file, output, sample, tool=None):
         if len(cannot_link_species) > num_species:
             cannot_link_species = random.sample(cannot_link_species, num_species)
 
-        out_text = open(output + '/{}.txt'.format(sample), 'w')
+        out_text = open(output + '/{}_cannot.txt'.format(sample), 'w')
         for cannot in cannot_link_species:
             out_text.write(cannot[0] + ',' + cannot[1])
             out_text.write('\n')
@@ -208,6 +207,8 @@ def generate_file(annotation_file, contig_file, output, sample, tool=None):
         for cannot in cannot_link_mix:
             out_text.write(cannot[0] + ',' + cannot[1])
             out_text.write('\n')
+
+
 
 
 def main():

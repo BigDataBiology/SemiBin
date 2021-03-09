@@ -332,6 +332,7 @@ def main(args=None):
             if sample_name not in sample_list:
                 sample_list.append(sample_name)
             contig_length_list.append(len(seq_record))
+
         if contig_sample_list != []:
             SeqIO.write(contig_sample_list,
                         os.path.join(
@@ -357,26 +358,26 @@ def main(args=None):
         is_combined = n_sample >= 5
         bam_list = args.bams
 
-        # if args.num_process != 0:
-        #     pool = multiprocessing.Pool(args.num_process)
-        # else:
-        #     pool = multiprocessing.Pool()
-        #
-        # for bam_index in range(n_sample):
-        #     pool.apply_async(generate_cov_multiple,
-        #                      args=(
-        #                          bam_list[bam_index],
-        #                          bam_index,
-        #                          os.path.join(out, 'samples'),
-        #                          threshold,
-        #                          is_combined,
-        #                          args.separator,
-        #                          binning_threshold,
-        #                          logger
-        #                      ),
-        #                      callback=_checkback)
-        # pool.close()
-        # pool.join()
+        if args.num_process != 0:
+            pool = multiprocessing.Pool(args.num_process)
+        else:
+            pool = multiprocessing.Pool()
+
+        for bam_index in range(n_sample):
+            pool.apply_async(generate_cov_multiple,
+                             args=(
+                                 bam_list[bam_index],
+                                 bam_index,
+                                 os.path.join(out, 'samples'),
+                                 threshold,
+                                 is_combined,
+                                 args.separator,
+                                 binning_threshold,
+                                 logger
+                             ),
+                             callback=_checkback)
+        pool.close()
+        pool.join()
 
         # Generate cov features for every sample
         data_cov = pd.read_csv(os.path.join(out, 'samples', '{}_data_cov.csv'.format(
@@ -450,8 +451,7 @@ def main(args=None):
             contig_length_dict = {}
             contig_dict = {}
             for seq_record in SeqIO.parse(sample_contig_fasta, "fasta"):
-                contig_length_dict[str(seq_record.id).strip(
-                    '')] = len((seq_record.seq))
+                contig_length_dict[str(seq_record.id).strip('')] = len((seq_record.seq))
                 contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
 
             binned_short = True if sample in binning_threshold[1000] else False
