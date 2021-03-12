@@ -23,16 +23,13 @@ S<sup>3</sup>N<sup>2</sup>Bin is a command line tool for metagenomic binning wit
 ## Commands
 
 ### Basic commands
-
+* `command` : easy-bin or advance-bin(You can get results using easy-bin with just one line code).
 * `-i/--input-fasta` : Path to the input contig fasta file(.fasta/.gz/.bz2).
-
 * `-b/--input-bam`: Path to the input bam files. If there are several samples, you can input several bam files.
-
 * `-c/--cannot-link`:  Path to the input cannot-link file generated from other additional biological information. One row for each cannot-link constraint.The file format: contig_1,contig_2.
-
 * `-o/--output`: Output directory (will be created if non-existent).
-
 * `-s/--separator`: Used when multi-samples binning to separete sample name and contig name.(None means using single sample and co-assemble binning)
+* `--GTDB-path`: Path to the GTDB database used in the mmseqs annotation when easy-bin mode.(If not set, we will download GTDB dataset to the output folder).
 
 ### Optional commands
 

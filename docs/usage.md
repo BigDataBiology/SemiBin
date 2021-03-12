@@ -9,7 +9,7 @@ Contig annotation with mmseqs(GTDB reference genomes)
 ```bash
 mmseqs createdb contig.fasta contig_DB
 
-mmseqs taxonomy contig_DB GTDB taxonomyResult tmp
+mmseqs taxonomy contig_DB GTDB taxonomyResult tmp --tax-lineage 1
 
 mmseqs createtsv contig_DB taxonomyResult taxonomyResult.tsv
 ```
@@ -36,9 +36,9 @@ python script/concatenate.py -i CAT.out -c contig.fasta -s sample-name -o output
 
 ## Examples
 
-### Single sample/co-assembly binning
+### Easy-bin mode
 
-#### Single sample/co-assembly binning pipeline
+You can get the results with one line code. Easy-bin command can be used in single-sample and co-assembly binning modes(contig annotations using mmseqs with GTDB reference genome).
 
 (1) Mapping reads to the contig fasta file. 
 
@@ -58,12 +58,26 @@ samtools sort -m 1000000000 contig.mapped.bam -o contig.mapped.sorted.bam -@ 64
 samtools index contig.mapped.sorted.bam
 ```
 
+(2) Run S<sup>3</sup>N<sup>2</sup>Bin with easy-bin mode.
+
+```bash
+S3N2Bin easy-bin -i contig.fna -b *.bam --GTDB-path /mmseqs_data/GTDB -o output
+```
+
+If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download GTDB  to your output folder.
+
+### Advance-bin mode
+
+### Single sample/co-assembly binning
+
+(1) Mapping reads to the contig fasta file. 
+
 (2) Generate cannot-link files for the contig fasta file.
 
 (3) Run S<sup>3</sup>N<sup>2</sup>Bin.
 
 ```bash
-S3N2Bin -i contig.fna -b *.bam -c cannot-link.txt -o output 
+S3N2Bin advance-bin -i contig.fna -b *.bam -c cannot-link.txt -o output 
 ```
 
 ### Multi-samples binning(Must set -s parameter)
@@ -98,20 +112,22 @@ ATGCAAAA
 (4) Run S<sup>3</sup>N<sup>2</sup>Bin.
 
 ```bash
-S3N2Bin -i whole_contig.fna -b *.bam -c *.txt -s C -o output
+S3N2Bin advance-bin -i whole_contig.fna -b *.bam -c *.txt -s C -o output
 ```
+
+#### --split-run command
 
 Running S<sup>3</sup>N<sup>2</sup>Bin for a large project in multi-samples binning mode will take a bit time when executed serially. You can set `--generate-data` and `--split-run` to manually run S<sup>3</sup>N<sup>2</sup>Bin parallel.
 
 Generate datas of every sample for training and clustering.
 
 ```bash
-S3N2Bin -i whole_contig.fna -b *.bam -s C -o output --generate-data
+S3N2Bin advance-bin -i whole_contig.fna -b *.bam -s C -o output --generate-data
 ```
 
 Running S<sup>3</sup>N<sup>2</sup>Bin for every sample(`output` must contain data.csv and data_split.csv).
 
 ```bash
-S3N2Bin -i sample.fna -b sample.bam -c sample.txt -o output/samples/sample --split-run
+S3N2Bin advance-bin -i sample.fna -b sample.bam -c sample.txt -o output/samples/sample --split-run
 ```
 
