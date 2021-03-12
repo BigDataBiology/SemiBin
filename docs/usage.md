@@ -34,7 +34,11 @@ Generate cannot-link constrains
 python script/concatenate.py -i CAT.out -c contig.fasta -s sample-name -o output --CAT
 ```
 
+
+
 ## Examples
+
+
 
 ### Easy-bin mode
 
@@ -66,9 +70,11 @@ S3N2Bin easy-bin -i contig.fna -b *.bam --GTDB-path /mmseqs_data/GTDB -o output
 
 If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download GTDB  to your output folder.
 
-### Advance-bin mode
 
-### Single sample/co-assembly binning
+
+### Advanced-bin mode
+
+#### Single sample/co-assembly binning
 
 (1) Mapping reads to the contig fasta file. 
 
@@ -77,12 +83,12 @@ If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download 
 (3) Run S<sup>3</sup>N<sup>2</sup>Bin.
 
 ```bash
-S3N2Bin advance-bin -i contig.fna -b *.bam -c cannot-link.txt -o output 
+S3N2Bin advanced-bin -i contig.fna -b *.bam -c cannot-link.txt -o output 
 ```
 
-### Multi-samples binning(Must set -s parameter)
 
-#### Multi-samples binning pipeline
+
+#### Multi-samples binning(Must set -s parameter)
 
 (1) Concatenate all contigs from all samples together. Make sure that names of samples are unique and id for every contig is <sample_name><\separator><contig_id>. Concatenated contig format is:
 
@@ -112,7 +118,7 @@ ATGCAAAA
 (4) Run S<sup>3</sup>N<sup>2</sup>Bin.
 
 ```bash
-S3N2Bin advance-bin -i whole_contig.fna -b *.bam -c *.txt -s C -o output
+S3N2Bin advanced-bin -i whole_contig.fna -b *.bam -c *.txt -s C -o output
 ```
 
 #### --split-run command
@@ -122,12 +128,12 @@ Running S<sup>3</sup>N<sup>2</sup>Bin for a large project in multi-samples binni
 Generate datas of every sample for training and clustering.
 
 ```bash
-S3N2Bin advance-bin -i whole_contig.fna -b *.bam -s C -o output --generate-data
+S3N2Bin advanced-bin -i whole_contig.fna -b *.bam -s C -o output --generate-data
 ```
 
 Running S<sup>3</sup>N<sup>2</sup>Bin for every sample(`output` must contain data.csv and data_split.csv).
 
 ```bash
-S3N2Bin advance-bin -i sample.fna -b sample.bam -c sample.txt -o output/samples/sample --split-run
+S3N2Bin advanced-bin -i sample.fna -b sample.bam -c sample.txt -o output/samples/sample --split-run
 ```
 

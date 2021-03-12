@@ -39,7 +39,7 @@ python script/concatenate.py -i CAT.out -c contig.fna -s sample-name -o output -
 
 ## Examples
 
-### Easy-bin mode 
+### Easy-bin mode
 
 You can get the results with one line code. Easy-bin command can be used in single-sample and co-assembly binning modes(contig annotations using mmseqs with GTDB reference genome).
 
@@ -49,18 +49,18 @@ S3N2Bin easy-bin -i contig.fna -b *.bam --GTDB-path /mmseqs_data/GTDB -o output
 
 If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download GTDB  to your output folder.
 
-### Advance-bin mode(Need to generate cannot-link file before running)
+### Advanced-bin mode(Need to generate cannot-link file before running)
 
 #### Single sample/co-assembly binning
 
 ```bash
-S3N2Bin advance-bin -i contig.fna -b *.bam -c cannot-link.txt -o output 
+S3N2Bin advanced-bin -i contig.fna -b *.bam -c cannot-link.txt -o output 
 ```
 
 #### Multiple samples binning (Must set `-s` parameter)
 
 ```bash
-S3N2Bin advance-bin -i whole_contig.fna -b *.bam -c *.txt -s C -o output
+S3N2Bin advanced-bin -i whole_contig.fna -b *.bam -c *.txt -s C -o output
 ```
 
 #### Multi-samples binning pipeline
