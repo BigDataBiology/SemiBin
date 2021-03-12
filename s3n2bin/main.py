@@ -5,7 +5,7 @@ import logging
 from .generate_kmer import generate_kmer_features_from_fasta
 from .generate_coverage import calculate_coverage
 from Bio import SeqIO
-from .utils import validate_args, get_threshold
+from .utils import validate_args, get_threshold, generate_cannot_link
 import pandas as pd
 from .semi_supervised_model import train
 import torch
@@ -17,6 +17,7 @@ from Bio.SeqRecord import SeqRecord
 import gzip
 import bz2
 import shutil
+import subprocess
 
 
 def parse_args(args):
@@ -24,6 +25,10 @@ def parse_args(args):
                                      description='Semi-supervised siamese neural network for metagenomic binning')
 
     basic = parser.add_argument_group(title='Basic commands', description=None)
+    basic.add_argument('command',
+                       nargs=1,
+                       help='You can choose easy-bin mode to get results with one line code(For single and co-assembly binning.)')
+
     basic.add_argument('-i', '--input-fasta',
                        required=True,
                        help='Path to the input contig fasta file.',
@@ -55,6 +60,13 @@ def parse_args(args):
                        help='Used when multiple samples binning to separate sample name and contig name.'
                             '(None means single sample and coassemble binning)',
                        dest='separator',
+                       default=None,
+                       )
+    basic.add_argument('--GTDB-path',
+                       required=False,
+                       help='Path to the GTDB database used in the mmseqs annotation when easy-bin mode.'
+                            '(If not set, we will download GTDB dataset to the output folder)',
+                       dest='gtdb_path',
                        default=None,
                        )
 
@@ -182,8 +194,8 @@ def main(args=None):
         args = sys.argv
 
     args = parse_args(args)
+    [args.command] = args.command
     validate_args(args)
-
     logger = logging.getLogger('S3N2Bin')
     logger.setLevel(logging.INFO)
 
@@ -231,11 +243,80 @@ def main(args=None):
         n_sample = len(args.bams)
         is_combined = n_sample >= 5
 
-        if not args.split_running:
-            # threshold for generating must link pairs
-            threshold = get_threshold(contig_length_list)
-            logger.info('Calculating coverage for every sample.')
+        # threshold for generating must link pairs
+        threshold = get_threshold(contig_length_list)
 
+        if args.command == 'easy-bin':
+            logger.info('Running mmseqs annotation')
+            if args.gtdb_path is None:
+                logger.info('Downloading GTDB.')
+                subprocess.check_call(
+                    ['mmseqs',
+                     'databases',
+                     'GTDB',
+                     '{}/GTDB'.format(out),
+                     '{}/tmp'.format(out),
+                     ],
+                    stdout=None,
+                    stderr=subprocess.DEVNULL,
+                )
+            gtdb_path = os.path.join(
+                out, 'GTDB') if args.gtdb_path is None else args.gtdb_path
+            subprocess.check_call(
+                ['mmseqs',
+                 'createdb',
+                 contig_fasta,
+                 '{}/contig_DB'.format(out)],
+                stdout=None,
+                stderr=subprocess.DEVNULL,
+            )
+            os.makedirs(os.path.join(out, 'mmseqs_annotation'), exist_ok=True)
+            subprocess.run(
+                ['mmseqs',
+                 'taxonomy',
+                 '{}/contig_DB'.format(out),
+                 gtdb_path,
+                 os.path.join(out, 'mmseqs_annotation/mmseqs_annotation'),
+                 os.path.join(out, 'mmseqs_tmp'),
+                 '--tax-lineage',
+                 str(1),
+                 ],
+                check=True,
+                stdout=None,
+                stderr=subprocess.DEVNULL,
+            )
+            subprocess.check_call(
+                ['mmseqs',
+                 'createtsv',
+                 '{}/contig_DB'.format(out),
+                 os.path.join(out, 'mmseqs_annotation/mmseqs_annotation'),
+                 os.path.join(out, 'mmseqs_annotation/taxonomyResult.tsv')
+                 ],
+                stdout=None,
+                stderr=subprocess.DEVNULL,
+            )
+            namelist = []
+            num_must_link = 0
+            binned_threshold = 1000 if binned_short else 2500
+            for seq_record in SeqIO.parse(handle, "fasta"):
+                if len(seq_record) > binned_threshold:
+                    namelist.append(seq_record.id)
+                if len(seq_record) >= threshold:
+                    num_must_link += 1
+            os.makedirs(os.path.join(out, 'cannot'), exist_ok=True)
+            generate_cannot_link(
+                os.path.join(
+                    out,
+                    'mmseqs_annotation/taxonomyResult.tsv'),
+                namelist,
+                num_must_link,
+                os.path.join(
+                    out,
+                    'cannot'),
+                'cannot')
+
+        if not args.split_running:
+            logger.info('Calculating coverage for every sample.')
             # generating coverage for every contig and for must link pair
 
             if args.num_process != 0:
@@ -291,7 +372,8 @@ def main(args=None):
                 data_split.to_csv(ofile)
         else:
             data = pd.read_csv(os.path.join(out, 'data.csv'), index_col=0)
-            data_split = pd.read_csv(os.path.join(out,'data_split.csv'),index_col=0)
+            data_split = pd.read_csv(
+                os.path.join(out,'data_split.csv'),index_col=0)
 
         model = train(
             out,
@@ -300,7 +382,8 @@ def main(args=None):
             logger,
             data,
             data_split,
-            args.cannot_link[0],
+            args.cannot_link[0] if args.command != 'easy-bin' else os.path.join(
+                out, 'cannot/cannot.txt'),
             is_combined,
             args.batchsize,
             args.epoches,

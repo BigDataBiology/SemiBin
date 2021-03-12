@@ -6,7 +6,8 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 import sys
-
+import pandas as pd
+import random
 
 def validate_args(args):
 
@@ -21,10 +22,13 @@ def validate_args(args):
         if fs is not None:
             for f in fs:
                 expect_file(f)
-
+    if args.command not in ['easy-bin','advanced-bin']:
+        sys.stderr.write(
+            f"Error: Expected command is easy-bin or advanced-bin.\n")
+        sys.exit(1)
     expect_file(args.contig_fasta)
     expect_file_list(args.bams)
-    if not args.generate_data:
+    if not args.generate_data or args.command == 'advanced-bin':
         expect_file_list(args.cannot_link)
 
     if args.split_running:
@@ -146,3 +150,72 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
                 stdout=open('/dev/null', 'w'),
                 stderr=subprocess.DEVNULL,
             )
+
+def generate_mmseqs(mmseqs_file):
+    species_result = mmseqs_file[(mmseqs_file['rank_name'] == 'species') & (
+        mmseqs_file['score'] > 0.95)].values
+    genus_result = mmseqs_file[(mmseqs_file['rank_name'] == 'genus') & (
+        mmseqs_file['score'] > 0.80)].values
+
+    cannot_link_species = []
+    for i in range(len(species_result)):
+        for j in range(i + 1, len(species_result)):
+            if species_result[i][2] != species_result[j][2]:
+                cannot_link_species.append(
+                    (species_result[i][0], species_result[j][0]))
+
+    cannot_link_genus = []
+    for i in range(len(genus_result)):
+        for j in range(i + 1, len(genus_result)):
+            if genus_result[i][2] != genus_result[j][2]:
+                cannot_link_genus.append(
+                    (genus_result[i][0], genus_result[j][0]))
+
+    cannot_link_mix = []
+    for i in range(len(species_result)):
+        genus_name = species_result[i][4].split(';')[-2]
+        for j in range(len(genus_result)):
+            if genus_name != genus_result[j][2]:
+                cannot_link_mix.append(
+                    (species_result[i][0], genus_result[j][0]))
+
+    return cannot_link_species, cannot_link_genus, cannot_link_mix
+
+
+def generate_cannot_link(mmseqs_path,namelist,num_threshold,output,sample):
+    mmseqs_result = pd.read_csv(mmseqs_path, sep='\t', header=None)
+    mmseqs_result.columns = ['contig_name', 'taxon_ID', 'rank_name', 'scientific_name', 'temp_1', 'temp_2', 'temp_3',
+                             'score', 'lineage']
+    mmseqs_result = mmseqs_result[[
+        'contig_name', 'rank_name', 'scientific_name', 'score', 'lineage']]
+    mmseqs_result = mmseqs_result[mmseqs_result['contig_name'].isin(
+        namelist)]
+    cannot_link_species, cannot_link_genus, cannot_link_mix = generate_mmseqs(
+        mmseqs_result)
+    num_whole_data = 1000 * num_threshold if 1000 * \
+                                             num_threshold < 4000000 else 4000000
+    num_mix = int(num_whole_data / 8)
+    num_genus = int(num_mix / 2)
+    num_species = num_whole_data - num_mix - num_genus
+    if len(cannot_link_mix) > num_mix:
+        cannot_link_mix = random.sample(cannot_link_mix, num_mix)
+
+    if len(cannot_link_genus) > num_genus:
+        cannot_link_genus = random.sample(cannot_link_genus, num_genus)
+
+    if len(cannot_link_species) > num_species:
+        cannot_link_species = random.sample(cannot_link_species, num_species)
+
+    out_text = open(output + '/{}.txt'.format(sample), 'w')
+    for cannot in cannot_link_species:
+        out_text.write(cannot[0] + ',' + cannot[1])
+        out_text.write('\n')
+
+    for cannot in cannot_link_genus:
+        out_text.write(cannot[0] + ',' + cannot[1])
+        out_text.write('\n')
+
+    for cannot in cannot_link_mix:
+        out_text.write(cannot[0] + ',' + cannot[1])
+        out_text.write('\n')
+
