@@ -27,7 +27,7 @@ def parse_args(args):
     basic = parser.add_argument_group(title='Basic commands', description=None)
     basic.add_argument('command',
                        nargs=1,
-                       help='You can choose easy-bin mode to get results with one line code(For single and co-assembly binning.)')
+                       help='You can choose easy-bin mode to get results with one line code (for single and co-assembly binning.)')
 
     basic.add_argument('-i', '--input-fasta',
                        required=True,
@@ -37,8 +37,8 @@ def parse_args(args):
     basic.add_argument('-b', '--input-bam',
                        required=True,
                        nargs='*',
-                       help='Path to the input bam file.'
-                             'If using multiple samples binning, you can input multiple files.',
+                       help='Path to the input bam file. '
+                             'If using multiple sample binning, you can input multiple files.',
                        dest='bams',
                        default=None)
     basic.add_argument('-c', '--cannot-link',
@@ -64,7 +64,7 @@ def parse_args(args):
                        )
     basic.add_argument('--GTDB-path',
                        required=False,
-                       help='Path to the GTDB database used in the mmseqs annotation when easy-bin mode.'
+                       help='Path to the GTDB database used in the mmseqs annotation in easy-bin mode.'
                             '(If not set, we will download GTDB dataset to the output folder)',
                        dest='gtdb_path',
                        default=None,
@@ -72,7 +72,7 @@ def parse_args(args):
 
     optional = parser.add_argument_group(
         title='Optional commands', description=None)
-    optional.add_argument('-p', '--processes',
+    optional.add_argument('-p', '--processes', '-t', '--threads',
                           required=False,
                           type=int,
                           help='Number of CPUs used',
@@ -96,7 +96,7 @@ def parse_args(args):
     optional.add_argument('--max-edges',
                           required=False,
                           type=int,
-                          help='The maximun number of edges that can be connected to one contig.',
+                          help='The maximum number of edges that can be connected to one contig.',
                           dest='max_edges',
                           default=200)
 
@@ -109,7 +109,7 @@ def parse_args(args):
 
     optional.add_argument('--generate-data',
                           help='Used when multi-samples binning.'
-                               'S3N2Bin will only generate datas(data.csv,data_split.csv) for training and clustering.',
+                               'S3N2Bin will only generate datas (data.csv,data_split.csv) for training and clustering.',
                           required=False,
                           action='store_true',
                           dest='generate_data'
