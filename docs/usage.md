@@ -1,52 +1,14 @@
 # Usage
 
-## Generate cannot-link constrains
+## Easy-bin mode
 
-You can use  [mmseqs](https://github.com/soedinglab/MMseqs2) or [CAT](https://github.com/dutilh/CAT)(or other contig annotation tools) to get the taxonomic classifications of contigs. Then you can use the script `script/concatenate.py` to generate the cannot-link file(Format: contig_1,contig_2 ) that can be used in S<sup>3</sup>N<sup>2</sup>Bin. 
-
-Contig annotation with mmseqs(GTDB reference genomes)
-
-```bash
-mmseqs createdb contig.fasta contig_DB
-
-mmseqs taxonomy contig_DB GTDB taxonomyResult tmp --tax-lineage 1
-
-mmseqs createtsv contig_DB taxonomyResult taxonomyResult.tsv
-```
-
-Generate cannot-link constrains
-
-```bash
-python script/concatenate.py -i taxonomyResult.tsv -c contig.fasta -s sample-name -o output --mmseqs
-```
-
-Contig annotation with CAT
-
-```bash
-CAT contigs -c contig.fasta -d CAT_prepare_20200304/2020-03-04_CAT_database --path_to_prodigal path_to_prodigal --path_to_diamond path_to_diamond -t CAT_prepare_20200304/2020-03-04_taxonomy -o CAT_output/CAT --force -f 0.5 --top 11 --I_know_what_Im_doing --index_chunks 1
-
-CAT add_names CAT_output/CAT.contig2classification.txt -o CAT_output/CAT.out -t CAT_prepare_20200304/2020-03-04_taxonomy --force --only_official
-```
-
-Generate cannot-link constrains
-
-```bash
-python script/concatenate.py -i CAT.out -c contig.fasta -s sample-name -o output --CAT
-```
-
-
-
-## Examples
-
-
-
-### Easy-bin mode
-
-You can get the results with one line code. Easy-bin command can be used in single-sample and co-assembly binning modes(contig annotations using mmseqs with GTDB reference genome).
+You can get the results with one line code. Easy-bin command can be used in
+single-sample and co-assembly binning modes (contig annotations using mmseqs
+with GTDB reference genome).
 
 (1) Mapping reads to the contig fasta file. 
 
-Bowtie2(Or any reads mapping tool)
+Example using Bowtie2 (but another read mapping tool would also work):
 
 ```bash
 bowtie2-build -f contig.fna contig.fna -p 16
@@ -71,10 +33,62 @@ S3N2Bin easy-bin -i contig.fna -b *.bam --GTDB-path /mmseqs_data/GTDB -o output
 If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download GTDB  to your output folder.
 
 
+## Generate cannot-link constrains
 
-### Advanced-bin mode
+S³N²Bin has builtin support for
+[mmseqs2](https://github.com/soedinglab/MMseqs2) (the default) and
+[CAT](https://github.com/dutilh/CAT) for generating contig taxonomic
+classifications. See below for format specifications if you want to use another
+tool
 
-#### Single sample/co-assembly binning
+### Contig annotation with mmseqs (GTDB reference):
+
+```bash
+mmseqs createdb contig.fasta contig_DB
+mmseqs taxonomy contig_DB GTDB taxonomyResult tmp --tax-lineage 1
+mmseqs createtsv contig_DB taxonomyResult taxonomyResult.tsv
+```
+
+Generate cannot-link constrains
+
+```bash
+python script/concatenate.py -i taxonomyResult.tsv -c contig.fasta -s sample-name -o output --mmseqs
+```
+
+### Contig annotation with CAT
+
+```bash
+CAT contigs \
+        -c contig.fasta \
+        -d CAT_prepare_20200304/2020-03-04_CAT_database \
+        --path_to_prodigal path_to_prodigal \
+        --path_to_diamond path_to_diamond \
+        -t CAT_prepare_20200304/2020-03-04_taxonomy \
+        -o CAT_output/CAT \
+        --force \
+        -f 0.5 \
+        --top 11 \
+        --I_know_what_Im_doing \
+        --index_chunks 1
+
+CAT add_names \
+    CAT_output/CAT.contig2classification.txt \
+    -o CAT_output/CAT.out \
+    -t CAT_prepare_20200304/2020-03-04_taxonomy \
+    --force \
+    --only_official
+```
+
+Generate cannot-link constrains
+
+```bash
+python script/concatenate.py -i CAT.out -c contig.fasta -s sample-name -o output --CAT
+```
+
+
+## Advanced-bin mode
+
+### Single sample/co-assembly binning
 
 (1) Mapping reads to the contig fasta file. 
 
@@ -87,8 +101,7 @@ S3N2Bin advanced-bin -i contig.fna -b *.bam -c cannot-link.txt -o output
 ```
 
 
-
-#### Multi-samples binning(Must set -s parameter)
+#### Multi-samples binning (Must set -s parameter)
 
 (1) Concatenate all contigs from all samples together. Make sure that names of samples are unique and id for every contig is <sample_name><\separator><contig_id>. Concatenated contig format is:
 
@@ -125,7 +138,7 @@ S3N2Bin advanced-bin -i whole_contig.fna -b *.bam -c *.txt -s C -o output
 
 Running S<sup>3</sup>N<sup>2</sup>Bin for a large project in multi-samples binning mode will take a bit time when executed serially. You can set `--generate-data` and `--split-run` to manually run S<sup>3</sup>N<sup>2</sup>Bin parallel.
 
-Generate datas of every sample for training and clustering.
+Generate data for every sample for training and clustering.
 
 ```bash
 S3N2Bin advanced-bin -i whole_contig.fna -b *.bam -s C -o output --generate-data

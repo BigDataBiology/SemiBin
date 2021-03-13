@@ -1,6 +1,5 @@
 # S<sup>3</sup>N<sup>2</sup>Bin (Semi-supervised Siamese Neural Network for metagenomic binning)
 
-
 _NOTE_: This tool is still in development. You are welcome to try it out and
 feedback is appreciated, but expect some bugs/rapid changes until it
 stabilizes.
@@ -10,7 +9,9 @@ information from reference genomes.
 
 ## Install
 
-S<sup>3</sup>N<sup>2</sup>Bin runs on Python 3.6-3.8 and requires [Bedtools](https://github.com/arq5x/bedtools2) to be available for calculating depth from bam files.
+S<sup>3</sup>N<sup>2</sup>Bin runs on Python 3.6-3.8 and requires
+[Bedtools](https://github.com/arq5x/bedtools2) to be available for calculating
+depth from bam files.
 
 ### Install from source
 
@@ -20,12 +21,38 @@ You can download the source code from github and install with the standard
 python setup.py install
 ```
 
+## Examples
+
+## Easy binning mode
+
+You will need the following inputs:
+
+1. A contig file (`contig.fna` in the example below)
+2. BAM files from mapping
+
+
+You can get the results with one line of code. The `easy-bin` command can be used in
+single-sample and co-assembly binning modes (contig annotations using mmseqs
+with GTDB reference genome).
+
+```bash
+S3N2Bin easy-bin -i contig.fna -b *.bam --GTDB-path /mmseqs_data/GTDB -o output
+```
+
+If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download
+GTDB  to your output folder.
+
+### Advanced-bin mode (Need to generate cannot-link file before running)
+
 ## Generate Cannot-link contrains
 
-You can use [mmseqs](https://github.com/soedinglab/MMseqs2) or [CAT](https://github.com/dutilh/CAT) (or other contig annotation tools) to get taxonomic classifications of contigs. Then you can use the script `script/concatenate.py` to generate the cannot-link file(contig1, contig2)
-that can be used in S<sup>3</sup>N<sup>2</sup>Bin.
+You can use [mmseqs2](https://github.com/soedinglab/MMseqs2) or
+[CAT](https://github.com/dutilh/CAT) (or other contig annotation tools) to get
+taxonomic classifications of contigs. Then you can use the script
+`script/concatenate.py` to generate the cannot-link file(contig1, contig2) that
+can be used in S<sup>3</sup>N<sup>2</sup>Bin.
 
-#### mmseqs
+#### mmseqs2
 
 ```bash
 python script/concatenate.py -i taxonomy.tsv -c contig.fna -s sample-name -o output --mmseqs
@@ -37,19 +64,6 @@ python script/concatenate.py -i taxonomy.tsv -c contig.fna -s sample-name -o out
 python script/concatenate.py -i CAT.out -c contig.fna -s sample-name -o output --CAT
 ```
 
-## Examples
-
-### Easy-bin mode
-
-You can get the results with one line code. Easy-bin command can be used in single-sample and co-assembly binning modes(contig annotations using mmseqs with GTDB reference genome).
-
-```bash
-S3N2Bin easy-bin -i contig.fna -b *.bam --GTDB-path /mmseqs_data/GTDB -o output
-```
-
-If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download GTDB  to your output folder.
-
-### Advanced-bin mode(Need to generate cannot-link file before running)
 
 #### Single sample/co-assembly binning
 

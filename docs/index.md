@@ -28,9 +28,9 @@ S<sup>3</sup>N<sup>2</sup>Bin is a command line tool for metagenomic binning wit
 
 #### Basic commands
 
-* `command` : easy-bin or advanced-bin(You can get results using easy-bin with just one line code).
+* `command` : `easy-bin` or `advanced-bin`
 
-* `-i/--input-fasta` : Path to the input contig fasta file(.fasta/.gz/.bz2).
+* `-i/--input-fasta` : Path to the input contig fasta file (gzip and bzip2 compression are accepted)
 
 * `-b/--input-bam`: Path to the input bam files. If there are several samples, you can input several bam files.
 
