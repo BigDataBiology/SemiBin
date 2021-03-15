@@ -74,14 +74,12 @@ def write_bins(namelist, contig_labels, output, contig_dict,
                 Seq(str(contig_dict[contig])), id=contig, description='')
             bin.append(rec)
             whole_bin_bp += len(str(contig_dict[contig]))
-        if not recluster:
-            if whole_bin_bp >= 200000:
-                with atomic_write(os.path.join(output, 'bin.{}.fa'.format(label)), overwrite=True) as ofile:
-                    SeqIO.write(bin, ofile, 'fasta')
-        else:
-            if whole_bin_bp >= 200000:
-                with atomic_write(os.path.join(output, 'recluster_{0}.bin.{1}.fa'.format(origin_label, label)), overwrite=True) as ofile:
-                    SeqIO.write(bin, ofile, 'fasta')
+
+        ofname = f'bin.{label}.fa' if not recluster \
+                    else f'recluster_{origin_label}.bin.{label}.fa'
+        if whole_bin_bp >= 200_000:
+            with atomic_write(os.path.join(output, ofname), overwrite=True) as ofile:
+                SeqIO.write(bin, ofile, 'fasta')
 
 
 def cal_kl(m1, m2, v1, v2):
