@@ -126,30 +126,17 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
         )
 
     if not os.path.exists(seed_output):
-        if binned_short:
-            getmarker = os.path.split(__file__)[0] + '/test_getmarker.pl'
-            subprocess.check_call(
-                ['perl', getmarker,
-                 hmm_output,
-                 fasta_path,
-                 '1001',
-                 seed_output,
-                 ],
-                stdout=open('/dev/null', 'w'),
-                stderr=subprocess.DEVNULL,
-            )
-        else:
-            getmarker = os.path.split(__file__)[0] + '/test_getmarker.pl'
-            subprocess.check_call(
-                ['perl', getmarker,
-                 hmm_output,
-                 fasta_path,
-                 '2501',
-                 seed_output,
-                 ],
-                stdout=open('/dev/null', 'w'),
-                stderr=subprocess.DEVNULL,
-            )
+        getmarker = os.path.split(__file__)[0] + '/test_getmarker.pl'
+        subprocess.check_call(
+            ['perl', getmarker,
+             hmm_output,
+             fasta_path,
+             ('1001' if binned_short else '2501'), # threshold
+             seed_output,
+             ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
 def generate_mmseqs(mmseqs_file):
     species_result = mmseqs_file[(mmseqs_file['rank_name'] == 'species') & (
