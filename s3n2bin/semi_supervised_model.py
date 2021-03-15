@@ -163,7 +163,6 @@ def train(out, contig_fasta, binned_short, logger, data, data_split, cannot_link
 
     namelist = data.index.tolist()
     mapObj = dict(zip(namelist, range(len(namelist))))
-    row_index = data._stat_axis.values.tolist()
     train_data = data.values
     train_data_must_link = data_split.values
 

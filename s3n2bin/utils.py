@@ -7,6 +7,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 import sys
 import pandas as pd
+import numpy as np
 import random
 
 def validate_args(args):
@@ -52,8 +53,7 @@ def get_threshold(contig_len):
         basepair_sum += contig_len[index]
         threshold = contig_len[index]
         index += 1
-    threshold = max(threshold, 4000)
-    return threshold
+    return np.clip(threshold, 4000, None)
 
 
 def write_bins(namelist, contig_labels, output, contig_dict,
@@ -74,24 +74,22 @@ def write_bins(namelist, contig_labels, output, contig_dict,
                 Seq(str(contig_dict[contig])), id=contig, description='')
             bin.append(rec)
             whole_bin_bp += len(str(contig_dict[contig]))
-        if not recluster:
-            if whole_bin_bp >= 200000:
-                with atomic_write(os.path.join(output, 'bin.{}.fa'.format(label)), overwrite=True) as ofile:
-                    SeqIO.write(bin, ofile, 'fasta')
-        else:
-            if whole_bin_bp >= 200000:
-                with atomic_write(os.path.join(output, 'recluster_{0}.bin.{1}.fa'.format(origin_label, label)), overwrite=True) as ofile:
-                    SeqIO.write(bin, ofile, 'fasta')
+
+        ofname = f'bin.{label}.fa' if not recluster \
+                    else f'recluster_{origin_label}.bin.{label}.fa'
+        if whole_bin_bp >= 200_000:
+            with atomic_write(os.path.join(output, ofname), overwrite=True) as ofile:
+                SeqIO.write(bin, ofile, 'fasta')
 
 
 def cal_kl(m1, m2, v1, v2):
-    m1 = max(m1, 1e-6)
-    m2 = max(m2, 1e-6)
-    v1 = 1 if v1 < 1 else v1
-    v2 = 1 if v2 < 1 else v2
+    m1 = np.clip(m1, 1e-6, None)
+    m2 = np.clip(m2, 1e-6, None)
+    v1 = np.clip(v1, 1.0, None)
+    v2 = np.clip(v2, 1.0, None)
     value = np.log(np.sqrt(v2 / v1)) + \
         np.divide(np.add(v1, np.square(m1 - m2)), 2 * v2) - 0.5
-    return min(max(value, 1e-6), 1 - 1e-6)
+    return np.clip(value, 1e-6, 1 - 1e-6)
 
 
 def cal_num_bins(fasta_path, contig_output, hmm_output,
@@ -126,36 +124,21 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
         )
 
     if not os.path.exists(seed_output):
-        if binned_short:
-            getmarker = os.path.split(__file__)[0] + '/test_getmarker.pl'
-            subprocess.check_call(
-                ['perl', getmarker,
-                 hmm_output,
-                 fasta_path,
-                 '1001',
-                 seed_output,
-                 ],
-                stdout=open('/dev/null', 'w'),
-                stderr=subprocess.DEVNULL,
-            )
-        else:
-            getmarker = os.path.split(__file__)[0] + '/test_getmarker.pl'
-            subprocess.check_call(
-                ['perl', getmarker,
-                 hmm_output,
-                 fasta_path,
-                 '2501',
-                 seed_output,
-                 ],
-                stdout=open('/dev/null', 'w'),
-                stderr=subprocess.DEVNULL,
-            )
+        getmarker = os.path.split(__file__)[0] + '/test_getmarker.pl'
+        subprocess.check_call(
+            ['perl', getmarker,
+             hmm_output,
+             fasta_path,
+             ('1001' if binned_short else '2501'), # threshold
+             seed_output,
+             ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
-def generate_mmseqs(mmseqs_file):
-    species_result = mmseqs_file[(mmseqs_file['rank_name'] == 'species') & (
-        mmseqs_file['score'] > 0.95)].values
-    genus_result = mmseqs_file[(mmseqs_file['rank_name'] == 'genus') & (
-        mmseqs_file['score'] > 0.80)].values
+def parse_mmseqs(mmseqs_result):
+    species_result = mmseqs_result.query('rank_name == "species" and score > 0.95').values
+    genus_result = mmseqs_result.query('rank_name == "genus" and score > 0.80').values
 
     cannot_link_species = []
     for i in range(len(species_result)):
@@ -183,6 +166,7 @@ def generate_mmseqs(mmseqs_file):
 
 
 def generate_cannot_link(mmseqs_path,namelist,num_threshold,output,sample):
+    import itertools
     mmseqs_result = pd.read_csv(mmseqs_path, sep='\t', header=None)
     mmseqs_result.columns = ['contig_name', 'taxon_ID', 'rank_name', 'scientific_name', 'temp_1', 'temp_2', 'temp_3',
                              'score', 'lineage']
@@ -190,32 +174,25 @@ def generate_cannot_link(mmseqs_path,namelist,num_threshold,output,sample):
         'contig_name', 'rank_name', 'scientific_name', 'score', 'lineage']]
     mmseqs_result = mmseqs_result[mmseqs_result['contig_name'].isin(
         namelist)]
-    cannot_link_species, cannot_link_genus, cannot_link_mix = generate_mmseqs(
+    cannot_link_species, cannot_link_genus, cannot_link_mix = parse_mmseqs(
         mmseqs_result)
-    num_whole_data = 1000 * num_threshold if 1000 * \
-                                             num_threshold < 4000000 else 4000000
-    num_mix = int(num_whole_data / 8)
-    num_genus = int(num_mix / 2)
-    num_species = num_whole_data - num_mix - num_genus
-    if len(cannot_link_mix) > num_mix:
-        cannot_link_mix = random.sample(cannot_link_mix, num_mix)
+    num_whole_data = np.clip(1000 * num_threshold, None, 4_000_000)
+    max_num_mix = int(num_whole_data / 8)
+    max_num_genus = int(max_num_mix / 2)
+    max_num_species = num_whole_data - max_num_mix - max_num_genus
+    if len(cannot_link_mix) > max_num_mix:
+        cannot_link_mix = random.sample(cannot_link_mix, max_num_mix)
 
-    if len(cannot_link_genus) > num_genus:
-        cannot_link_genus = random.sample(cannot_link_genus, num_genus)
+    if len(cannot_link_genus) > max_num_genus:
+        cannot_link_genus = random.sample(cannot_link_genus, max_num_genus)
 
-    if len(cannot_link_species) > num_species:
-        cannot_link_species = random.sample(cannot_link_species, num_species)
+    if len(cannot_link_species) > max_num_species:
+        cannot_link_species = random.sample(cannot_link_species, max_num_species)
 
-    out_text = open(output + '/{}.txt'.format(sample), 'w')
-    for cannot in cannot_link_species:
-        out_text.write(cannot[0] + ',' + cannot[1])
-        out_text.write('\n')
-
-    for cannot in cannot_link_genus:
-        out_text.write(cannot[0] + ',' + cannot[1])
-        out_text.write('\n')
-
-    for cannot in cannot_link_mix:
-        out_text.write(cannot[0] + ',' + cannot[1])
-        out_text.write('\n')
+    with open(os.path.join(output  f'{sample}.txt'), 'w') as out_cannot_link:
+        for cannot in itertools.chain(
+                cannot_link_species,
+                cannot_link_genus,
+                cannot_link_mix):
+            out_cannot_link.write(f'{cannot[0]},{cannot[1]}\n')
 
