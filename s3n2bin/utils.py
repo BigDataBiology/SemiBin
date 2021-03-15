@@ -166,6 +166,7 @@ def parse_mmseqs(mmseqs_result):
 
 
 def generate_cannot_link(mmseqs_path,namelist,num_threshold,output,sample):
+    import itertools
     mmseqs_result = pd.read_csv(mmseqs_path, sep='\t', header=None)
     mmseqs_result.columns = ['contig_name', 'taxon_ID', 'rank_name', 'scientific_name', 'temp_1', 'temp_2', 'temp_3',
                              'score', 'lineage']
@@ -173,32 +174,25 @@ def generate_cannot_link(mmseqs_path,namelist,num_threshold,output,sample):
         'contig_name', 'rank_name', 'scientific_name', 'score', 'lineage']]
     mmseqs_result = mmseqs_result[mmseqs_result['contig_name'].isin(
         namelist)]
-    cannot_link_species, cannot_link_genus, cannot_link_mix = generate_mmseqs(
+    cannot_link_species, cannot_link_genus, cannot_link_mix = parse_mmseqs(
         mmseqs_result)
-    num_whole_data = 1000 * num_threshold if 1000 * \
-                                             num_threshold < 4000000 else 4000000
-    num_mix = int(num_whole_data / 8)
-    num_genus = int(num_mix / 2)
-    num_species = num_whole_data - num_mix - num_genus
-    if len(cannot_link_mix) > num_mix:
-        cannot_link_mix = random.sample(cannot_link_mix, num_mix)
+    num_whole_data = np.clip(1000 * num_threshold, None, 4_000_000)
+    max_num_mix = int(num_whole_data / 8)
+    max_num_genus = int(max_num_mix / 2)
+    max_num_species = num_whole_data - max_num_mix - max_num_genus
+    if len(cannot_link_mix) > max_num_mix:
+        cannot_link_mix = random.sample(cannot_link_mix, max_num_mix)
 
-    if len(cannot_link_genus) > num_genus:
-        cannot_link_genus = random.sample(cannot_link_genus, num_genus)
+    if len(cannot_link_genus) > max_num_genus:
+        cannot_link_genus = random.sample(cannot_link_genus, max_num_genus)
 
-    if len(cannot_link_species) > num_species:
-        cannot_link_species = random.sample(cannot_link_species, num_species)
+    if len(cannot_link_species) > max_num_species:
+        cannot_link_species = random.sample(cannot_link_species, max_num_species)
 
-    out_text = open(output + '/{}.txt'.format(sample), 'w')
-    for cannot in cannot_link_species:
-        out_text.write(cannot[0] + ',' + cannot[1])
-        out_text.write('\n')
-
-    for cannot in cannot_link_genus:
-        out_text.write(cannot[0] + ',' + cannot[1])
-        out_text.write('\n')
-
-    for cannot in cannot_link_mix:
-        out_text.write(cannot[0] + ',' + cannot[1])
-        out_text.write('\n')
+    with open(os.path.join(output  f'{sample}.txt'), 'w') as out_cannot_link:
+        for cannot in itertools.chain(
+                cannot_link_species,
+                cannot_link_genus,
+                cannot_link_mix):
+            out_cannot_link.write(f'{cannot[0]},{cannot[1]}\n')
 
