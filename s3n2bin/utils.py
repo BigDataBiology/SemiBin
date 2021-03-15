@@ -7,6 +7,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 import sys
 import pandas as pd
+import numpy as np
 import random
 
 def validate_args(args):
@@ -52,8 +53,7 @@ def get_threshold(contig_len):
         basepair_sum += contig_len[index]
         threshold = contig_len[index]
         index += 1
-    threshold = max(threshold, 4000)
-    return threshold
+    return np.clip(threshold, 4000, None)
 
 
 def write_bins(namelist, contig_labels, output, contig_dict,
@@ -85,13 +85,13 @@ def write_bins(namelist, contig_labels, output, contig_dict,
 
 
 def cal_kl(m1, m2, v1, v2):
-    m1 = max(m1, 1e-6)
-    m2 = max(m2, 1e-6)
-    v1 = 1 if v1 < 1 else v1
-    v2 = 1 if v2 < 1 else v2
+    m1 = np.clip(m1, 1e-6, None)
+    m2 = np.clip(m2, 1e-6, None)
+    v1 = np.clip(v1, 1.0, None)
+    v2 = np.clip(v2, 1.0, None)
     value = np.log(np.sqrt(v2 / v1)) + \
         np.divide(np.add(v1, np.square(m1 - m2)), 2 * v2) - 0.5
-    return min(max(value, 1e-6), 1 - 1e-6)
+    return np.clip(value, 1e-6, 1 - 1e-6)
 
 
 def cal_num_bins(fasta_path, contig_output, hmm_output,
