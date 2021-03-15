@@ -136,11 +136,9 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
             stderr=subprocess.DEVNULL,
         )
 
-def generate_mmseqs(mmseqs_file):
-    species_result = mmseqs_file[(mmseqs_file['rank_name'] == 'species') & (
-        mmseqs_file['score'] > 0.95)].values
-    genus_result = mmseqs_file[(mmseqs_file['rank_name'] == 'genus') & (
-        mmseqs_file['score'] > 0.80)].values
+def parse_mmseqs(mmseqs_result):
+    species_result = mmseqs_result.query('rank_name == "species" and score > 0.95').values
+    genus_result = mmseqs_result.query('rank_name == "genus" and score > 0.80').values
 
     cannot_link_species = []
     for i in range(len(species_result)):
