@@ -21,7 +21,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     depth = data.values[:, 136:len(data.values[0])]
     namelist = data.index.tolist()
     row_index = data._stat_axis.values.tolist()
-    mapObj = dict(zip(namelist, range(len(namelist))))
+    mapObj = {n:i for i, n in enumerate(namelist)}
     with torch.no_grad():
         model.eval()
         x = torch.from_numpy(train_data_input).to(device)
@@ -85,8 +85,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     logger.info('Edges:{}'.format(len(edges)))
 
     g = Graph()
-    vertex = list(range(len(matrix)))
-    g.add_vertices(vertex)
+    g.add_vertices(list(range(len(matrix))))
     g.add_edges(edges)
     length_weight = np.array([contig_length_dict[name] for name in namelist])
     result = g.community_infomap(
