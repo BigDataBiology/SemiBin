@@ -1,5 +1,9 @@
 # S<sup>3</sup>N<sup>2</sup>Bin (Semi-supervised Siamese Neural Network for metagenomic binning)
 
+[![Test Status](https://github.com/BigDataBiology/S3N2Bin/actions/workflows/s3n2bin_test.yml/badge.svg)](https://github.com/BigDataBiology/S3N2Bin/actions/workflows/s3n2bin_test.yml)
+[![Documentation Status](https://readthedocs.org/projects/s3n2bin/badge/?version=latest)](https://s3n2bin.readthedocs.io/en/latest/?badge=latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 _NOTE_: This tool is still in development. You are welcome to try it out and
 feedback is appreciated, but expect some bugs/rapid changes until it
 stabilizes.
