@@ -11,7 +11,7 @@ import shutil
 
 
 def cluster(model, data, device, max_edges, max_node, is_combined,
-            logger, n_sample, contig_length_dict, out, contig_dict, binned_short):
+            logger, n_sample, contig_length_dict, out, contig_dict, binned_short,num_process,minfasta):
     train_data = data.values
     if not is_combined:
         train_data_input = train_data[:, 0:136]
@@ -100,7 +100,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     output_bin_path = os.path.join(out, 'output_bins')
     os.makedirs(output_bin_path, exist_ok=True)
 
-    write_bins(namelist, contig_labels, output_bin_path, contig_dict)
+    write_bins(namelist, contig_labels, output_bin_path, contig_dict,minfasta=minfasta)
     if not is_combined:
         mean_index = [2 * temp for temp in range(n_sample)]
         depth_mean = depth[:, mean_index] / 100
@@ -126,13 +126,11 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
             seed_output = os.path.join(output_bin_path, bin) + '.seed'
             try:
                 cal_num_bins(
-                    os.path.join(
-                        output_bin_path,
-                        bin),
+                    os.path.join(output_bin_path,bin),
                     contig_output,
                     hmm_output,
                     seed_output,
-                    binned_short)
+                    binned_short,num_process)
             except BaseException:
                 pass
             contig_index = [mapObj[temp] for temp in contig_list]
@@ -158,7 +156,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                 kmeans.fit(re_bin_features, sample_weight=length_weight)
                 labels = kmeans.labels_
                 write_bins(contig_list, labels, os.path.join(out, 'output_recluster_bins'), contig_dict,
-                           recluster=True, origin_label=int(bin.split('.')[-2]))
+                           recluster=True, origin_label=int(bin.split('.')[-2]),minfasta = minfasta)
             else:
                 shutil.copy(os.path.join(
                     output_bin_path, bin), os.path.join(out, 'output_recluster_bins'))

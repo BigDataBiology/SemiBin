@@ -136,20 +136,21 @@ class unsupervised_feature_Dataset(Dataset):
 
 
 def train(out, contig_fasta, binned_short, logger, data, data_split, cannot_link, is_combined=True,
-          batchsize=2048, epoches=20, device=None):
+          batchsize=2048, epoches=20, device=None,num_process = 8):
     contig_output = os.path.join(out, os.path.split(contig_fasta)[1] + '.frag')
     hmm_output = os.path.join(out, os.path.split(contig_fasta)[1] + '.hmmout')
     seed_output = os.path.join(out, os.path.split(contig_fasta)[1] + '.seed')
+
 
     cal_num_bins(
         contig_fasta,
         contig_output,
         hmm_output,
         seed_output,
-        binned_short)
+        binned_short,
+        num_process)
 
-    seed = open(seed_output).read().split('\n')
-    seed = [contig for contig in seed if contig != '']
+
 
     logger.info('Generate training data:')
 
@@ -175,16 +176,19 @@ def train(out, contig_fasta, binned_short, logger, data, data_split, cannot_link
 
     # can not link from contig annotation
     for link in cannot_link:
-        train_input_1.append(train_data_input[mapObj[link[0]]])
-        train_input_2.append(train_data_input[mapObj[link[1]]])
+        train_input_1.append(train_data_input[mapObj[str(link[0])]])
+        train_input_2.append(train_data_input[mapObj[str(link[1])]])
         train_labels.append(0)
 
     # cannot link from bin seed
-    for i in range(len(seed)):
-        for j in range(i + 1, len(seed)):
-            train_input_1.append(train_data_input[mapObj[seed[i]]])
-            train_input_2.append(train_data_input[mapObj[seed[j]]])
-            train_labels.append(0)
+    if os.path.exists(seed_output):
+        seed = open(seed_output).read().split('\n')
+        seed = [contig for contig in seed if contig != '']
+        for i in range(len(seed)):
+            for j in range(i + 1, len(seed)):
+                train_input_1.append(train_data_input[mapObj[str(seed[i])]])
+                train_input_2.append(train_data_input[mapObj[str(seed[j])]])
+                train_labels.append(0)
 
     # must link from breaking up
     for i in range(0, len(train_data_must_link), 2):
@@ -262,4 +266,5 @@ def train(out, contig_fasta, binned_short, logger, data, data_split, cannot_link
 
     logger.info('Training finished.')
     torch.save(model, os.path.join(out, 'model.h5'))
+
     return model

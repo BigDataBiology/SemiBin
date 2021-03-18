@@ -52,7 +52,7 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
             if sep is None:
                 cov_threshold = contig_threshold
             else:
-                sample_name = contig_name.split(sep)[0]
+                sample_name = depth_contig.split(sep)[0]
                 cov_threshold = 1000 if sample_name in binned_thre_dict[1000] else 2500
 
             if len(depth_value) <= cov_threshold:
@@ -101,4 +101,3 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
         contig_cov['mean'] = contig_cov['mean'].astype('float')
         contig_cov['var'] = contig_cov['var'].astype('float')
         return contig_cov
-
