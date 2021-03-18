@@ -10,6 +10,7 @@
 * `*_data_cov.csv/*_data_split_cov.csv`: coverage data generated from depth file.
 * `.faa/.ffn/.gff/.out/.hmmout/.hmmout.out/`: intermediate files when estimating number of single-copy marker genes.
 * `.seed`: seed contig by estimating single-copy marker genes.
+* `cannot/cannot.txt`: cannot-link file used in the training.
 
 ## Multi-samples binning
 

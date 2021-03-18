@@ -1,10 +1,10 @@
 # Usage
 
-## Easy-bin mode
+## Easy single/co-assembly binning mode
 
-You can get the results with one line code. Easy-bin command can be used in
+You can get the results with one line of code. The `single_easy_bin` command can be used in
 single-sample and co-assembly binning modes (contig annotations using mmseqs
-with GTDB reference genome).
+with GTDB reference genome). `single_easy_bin` includes the following parts: `predict_taxonomy`,`generate_data_single` and `bin`.
 
 (1) Mapping reads to the contig fasta file. 
 
@@ -24,38 +24,68 @@ samtools sort -m 1000000000 contig.mapped.bam -o contig.mapped.sorted.bam -@ 64
 samtools index contig.mapped.sorted.bam
 ```
 
-(2) Run S<sup>3</sup>N<sup>2</sup>Bin with easy-bin mode.
+(2) Run S<sup>3</sup>N<sup>2</sup>Bin with single_easy_bin mode.
 
 ```bash
-S3N2Bin easy-bin -i contig.fna -b *.bam --GTDB-path /mmseqs_data/GTDB -o output
+S3N2Bin single_easy_bin -i contig.fna -b *.bam -r /mmseqs_data/GTDB -o output
 ```
 
-If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download GTDB  to your output folder.
+If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download GTDB  to $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB.
 
+## Easy multi-samples binning mode
 
-## Generate cannot-link constrains
+The `multi_easy_bin` command can be used in
+multi-samples binning modes (contig annotations using mmseqs
+with GTDB reference genome). `multi_easy_bin` includes following parts: `predict_taxonomy`, `generate_data_multi` and `bin`.
+
+(1) Concatenate all contigs from all samples together. Make sure that names of samples are unique and id for every contig is <sample_name>:<contig_id>. ':' is the separator that used to split the contig name to sample_name and contig_id. You can use any separator you want by set `--separator`(Default is  `:`). Just make sure that the separator will not introduce confusion when splitting. Concatenated contig format is:
+
+```bash
+<S1>:<Contig_1>
+ATGCAAAA
+<S1>:<Contig_2>
+ATGCAAAA
+<S1>:<Contig_3>
+ATGCAAAA
+<S2>:<Contig_1>
+ATGCAAAA
+<S2>:<Contig_2>
+ATGCAAAA
+<S3>:<Contig_1>
+ATGCAAAA
+<S3>:<Contig_2>
+ATGCAAAA
+<S3>:<Contig_3>
+ATGCAAAA
+```
+
+(2) Mapping reads to the contig_whole.fna . 
+
+(3) Run S<sup>3</sup>N<sup>2</sup>Bin with multi_easy_bin mode.
+
+```bash
+S3N2Bin multi_easy_bin -i contig_whole.fna -b *.bam -r /mmseqs_data/GTDB -o output -s :
+```
+
+## Advanced-bin mode
+
+Especially for multi-samples binning, running with `multi_easy_bin` takes much time when processing samples serially. You can split the step and manually run S³N²Bin parallel.
+
+### Generate cannot-link constrains
 
 S³N²Bin has builtin support for
 [mmseqs2](https://github.com/soedinglab/MMseqs2) (the default) and
-[CAT](https://github.com/dutilh/CAT) for generating contig taxonomic
-classifications. See below for format specifications if you want to use another
-tool
+[CAT](https://github.com/dutilh/CAT) for generating contig taxonomic classifications and generating cannot-link file. See below for format specifications if you want to use another tool.
 
-### Contig annotation with mmseqs (GTDB reference):
+#### Contig annotation with mmseqs (GTDB reference):
 
-```bash
-mmseqs createdb contig.fasta contig_DB
-mmseqs taxonomy contig_DB GTDB taxonomyResult tmp --tax-lineage 1
-mmseqs createtsv contig_DB taxonomyResult taxonomyResult.tsv
-```
-
-Generate cannot-link constrains
+Default GTDB path is $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB. If you do not set `--reference-db` and do not find GTDB in the default path. S³N²Bin will download GTDB to the default path.
 
 ```bash
-python script/concatenate.py -i taxonomyResult.tsv -c contig.fasta -s sample-name -o output --mmseqs
+S3N2Bin predict_taxonomy -i contig.fna -r /mmseqs_data/GTDB -o output
 ```
 
-### Contig annotation with CAT
+#### Contig annotation with CAT
 
 ```bash
 CAT contigs \
@@ -85,68 +115,24 @@ Generate cannot-link constrains
 python script/concatenate.py -i CAT.out -c contig.fasta -s sample-name -o output --CAT
 ```
 
+### Generating data for training and clustering(data.csv;data_split.csv)
 
-## Advanced-bin mode
-
-### Single sample/co-assembly binning
-
-(1) Mapping reads to the contig fasta file. 
-
-(2) Generate cannot-link files for the contig fasta file.
-
-(3) Run S<sup>3</sup>N<sup>2</sup>Bin.
+#### Single/co-assembly binning
 
 ```bash
-S3N2Bin advanced-bin -i contig.fna -b *.bam -c cannot-link.txt -o output 
+S3N2Bin generate_data_single -i contig.fna -b *.bam -o output
 ```
 
-
-#### Multi-samples binning (Must set -s parameter)
-
-(1) Concatenate all contigs from all samples together. Make sure that names of samples are unique and id for every contig is <sample_name><\separator><contig_id>. Concatenated contig format is:
+#### Multi-samples binning
 
 ```bash
-<S1>O<Contig_1>
-ATGCAAAA
-<S1>O<Contig_2>
-ATGCAAAA
-<S1>O<Contig_3>
-ATGCAAAA
-<S2>O<Contig_1>
-ATGCAAAA
-<S2>O<Contig_2>
-ATGCAAAA
-<S3>O<Contig_1>
-ATGCAAAA
-<S3>O<Contig_2>
-ATGCAAAA
-<S3>O<Contig_3>
-ATGCAAAA
+S3N2Bin generate_data_multi -i contig_whole.fna -b *.bam -o output -s :
 ```
 
-(2) Map reads to the concatenated contig file to get the bam files.
+### Binning(training and clustering)
 
-(3) Generate cannot-link files for every sample. The name of the cannot-link file is <sample_name>.txt. Make sure the sample name here is same to that in step(1).
-
-(4) Run S<sup>3</sup>N<sup>2</sup>Bin.
+If you run S<sup>3</sup>N<sup>2</sup>Bin on a GPU server, S<sup>3</sup>N<sup>2</sup>Bin will run on GPU automatically.
 
 ```bash
-S3N2Bin advanced-bin -i whole_contig.fna -b *.bam -c *.txt -s C -o output
+S3N2Bin bin -i contig.fna --data data.csv --data-split data_split.csv -c cannot.txt -o output
 ```
-
-#### --split-run command
-
-Running S<sup>3</sup>N<sup>2</sup>Bin for a large project in multi-samples binning mode will take a bit time when executed serially. You can set `--generate-data` and `--split-run` to manually run S<sup>3</sup>N<sup>2</sup>Bin parallel.
-
-Generate data for every sample for training and clustering.
-
-```bash
-S3N2Bin advanced-bin -i whole_contig.fna -b *.bam -s C -o output --generate-data
-```
-
-Running S<sup>3</sup>N<sup>2</sup>Bin for every sample(`output` must contain data.csv and data_split.csv).
-
-```bash
-S3N2Bin advanced-bin -i sample.fna -b sample.bam -c sample.txt -o output/samples/sample --split-run
-```
-
