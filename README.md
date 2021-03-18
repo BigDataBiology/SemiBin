@@ -27,39 +27,80 @@ python setup.py install
 
 ## Examples
 
-## Easy binning mode
+## Easy single/co-assembly binning mode
 
 You will need the following inputs:
 
 1. A contig file (`contig.fna` in the example below)
 2. BAM files from mapping
 
-
-You can get the results with one line of code. The `easy-bin` command can be used in
+You can get the results with one line of code. The `single_easy_bin` command can be used in
 single-sample and co-assembly binning modes (contig annotations using mmseqs
-with GTDB reference genome).
+with GTDB reference genome). `single_easy_bin` includes the following parts: `predict_taxonomy`,`generate_data_single` and `bin`.
 
 ```bash
-S3N2Bin easy-bin -i contig.fna -b *.bam --GTDB-path /mmseqs_data/GTDB -o output
+S3N2Bin single_easy_bin -i contig.fna -b *.bam -r /mmseqs_data/GTDB -o output
 ```
 
-If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download
-GTDB  to your output folder.
+If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download GTDB  to $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB.
 
-### Advanced-bin mode (Need to generate cannot-link file before running)
+## Easy multi-samples binning mode
+
+The `multi_easy_bin` command can be used in
+multi-samples binning modes (contig annotations using mmseqs
+with GTDB reference genome). `multi_easy_bin` includes following parts: `predict_taxonomy`, `generate_data_multi` and `bin`.
+
+You will need the following inputs.
+
+1. A combined contig file 
+
+2. BAM files from mapping
+
+  For every contig, format of the name is <sample_name>:<contig_name>, : is the separator. You can use any separator you want by set `--separator` . *Note:* Make sure the sample names are unique and  the separator does not introduce confusion when splitting. For example:
+
+```bash
+<S1>:<Contig_1>
+ATGCAAAA
+<S1>:<Contig_2>
+ATGCAAAA
+<S1>:<Contig_3>
+ATGCAAAA
+<S2>:<Contig_1>
+ATGCAAAA
+<S2>:<Contig_2>
+ATGCAAAA
+<S3>:<Contig_1>
+ATGCAAAA
+<S3>:<Contig_2>
+ATGCAAAA
+<S3>:<Contig_3>
+ATGCAAAA
+```
+
+You can get the results with one line of code. 
+
+```bash
+S3N2Bin multi_easy_bin -i contig_whole.fna -b *.bam -r /mmseqs_data/GTDB -o output -s :
+```
+
+## Advanced-bin mode
+
+You can run every step by yourself, which will make the binning process a bit faster especially in multi-samples binning mode.
 
 ## Generate Cannot-link contrains
 
 You can use [mmseqs2](https://github.com/soedinglab/MMseqs2) or
 [CAT](https://github.com/dutilh/CAT) (or other contig annotation tools) to get
-taxonomic classifications of contigs. Then you can use the script
+taxonomic classifications of contigs. 
+
+If you want to use mmseqs(default in S<sup>3</sup>N<sup>2</sup>Bin), you can use subcommand `predict_taxonomy` to generate the cannot-link file. If you want to use CAT, you can run CAT first and  use the script
 `script/concatenate.py` to generate the cannot-link file(contig1, contig2) that
 can be used in S<sup>3</sup>N<sup>2</sup>Bin.
 
 #### mmseqs2
 
 ```bash
-python script/concatenate.py -i taxonomy.tsv -c contig.fna -s sample-name -o output --mmseqs
+S3N2Bin predict_taxonomy -i contig.fna -r /mmseqs_data/GTDB -o output
 ```
 
 #### CAT
@@ -68,49 +109,29 @@ python script/concatenate.py -i taxonomy.tsv -c contig.fna -s sample-name -o out
 python script/concatenate.py -i CAT.out -c contig.fna -s sample-name -o output --CAT
 ```
 
+## Generating data for training and clustering(data.csv;data_split.csv)
 
-#### Single sample/co-assembly binning
-
-```bash
-S3N2Bin advanced-bin -i contig.fna -b *.bam -c cannot-link.txt -o output 
-```
-
-#### Multiple samples binning (Must set `-s` parameter)
+### Single/co-assembly binning
 
 ```bash
-S3N2Bin advanced-bin -i whole_contig.fna -b *.bam -c *.txt -s C -o output
+S3N2Bin generate_data_single -i contig.fna -b *.bam -o output
 ```
 
-#### Multi-samples binning pipeline
-
-(1) Concatenate all contigs from all samples together. Make sure that names of samples are unique and id for every contig is <sample_name><\separator><contig_id>. Concatenated contig format is:
+### Multi-samples binning
 
 ```bash
-<S1>O<Contig_1>
-ATGCAAAA
-<S1>O<Contig_2>
-ATGCAAAA
-<S1>O<Contig_3>
-ATGCAAAA
-<S2>O<Contig_1>
-ATGCAAAA
-<S2>O<Contig_2>
-ATGCAAAA
-<S3>O<Contig_1>
-ATGCAAAA
-<S3>O<Contig_2>
-ATGCAAAA
-<S3>O<Contig_3>
-ATGCAAAA
+S3N2Bin generate_data_multi -i contig_whole.fna -b *.bam -o output -s :
 ```
 
-(2) Map reads to the concatenated contig file to get the bam files.
+## Binning(training and clustering)
 
-(3) Generate cannot-link files for every sample. The name of the cannot-link file should be <sample_name>.txt. Make sure the sample name here is same to that in step 1.
+If you run S<sup>3</sup>N<sup>2</sup>Bin on a GPU server, S<sup>3</sup>N<sup>2</sup>Bin will run on GPU automatically.
 
-(4) Run S<sup>3</sup>N<sup>2</sup>Bin.
+```bash
+S3N2Bin bin -i contig.fna --data data.csv --data-split data_split.csv -c cannot.txt -o output
+```
 
-For more details(i.e. --split-run, which is reconmended for projects with large samples), [read the docs](https://s3n2bin.readthedocs.io/en/latest/usage/). 
+For more details of the usage, please  [read the docs](https://s3n2bin.readthedocs.io/en/latest/usage/). 
 
 ## Output
 
@@ -124,7 +145,7 @@ The output folder will contain
 
 4. Some intermediate files.
 
-When single sample/co-assembly binning, reconstructed bins are in `output_recluster_bins` directory. When multi-samples binning, reconstructed bins from all samples are in `bins` directory. 
+For every sample, reconstructed bins are in `output_recluster_bins` directory.
 
-For more details, [read the docs](https://s3n2bin.readthedocs.io/en/latest/output/). 
+For more details about the output, [read the docs](https://s3n2bin.readthedocs.io/en/latest/output/). 
 
