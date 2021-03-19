@@ -647,7 +647,7 @@ def generate_data_multi(bams, num_process,separator,
         binned_short = contig_bp_2500 / whole_contig_bp < 0.05
         binning_threshold[1000].append(sample) if binned_short \
             else binning_threshold[2500].append(sample)
-    print(binning_threshold)
+
     for bam_index in range(n_sample):
         pool.apply_async(generate_cov_multiple,
                          args=(
@@ -663,7 +663,6 @@ def generate_data_multi(bams, num_process,separator,
                          callback=_checkback)
     pool.close()
     pool.join()
-
     # Generate cov features for every sample
     data_cov = pd.read_csv(os.path.join(output, 'samples', '{}_data_cov.csv'.format(
         os.path.split(bam_list[0])[-1] + '_{}'.format(0))), index_col=0)
@@ -727,7 +726,6 @@ def generate_data_multi(bams, num_process,separator,
         sample_contig_fasta = os.path.join(
             output, 'samples/{}.fasta'.format(sample))
         binned_short = True if sample in binning_threshold[1000] else False
-        print(binned_short)
         kmer_whole = generate_kmer_features_from_fasta(
             sample_contig_fasta, 1000 if binned_short else 2500, 4)
         kmer_split = generate_kmer_features_from_fasta(

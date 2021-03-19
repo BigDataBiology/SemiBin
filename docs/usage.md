@@ -41,21 +41,21 @@ with GTDB reference genome). `multi_easy_bin` includes following parts: `predict
 (1) Concatenate all contigs from all samples together. Make sure that names of samples are unique and id for every contig is <sample_name>:<contig_id>. ':' is the separator that used to split the contig name to sample_name and contig_id. You can use any separator you want by set `--separator`(Default is  `:`). Just make sure that the separator will not introduce confusion when splitting. Concatenated contig format is:
 
 ```bash
-<S1>:<Contig_1>
+[S1]:[Contig_1]
 ATGCAAAA
-<S1>:<Contig_2>
+[S1]:[Contig_2]
 ATGCAAAA
-<S1>:<Contig_3>
+[S1]:[Contig_3]
 ATGCAAAA
-<S2>:<Contig_1>
+[S2]:[Contig_1]
 ATGCAAAA
-<S2>:<Contig_2>
+[S2]:[Contig_2]
 ATGCAAAA
-<S3>:<Contig_1>
+[S3]:[Contig_1]
 ATGCAAAA
-<S3>:<Contig_2>
+[S3]:[Contig_2]
 ATGCAAAA
-<S3>:<Contig_3>
+[S3]:[Contig_3]
 ATGCAAAA
 ```
 

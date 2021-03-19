@@ -10,7 +10,7 @@ except:
     long_description = open('README.md').read()
 
 
-setup(name='semi_metabin',
+setup(name='S3N2Bin',
       version=__version__,
       description='Metagenomic binning with semi-supervised siamese neural network',
       long_description = long_description,
@@ -36,7 +36,8 @@ setup(name='semi_metabin',
           'tqdm',
           'pyyaml',
           'atomicwrites',
-          'torch'
+          'torch',
+          'python-igraph'
       ],
       package_data={
           's3n2bin': ['*.hmm','*.pl']},

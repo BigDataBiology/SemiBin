@@ -24,7 +24,15 @@ jobs:
         pip install .
         pip install pytest
         pip install atomicwrites
+        pip install Biopython
+        pip install python-igraph
+        pip install torch
+        conda install -c bioconda bedtools hmmer fraggenescan
     - name: Test with pytest
       run: |
         python -m pytest ./test/test_cov.py
         python -m pytest ./test/test_kmer.py
+        python -m pytest ./test/test_generate_data_single.py
+        python -m pytest ./test/test_generate_data_multi.py
+        python -m pytest ./test/test_generate_data_coassembly.py
+        python -m pytest ./test/test_bin.py
