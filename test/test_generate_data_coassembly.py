@@ -12,11 +12,15 @@ def test_generate_data_coassembly():
     logger.addHandler(sh)
 
     os.makedirs('output_coassembly',exist_ok=True)
-    generate_data_single(bams=['coassembly_sample_data/input.sorted1.bam','coassembly_sample_data/input.sorted2.bam','coassembly_sample_data/input.sorted3.bam','coassembly_sample_data/input.sorted4.bam','coassembly_sample_data/input.sorted5.bam'],
+    generate_data_single(bams=['test/coassembly_sample_data/input.sorted1.bam',
+                               'test/coassembly_sample_data/input.sorted2.bam',
+                               'test/coassembly_sample_data/input.sorted3.bam',
+                               'test/coassembly_sample_data/input.sorted4.bam',
+                               'test/coassembly_sample_data/input.sorted5.bam'],
                          num_process=1,
                          logger=logger,
                          output='output_coassembly',
-                         handle='coassembly_sample_data/input.fasta',
+                         handle='test/coassembly_sample_data/input.fasta',
                          binned_short=False,
                          must_link_threshold=4000
                          )

@@ -12,21 +12,21 @@ def test_generate_data_multi():
     logger.addHandler(sh)
 
     os.makedirs('output_multi',exist_ok=True)
-    generate_data_multi(bams=['multi_samples_data/input_multi_sorted1.bam',
-                              'multi_samples_data/input_multi_sorted2.bam',
-                              'multi_samples_data/input_multi_sorted3.bam',
-                              'multi_samples_data/input_multi_sorted4.bam',
-                              'multi_samples_data/input_multi_sorted5.bam',
-                              'multi_samples_data/input_multi_sorted6.bam',
-                              'multi_samples_data/input_multi_sorted7.bam',
-                              'multi_samples_data/input_multi_sorted8.bam',
-                              'multi_samples_data/input_multi_sorted9.bam',
-                              'multi_samples_data/input_multi_sorted10.bam'],
+    generate_data_multi(bams=['test/multi_samples_data/input_multi_sorted1.bam',
+                              'test/multi_samples_data/input_multi_sorted2.bam',
+                              'test/multi_samples_data/input_multi_sorted3.bam',
+                              'test/multi_samples_data/input_multi_sorted4.bam',
+                              'test/multi_samples_data/input_multi_sorted5.bam',
+                              'test/multi_samples_data/input_multi_sorted6.bam',
+                              'test/multi_samples_data/input_multi_sorted7.bam',
+                              'test/multi_samples_data/input_multi_sorted8.bam',
+                              'test/multi_samples_data/input_multi_sorted9.bam',
+                              'test/multi_samples_data/input_multi_sorted10.bam'],
                          num_process=1,
                          separator=':',
                          logger=logger,
                          output='output_multi',
-                         handle='multi_samples_data/input_multi.fasta',
+                         handle='test/multi_samples_data/input_multi.fasta',
                          )
 
     for i in range(10):

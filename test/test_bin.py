@@ -14,19 +14,19 @@ def test_bin():
 
     contig_length_dict = {}
     contig_dict = {}
-    handle = 'bin_data/input.fasta'
+    handle = 'test/bin_data/input.fasta'
     for seq_record in SeqIO.parse(handle, "fasta"):
         contig_length_dict[str(seq_record.id).strip(
             '')] = len((seq_record.seq))
         contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
 
     os.makedirs('output_bin',exist_ok=True)
-    binning(contig_fasta='bin_data/input.fasta',
-            bams=['bin_data/input.sorted.bam'],
+    binning(contig_fasta='test/bin_data/input.fasta',
+            bams=['test/bin_data/input.sorted.bam'],
             num_process=1,
-            data='bin_data/data.csv',
-            data_split='bin_data/data_split.csv',
-            cannot_link='bin_data/cannot.txt',
+            data='test/bin_data/data.csv',
+            data_split='test/bin_data/data_split.csv',
+            cannot_link='test/bin_data/cannot.txt',
             batchsize=2048,
             epoches=1,
             max_edges=20,
