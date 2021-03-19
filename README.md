@@ -63,21 +63,21 @@ You will need the following inputs.
   For every contig, format of the name is <sample_name>:<contig_name>, : is the separator. You can use any separator you want by set `--separator` . *Note:* Make sure the sample names are unique and  the separator does not introduce confusion when splitting. For example:
 
 ```bash
-<S1>:<Contig_1>
+[S1]:[Contig_1]
 ATGCAAAA
-<S1>:<Contig_2>
+[S1]:[Contig_2]
 ATGCAAAA
-<S1>:<Contig_3>
+[S1]:[Contig_3]
 ATGCAAAA
-<S2>:<Contig_1>
+[S2]:[Contig_1]
 ATGCAAAA
-<S2>:<Contig_2>
+[S2]:[Contig_2]
 ATGCAAAA
-<S3>:<Contig_1>
+[S3]:[Contig_1]
 ATGCAAAA
-<S3>:<Contig_2>
+[S3]:[Contig_2]
 ATGCAAAA
-<S3>:<Contig_3>
+[S3]:[Contig_3]
 ATGCAAAA
 ```
 
