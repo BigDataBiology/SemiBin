@@ -26,16 +26,47 @@ def parse_args(args):
                                        dest='cmd',
                                        metavar='')
 
+    single_easy_bin = subparsers.add_parser('single_easy_bin',
+                                            help='Get the bins with single or co-assembly binning using one line command.')
 
-    single_easy_bin = subparsers.add_parser(
-        'single_easy_bin',
-        help='Get the bins with single or co-assembly binning using one line command.')
-    single_easy_bin.add_argument('-i', '--input-fasta',
+    multi_easy_bin = subparsers.add_parser('multi_easy_bin',
+                                            help='Get the bins with multi-samples binning using one line command.')
+
+    predict_taxonomy = subparsers.add_parser('predict_taxonomy',
+                                             help='Run the contig annotation using mmseqs '
+                                                  'with GTDB reference genome and generate'
+                                                  'cannot-link file used in the semi-supervsied deep learning model training.'
+                                                  '(Will download the GTDB database if not input path of GTDB )')
+
+    generate_data_single = subparsers.add_parser('generate_data_single',
+                                                 help='Generate training data(data.csv,data_split.csv) '
+                                                      'for single and co-assembly binning '
+                                                      'for the semi-supervised deep learning model training.')
+
+    generate_data_multi = subparsers.add_parser('generate_data_multi', help='Generate training data(data.csv,data_split.csv) '
+                                          'for multi-samples binning '
+                                          'for the semi-supervised deep learning model training.')
+
+    binning = subparsers.add_parser('bin',
+                                    help='Training the model and clustering contigs to bins.')
+
+    for p in [single_easy_bin, multi_easy_bin, predict_taxonomy, generate_data_single, generate_data_multi,binning]:
+        p.add_argument('-i', '--input-fasta',
+                                required=True,
+                                help='Path to the input fasta file.',
+                                dest='contig_fasta',
+                                default=None,)
+
+    for p in [single_easy_bin, multi_easy_bin, predict_taxonomy, generate_data_single, generate_data_multi, binning]:
+        p.add_argument('-o', '--output',
                             required=True,
-                            help='Path to the input fasta file.',
-                            dest='contig_fasta',
-                            default=None,)
-    single_easy_bin.add_argument('-b', '--input-bam',
+                            help='Output directory (will be created if non-existent)',
+                            dest='output',
+                            default=None,
+                            )
+
+    for p in [single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi, binning]:
+        p.add_argument('-b', '--input-bam',
                             required=True,
                             nargs='*',
                             help='Path to the input bam file. '
@@ -43,20 +74,18 @@ def parse_args(args):
                             dest='bams',
                             default=None,
                             )
-    single_easy_bin.add_argument('-o', '--output',
-                            required=True,
-                            help='Output directory (will be created if non-existent)',
-                            dest='output',
-                            default=None,
-                            )
-    single_easy_bin.add_argument('--cannot-name',
-                            required=False,
-                            help='Name for the cannot-link file.',
-                            dest='cannot_name',
-                            default='cannot',
-                            metavar=''
-                            )
-    single_easy_bin.add_argument('-r', '--reference-db',
+
+        p.add_argument('-p', '--processes', '-t', '--threads',
+                                     required=False,
+                                     type=int,
+                                     help='Number of CPUs used(0: use whole)',
+                                     dest='num_process',
+                                     default=0,
+                                     metavar=''
+                                     )
+
+    for p in [single_easy_bin, multi_easy_bin, predict_taxonomy]:
+        p.add_argument('-r', '--reference-db',
                             required=False,
                             help='GTDB reference file.(Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB).'
                             'If not set --reference-db and can not find GTDB in $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB, '
@@ -64,93 +93,54 @@ def parse_args(args):
                             dest='GTDB_reference',
                             metavar='',
                             default=None)
-    single_easy_bin.add_argument('-p', '--processes', '-t', '--threads',
-                           required=False,
-                           type=int,
-                           help='Number of CPUs used(0: use whole)',
-                           dest='num_process',
-                           default=0,
-                           metavar=''
+    for p in [single_easy_bin, predict_taxonomy]:
+        p.add_argument('--cannot-name',
+                            required=False,
+                            help='Name for the cannot-link file.',
+                            dest='cannot_name',
+                            default='cannot',
+                            metavar=''
                             )
-    single_easy_bin.add_argument('--minfasta',
+
+    for p in [single_easy_bin, multi_easy_bin, binning]:
+        p.add_argument('--minfasta',
                             required=False,
                             type=int,
                             help='minimum bin size(Default: 200000).',
                             dest='minfasta',
                             default=200000,
                             metavar='')
-    single_easy_bin.add_argument('--epoches',
+
+        p.add_argument('--epoches',
                           required=False,
                           type=int,
                           help='Number of epoches used in the training process(Default: 20).',
                           dest='epoches',
                           default=20)
-    single_easy_bin.add_argument('--batch-size',
+
+        p.add_argument('--batch-size',
                           required=False,
                           type=int,
                           help='Batch size used in the training process(Default: 2048).',
                           dest='batchsize',
                           default=2048,)
-    single_easy_bin.add_argument('--max-edges',
+
+        p.add_argument('--max-edges',
                           required=False,
                           type=int,
                           help='The maximum number of edges that can be connected to one contig(Default: 200).',
                           dest='max_edges',
                           default=200)
-    single_easy_bin.add_argument('--max-node',
+
+        p.add_argument('--max-node',
                           required=False,
                           type=float,
                           dest='max_node',
                           default=1,
                           help='Percentage of contigs that considered to be binned(Default: 1).')
 
-    multi_easy_bin = subparsers.add_parser(
-        'multi_easy_bin',
-        help='Get the bins with multi-samples binning using one line command.')
-    multi_easy_bin.add_argument('-i', '--input-fasta',
-                           required=True,
-                           help='Path to the input fasta file.',
-                           dest='contig_fasta',
-                           default=None,
-                           )
-    multi_easy_bin.add_argument('-b', '--input-bam',
-                           required=True,
-                           nargs='*',
-                           help='Path to the input bam file. '
-                                 'If using multiple sample binning, you can input multiple files.',
-                           dest='bams',
-                           default=None,
-                           )
-    multi_easy_bin.add_argument('-o', '--output',
-                           required=True,
-                           help='Output directory (will be created if non-existent)',
-                           dest='output',
-                           default=None,
-                           )
-    multi_easy_bin.add_argument('-r', '--reference-db',
-                           required=False,
-                           help='GTDB reference file.(Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB).'
-                           'If not set --reference-db and can not find GTDB in $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB, '
-                           'we will download GTDB to the default path.',
-                           dest='GTDB_reference',
-                           metavar='',
-                           default=None)
-    multi_easy_bin.add_argument('-p', '--processes', '-t', '--threads',
-                           required=False,
-                           type=int,
-                           help='Number of CPUs used(0: use whole)',
-                           dest='num_process',
-                           default=0,
-                           metavar=''
-                           )
-    multi_easy_bin.add_argument('--minfasta',
-                           required=False,
-                           type=int,
-                           help='minimum bin size.',
-                           dest='minfasta',
-                           default=200000,
-                           metavar='')
-    multi_easy_bin.add_argument('-s', '--separator',
+    for p in [multi_easy_bin, generate_data_multi]:
+        p.add_argument('-s', '--separator',
                            required=False,
                            type=str,
                            help='Used when multiple samples binning to separate sample name and contig name(Default is :).',
@@ -158,155 +148,7 @@ def parse_args(args):
                            default=':',
                            metavar=''
                                )
-    multi_easy_bin.add_argument('--epoches',
-                          required=False,
-                          type=int,
-                          help='Number of epoches used in the training process(Default: 20).',
-                          dest='epoches',
-                          default=20)
-    multi_easy_bin.add_argument('--batch-size',
-                          required=False,
-                          type=int,
-                          help='Batch size used in the training process(Default: 2048).',
-                          dest='batchsize',
-                          default=2048,)
-    multi_easy_bin.add_argument('--max-edges',
-                          required=False,
-                          type=int,
-                          help='The maximum number of edges that can be connected to one contig(Default: 200).',
-                          dest='max_edges',
-                          default=200)
-    multi_easy_bin.add_argument('--max-node',
-                          required=False,
-                          type=float,
-                          dest='max_node',
-                          default=1,
-                          help='Percentage of contigs that considered to be binned(Default: 1).')
 
-    predict_taxonomy = subparsers.add_parser('predict_taxonomy', help='Run the contig annotation using mmseqs with GTDB reference genome and generate'
-                                             ' cannot-link file used in the semi-supervsied deep learning model training.'
-                                             '(Will download the GTDB database if not input path of GTDB )')
-    predict_taxonomy.add_argument('-i', '--input-fasta',
-                                  required=True,
-                                  help='Path to the input fasta file.',
-                                  dest='contig_fasta',
-                                  default=None,)
-    predict_taxonomy.add_argument('-o', '--output',
-                                  required=True,
-                                  help='Output directory (will be created if non-existent)',
-                                  dest='output',
-                                  default=None,
-                                  )
-    predict_taxonomy.add_argument('--cannot-name',
-                                  required=False,
-                                  help='Name for the cannot-link file(Default: cannot).',
-                                  dest='cannot_name',
-                                  default='cannot',
-                                  metavar='',
-                                  )
-    predict_taxonomy.add_argument('-r', '--reference-db',
-                                  required=False,
-                                  help='GTDB reference file.(Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB).'
-                                  'If not set --reference-db and can not find GTDB in $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB, '
-                                  'we will download GTDB to the default path.',
-                                  dest='GTDB_reference',
-                                  metavar='',
-                                  default=None)
-
-    generate_data_single = subparsers.add_parser('generate_data_single', help='Generate training data(data.csv,data_split.csv) '
-                                          'for single and co-assembly binning '
-                                          'for the semi-supervised deep learning model training.')
-    generate_data_single.add_argument('-i', '--input-fasta',
-                               required=True,
-                               help='Path to the input fasta file.',
-                               dest='contig_fasta',
-                               default=None,
-                               )
-    generate_data_single.add_argument('-b', '--input-bam',
-                               required=True,
-                               nargs='*',
-                               help='Path to the input bam file. '
-                                     'If using multiple sample binning, you can input multiple files.',
-                               dest='bams',
-                               default=None,
-                               )
-    generate_data_single.add_argument('-o', '--output',
-                               required=True,
-                               help='Output directory (will be created if non-existent)',
-                               dest='output',
-                               default=None,
-                               )
-    generate_data_single.add_argument('-p', '--processes', '-t', '--threads',
-                               required=False,
-                               type=int,
-                               help='Number of CPUs used(0: use whole)',
-                               dest='num_process',
-                               default=0,
-                               metavar=''
-                               )
-
-    generate_data_multi = subparsers.add_parser('generate_data_multi', help='Generate training data(data.csv,data_split.csv) '
-                                          'for multi-samples binning '
-                                          'for the semi-supervised deep learning model training.')
-    generate_data_multi.add_argument('-i', '--input-fasta',
-                               required=True,
-                               help='Path to the input fasta file.',
-                               dest='contig_fasta',
-                               default=None,
-                               )
-    generate_data_multi.add_argument('-b', '--input-bam',
-                               required=True,
-                               nargs='*',
-                               help='Path to the input bam file. '
-                                     'If using multiple sample binning, you can input multiple files.',
-                               dest='bams',
-                               default=None,
-                               )
-    generate_data_multi.add_argument('-o', '--output',
-                               required=True,
-                               help='Output directory (will be created if non-existent)',
-                               dest='output',
-                               default=None,
-                               )
-    generate_data_multi.add_argument('-s', '--separator',
-                               required=False,
-                               type=str,
-                               help='Used when multiple samples binning to separate sample name and contig name(Default is :).',
-                               dest='separator',
-                               default=':',
-                               metavar=''
-                               )
-    generate_data_multi.add_argument('-p', '--processes', '-t', '--threads',
-                               required=False,
-                               type=int,
-                               help='Number of CPUs used(0: use whole)',
-                               dest='num_process',
-                               default=0,
-                               metavar=''
-                               )
-
-    binning = subparsers.add_parser(
-        'bin', help='Training the model and clustering contigs to bins.')
-    binning.add_argument('-i', '--input-fasta',
-                         required=True,
-                         help='Path to the input fasta file.'
-                         'If multi-samples binning, input the fasta file of one sample.',
-                         dest='contig_fasta',
-                         default=None,
-                         )
-    binning.add_argument('-o', '--output',
-                         required=True,
-                         help='Output directory (will be created if non-existent)',
-                         dest='output',
-                         default=None,)
-    binning.add_argument('-b', '--input-bam',
-                           required=True,
-                           nargs='*',
-                           help='Path to the input bam file. '
-                                 'If using multiple sample binning, you can input multiple files.',
-                           dest='bams',
-                           default=None,
-                           )
     binning.add_argument('--data',
                          required=True,
                          help='Path to the input data.csv file.',
@@ -328,48 +170,8 @@ def parse_args(args):
                          dest='cannot_link',
                          default=None,
                          metavar='')
-    binning.add_argument('--minfasta',
-                         required=False,
-                         type=int,
-                         help='minimum bin size(Default: 200000).',
-                         dest='minfasta',
-                         default=200000,
-                          metavar='')
-    binning.add_argument('--epoches',
-                          required=False,
-                          type=int,
-                          help='Number of epoches used in the training process(Default: 20).',
-                          dest='epoches',
-                          default=20)
 
-    binning.add_argument('--batch-size',
-                          required=False,
-                          type=int,
-                          help='Batch size used in the training process(Default: 2048).',
-                          dest='batchsize',
-                          default=2048,)
 
-    binning.add_argument('--max-edges',
-                          required=False,
-                          type=int,
-                          help='The maximum number of edges that can be connected to one contig(Default: 200).',
-                          dest='max_edges',
-                          default=200)
-
-    binning.add_argument('--max-node',
-                          required=False,
-                          type=float,
-                          dest='max_node',
-                          default=1,
-                          help='Percentage of contigs that considered to be binned(Default: 1).')
-    binning.add_argument('-p', '--processes', '-t', '--threads',
-                           required=False,
-                           type=int,
-                           help='Number of CPUs used(0: use whole)',
-                           dest='num_process',
-                           default=0,
-                           metavar=''
-                               )
 
     if not args:
         parser.print_help(sys.stderr)

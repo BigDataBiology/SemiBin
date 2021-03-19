@@ -83,6 +83,7 @@ Generate training data(data.csv;data_split.csv) for multi-samples binning.
 Training the model and clustering contigs into bins.
 
 * `-i/--input-fasta` : Path to the input contig fasta file (gzip and bzip2 compression are accepted).
+* `-b/--input-bam`: Path to the input bam files. If there are several samples, you can input several bam files.
 * `-o/--output`: Output directory (will be created if non-existent).
 * `--data`: Path to the input data.csv file.
 * `--data_split`: Path to the input data_split.csv file.
