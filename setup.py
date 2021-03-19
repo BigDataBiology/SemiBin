@@ -1,14 +1,9 @@
-from os import path
-from setuptools import setup,find_packages
+from setuptools import setup
 
 exec(compile(open('s3n2bin/s3n2bin_version.py').read(),
              's3n2bin/s3n2bin_version.py', 'exec'))
 
-try:
-    long_description = open('README.md', encoding='utf-8').read()
-except:
-    long_description = open('README.md').read()
-
+long_description = open('README.md', encoding='utf-8').read()
 
 setup(name='S3N2Bin',
       version=__version__,
@@ -16,7 +11,7 @@ setup(name='S3N2Bin',
       long_description = long_description,
       long_description_content_type = 'text/markdown',
       classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
@@ -25,7 +20,7 @@ setup(name='S3N2Bin',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
       ],
-      url='https://github.com/psj1997/Semi-supervised-siamese-neural-network-for-metagenomic-binning',
+      url='https://github.com/BigDataBiology/S3N2Bin',
       author='Shaojun Pan',
       author_email='shaojun1997777@gmail.com',
       license='MIT',
