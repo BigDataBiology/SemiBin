@@ -27,6 +27,7 @@ jobs:
         pip install Biopython
         pip install python-igraph
         pip install torch
+        pip install scikit-learn
         conda install -c bioconda bedtools hmmer fraggenescan
     - name: Test with pytest
       run: |
