@@ -63,7 +63,7 @@ def parse_args(args):
                          default=None,
                          )
     binning.add_argument('-c', '--cannot-link',
-                         required=False,
+                         required=True,
                          nargs='*',
                          help='Path to the input cannot link file generated from other additional biological information,'
                          'one row for each cannot link constraint.'
