@@ -50,6 +50,28 @@ def parse_args(args):
     binning = subparsers.add_parser('bin',
                                     help='Training the model and clustering contigs to bins.')
 
+    binning.add_argument('--data',
+                         required=True,
+                         help='Path to the input data.csv file.',
+                         dest='data',
+                         default=None,
+                         )
+    binning.add_argument('--data-split',
+                         required=True,
+                         help='Path to the input data_split.csv file.',
+                         dest='data_split',
+                         default=None,
+                         )
+    binning.add_argument('-c', '--cannot-link',
+                         required=False,
+                         nargs='*',
+                         help='Path to the input cannot link file generated from other additional biological information,'
+                         'one row for each cannot link constraint.'
+                         'The file format: contig_1,contig_2.',
+                         dest='cannot_link',
+                         default=None,
+                         metavar='')
+
     for p in [single_easy_bin, multi_easy_bin, predict_taxonomy, generate_data_single, generate_data_multi,binning]:
         p.add_argument('-i', '--input-fasta',
                                 required=True,
@@ -148,29 +170,6 @@ def parse_args(args):
                            default=':',
                            metavar=''
                                )
-
-    binning.add_argument('--data',
-                         required=True,
-                         help='Path to the input data.csv file.',
-                         dest='data',
-                         default=None,
-                         )
-    binning.add_argument('--data-split',
-                         required=True,
-                         help='Path to the input data_split.csv file.',
-                         dest='data_split',
-                         default=None,
-                         )
-    binning.add_argument('-c', '--cannot-link',
-                         required=False,
-                         nargs='*',
-                         help='Path to the input cannot link file generated from other additional biological information,'
-                         'one row for each cannot link constraint.'
-                         'The file format: contig_1,contig_2.',
-                         dest='cannot_link',
-                         default=None,
-                         metavar='')
-
 
 
     if not args:
