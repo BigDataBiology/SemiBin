@@ -12,11 +12,11 @@ def test_generate_data_single():
     logger.addHandler(sh)
 
     os.makedirs('output_single',exist_ok=True)
-    generate_data_single(bams=['single_sample_data/input.sorted.bam'],
+    generate_data_single(bams=['test/single_sample_data/input.sorted.bam'],
                          num_process=1,
                          logger=logger,
                          output='output_single',
-                         handle='single_sample_data/input.fasta',
+                         handle='test/single_sample_data/input.fasta',
                          binned_short=False,
                          must_link_threshold=4000
                          )
