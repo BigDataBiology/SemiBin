@@ -1,9 +1,10 @@
 site_name: "S3N2Bin"
-repo_url: "https://github.com/psj1997/S3N2Bin"
+repo_url: "https://github.com/BigDataBiology/S3N2Bin"
 
 nav:
         - 'S3N2Bin': index.md
         - 'Install': install.md
         - 'Usage': usage.md
+        - 'Generating inputs to S³N²Bin': generate.md
         - 'Output' : output.md
 

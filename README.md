@@ -40,27 +40,34 @@ You will need the following inputs:
 
 You can get the results with one line of code. The `single_easy_bin` command can be used in
 single-sample and co-assembly binning modes (contig annotations using mmseqs
-with GTDB reference genome). `single_easy_bin` includes the following parts: `predict_taxonomy`,`generate_data_single` and `bin`.
+with GTDB reference genome). `single_easy_bin` includes the following steps:
+`predict_taxonomy`,`generate_data_single` and `bin`.
 
 ```bash
-S3N2Bin single_easy_bin -i contig.fna -b *.bam -r /mmseqs_data/GTDB -o output
+S3N2Bin single_easy_bin -i contig.fna -b *.bam -o output
 ```
 
-If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download GTDB  to $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB.
+In this example, S³N²Bin will download GTDB to
+`$HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB`. You can change this default using the
+`-r` argument.
 
 ## Easy multi-samples binning mode
 
 The `multi_easy_bin` command can be used in
 multi-samples binning modes (contig annotations using mmseqs
-with GTDB reference genome). `multi_easy_bin` includes following parts: `predict_taxonomy`, `generate_data_multi` and `bin`.
+with GTDB reference genome). `multi_easy_bin` includes following step:
+`predict_taxonomy`, `generate_data_multi` and `bin`.
 
 You will need the following inputs.
 
-1. A combined contig file 
+1. A combined contig file
 
 2. BAM files from mapping
 
-  For every contig, format of the name is <sample_name>:<contig_name>, : is the separator. You can use any separator you want by set `--separator` . *Note:* Make sure the sample names are unique and  the separator does not introduce confusion when splitting. For example:
+For every contig, format of the name is `<sample_name>:<contig_name>`, where
+`:` is the default separator (it can be changed with the `--separator`
+argument). *Note:* Make sure the sample names are unique and  the separator
+does not introduce confusion when splitting. For example:
 
 ```bash
 [S1]:[Contig_1]
@@ -81,61 +88,20 @@ ATGCAAAA
 ATGCAAAA
 ```
 
-You can get the results with one line of code. 
+You can get the results with one line of code.
 
 ```bash
-S3N2Bin multi_easy_bin -i contig_whole.fna -b *.bam -r /mmseqs_data/GTDB -o output -s :
+S3N2Bin multi_easy_bin -i contig_whole.fna -b *.bam -o output
 ```
 
 ## Advanced-bin mode
 
-You can run every step by yourself, which will make the binning process a bit faster especially in multi-samples binning mode.
+You can run individual steps by yourself, which can enable using compute
+clusters to make the binning process faster (especially in multi-samples
+binning mode).
 
-## Generate Cannot-link contrains
-
-You can use [mmseqs2](https://github.com/soedinglab/MMseqs2) or
-[CAT](https://github.com/dutilh/CAT) (or other contig annotation tools) to get
-taxonomic classifications of contigs. 
-
-If you want to use mmseqs(default in S<sup>3</sup>N<sup>2</sup>Bin), you can use subcommand `predict_taxonomy` to generate the cannot-link file. If you want to use CAT, you can run CAT first and  use the script
-`script/concatenate.py` to generate the cannot-link file(contig1, contig2) that
-can be used in S<sup>3</sup>N<sup>2</sup>Bin.
-
-#### mmseqs2
-
-```bash
-S3N2Bin predict_taxonomy -i contig.fna -r /mmseqs_data/GTDB -o output
-```
-
-#### CAT
-
-```bash
-python script/concatenate.py -i CAT.out -c contig.fna -s sample-name -o output --CAT
-```
-
-## Generating data for training and clustering(data.csv;data_split.csv)
-
-### Single/co-assembly binning
-
-```bash
-S3N2Bin generate_data_single -i contig.fna -b *.bam -o output
-```
-
-### Multi-samples binning
-
-```bash
-S3N2Bin generate_data_multi -i contig_whole.fna -b *.bam -o output -s :
-```
-
-## Binning(training and clustering)
-
-If you run S<sup>3</sup>N<sup>2</sup>Bin on a GPU server, S<sup>3</sup>N<sup>2</sup>Bin will run on GPU automatically.
-
-```bash
-S3N2Bin bin -i contig.fna --data data.csv --data-split data_split.csv -c cannot.txt -o output
-```
-
-For more details of the usage, please  [read the docs](https://s3n2bin.readthedocs.io/en/latest/usage/). 
+For more details on usage, including information on how to run individual steps
+separately, [read the docs](https://s3n2bin.readthedocs.io/en/latest/usage/).
 
 ## Output
 
@@ -151,5 +117,5 @@ The output folder will contain
 
 For every sample, reconstructed bins are in `output_recluster_bins` directory.
 
-For more details about the output, [read the docs](https://s3n2bin.readthedocs.io/en/latest/output/). 
+For more details about the output, [read the docs](https://s3n2bin.readthedocs.io/en/latest/output/).
 
