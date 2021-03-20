@@ -18,17 +18,17 @@ Multi-samples binning means multiple samples are assembled individually. Then th
 
 ## Commands
 
-#### Single_easy_bin
+#### `single_easy_bin`
 
 Reconstruct bins with single or co-assembly binning using one line command.
 
 * `-i/--input-fasta` : Path to the input contig fasta file (gzip and bzip2 compression are accepted).
-* `-b/--input-bam`: Path to the input bam files. If there are several samples, you can input several bam files.
+* `-b/--input-bam`: Path to the input BAM files.
 * `-o/--output`: Output directory (will be created if non-existent).
 * `--cannot-name:` Name for the cannot-link file(Default: cannot).
 * `-r/--reference-db`: GTDB reference file.(Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB) If not set `--reference-db` and can not find GTDB in the default path, we will download GTDB to the default path.
 * `-p/--processes/-t/--threads`: Number of CPUs used(0: use whole).
-* `--minfasta`: minimum bin size(Default: 200000).
+* `--minfasta-kbs`: minimum bin size in kilo-basepairs (Default: 200).
 * `--epoches`: Number of epoches used in the training process(Default: 20).
 * `--batch-size`: Batch size used in the training process(Default: 2048).
 * `--max-node`: Percentage of contigs that considered to be binned(Default: 1).
@@ -38,17 +38,16 @@ Reconstruct bins with single or co-assembly binning using one line command.
 
 Reconstruct bins with multi-samples binning using one line command.
 
-* `-i/--input-fasta` : Path to the input contig fasta file (gzip and bzip2 compression are accepted).
-* `-b/--input-bam`: Path to the input bam files. If there are several samples, you can input several bam files.
-* `-o/--output`: Output directory (will be created if non-existent).
-* `-r/--reference-db`: GTDB reference file.(Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB) If not set `--reference-db` and can not find GTDB in the default path, we will download GTDB to the default path.
-* `-p/--processes/-t/--threads`: Number of CPUs used(0: use whole).
-* `--minfasta`: minimum bin size(Default: 200000).
+
+* `-b/--input-bam`: Path to the input BAM files. Unlike in `single_easy_bin`, you can pass multiple BAM files, one per sample
 * `-s/--separator`: Used when multiple samples binning to separate sample name and contig name(Default is `:`).
-* `--epoches`: Number of epoches used in the training process(Default: 20).
-* `--batch-size`: Batch size used in the training process(Default: 2048).
-* `--max-node`: Percentage of contigs that considered to be binned(Default: 1).
-* `--max-edges`: The maximum number of edges that can be connected to one contig(Default: 200).
+
+The following options (including synonyms) are the same as for
+`single_easy_bin`: `--input-fasta`, `--output`, `--reference-db`,
+`--processes`, `--minfasta-kbs`, `--epoches`, `--batch-size`, `--max-node`, and
+`--max-edges`.
+
+
 
 #### predict_taxonomy
 
@@ -88,7 +87,7 @@ Training the model and clustering contigs into bins.
 * `--data`: Path to the input data.csv file.
 * `--data_split`: Path to the input data_split.csv file.
 * `-c/--cannot-link` : Path to the input cannot link file generated from other additional biological information, one row for each cannot link constraint. The file format: contig_1,contig_2.
-* `--minfasta`: minimum bin size(Default: 200000).
+* `--minfasta-kbs`: minimum bin size in kilo-basepairs (Default: 200).
 * `--epoches`: Number of epoches used in the training process(Default: 20).
 * `--batch-size`: Batch size used in the training process(Default: 2048).
 * `--max-node`: Percentage of contigs that considered to be binned(Default: 1).

@@ -91,7 +91,7 @@ def parse_args(args):
         p.add_argument('-b', '--input-bam',
                             required=True,
                             nargs='*',
-                            help='Path to the input bam file. '
+                            help='Path to the input BAM file. '
                                  'If using multiple sample binning, you can input multiple files.',
                             dest='bams',
                             default=None,
@@ -100,7 +100,7 @@ def parse_args(args):
         p.add_argument('-p', '--processes', '-t', '--threads',
                                      required=False,
                                      type=int,
-                                     help='Number of CPUs used(0: use whole)',
+                                     help='Number of CPUs used (pass the value 0 to use all CPUs)',
                                      dest='num_process',
                                      default=0,
                                      metavar=''
@@ -109,7 +109,7 @@ def parse_args(args):
     for p in [single_easy_bin, multi_easy_bin, predict_taxonomy]:
         p.add_argument('-r', '--reference-db',
                             required=False,
-                            help='GTDB reference file.(Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB).'
+                            help='GTDB reference file. (Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB).'
                             'If not set --reference-db and can not find GTDB in $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB, '
                             'we will download GTDB to the default path.',
                             dest='GTDB_reference',
@@ -125,32 +125,32 @@ def parse_args(args):
                             )
 
     for p in [single_easy_bin, multi_easy_bin, binning]:
-        p.add_argument('--minfasta',
+        p.add_argument('--minfasta-kbs',
                             required=False,
                             type=int,
-                            help='minimum bin size(Default: 200000).',
-                            dest='minfasta',
-                            default=200000,
+                            help='minimum bin size in Kbps (Default: 200).',
+                            dest='minfasta_kb',
+                            default=200,
                             metavar='')
 
         p.add_argument('--epoches',
                           required=False,
                           type=int,
-                          help='Number of epoches used in the training process(Default: 20).',
+                          help='Number of epoches used in the training process (Default: 20).',
                           dest='epoches',
                           default=20)
 
         p.add_argument('--batch-size',
                           required=False,
                           type=int,
-                          help='Batch size used in the training process(Default: 2048).',
+                          help='Batch size used in the training process (Default: 2048).',
                           dest='batchsize',
                           default=2048,)
 
         p.add_argument('--max-edges',
                           required=False,
                           type=int,
-                          help='The maximum number of edges that can be connected to one contig(Default: 200).',
+                          help='The maximum number of edges that can be connected to one contig (Default: 200).',
                           dest='max_edges',
                           default=200)
 
@@ -159,17 +159,16 @@ def parse_args(args):
                           type=float,
                           dest='max_node',
                           default=1,
-                          help='Percentage of contigs that considered to be binned(Default: 1).')
+                          help='Fraction of contigs that considered to be binned (should be between 0 and 1; default: 1).')
 
     for p in [multi_easy_bin, generate_data_multi]:
         p.add_argument('-s', '--separator',
                            required=False,
                            type=str,
-                           help='Used when multiple samples binning to separate sample name and contig name(Default is :).',
+                           help='Used when multiple samples binning to separate sample name and contig name (Default is :).',
                            dest='separator',
                            default=':',
-                           metavar=''
-                               )
+                           metavar='')
 
 
     if not args:
@@ -623,7 +622,7 @@ def single_easy_binning(args, logger, output, handle, binned_short,
     binning(args.contig_fasta, args.bams, args.num_process, data_path,
             data_split_path, os.path.join(
                 output, 'cannot', 'cannot.txt'), args.batchsize, args.epoches,
-            args.max_edges, args.max_node, args.minfasta, logger, output, binned_short, device, contig_length_dict, contig_dict)
+            args.max_edges, args.max_node, args.minfasta_kb * 1000, logger, output, binned_short, device, contig_length_dict, contig_dict)
 
 
 def multi_easy_binning(args, logger, output, handle, device):
@@ -674,7 +673,7 @@ def multi_easy_binning(args, logger, output, handle, device):
         logger.info('Training model and clustering for {}.'.format(sample))
         binning(sample_fasta, args.bams, args.num_process, sample_data,
                 sample_data_split, sample_cannot, args.batchsize, args.epoches,
-                args.max_edges, args.max_node, args.minfasta, logger, os.path.join(output, 'samples', sample), binned_short, device, contig_length_dict, contig_dict)
+                args.max_edges, args.max_node, args.minfasta_kb * 1000, logger, os.path.join(output, 'samples', sample), binned_short, device, contig_length_dict, contig_dict)
 
     os.makedirs(os.path.join(output, 'bins'), exist_ok=True)
     for sample in sample_list:
@@ -764,7 +763,7 @@ def main():
                 args.data_split, args.cannot_link[0],
                 args.batchsize, args.epoches,
                 args.max_edges, args.max_node,
-                args.minfasta, logger,
+                args.minfasta * 1000, logger,
                 out, binned_short, device,
                 contig_length_dict, contig_dict)
 
