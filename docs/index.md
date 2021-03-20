@@ -4,17 +4,33 @@ S<sup>3</sup>N<sup>2</sup>Bin is a command line tool for metagenomic binning wit
 
 ### Single sample binning
 
-Single sample binning means binning each sample into genomes after independently assembling. This mode allows for parallel binning of samples, but it do not use co-abundance information across samples.
+Single sample binning means that each sample is assembled and binned
+independently.
+
+This mode allows for parallel binning of samples and avoid cross-sample
+chimeras, but it does not use co-abundance information across samples.
 
 ### Co-assembly binning
 
-Co-assembly binning means samples are co-assembled first and binning later.  This mode can generate better contigs and use co-abundance information, but co-assembly will lead to intersample chimeric contigs and binning based on co-assembly can not retain sample specific variation.
+Co-assembly binning means samples are co-assembled first (as if the pool of
+samples were a single sample) and binned later.
 
-### Multi-samples binning
+This mode can generate better contigs (especially from species that are at a
+low abundance in any individual sample) and use co-abundance information, but
+co-assembly can lead to intersample chimeric contigs and binning based on
+co-assembly dows not retain sample specific variation. It is appropriate when
+the samples are very similar.
 
-Multi-samples binning means multiple samples are assembled individually. Then these contigs are concatenated together and mapping reads to the concatenated contig from each sample. Then binning for every sample with abundance information from all samples. This mode can use  co-abundance information and retain the sample-specific variation at the same time. But this mode requires more computation resource. It takes more time when mapping reads back to the concatenated  fasta file.
+### Multi-sample binning
 
+With multi-sample binning, multiple samples are assembled and binned
+individually, but _information from multiple samples is used together_.
+This mode can use co-abundance information and retain sample-specific
+variation at the same time. However, it has increased computational costs.
 
+This mode is implemented by concatenating the contigs assembled from the
+individual samples together and then mapping reads from each sample to this
+concatenated database.
 
 ## Commands
 

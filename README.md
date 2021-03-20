@@ -1,4 +1,4 @@
-# S<sup>3</sup>N<sup>2</sup>Bin (Semi-supervised Siamese Neural Network for metagenomic binning)
+# S³N²Bin (Semi-supervised Siamese Neural Network for metagenomic binning)
 
 [![Test Status](https://github.com/BigDataBiology/S3N2Bin/actions/workflows/s3n2bin_test.yml/badge.svg)](https://github.com/BigDataBiology/S3N2Bin/actions/workflows/s3n2bin_test.yml)
 [![Documentation Status](https://readthedocs.org/projects/s3n2bin/badge/?version=latest)](https://s3n2bin.readthedocs.io/en/latest/?badge=latest)
@@ -6,7 +6,10 @@
 
 _NOTE_: This tool is still in development. You are welcome to try it out and
 feedback is appreciated, but expect some bugs/rapid changes until it
-stabilizes.
+stabilizes. Please use [Github
+issues](https://github.com/BigDataBiology/S3N2Bin/issues) for bug reports and
+the [Discussions](https://github.com/BigDataBiology/S3N2Bin/discussions) for
+more open-ended discussions/questions.
 
 Command tool for metagenomic binning with semi-supervised deep learning using
 information from reference genomes.
@@ -73,22 +76,22 @@ argument). *Note:* Make sure the sample names are unique and  the separator
 does not introduce confusion when splitting. For example:
 
 ```bash
-[S1]:[Contig_1]
-ATGCAAAA
-[S1]:[Contig_2]
-ATGCAAAA
-[S1]:[Contig_3]
-ATGCAAAA
-[S2]:[Contig_1]
-ATGCAAAA
-[S2]:[Contig_2]
-ATGCAAAA
-[S3]:[Contig_1]
-ATGCAAAA
-[S3]:[Contig_2]
-ATGCAAAA
-[S3]:[Contig_3]
-ATGCAAAA
+>S1:Contig_1
+AGATAATAAAGATAATAATA
+>S1:Contig_2
+CGAATTTATCTCAAGAACAAGAAAA
+>S1:Contig_3
+AAAAAGAGAAAATTCAGAATTAGCCAATAAAATA
+>S2:Contig_1
+AATGATATAATACTTAATA
+>S2:Contig_2
+AAAATATTAAAGAAATAATGAAAGAAA
+>S3:Contig_1
+ATAAAGACGATAAAATAATAAAAGCCAAATCCGACAAAGAAAGAACGG
+>S3:Contig_2
+AATATTTTAGAGAAAGACATAAACAATAAGAAAAGTATT
+>S3:Contig_3
+CAAATACGAATGATTCTTTATTAGATTATCTTAATAAGAATATC
 ```
 
 You can get the results with one line of code.
