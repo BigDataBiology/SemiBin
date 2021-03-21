@@ -763,7 +763,7 @@ def main():
                 args.data_split, args.cannot_link[0],
                 args.batchsize, args.epoches,
                 args.max_edges, args.max_node,
-                args.minfasta * 1000, logger,
+                args.minfasta_kb * 1000, logger,
                 out, binned_short, device,
                 contig_length_dict, contig_dict)
 
