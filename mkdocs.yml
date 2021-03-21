@@ -7,4 +7,5 @@ nav:
         - 'Usage': usage.md
         - 'Generating inputs to S³N²Bin': generate.md
         - 'Output' : output.md
+        - "What's New": whatsnew.md
 
