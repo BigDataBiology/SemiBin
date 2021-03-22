@@ -47,9 +47,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     threshold = 0.95
 
     while (threshold >= 0):
-        temp_threshold = embedding_matrix.copy()
-        temp_threshold[temp_threshold <= threshold] = 0
-        num = len(list(set(np.where(temp_threshold > 0)[0])))
+        num = len(list(set(np.where(embedding_matrix > threshold)[0])))
         if round(num / len(embedding_matrix), 2) >= max_node:
             break
         else:
