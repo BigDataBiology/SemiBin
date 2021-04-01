@@ -45,6 +45,7 @@ Reconstruct bins with single or co-assembly binning using one line command.
 * `-r/--reference-db`: GTDB reference file.(Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB) If not set `--reference-db` and can not find GTDB in the default path, we will download GTDB to the default path.
 * `-p/--processes/-t/--threads`: Number of CPUs used(0: use whole).
 * `--minfasta-kbs`: minimum bin size in kilo-basepairs (Default: 200).
+* `--no-recluster` : Not recluster bins(which will make binning faster and very little decrease).
 * `--epoches`: Number of epoches used in the training process(Default: 20).
 * `--batch-size`: Batch size used in the training process(Default: 2048).
 * `--max-node`: Percentage of contigs that considered to be binned(Default: 1).
@@ -60,10 +61,8 @@ Reconstruct bins with multi-samples binning using one line command.
 
 The following options (including synonyms) are the same as for
 `single_easy_bin`: `--input-fasta`, `--output`, `--reference-db`,
-`--processes`, `--minfasta-kbs`, `--epoches`, `--batch-size`, `--max-node`, and
+`--processes`, `--minfasta-kbs`, `--no-recluster`,`--epoches`, `--batch-size`, `--max-node`, and
 `--max-edges`.
-
-
 
 #### predict_taxonomy
 
@@ -104,6 +103,7 @@ Training the model and clustering contigs into bins.
 * `--data_split`: Path to the input data_split.csv file.
 * `-c/--cannot-link` : Path to the input cannot link file generated from other additional biological information, one row for each cannot link constraint. The file format: contig_1,contig_2.
 * `--minfasta-kbs`: minimum bin size in kilo-basepairs (Default: 200).
+* `--no-recluster` : Not recluster bins(which will make binning faster and very little decrease).
 * `--epoches`: Number of epoches used in the training process(Default: 20).
 * `--batch-size`: Batch size used in the training process(Default: 2048).
 * `--max-node`: Percentage of contigs that considered to be binned(Default: 1).

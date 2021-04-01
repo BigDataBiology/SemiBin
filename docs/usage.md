@@ -13,7 +13,7 @@ reads to the contigs (see [Generating inputs to S³N²Bin](generate.html)).
 Run S<sup>3</sup>N<sup>2</sup>Bin in `single_easy_bin` mode.
 
 ```bash
-S3N2Bin single_easy_bin -i contig.fna -b *.bam -r /mmseqs_data/GTDB -o output
+S3N2Bin single_easy_bin -i contig.fna -b *.bam -r /mmseqs_data/GTDB -o output --no-recluster
 ```
 
 If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download GTDB  to $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB.
@@ -55,7 +55,7 @@ CAAATACGAATGATTCTTTATTAGATTATCTTAATAAGAATATC
 (3) Run S<sup>3</sup>N<sup>2</sup>Bin with `multi_easy_bin` mode.
 
 ```bash
-S3N2Bin multi_easy_bin -i contig_whole.fna -b *.bam -o output
+S3N2Bin multi_easy_bin -i contig_whole.fna -b *.bam -o output --no-recluster
 ```
 
 See above for the comment about the location where the GTDB database is stored.
@@ -135,7 +135,7 @@ S3N2Bin generate_data_multi -i contig_whole.fna -b *.bam -o output
 ### Binning (training and clustering)
 
 ```bash
-S3N2Bin bin -i contig.fna --data data.csv --data-split data_split.csv -c cannot.txt -o output
+S3N2Bin bin -i contig.fna --data data.csv --data-split data_split.csv -c cannot.txt -o output --no-recluster
 ```
 
 If a GPU is available, S<sup>3</sup>N<sup>2</sup>Bin will automatically take

@@ -50,7 +50,7 @@ with GTDB reference genome). `single_easy_bin` includes the following steps:
 `predict_taxonomy`,`generate_data_single` and `bin`.
 
 ```bash
-S3N2Bin single_easy_bin -i contig.fna -b *.bam -o output
+S3N2Bin single_easy_bin -i contig.fna -b *.bam -o output --no-recluster
 ```
 
 In this example, S³N²Bin will download GTDB to
@@ -97,7 +97,7 @@ CAAATACGAATGATTCTTTATTAGATTATCTTAATAAGAATATC
 You can get the results with one line of code.
 
 ```bash
-S3N2Bin multi_easy_bin -i contig_whole.fna -b *.bam -o output
+S3N2Bin multi_easy_bin -i contig_whole.fna -b *.bam -o output --no-recluster
 ```
 
 ## Advanced-bin mode

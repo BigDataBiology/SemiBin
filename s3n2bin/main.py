@@ -133,6 +133,12 @@ def parse_args(args):
                             default=200,
                             metavar='')
 
+        p.add_argument('--no-recluster',
+                            required=False,
+                            help='Not recluster bins.',
+                            dest='no_recluster',
+                            action ='store_true',)
+
         p.add_argument('--epoches',
                           required=False,
                           type=int,
@@ -559,7 +565,7 @@ def generate_data_multi(bams, num_process,separator,
 def binning(contig_fasta, bams, num_process, data,
             data_split, cannot_link, batchsize, epoches,
             max_edges, max_node, minfasta, logger, output,
-            binned_short, device, contig_length_dict, contig_dict):
+            binned_short, device, contig_length_dict, contig_dict,recluster):
     """
     Training and clustering the contigs to get the final bins.
     """
@@ -598,11 +604,11 @@ def binning(contig_fasta, bams, num_process, data,
         contig_dict,
         binned_short,
         num_cpu,
-        minfasta)
+        minfasta,recluster)
 
 
 def single_easy_binning(args, logger, output, handle, binned_short,
-                        must_link_threshold, device, contig_length_dict, contig_dict):
+                        must_link_threshold, device, contig_length_dict, contig_dict,recluster):
     logger.info('Running mmseqs and generate cannot-link file.')
     predict_taxonomy(
         args.contig_fasta,
@@ -622,10 +628,10 @@ def single_easy_binning(args, logger, output, handle, binned_short,
     binning(args.contig_fasta, args.bams, args.num_process, data_path,
             data_split_path, os.path.join(
                 output, 'cannot', 'cannot.txt'), args.batchsize, args.epoches,
-            args.max_edges, args.max_node, args.minfasta_kb * 1000, logger, output, binned_short, device, contig_length_dict, contig_dict)
+            args.max_edges, args.max_node, args.minfasta_kb * 1000, logger, output, binned_short, device, contig_length_dict, contig_dict,recluster)
 
 
-def multi_easy_binning(args, logger, output, handle, device):
+def multi_easy_binning(args, logger, output, handle, device,recluster):
     logger.info('Multi-samples binning.')
     logger.info('Generate training data.')
     sample_list = generate_data_multi(
@@ -673,18 +679,29 @@ def multi_easy_binning(args, logger, output, handle, device):
         logger.info('Training model and clustering for {}.'.format(sample))
         binning(sample_fasta, args.bams, args.num_process, sample_data,
                 sample_data_split, sample_cannot, args.batchsize, args.epoches,
-                args.max_edges, args.max_node, args.minfasta_kb * 1000, logger, os.path.join(output, 'samples', sample), binned_short, device, contig_length_dict, contig_dict)
+                args.max_edges, args.max_node, args.minfasta_kb * 1000, logger, os.path.join(output, 'samples', sample), binned_short, device, contig_length_dict, contig_dict,recluster)
 
     os.makedirs(os.path.join(output, 'bins'), exist_ok=True)
     for sample in sample_list:
-        bin_file = os.listdir(os.path.join(
-            output, 'samples', sample, 'output_recluster_bins'))
-        for bin in bin_file:
-            original_path = os.path.join(
-                output, 'samples', sample, 'output_recluster_bins', bin)
-            new_file = '{0}_{1}'.format(sample, bin)
-            new_path = os.path.join(output, 'bins', new_file)
-            shutil.copyfile(original_path, new_path)
+        if recluster:
+            bin_file = os.listdir(os.path.join(
+                output, 'samples', sample, 'output_recluster_bins'))
+            for bin in bin_file:
+                original_path = os.path.join(
+                    output, 'samples', sample, 'output_recluster_bins', bin)
+                new_file = '{0}_{1}'.format(sample, bin)
+                new_path = os.path.join(output, 'bins', new_file)
+                shutil.copyfile(original_path, new_path)
+        else:
+            bin_file = os.listdir(os.path.join(
+                output, 'samples', sample, 'output_bins'))
+            for bin in bin_file:
+                original_path = os.path.join(
+                    output, 'samples', sample, 'output_bins', bin)
+                new_file = '{0}_{1}'.format(sample, bin)
+                new_path = os.path.join(output, 'bins', new_file)
+                shutil.copyfile(original_path, new_path)
+
 
 
 def main():
@@ -704,6 +721,10 @@ def main():
 
     device = torch.device(
         "cuda" if torch.cuda.is_available() else "cpu")
+
+    recluster = True
+    if args.no_recluster:
+        recluster = False
 
     if os.path.splitext(args.contig_fasta)[1] == '.gz':
         handle = gzip.open(args.contig_fasta, "rt")
@@ -765,7 +786,7 @@ def main():
                 args.max_edges, args.max_node,
                 args.minfasta_kb * 1000, logger,
                 out, binned_short, device,
-                contig_length_dict, contig_dict)
+                contig_length_dict, contig_dict,recluster)
 
     if args.cmd == 'single_easy_bin':
         single_easy_binning(
@@ -777,7 +798,7 @@ def main():
             must_link_threshold,
             device,
             contig_length_dict,
-            contig_dict)
+            contig_dict,recluster)
 
     if args.cmd == 'multi_easy_bin':
         multi_easy_binning(
@@ -785,7 +806,7 @@ def main():
             logger,
             out,
             handle,
-            device)
+            device,recluster)
 
 
 if __name__ == '__main__':
