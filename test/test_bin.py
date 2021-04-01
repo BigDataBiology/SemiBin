@@ -37,7 +37,8 @@ def test_bin():
             binned_short=True,
             device='cpu',
             contig_length_dict=contig_length_dict,
-            contig_dict=contig_dict
+            contig_dict=contig_dict,
+            recluster=True
             )
 
     assert len(os.listdir('output_bin/output_bins')) > 0
