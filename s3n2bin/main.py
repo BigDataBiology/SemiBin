@@ -17,6 +17,7 @@ from .semi_supervised_model import train
 import torch
 from .cluster import cluster
 import shutil
+import math
 
 def parse_args(args):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -196,8 +197,11 @@ def generate_cov(bam_file, bam_index, out, threshold,
                                                               contig_threshold=contig_threshold)
         contig_cov = contig_cov.apply(lambda x: x + 1e-5)
         must_link_contig_cov = must_link_contig_cov.apply(lambda x: x + 1e-5)
-        contig_cov = contig_cov / 100
-        must_link_contig_cov = must_link_contig_cov / 100
+        abun_scale = math.ceil(contig_cov.mean() / 100) * 100
+        abun_split_scale = math.ceil(must_link_contig_cov.mean() / 100) * 100
+        contig_cov = contig_cov / abun_scale
+        must_link_contig_cov = must_link_contig_cov / abun_split_scale
+
         with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
             contig_cov.to_csv(ofile)
 
@@ -227,8 +231,7 @@ def generate_cov_multiple(bam_file, bam_index, out, threshold,
                                                               sep=sep, binned_thre_dict=binned_threshold_dict)
         contig_cov = contig_cov.apply(lambda x: x + 1e-5)
         must_link_contig_cov = must_link_contig_cov.apply(lambda x: x + 1e-5)
-        contig_cov = contig_cov / 100
-        must_link_contig_cov = must_link_contig_cov / 100
+
         with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
             contig_cov.to_csv(ofile)
 
@@ -516,6 +519,8 @@ def generate_data_multi(bams, num_process,separator,
         index_list = part_data.index.tolist()
         index_list = [temp.split(separator)[1] for temp in index_list]
         part_data.index = index_list
+        abun_scale = math.ceil(part_data.mean() / 100) * 100
+        part_data = part_data / abun_scale
         part_data.to_csv(os.path.join(output_path, 'data_cov.csv'))
         if is_combined:
             part_data = data_split_cov[data_split_cov['contig_name'].str.contains(
@@ -526,6 +531,8 @@ def generate_data_multi(bams, num_process,separator,
             index_list = [temp.split(separator)[1]
                           for temp in index_list]
             part_data.index = index_list
+            abun_scale = math.ceil(part_data.mean() / 100) * 100
+            part_data = part_data / abun_scale
             part_data.to_csv(os.path.join(
                 output_path, 'data_split_cov.csv'))
 

@@ -102,7 +102,9 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     if recluster:
         if not is_combined:
             mean_index = [2 * temp for temp in range(n_sample)]
-            depth_mean = depth[:, mean_index] / 100
+            depth_mean = depth[:, mean_index]
+            abun_scale = (depth_mean.mean() / 100).apply(np.ceil) * 100
+            depth_mean = depth_mean.div(abun_scale)
             scaling = np.mean(np.abs(embedding)) / np.mean(depth_mean)
             base = 10
             weight = 2 * base * math.ceil(scaling / base)
