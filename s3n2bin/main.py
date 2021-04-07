@@ -731,10 +731,6 @@ def main():
     device = torch.device(
         "cuda" if torch.cuda.is_available() else "cpu")
 
-    recluster = True
-    if args.no_recluster:
-        recluster = False
-
     if os.path.splitext(args.contig_fasta)[1] == '.gz':
         handle = gzip.open(args.contig_fasta, "rt")
     elif os.path.splitext(args.contig_fasta)[1] == '.bz2':
@@ -795,7 +791,8 @@ def main():
                 args.max_edges, args.max_node,
                 args.minfasta_kb * 1000, logger,
                 out, binned_short, device,
-                contig_length_dict, contig_dict,recluster)
+                contig_length_dict, contig_dict,
+                not args.no_recluster)
 
     if args.cmd == 'single_easy_bin':
         single_easy_binning(
@@ -807,7 +804,8 @@ def main():
             must_link_threshold,
             device,
             contig_length_dict,
-            contig_dict,recluster)
+            contig_dict,
+            not args.no_recluster)
 
     if args.cmd == 'multi_easy_bin':
         multi_easy_binning(
@@ -815,7 +813,8 @@ def main():
             logger,
             out,
             handle,
-            device,recluster)
+            device,
+            not args.no_recluster)
 
 
 if __name__ == '__main__':
