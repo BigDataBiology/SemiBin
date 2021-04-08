@@ -28,31 +28,32 @@ def parse_args(args):
                                        metavar='')
 
     single_easy_bin = subparsers.add_parser('single_easy_bin',
-                                            help='Get the bins with single or co-assembly binning using one line command.')
+                                            help='Bin contigs (single or co-assembly) using one command.')
 
     multi_easy_bin = subparsers.add_parser('multi_easy_bin',
-                                            help='Get the bins with multi-samples binning using one line command.')
+                                            help='Bin contigs (multi-sample mode) using one command.')
 
     predict_taxonomy = subparsers.add_parser('predict_taxonomy',
                                              help='Run the contig annotation using mmseqs '
-                                                  'with GTDB reference genome and generate'
-                                                  'cannot-link file used in the semi-supervsied deep learning model training.'
-                                                  '(Will download the GTDB database if not input path of GTDB )')
+                                                  'with GTDB reference genome and generate '
+                                                  'cannot-link file used in the semi-supervised deep learning model training. '
+                                                  'This will download the GTDB database if not downloaded before.')
 
     generate_data_single = subparsers.add_parser('generate_data_single',
-                                                 help='Generate training data(data.csv,data_split.csv) '
-                                                      'for single and co-assembly binning '
-                                                      'for the semi-supervised deep learning model training.')
+                                            help='Generate training data (files data.csv and data_split.csv) '
+                                                  'for semi-supervised deep learning model training (single or co-assembly).')
 
-    generate_data_multi = subparsers.add_parser('generate_data_multi', help='Generate training data(data.csv,data_split.csv)'
-                                          'for multi-samples binning'
-                                          'for the semi-supervised deep learning model training.')
+
+    generate_data_multi = subparsers.add_parser('generate_data_multi',
+                                            help='Generate training data (files data.csv and data_split.csv) '
+                                                'for the semi-supervised deep learning model training (multi-sample)')
+
 
     download_GTDB = subparsers.add_parser('download_GTDB', help='Download GTDB reference genomes.')
 
 
     binning = subparsers.add_parser('bin',
-                                    help='Training the model and clustering contigs to bins.')
+                                    help='Trainthe model and cluster contigs to bins.')
 
     download_GTDB.add_argument('-r', '--reference-db',
                             required=False,
@@ -77,21 +78,19 @@ def parse_args(args):
     binning.add_argument('-c', '--cannot-link',
                          required=True,
                          nargs='*',
-                         help='Path to the input cannot link file generated from other additional biological information,'
-                         'one row for each cannot link constraint.'
-                         'The file format: contig_1,contig_2.',
+                         help='Path to the input cannot link file. '
+                         'The file format: `contig_1,contig_2` '
+                         '(one row for each cannot link constraint).',
                          dest='cannot_link',
                          default=None,
                          metavar='')
 
-    for p in [single_easy_bin, multi_easy_bin, predict_taxonomy, generate_data_single, generate_data_multi,binning]:
+    for p in [single_easy_bin, multi_easy_bin, predict_taxonomy, generate_data_single, generate_data_multi, binning]:
         p.add_argument('-i', '--input-fasta',
                                 required=True,
                                 help='Path to the input fasta file.',
                                 dest='contig_fasta',
                                 default=None,)
-
-    for p in [single_easy_bin, multi_easy_bin, predict_taxonomy, generate_data_single, generate_data_multi, binning]:
         p.add_argument('-o', '--output',
                             required=True,
                             help='Output directory (will be created if non-existent)',
@@ -121,9 +120,9 @@ def parse_args(args):
     for p in [single_easy_bin, multi_easy_bin, predict_taxonomy]:
         p.add_argument('-r', '--reference-db',
                             required=False,
-                            help='GTDB reference file. (Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB).'
-                            'If not set --reference-db and can not find GTDB in $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB, '
-                            'we will download GTDB to the default path.',
+                            help='GTDB reference storage path. (Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB).'
+                            'If not set --reference-db and S3N2Bin cannot find GTDB in $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB, '
+                            'S3N2Bin will download GTDB (Note that >100GB of disk space are required).',
                             dest='GTDB_reference',
                             metavar='',
                             default=None)
@@ -766,10 +765,6 @@ def main():
     device = torch.device(
         "cuda" if torch.cuda.is_available() else "cpu")
 
-    recluster = True
-    if args.no_recluster:
-        recluster = False
-
     if os.path.splitext(args.contig_fasta)[1] == '.gz':
         handle = gzip.open(args.contig_fasta, "rt")
     elif os.path.splitext(args.contig_fasta)[1] == '.bz2':
@@ -833,7 +828,8 @@ def main():
                 args.max_edges, args.max_node,
                 args.minfasta_kb * 1000, logger,
                 out, binned_short, device,
-                contig_length_dict, contig_dict,recluster)
+                contig_length_dict, contig_dict,
+                not args.no_recluster)
 
     if args.cmd == 'single_easy_bin':
         single_easy_binning(
@@ -845,7 +841,8 @@ def main():
             must_link_threshold,
             device,
             contig_length_dict,
-            contig_dict,recluster)
+            contig_dict,
+            not args.no_recluster)
 
     if args.cmd == 'multi_easy_bin':
         multi_easy_binning(
@@ -853,7 +850,8 @@ def main():
             logger,
             out,
             handle,
-            device,recluster)
+            device,
+            not args.no_recluster)
 
 
 if __name__ == '__main__':
