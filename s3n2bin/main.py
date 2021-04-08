@@ -17,7 +17,6 @@ from .semi_supervised_model import train
 import torch
 from .cluster import cluster
 import shutil
-import math
 import numpy as np
 
 def parse_args(args):
@@ -45,12 +44,23 @@ def parse_args(args):
                                                       'for single and co-assembly binning '
                                                       'for the semi-supervised deep learning model training.')
 
-    generate_data_multi = subparsers.add_parser('generate_data_multi', help='Generate training data(data.csv,data_split.csv) '
-                                          'for multi-samples binning '
+    generate_data_multi = subparsers.add_parser('generate_data_multi', help='Generate training data(data.csv,data_split.csv)'
+                                          'for multi-samples binning'
                                           'for the semi-supervised deep learning model training.')
+
+    download_GTDB = subparsers.add_parser('download_GTDB', help='Download GTDB reference genomes.')
+
 
     binning = subparsers.add_parser('bin',
                                     help='Training the model and clustering contigs to bins.')
+
+    download_GTDB.add_argument('-r', '--reference-db',
+                            required=False,
+                            help='GTDB reference file path to download(~/path/GTDB). (Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB).'
+                            'If not set --reference-db, we will download GTDB to the default path.',
+                            dest='GTDB_reference',
+                            metavar='',
+                            default=None)
 
     binning.add_argument('--data',
                          required=True,
@@ -250,6 +260,31 @@ def generate_cov_multiple(bam_file, bam_index, out, threshold,
 
 def _checkback(msg):
     msg[1].info('Processed:{}'.format(msg[0]))
+
+
+def download_GTDB(logger,GTDB_reference):
+    GTDB_default = os.path.join(
+        os.environ['HOME'],
+        '.cache',
+        'S3N2Bin',
+        'mmseqs2-GTDB',
+        'GTDB')
+
+    GTDB_path = GTDB_reference if GTDB_reference is not None else GTDB_default
+    logger.info('Downloading GTDB.')
+    GTDB_dir = os.path.split(GTDB_path)[0]
+    os.makedirs(GTDB_dir, exist_ok=True)
+    subprocess.check_call(
+        ['mmseqs',
+         'databases',
+         'GTDB',
+         GTDB_default,
+         '{}/tmp'.format(GTDB_dir),
+         ],
+        stdout=None,
+        stderr=subprocess.DEVNULL,
+    )
+
 
 
 def predict_taxonomy(contig_fasta, GTDB_reference,
@@ -760,6 +795,9 @@ def main():
 
         binned_short = contig_bp_2500 / whole_contig_bp < 0.05
         must_link_threshold = get_threshold(contig_length_list)
+
+    if args.cmd == 'download_GTDB':
+        download_GTDB(logger,args.GTDB_reference)
 
     if args.cmd == 'predict_taxonomy':
         predict_taxonomy(

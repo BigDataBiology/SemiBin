@@ -110,5 +110,9 @@ Training the model and clustering contigs into bins.
 * `--max-edges`: The maximum number of edges that can be connected to one contig(Default: 200).
 * `-p/--processes/-t/--threads`: Number of CPUs used(0: use whole).
 
+#### download_GTDB
 
+Download reference genomes(GTDB).
+
+* `-r/--reference-db`: GTDB reference file path to download(~/path/GTDB).(Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB) If not set `--reference-db` , we will download GTDB to the default path.
 
