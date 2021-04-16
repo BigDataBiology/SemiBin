@@ -1,3 +1,6 @@
+Unreleased
+	* Download mmseqs database with `--remove-tmp-file 1`
+
 Version 0.1.1 Sun 21 Mar 2021 by BigDataBiology
 	* Fix bug with --minfasta-kbs
 
