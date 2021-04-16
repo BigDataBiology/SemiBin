@@ -1,3 +1,4 @@
 /build/
 /dist/
 /S3N2Bin.egg-info/
+__pycache__/
