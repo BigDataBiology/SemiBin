@@ -16,7 +16,7 @@ information from reference genomes.
 
 ## Install
 
-S<sup>3</sup>N<sup>2</sup>Bin runs on Python 3.6-3.8.
+S<sup>3</sup>N<sup>2</sup>Bin runs on Python 3.6-3.9.
 
 ### Install from source
 
