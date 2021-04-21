@@ -43,4 +43,5 @@ jobs:
         python -m pytest ./test/test_generate_data_single.py
         python -m pytest ./test/test_generate_data_multi.py
         python -m pytest ./test/test_generate_data_coassembly.py
+        python -m pytest ./test/test_train.py
         python -m pytest ./test/test_bin.py

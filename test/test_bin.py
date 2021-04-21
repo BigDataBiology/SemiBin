@@ -34,7 +34,7 @@ def test_bin():
             contig_length_dict=contig_length_dict,
             contig_dict=contig_dict,
             model_path='test/bin_data/model.h5',
-            recluster=False,
+            recluster=True,
             random_seed=None,
             )
 

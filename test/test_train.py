@@ -5,7 +5,7 @@ import logging
 import pandas as pd
 from Bio import SeqIO
 
-def test_bin():
+def test_train():
     logger = logging.getLogger('S3N2Bin')
     logger.setLevel(logging.INFO)
     sh = logging.StreamHandler()
