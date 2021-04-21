@@ -36,10 +36,17 @@ def validate_args(args):
         expect_file(args.contig_fasta)
         expect_file_list(args.bams)
 
-    if args.cmd == 'bin':
+    if args.cmd == 'train':
         expect_file(args.contig_fasta)
+        expect_file_list(args.bams)
         expect_file(args.data)
         expect_file(args.data_split)
+        expect_file_list(args.cannot_link)
+
+    if args.cmd == 'bin':
+        expect_file(args.contig_fasta)
+        expect_file_list(args.bams)
+        expect_file(args.data)
 
     if args.cmd == 'single_easy_bin':
         if args.GTDB_reference is not None:

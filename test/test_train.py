@@ -1,4 +1,4 @@
-from s3n2bin.main import binning
+from s3n2bin.main import training
 import os
 import pytest
 import logging
@@ -14,29 +14,25 @@ def test_bin():
 
     contig_length_dict = {}
     contig_dict = {}
-    handle = 'test/bin_data/input.fasta'
+    handle = 'test/train_data/input.fasta'
     for seq_record in SeqIO.parse(handle, "fasta"):
         contig_length_dict[str(seq_record.id).strip(
             '')] = len((seq_record.seq))
         contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
 
-    os.makedirs('output_bin',exist_ok=True)
-    binning(bams=['test/bin_data/input.sorted.bam'],
+    os.makedirs('output_train',exist_ok=True)
+    training(contig_fasta='test/train_data/input.fasta',
+            bams=['test/train_data/input.sorted.bam'],
             num_process=1,
-            data='test/bin_data/data.csv',
-            max_edges=20,
-            max_node=1,
-            minfasta=0,
+            data='test/train_data/data.csv',
+            data_split='test/train_data/data_split.csv',
+            cannot_link='test/train_data/cannot.txt',
+            batchsize=2048,
+            epoches=1,
             logger=logger,
-            output='output_bin',
+            output='output_train',
             binned_short=True,
             device='cpu',
-            contig_length_dict=contig_length_dict,
-            contig_dict=contig_dict,
-            model_path='test/bin_data/model.h5',
-            recluster=False,
-            random_seed=None,
             )
 
-    assert len(os.listdir('output_bin/output_bins')) > 0
-    assert len(os.listdir('output_bin/output_recluster_bins')) > 0
+    assert os.path.exists('output_train/model.h5')
