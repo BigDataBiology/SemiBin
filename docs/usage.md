@@ -154,3 +154,35 @@ S3N2Bin bin -i contig.fna --model model.h5 --data data.csv -o output
 If a GPU is available, S<sup>3</sup>N<sup>2</sup>Bin will automatically take
 advantage of it.
 
+### Command(whole)
+
+```bash
+S3N2Bin predict_taxonomy -i contig.fna -o output
+```
+
+```bash
+S3N2Bin generate_data_single -i contig.fna -b *.bam -o output
+S3N2Bin generate_data_multi -i contig_whole.fna -b *.bam -o output
+```
+
+```bash
+S3N2Bin train -i contig.fna --data data.csv --data-split data_split.csv -c cannot.txt -o output
+```
+
+```bash
+S3N2Bin bin -i contig.fna --model model.h5 --data data.csv -o output 
+```
+
+### Command(with pre-trained model) ###
+
+```bash
+S3N2Bin generate_data_single -i contig.fna -b *.bam -o output
+S3N2Bin generate_data_multi -i contig_whole.fna -b *.bam -o output
+```
+
+```bash
+S3N2Bin bin -i contig.fna --model model.h5 --data data.csv -o output 
+```
+
+
+
