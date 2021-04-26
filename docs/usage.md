@@ -144,7 +144,7 @@ If you want to use our provided models(in the models directory) and you have a m
 
 #### Getting a model from your project
 
-For example, you can subsample several samples(i.e. 5) as training samples and several samples as testing samples. Then you can train models from every training samples and test the models in the testing samples. Finally you can use the best model and transfer it to other samples.
+For example, you can subsample several samples(i.e. 5) as training samples and several samples as testing samples. Then you can train models from every training samples and test the models in the testing samples. Finally you can use the best model in other samples and get the binning results.
 
 
 ```bash
