@@ -41,7 +41,7 @@ def validate_args(args):
         expect_file_list(args.bams)
         expect_file(args.data)
         expect_file(args.data_split)
-        expect_file_list(args.cannot_link)
+        expect_file(args.cannot_link)
 
     if args.cmd == 'bin':
         expect_file(args.contig_fasta)

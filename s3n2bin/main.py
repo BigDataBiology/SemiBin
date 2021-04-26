@@ -85,8 +85,7 @@ def parse_args(args):
                          'The file format: `contig_1,contig_2` '
                          '(one row for each cannot link constraint).',
                          dest='cannot_link',
-                         default=None,
-                         metavar='')
+                         default=None)
 
     training.add_argument('--epoches',
                    required=False,
