@@ -81,13 +81,13 @@ def parse_args(args):
                          )
     training.add_argument('-c', '--cannot-link',
                          required=True,
-                         nargs='*',
                          help='Path to the input cannot link file. '
                          'The file format: `contig_1,contig_2` '
                          '(one row for each cannot link constraint).',
                          dest='cannot_link',
                          default=None,
                          metavar='')
+
     training.add_argument('--epoches',
                    required=False,
                    type=int,
@@ -915,7 +915,7 @@ def main():
         if args.random_seed is not None:
             set_random_seed(args.random_seed)
         training(args.contig_fasta, args.bams, args.num_process, args.data,
-            args.data_split, args.cannot_link[0], args.batchsize, args.epoches,
+            args.data_split, args.cannot_link, args.batchsize, args.epoches,
             logger, out, binned_short, device)
 
 
