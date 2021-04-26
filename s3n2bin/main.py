@@ -88,13 +88,6 @@ def parse_args(args):
                          dest='cannot_link',
                          default=None,
                          metavar='')
-    training.add_argument('-p', '--processes', '-t', '--threads',
-                                     required=False,
-                                     type=int,
-                                     help='Number of CPUs used (pass the value 0 to use all CPUs)',
-                                     dest='num_process',
-                                     default=0,
-                                     metavar='')
     training.add_argument('--epoches',
                    required=False,
                    type=int,
@@ -139,6 +132,7 @@ def parse_args(args):
                    dest='max_node',
                    default=1,
                    help='Fraction of contigs that considered to be binned (should be between 0 and 1; default: 1).')
+
     binning.add_argument('--model',
                          required=True,
                          type=str,
@@ -159,7 +153,7 @@ def parse_args(args):
                             default=None,
                             )
 
-    for p in [single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi, binning]:
+    for p in [single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi, binning, training]:
         p.add_argument('-b', '--input-bam',
                             required=True,
                             nargs='*',

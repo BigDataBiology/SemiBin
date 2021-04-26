@@ -16,7 +16,7 @@ Run S<sup>3</sup>N<sup>2</sup>Bin in `single_easy_bin` mode.
 S3N2Bin single_easy_bin -i contig.fna -b *.bam -r /mmseqs_data/GTDB -o output 
 ```
 
-If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download GTDB  to $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB.
+If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download GTDB  to $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB. You can set `--recluster` to use the reclustering part with single-copy genes described in the paper.
 
 ## Easy multi-samples binning mode
 
@@ -58,11 +58,11 @@ CAAATACGAATGATTCTTTATTAGATTATCTTAATAAGAATATC
 S3N2Bin multi_easy_bin -i contig_whole.fna -b *.bam -o output
 ```
 
-See above for the comment about the location where the GTDB database is stored.
+See above for the comment about the location where the GTDB database is stored. You can set `--recluster` to use the reclustering part with single-copy genes described in the paper.
 
 ## Advanced-bin mode
 
-Especially for multi-samples binning, running with `multi_easy_bin` takes much time when processing samples serially. You can split the step and manually run S³N²Bin parallel.
+Especially for multi-samples binning, running with `multi_easy_bin` takes much time when processing samples serially. You can split the step and manually run S³N²Bin parallel. Another advantage is that you do not annotate contigs and train models for every sample. You can use our provided trained models and get a good model from your own datasets. Then you can transfer this to your datasets to get binning results and it can save much time.
 
 ### Generate cannot-link constrains
 
@@ -132,14 +132,23 @@ S3N2Bin generate_data_single -i contig.fna -b *.bam -o output
 S3N2Bin generate_data_multi -i contig_whole.fna -b *.bam -o output
 ```
 
-### Binning (training and clustering)
+### Training
 
 ```bash
 S3N2Bin train -i contig.fna --data data.csv --data-split data_split.csv -c cannot.txt -o output
 ```
 
+### Binning
+
+If you want to use our provided models(in the models directory) and you have a model from your samples, you do not need to generate cannot-link constrains and train model, you can just generate data.csv and get the binning results. 
+
+#### Getting a model from your project
+
+For example, you can subsample several samples(i.e. 5) as training samples and several samples as testing samples. Then you can train models from every training samples and test the models in the testing samples. Finally you can use the best model and transfer it to other samples.
+
+
 ```bash
-S3N2Bin bin -i contig.fna --model model.h5 --data data.csv -o output --no-recluster
+S3N2Bin bin -i contig.fna --model model.h5 --data data.csv -o output 
 ```
 
 If a GPU is available, S<sup>3</sup>N<sup>2</sup>Bin will automatically take
