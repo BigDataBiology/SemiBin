@@ -1,14 +1,14 @@
 # SemiBin (Semi-supervised Siamese Neural Network for metagenomic binning)
 
-[![Test Status](https://github.com/BigDataBiology/S3N2Bin/actions/workflows/s3n2bin_test.yml/badge.svg)](https://github.com/BigDataBiology/S3N2Bin/actions/workflows/s3n2bin_test.yml)
-[![Documentation Status](https://readthedocs.org/projects/s3n2bin/badge/?version=latest)](https://s3n2bin.readthedocs.io/en/latest/?badge=latest)
+[![Test Status](https://github.com/BigDataBiology/SemiBin/actions/workflows/semibin_test.yml/badge.svg)](https://github.com/BigDataBiology/SemiBin/actions/workflows/semibin_test.yml)
+[![Documentation Status](https://readthedocs.org/projects/semibin/badge/?version=latest)](https://semibin.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 _NOTE_: This tool is still in development. You are welcome to try it out and
 feedback is appreciated, but expect some bugs/rapid changes until it
 stabilizes. Please use [Github
-issues](https://github.com/BigDataBiology/S3N2Bin/issues) for bug reports and
-the [Discussions](https://github.com/BigDataBiology/S3N2Bin/discussions) for
+issues](https://github.com/BigDataBiology/SemiBin/issues) for bug reports and
+the [Discussions](https://github.com/BigDataBiology/SemiBin/discussions) for
 more open-ended discussions/questions.
 
 Command tool for metagenomic binning with semi-supervised deep learning using
@@ -53,7 +53,7 @@ In our experiments, we found that training for every sample then binning would g
 Another suggestion for running with pre-trained model is that you can get a pre-trained model from your dataset, which is a better way that we think can save time and get good results at the same time. For example, you can subsample several samples(i.e. 5) as training samples and several samples as testing samples. Then you can train models from every training samples and test the models in the testing samples.  Finally you can use the best model in other samples and get the binning results.
 
 For more details on usage, including information on how to run individual steps
-separately, [read the docs](https://s3n2bin.readthedocs.io/en/latest/usage/).
+separately, [read the docs](https://semibin.readthedocs.io/en/latest/usage/).
 
 ## Easy single/co-assembly binning mode
 
@@ -132,5 +132,5 @@ The output folder will contain
 
 For every sample, reconstructed bins are in `output_recluster_bins` directory.
 
-For more details about the output, [read the docs](https://s3n2bin.readthedocs.io/en/latest/output/).
+For more details about the output, [read the docs](https://semibin.readthedocs.io/en/latest/output/).
 
