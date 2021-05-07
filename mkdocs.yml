@@ -1,11 +1,11 @@
-site_name: "S3N2Bin"
-repo_url: "https://github.com/BigDataBiology/S3N2Bin"
+site_name: "SemiBin"
+repo_url: "https://github.com/psj1997/SemiBin"
 
 nav:
-        - 'S3N2Bin': index.md
+        - 'SemiBin': index.md
         - 'Install': install.md
         - 'Usage': usage.md
-        - 'Generating inputs to S³N²Bin': generate.md
+        - 'Generating inputs to SemiBin': generate.md
         - 'Output' : output.md
         - "What's New": whatsnew.md
 
