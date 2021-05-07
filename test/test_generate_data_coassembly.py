@@ -1,4 +1,4 @@
-from s3n2bin.main import generate_data_single
+from SemiBin.main import generate_data_single
 import os
 import pytest
 import logging

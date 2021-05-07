@@ -1,6 +1,6 @@
 # Install
 
-S<sup>3</sup>N<sup>2</sup>Bin can run on Python 3.6-3.8.
+SemiBin can run on Python 3.6-3.8.
 
 Install from source
 

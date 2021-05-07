@@ -1,4 +1,4 @@
-from s3n2bin.main import training
+from SemiBin.main import training
 import os
 import pytest
 import logging

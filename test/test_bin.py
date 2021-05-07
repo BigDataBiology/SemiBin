@@ -1,4 +1,4 @@
-from s3n2bin.main import binning
+from SemiBin.main import binning
 import os
 import pytest
 import logging

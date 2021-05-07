@@ -24,7 +24,7 @@ def parse_args(args):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      description='Semi-supervised siamese neural network for metagenomic binning')
 
-    subparsers = parser.add_subparsers(title='S3N2Bin subcommands',
+    subparsers = parser.add_subparsers(title='SemiBin subcommands',
                                        dest='cmd',
                                        metavar='')
 
@@ -61,7 +61,7 @@ def parse_args(args):
 
     download_GTDB.add_argument('-r', '--reference-db',
                             required=False,
-                            help='GTDB reference file path to download(~/path/GTDB). (Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB).'
+                            help='GTDB reference file path to download(~/path/GTDB). (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB).'
                             'If not set --reference-db, we will download GTDB to the default path.',
                             dest='GTDB_reference',
                             metavar='',
@@ -174,9 +174,9 @@ def parse_args(args):
     for p in [single_easy_bin, multi_easy_bin, predict_taxonomy]:
         p.add_argument('-r', '--reference-db',
                             required=False,
-                            help='GTDB reference storage path. (Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB).'
-                            'If not set --reference-db and S3N2Bin cannot find GTDB in $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB, '
-                            'S3N2Bin will download GTDB (Note that >100GB of disk space are required).',
+                            help='GTDB reference storage path. (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB).'
+                            'If not set --reference-db and SemiBin cannot find GTDB in $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB, '
+                            'SemiBin will download GTDB (Note that >100GB of disk space are required).',
                             dest='GTDB_reference',
                             metavar='',
                             default=None)
@@ -327,7 +327,7 @@ def download_GTDB(logger,GTDB_reference):
     GTDB_default = os.path.join(
         os.environ['HOME'],
         '.cache',
-        'S3N2Bin',
+        'SemiBin',
         'mmseqs2-GTDB',
         'GTDB')
 
@@ -361,7 +361,7 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
     GTDB_default = os.path.join(
         os.environ['HOME'],
         '.cache',
-        'S3N2Bin',
+        'SemiBin',
         'mmseqs2-GTDB',
         'GTDB')
     GTDB_path = GTDB_reference
@@ -841,7 +841,7 @@ def main():
     args = sys.argv[1:]
     args = parse_args(args)
 
-    logger = logging.getLogger('S3N2Bin')
+    logger = logging.getLogger('SemiBin')
     logger.setLevel(logging.INFO)
     sh = logging.StreamHandler()
     sh.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
