@@ -1,4 +1,4 @@
-# Output of S<sup>3</sup>N<sup>2</sup>Bin
+# Output of SemiBin
 
 ## Single sample/co-assembly binning
 
@@ -18,5 +18,5 @@
 * `samples/*.fasta`: Contig fasta file for every sample from the input whole_contig.fna.
 * `samples/*_depth.txt`: same as that in Single sample/coassembly binning.
 * `samples/*_data_cov.csv`: same as that in Single sample/coassembly binning.
-* `samples/{sample-name}/`: directory of the output of S<sup>3</sup>N<sup>2</sup>Bin for every sample(same as that in Single sample/coassembly binning). 
+* `samples/{sample-name}/`: directory of the output of SemiBin for every sample(same as that in Single sample/coassembly binning). 
 

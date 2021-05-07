@@ -1,4 +1,4 @@
-from s3n2bin.main import binning
+from SemiBin.main import binning
 import os
 import pytest
 import logging
@@ -6,7 +6,7 @@ import pandas as pd
 from Bio import SeqIO
 
 def test_bin():
-    logger = logging.getLogger('S3N2Bin')
+    logger = logging.getLogger('SemiBin')
     logger.setLevel(logging.INFO)
     sh = logging.StreamHandler()
     sh.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))

@@ -8,15 +8,15 @@ with GTDB reference genome). `single_easy_bin` includes the following parts:
 `predict_taxonomy`,`generate_data_single` and `bin`.
 
 Your inputs consist of a (1) a contig FASTA file and (2) a BAM file of mapped
-reads to the contigs (see [Generating inputs to S³N²Bin](generate.html)).
+reads to the contigs (see [Generating inputs to SemiBin](generate.html)).
 
-Run S<sup>3</sup>N<sup>2</sup>Bin in `single_easy_bin` mode.
+Run SemiBin in `single_easy_bin` mode.
 
 ```bash
-S3N2Bin single_easy_bin -i contig.fna -b *.bam -r /mmseqs_data/GTDB -o output 
+SemiBin single_easy_bin -i contig.fna -b *.bam -r /mmseqs_data/GTDB -o output 
 ```
 
-If you do not set the path of GTDB, S<sup>3</sup>N<sup>2</sup>Bin will download GTDB  to $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB. You can set `--recluster` to use the reclustering part with single-copy genes described in the paper.
+If you do not set the path of GTDB, SemiBin will download GTDB  to $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB. You can set `--recluster` to use the reclustering part with single-copy genes described in the paper.
 
 ## Easy multi-samples binning mode
 
@@ -52,40 +52,40 @@ CAAATACGAATGATTCTTTATTAGATTATCTTAATAAGAATATC
 
 (2) Map reads to the `contig_whole.fna`.
 
-(3) Run S<sup>3</sup>N<sup>2</sup>Bin with `multi_easy_bin` mode.
+(3) Run SemiBin with `multi_easy_bin` mode.
 
 ```bash
-S3N2Bin multi_easy_bin -i contig_whole.fna -b *.bam -o output
+SemiBin multi_easy_bin -i contig_whole.fna -b *.bam -o output
 ```
 
 See above for the comment about the location where the GTDB database is stored. You can set `--recluster` to use the reclustering part with single-copy genes described in the paper.
 
 ## Advanced-bin mode
 
-Especially for multi-samples binning, running with `multi_easy_bin` takes much time when processing samples serially. You can split the step and manually run S³N²Bin parallel. Another advantage is that you do not annotate contigs and train models for every sample. You can use our provided trained models and get a good model from your own datasets. Then you can transfer this to your datasets to get binning results and it can save much time.
+Especially for multi-samples binning, running with `multi_easy_bin` takes much time when processing samples serially. You can split the step and manually run SemiBin parallelly. Another advantage is that you do not annotate contigs and train models for every sample. You can use our provided trained models and get a good model from your own datasets. Then you can transfer this to your datasets to get binning results and it can save much time.
 
 ### Generate cannot-link constrains
 
-S³N²Bin has builtin support for
-[mmseqs2](https://github.com/soedinglab/MMseqs2) (the default) and
+SemiBin has builtin support for
+[MMseqs2](https://github.com/soedinglab/MMseqs2) (the default) and
 [CAT](https://github.com/dutilh/CAT) for generating contig taxonomic
 classifications and generating cannot-link file. See below for format
 specifications if you want to use another tool.
 
-#### Contig annotation with mmseqs (GTDB reference):
+#### Contig annotation with MMseqs (GTDB reference):
 
-To use mmseqs (default in S<sup>3</sup>N<sup>2</sup>Bin and producing the best
+To use MMseqs (default in SemiBin and producing the best
 results in benchmarks), you can use subcommand `predict_taxonomy` to generate
 the cannot-link file. If you want to use CAT, you have run CAT first anduse
 the script `script/concatenate.py` to generate the cannot-link file(contig1,
-contig2) that can be used in S<sup>3</sup>N<sup>2</sup>Bin.
+contig2) that can be used in SemiBin.
 
 ```bash
-S3N2Bin predict_taxonomy -i contig.fna -o output
+SemiBin predict_taxonomy -i contig.fna -o output
 ```
 
-Default GTDB path is $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB. If you do not set
-`--reference-db` and do not find GTDB in the default path. S³N²Bin will
+Default GTDB path is $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB. If you do not set
+`--reference-db` and do not find GTDB in the default path. SemiBin will
 download GTDB to the default path.
 
 #### Contig annotation with CAT
@@ -123,19 +123,19 @@ python script/concatenate.py -i CAT.out -c contig.fasta -s sample-name -o output
 #### Single/co-assembly binning
 
 ```bash
-S3N2Bin generate_data_single -i contig.fna -b *.bam -o output
+SemiBin generate_data_single -i contig.fna -b *.bam -o output
 ```
 
 #### Multi-samples binning
 
 ```bash
-S3N2Bin generate_data_multi -i contig_whole.fna -b *.bam -o output
+SemiBin generate_data_multi -i contig_whole.fna -b *.bam -o output
 ```
 
 ### Training
 
 ```bash
-S3N2Bin train -i contig.fna --data data.csv --data-split data_split.csv -c cannot.txt -o output
+SemiBin train -i contig.fna --data data.csv --data-split data_split.csv -c cannot.txt -o output
 ```
 
 ### Binning
@@ -144,44 +144,44 @@ If you want to use our provided models(in the models directory) and you have a m
 
 #### Getting a model from your project
 
-For example, you can subsample several samples(i.e. 5) as training samples and several samples as testing samples. Then you can train models from every training samples and test the models in the testing samples. Finally you can use the best model in other samples and get the binning results.
+For example, you can subsample several samples(i.e. 5) as training samples and several samples as testing samples. Then you can train models from every training sample and test the models in the testing samples. Finally you can use the best model in other samples and get the binning results.
 
 
 ```bash
-S3N2Bin bin -i contig.fna --model model.h5 --data data.csv -o output 
+SemiBin bin -i contig.fna --model model.h5 --data data.csv -o output 
 ```
 
-If a GPU is available, S<sup>3</sup>N<sup>2</sup>Bin will automatically take
+If a GPU is available, SemiBin will automatically take
 advantage of it.
 
 ### Command(whole)
 
 ```bash
-S3N2Bin predict_taxonomy -i contig.fna -o output
+SemiBin predict_taxonomy -i contig.fna -o output
 ```
 
 ```bash
-S3N2Bin generate_data_single -i contig.fna -b *.bam -o output
-S3N2Bin generate_data_multi -i contig_whole.fna -b *.bam -o output
+SemiBin generate_data_single -i contig.fna -b *.bam -o output
+SemiBin generate_data_multi -i contig_whole.fna -b *.bam -o output
 ```
 
 ```bash
-S3N2Bin train -i contig.fna --data data.csv --data-split data_split.csv -c cannot.txt -o output
+SemiBin train -i contig.fna --data data.csv --data-split data_split.csv -c cannot.txt -o output
 ```
 
 ```bash
-S3N2Bin bin -i contig.fna --model model.h5 --data data.csv -o output 
+SemiBin bin -i contig.fna --model model.h5 --data data.csv -o output 
 ```
 
 ### Command(with pre-trained model) ###
 
 ```bash
-S3N2Bin generate_data_single -i contig.fna -b *.bam -o output
-S3N2Bin generate_data_multi -i contig_whole.fna -b *.bam -o output
+SemiBin generate_data_single -i contig.fna -b *.bam -o output
+SemiBin generate_data_multi -i contig_whole.fna -b *.bam -o output
 ```
 
 ```bash
-S3N2Bin bin -i contig.fna --model model.h5 --data data.csv -o output 
+SemiBin bin -i contig.fna --model model.h5 --data data.csv -o output 
 ```
 
 

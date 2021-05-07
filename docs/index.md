@@ -1,6 +1,6 @@
-# S<sup>3</sup>N<sup>2</sup>Bin
+# SemiBin
 
-S<sup>3</sup>N<sup>2</sup>Bin is a command line tool for metagenomic binning with semi-supervised siamese neural network using additional information from reference genomes and contigs themselves. It will output the reconstructed bins in single sample/co-assembly/multi-samples binning mode.
+SemiBin is a command line tool for metagenomic binning with semi-supervised siamese neural network using additional information from reference genomes and contigs themselves. It will output the reconstructed bins in single sample/co-assembly/multi-samples binning mode.
 
 ### Single sample binning
 
@@ -42,7 +42,7 @@ Reconstruct bins with single or co-assembly binning using one line command.
 * `-b/--input-bam`: Path to the input BAM files.
 * `-o/--output`: Output directory (will be created if non-existent).
 * `--cannot-name:` Name for the cannot-link file(Default: cannot).
-* `-r/--reference-db`: GTDB reference file.(Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB) If not set `--reference-db` and can not find GTDB in the default path, we will download GTDB to the default path.
+* `-r/--reference-db`: GTDB reference file.(Default: $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB) If not set `--reference-db` and can not find GTDB in the default path, we will download GTDB to the default path.
 * `-p/--processes/-t/--threads`: Number of CPUs used(0: use whole).
 * `--minfasta-kbs`: minimum bin size in kilo-basepairs (Default: 200).
 * `--recluster` : Recluster bins(which will take more time and better results).
@@ -126,5 +126,5 @@ Training the model and clustering contigs into bins.
 
 Download reference genomes(GTDB).
 
-* `-r/--reference-db`: GTDB reference file path to download(~/path/GTDB).(Default: $HOME/.cache/S3N2Bin/mmseqs2-GTDB/GTDB) If not set `--reference-db` , we will download GTDB to the default path.
+* `-r/--reference-db`: GTDB reference file path to download(~/path/GTDB).(Default: $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB) If not set `--reference-db` , we will download GTDB to the default path.
 

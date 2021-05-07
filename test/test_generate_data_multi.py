@@ -1,11 +1,11 @@
-from s3n2bin.main import generate_data_multi
+from SemiBin.main import generate_data_multi
 import os
 import pytest
 import logging
 import pandas as pd
 
 def test_generate_data_multi():
-    logger = logging.getLogger('S3N2Bin')
+    logger = logging.getLogger('SemiBin')
     logger.setLevel(logging.INFO)
     sh = logging.StreamHandler()
     sh.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))

@@ -1,4 +1,4 @@
-name: s3n2bin_test
+name: semibin_test
 
 on: [push, pull_request]
 

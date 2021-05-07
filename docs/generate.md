@@ -1,4 +1,4 @@
-# Generating the inputs to S³N²Bin
+# Generating the inputs to SemiBin
 
 ## For single-sample mode
 

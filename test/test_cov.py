@@ -1,4 +1,4 @@
-from s3n2bin.generate_coverage import calculate_coverage
+from SemiBin.generate_coverage import calculate_coverage
 from os import path
 import pytest
 import pandas as pd

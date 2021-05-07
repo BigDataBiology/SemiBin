@@ -1,4 +1,4 @@
-from s3n2bin.generate_kmer import generate_kmer_features_from_fasta
+from SemiBin.generate_kmer import generate_kmer_features_from_fasta
 from os import path
 import pytest
 import pandas as pd
