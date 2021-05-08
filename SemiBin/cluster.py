@@ -28,13 +28,13 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
         embedding = model.embedding(x.float()).detach().cpu().numpy()
         embedding_matrix = kneighbors_graph(
             embedding,
-            n_neighbors=max_edges,
+            n_neighbors=min(max_edges, train_data.shape[0] - 1),
             mode='distance',
             p=2,
             n_jobs=-1).toarray()
         kmer_matrix = kneighbors_graph(
             train_data_input,
-            n_neighbors=max_edges,
+            n_neighbors=min(max_edges, train_data.shape[0] - 1),
             mode='distance',
             p=2,
             n_jobs=-1).toarray()
