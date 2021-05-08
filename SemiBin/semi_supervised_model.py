@@ -7,7 +7,7 @@ from .utils import cal_num_bins
 import pandas as pd
 from torch.optim import lr_scheduler
 from tqdm import tqdm
-
+import sys
 
 class Semi_encoding_multiple(torch.nn.Module):
     def __init__(self, num):
@@ -161,7 +161,9 @@ def train(out, contig_fasta, binned_short, logger, data, data_split, cannot_link
 
     # cannot link
     cannot_link = pd.read_csv(cannot_link, sep=',', header=None).values
-
+    if cannot_link.size == 0:
+        sys.stderr.write(
+            f"Error: Cannot-link file is empty!\n")
     namelist = data.index.tolist()
     mapObj = dict(zip(namelist, range(len(namelist))))
     train_data = data.values
