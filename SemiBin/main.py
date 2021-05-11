@@ -343,7 +343,6 @@ def download_GTDB(logger,GTDB_reference):
          '{}/tmp'.format(GTDB_dir),
          ],
         stdout=None,
-        stderr=subprocess.DEVNULL,
     )
 
 
@@ -379,7 +378,6 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
                  '--remove-tmp-files', '1',
                  ],
                 stdout=None,
-                stderr=subprocess.DEVNULL,
             )
         GTDB_path = GTDB_default
     subprocess.check_call(
@@ -388,7 +386,6 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
          contig_fasta,
          '{}/contig_DB'.format(output)],
         stdout=None,
-        stderr=subprocess.DEVNULL,
     )
     os.makedirs(os.path.join(output, 'mmseqs_annotation'), exist_ok=True)
     subprocess.run(
@@ -403,7 +400,6 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
          ],
         check=True,
         stdout=None,
-        stderr=subprocess.DEVNULL,
     )
     subprocess.check_call(
         ['mmseqs',
@@ -413,7 +409,6 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
          os.path.join(output, 'mmseqs_annotation/taxonomyResult.tsv')
          ],
         stdout=None,
-        stderr=subprocess.DEVNULL,
     )
 
     namelist = []
