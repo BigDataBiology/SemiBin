@@ -32,7 +32,9 @@ setup(name='SemiBin',
           'pyyaml',
           'atomicwrites',
           'torch',
-          'python-igraph'
+          'python-igraph',
+          'pandas',
+          'scikit-learn',
       ],
       package_data={
           'SemiBin': ['*.hmm','*.pl']},
