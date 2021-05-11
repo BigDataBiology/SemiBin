@@ -149,7 +149,6 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
              '-thread={}'.format(num_process),
              ],
             stdout=frag_out_log,
-            stderr=subprocess.DEVNULL,
         )
 
     if not os.path.exists(hmm_output):
@@ -164,7 +163,6 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
              contig_output + '.faa',
              ],
             stdout=hmm_out_log,
-            stderr=subprocess.DEVNULL,
         )
 
     if not os.path.exists(seed_output):
@@ -176,8 +174,6 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
              ('1001' if binned_short else '2501'), # threshold
              seed_output,
              ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
         )
 
 
