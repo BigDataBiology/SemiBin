@@ -26,7 +26,7 @@ def test_generate_data_multi():
                          separator=':',
                          logger=logger,
                          output='output_multi',
-                         handle='test/multi_samples_data/input_multi.fasta',
+                         contig_fasta='test/multi_samples_data/input_multi.fasta',
                          )
 
     for i in range(10):
