@@ -20,7 +20,7 @@ def test_generate_data_coassembly():
                          num_process=1,
                          logger=logger,
                          output='output_coassembly',
-                         handle='test/coassembly_sample_data/input.fasta',
+                         contig_fasta='test/coassembly_sample_data/input.fasta',
                          binned_short=False,
                          must_link_threshold=4000
                          )
