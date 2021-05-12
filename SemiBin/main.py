@@ -19,10 +19,18 @@ from .cluster import cluster
 import shutil
 import numpy as np
 import random
+from .semibin_version import __version__ as ver
 
 def parse_args(args):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      description='Semi-supervised siamese neural network for metagenomic binning')
+
+    parser.version = ver
+
+    parser.add_argument('-v',
+                        '--version',
+                        action='version',
+                        help='Print the version number')
 
     subparsers = parser.add_subparsers(title='SemiBin subcommands',
                                        dest='cmd',
