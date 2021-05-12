@@ -350,8 +350,8 @@ def download_GTDB(logger,GTDB_reference):
 
 def predict_taxonomy(contig_fasta, GTDB_reference,
                      cannot_name, logger,
-                     output, handle,
-                     binned_short, must_link_threshold):
+                     output, binned_short,
+                     must_link_threshold):
     """
     Predict taxonomy using mmseqs and generate cannot-link file
     :param handle: handle to read fasta file
@@ -419,7 +419,7 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
     namelist = []
     num_must_link = 0
     binned_threshold = 1000 if binned_short else 2500
-    for seq_record in SeqIO.parse(handle, "fasta"):
+    for seq_record in SeqIO.parse(contig_fasta, "fasta"):
         if len(seq_record) > binned_threshold:
             namelist.append(seq_record.id)
         if len(seq_record) >= must_link_threshold:
@@ -432,7 +432,7 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
 
 
 def generate_data_single(bams, num_process, logger,
-                         output, handle, binned_short,
+                         output, contig_fasta, binned_short,
                          must_link_threshold):
     """
     Generate data.csv and data_split.csv for training and clustering.
@@ -467,9 +467,9 @@ def generate_data_single(bams, num_process, logger,
 
     logger.info('Start generating kmer features from fasta file.')
     kmer_whole = generate_kmer_features_from_fasta(
-        handle, 1000 if binned_short else 2500, 4)
+        contig_fasta, 1000 if binned_short else 2500, 4)
     kmer_split = generate_kmer_features_from_fasta(
-        handle, 1000, 4, split=True, threshold=must_link_threshold)
+        contig_fasta, 1000, 4, split=True, threshold=must_link_threshold)
 
     data = kmer_whole
     data_split = kmer_split
@@ -498,7 +498,7 @@ def generate_data_single(bams, num_process, logger,
 
 
 def generate_data_multi(bams, num_process,separator,
-                        logger, output, handle):
+                        logger, output, contig_fasta):
     n_sample = len(bams)
     is_combined = n_sample >= 5
     bam_list = bams
@@ -516,7 +516,7 @@ def generate_data_multi(bams, num_process,separator,
 
     os.makedirs(os.path.join(output, 'samples'), exist_ok=True)
 
-    for seq_record in SeqIO.parse(handle, "fasta"):
+    for seq_record in SeqIO.parse(contig_fasta, "fasta"):
         sample_name, contig_name = seq_record.id.split(separator)
         if flag_name is None:
             flag_name = sample_name
@@ -730,7 +730,7 @@ def binning(bams, num_process, data,
         minfasta,recluster,random_seed)
 
 
-def single_easy_binning(args, logger, output, handle, binned_short,
+def single_easy_binning(args, logger, output, binned_short,
                         must_link_threshold, device, contig_length_dict, contig_dict, recluster,random_seed):
     logger.info('Running mmseqs and generate cannot-link file.')
     predict_taxonomy(
@@ -738,13 +738,13 @@ def single_easy_binning(args, logger, output, handle, binned_short,
         args.GTDB_reference,
         args.cannot_name,
         logger,
-        output, handle, binned_short, must_link_threshold)
+        output, binned_short, must_link_threshold)
     logger.info('Generate training data.')
     generate_data_single(
         args.bams,
         args.num_process,
         logger,
-        output, handle, binned_short, must_link_threshold)
+        output, args.contig_fasta, binned_short, must_link_threshold)
     logger.info('Training model and clustering.')
     data_path = os.path.join(output,'data.csv')
     data_split_path = os.path.join(output,'data_split.csv')
@@ -756,7 +756,7 @@ def single_easy_binning(args, logger, output, handle, binned_short,
             args.max_edges, args.max_node, args.minfasta_kb * 1000, logger, output, binned_short, device, contig_length_dict, contig_dict,recluster, os.path.join(output, 'model.h5'),random_seed)
 
 
-def multi_easy_binning(args, logger, output, handle, device, recluster, random_seed):
+def multi_easy_binning(args, logger, output, device, recluster, random_seed):
     logger.info('Multi-samples binning.')
     logger.info('Generate training data.')
     sample_list = generate_data_multi(
@@ -764,7 +764,7 @@ def multi_easy_binning(args, logger, output, handle, device, recluster, random_s
         args.num_process,
         args.separator,
         logger,
-        output, handle)
+        output, args.contig_fasta)
 
     for sample in sample_list:
         logger.info(
@@ -856,11 +856,17 @@ def main():
         "cuda" if torch.cuda.is_available() else "cpu")
 
     if os.path.splitext(args.contig_fasta)[1] == '.gz':
-        handle = gzip.open(args.contig_fasta, "rt")
+        contig_name = args.contig_fasta.replace(".gz", "")
+        ungz_file = gzip.GzipFile(args.contig_fasta)
+        open(contig_name, "wb+").write(ungz_file.read())
+        ungz_file.close()
+        args.contig_fasta = contig_name
     elif os.path.splitext(args.contig_fasta)[1] == '.bz2':
-        handle = bz2.open(args.contig_fasta, "rt")
-    else:
-        handle = args.contig_fasta
+        contig_name = args.contig_fasta.replace(".bz2", "")
+        unbz2_file = bz2.BZ2File(args.contig_fasta)
+        open(contig_name, "wb+").write(unbz2_file.read())
+        unbz2_file.close()
+        args.contig_fasta = contig_name
 
     if args.cmd in ['predict_taxonomy', 'generate_data_single', 'bin','single_easy_bin','train']:
         whole_contig_bp = 0
@@ -869,7 +875,7 @@ def main():
         contig_length_dict = {}
         contig_dict = {}
 
-        for seq_record in SeqIO.parse(handle, "fasta"):
+        for seq_record in SeqIO.parse(args.contig_fasta, "fasta"):
             if len(seq_record) >= 1000 and len(seq_record) <= 2500:
                 contig_bp_2500 += len(seq_record)
             contig_length_list.append(len(seq_record))
@@ -890,8 +896,7 @@ def main():
             args.GTDB_reference,
             args.cannot_name,
             logger,
-            out,
-            handle, binned_short, must_link_threshold)
+            out, binned_short, must_link_threshold)
 
     if args.cmd == 'generate_data_single':
         generate_data_single(
@@ -899,7 +904,7 @@ def main():
             args.num_process,
             logger,
             out,
-            handle, binned_short, must_link_threshold)
+            args.contig_fasta, binned_short, must_link_threshold)
 
     if args.cmd == 'generate_data_multi':
         generate_data_multi(
@@ -908,7 +913,7 @@ def main():
             args.separator,
             logger,
             out,
-            handle)
+            args.contig_fasta)
 
     if args.cmd == 'train':
         if args.random_seed is not None:
@@ -934,7 +939,6 @@ def main():
             args,
             logger,
             out,
-            handle,
             binned_short,
             must_link_threshold,
             device,
@@ -950,7 +954,6 @@ def main():
             args,
             logger,
             out,
-            handle,
             device,
             args.recluster,
             args.random_seed)
