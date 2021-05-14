@@ -34,6 +34,8 @@ jobs:
         pip install python-igraph
         pip install torch
         pip install scikit-learn
+        pip install requests
+        pip install
         conda install -c bioconda bedtools hmmer fraggenescan
     - name: Test with pytest
       shell: bash -l {0}
