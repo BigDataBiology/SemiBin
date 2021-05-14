@@ -325,6 +325,16 @@ def generate_cov_multiple(bam_file, bam_index, out, threshold,
 def _checkback(msg):
     msg[1].info('Processed:{}'.format(msg[0]))
 
+def get_file_md5(fname):
+    m = hashlib.md5()
+    with open(fname,'rb') as fobj:
+        while True:
+            data = fobj.read(4096)
+            if not data:
+                break
+            m.update(data)
+
+    return m.hexdigest()
 
 def download_GTDB(logger,GTDB_reference):
     GTDB_default = os.path.join(
@@ -358,18 +368,6 @@ def download_GTDB(logger,GTDB_reference):
         sys.stderr.write(
             f"Error: MD5 check failed removing '{download_path}'.\n")
         sys.exit(1)
-
-def get_file_md5(fname):
-    m = hashlib.md5()
-    with open(fname,'rb') as fobj:
-        while True:
-            data = fobj.read(4096)
-            if not data:
-                break
-            m.update(data)
-
-    return m.hexdigest()
-
 
 def predict_taxonomy(contig_fasta, GTDB_reference,
                      cannot_name, logger,
