@@ -23,9 +23,19 @@ import requests
 import sys
 import hashlib
 
+from .semibin_version import __version__ as ver
+
+
 def parse_args(args):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      description='Semi-supervised siamese neural network for metagenomic binning')
+
+    parser.version = ver
+
+    parser.add_argument('-v',
+                        '--version',
+                        action='version',
+                        help='Print the version number')
 
     subparsers = parser.add_subparsers(title='SemiBin subcommands',
                                        dest='cmd',
@@ -348,6 +358,7 @@ def download_GTDB(logger,GTDB_reference):
     logger.info('Downloading GTDB.')
     GTDB_dir = os.path.split(GTDB_path)[0]
     os.makedirs(GTDB_dir, exist_ok=True)
+
     download_url = 'https://zenodo.org/record/4751564/files/GTDB_v95.tar.gz?download=1'
     download_path = os.path.join(GTDB_dir, 'GTDB_v95.tar.gz')
 
@@ -391,6 +402,7 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
             logger.info('Downloading GTDB. It will take a while..')
             GTDB_dir = os.path.split(GTDB_default)[0]
             os.makedirs(GTDB_dir, exist_ok=True)
+
             download_url = 'https://zenodo.org/record/4751564/files/GTDB_v95.tar.gz?download=1'
             download_path = os.path.join(GTDB_dir,'GTDB_v95.tar.gz')
 
@@ -411,6 +423,7 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
                 sys.stderr.write(
                     f"Error: MD5 check failed removing '{download_path}'.\n")
                 sys.exit(1)
+
         GTDB_path = GTDB_default
     subprocess.check_call(
         ['mmseqs',
@@ -418,7 +431,6 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
          contig_fasta,
          '{}/contig_DB'.format(output)],
         stdout=None,
-        stderr=subprocess.DEVNULL,
     )
     os.makedirs(os.path.join(output, 'mmseqs_annotation'), exist_ok=True)
     subprocess.run(
@@ -433,7 +445,6 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
          ],
         check=True,
         stdout=None,
-        stderr=subprocess.DEVNULL,
     )
     subprocess.check_call(
         ['mmseqs',
@@ -443,7 +454,6 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
          os.path.join(output, 'mmseqs_annotation/taxonomyResult.tsv')
          ],
         stdout=None,
-        stderr=subprocess.DEVNULL,
     )
 
     namelist = []
