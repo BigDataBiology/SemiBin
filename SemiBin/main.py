@@ -19,7 +19,12 @@ from .cluster import cluster
 import shutil
 import numpy as np
 import random
+import requests
+import sys
+import hashlib
+
 from .semibin_version import __version__ as ver
+
 
 def parse_args(args):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -330,6 +335,16 @@ def generate_cov_multiple(bam_file, bam_index, out, threshold,
 def _checkback(msg):
     msg[1].info('Processed:{}'.format(msg[0]))
 
+def get_file_md5(fname):
+    m = hashlib.md5()
+    with open(fname,'rb') as fobj:
+        while True:
+            data = fobj.read(4096)
+            if not data:
+                break
+            m.update(data)
+
+    return m.hexdigest()
 
 def download_GTDB(logger,GTDB_reference):
     GTDB_default = os.path.join(
@@ -343,17 +358,27 @@ def download_GTDB(logger,GTDB_reference):
     logger.info('Downloading GTDB.')
     GTDB_dir = os.path.split(GTDB_path)[0]
     os.makedirs(GTDB_dir, exist_ok=True)
-    subprocess.check_call(
-        ['mmseqs',
-         'databases',
-         'GTDB',
-         GTDB_default,
-         '{}/tmp'.format(GTDB_dir),
-         ],
-        stdout=None,
-    )
 
+    download_url = 'https://zenodo.org/record/4751564/files/GTDB_v95.tar.gz?download=1'
+    download_path = os.path.join(GTDB_dir, 'GTDB_v95.tar.gz')
 
+    with requests.get(download_url, stream=True) as r:
+        with open(download_path, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
+    logger.info('Download finished. Checking MD5...')
+    if get_file_md5(download_path) == '4a70301c54104e87d5615e3f2383c8b5':
+        subprocess.check_call([
+            'tar',
+            '-xzvf',
+            download_path],
+            stdout=subprocess.DEVNULL,
+        )
+        os.remove(download_path)
+    else:
+        os.remove(download_path)
+        sys.stderr.write(
+            f"Error: MD5 check failed removing '{download_path}'.\n")
+        sys.exit(1)
 
 def predict_taxonomy(contig_fasta, GTDB_reference,
                      cannot_name, logger,
@@ -374,19 +399,31 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
     GTDB_path = GTDB_reference
     if GTDB_reference is None:
         if not os.path.exists(GTDB_default):
-            logger.info('Downloading GTDB.')
+            logger.info('Downloading GTDB. It will take a while..')
             GTDB_dir = os.path.split(GTDB_default)[0]
             os.makedirs(GTDB_dir, exist_ok=True)
-            subprocess.check_call(
-                ['mmseqs',
-                 'databases',
-                 'GTDB',
-                 GTDB_default,
-                 '{}/tmp'.format(GTDB_dir),
-                 '--remove-tmp-files', '1',
-                 ],
-                stdout=None,
-            )
+
+            download_url = 'https://zenodo.org/record/4751564/files/GTDB_v95.tar.gz?download=1'
+            download_path = os.path.join(GTDB_dir,'GTDB_v95.tar.gz')
+
+            with requests.get(download_url, stream=True) as r:
+                with open(download_path, 'wb') as f:
+                    shutil.copyfileobj(r.raw, f)
+            logger.info('Download finished. Checking MD5...')
+            if get_file_md5(download_path) == '4a70301c54104e87d5615e3f2383c8b5':
+                subprocess.check_call([
+                    'tar',
+                    '-xzvf',
+                    download_path],
+                    stdout=subprocess.DEVNULL,
+                )
+                os.remove(download_path)
+            else:
+                os.remove(download_path)
+                sys.stderr.write(
+                    f"Error: MD5 check failed removing '{download_path}'.\n")
+                sys.exit(1)
+
         GTDB_path = GTDB_default
     subprocess.check_call(
         ['mmseqs',

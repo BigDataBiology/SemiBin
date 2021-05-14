@@ -35,6 +35,7 @@ setup(name='SemiBin',
           'python-igraph',
           'pandas',
           'scikit-learn',
+          'requests',
       ],
       package_data={
           'SemiBin': ['*.hmm','*.pl']},
