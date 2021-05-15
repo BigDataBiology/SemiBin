@@ -816,7 +816,7 @@ def multi_easy_binning(args, logger, output, device, recluster, random_seed):
         args.separator,
         logger,
         output, args.contig_fasta)
-
+    sample_list = ['S1']
     for sample in sample_list:
         logger.info(
             'Running mmseqs and generate cannot-link file of {}.'.format(sample))

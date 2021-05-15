@@ -112,6 +112,7 @@ def generate_cannot_link(mmseqs_path,namelist,num_threshold,output,sample):
                              'score', 'lineage']
     mmseqs_result = mmseqs_result[[
         'contig_name', 'rank_name', 'scientific_name', 'score', 'lineage']]
+    mmseqs_result['contig_name'] = mmseqs_result['contig_name'].astype(str)
     mmseqs_result = mmseqs_result[mmseqs_result['contig_name'].isin(
         namelist)]
     cannot_link_species, cannot_link_genus, cannot_link_mix = parse_mmseqs(
