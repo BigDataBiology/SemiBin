@@ -160,10 +160,14 @@ def train(out, contig_fasta, binned_short, logger, data, data_split, cannot_link
     train_labels = []
 
     # cannot link
-    cannot_link = pd.read_csv(cannot_link, sep=',', header=None).values
-    if cannot_link.size == 0:
+
+    if not os.path.getsize(cannot_link):
         sys.stderr.write(
             f"Error: Cannot-link file is empty!\n")
+        sys.exit(1)
+
+    cannot_link = pd.read_csv(cannot_link, sep=',', header=None).values
+
     namelist = data.index.tolist()
     mapObj = dict(zip(namelist, range(len(namelist))))
     train_data = data.values
