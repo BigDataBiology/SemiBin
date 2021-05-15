@@ -849,7 +849,7 @@ def multi_easy_binning(args, logger, output, device, recluster, random_seed):
             args.GTDB_reference,
             sample,
             logger,
-            os.path.join(output, 'samples', sample), handle, binned_short, must_link_threshold,)
+            os.path.join(output, 'samples', sample), binned_short, must_link_threshold,)
         sample_cannot = os.path.join(
             output, 'samples', sample, 'cannot/{}.txt'.format(sample))
         logger.info('Training model and clustering for {}.'.format(sample))
