@@ -175,6 +175,7 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
              ('1001' if binned_short else '2501'), # threshold
              seed_output,
              ],
+            stdout=subprocess.DEVNULL,
         )
 
 
