@@ -44,14 +44,14 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     embedding_matrix[embedding_matrix == 0] = 1
     embedding_matrix = 1 - embedding_matrix
 
-    threshold = 0.95
+    threshold = 0
 
-    while (threshold >= 0):
+    while (threshold < 1):
+        threshold += 0.05
         num = len(list(set(np.where(embedding_matrix > threshold)[0])))
-        if round(num / len(embedding_matrix), 2) >= max_node:
+        if round(num / len(embedding_matrix), 2) < 1:
             break
-        else:
-            threshold -= 0.05
+    threshold -= 0.05
 
     embedding_matrix[embedding_matrix <= threshold] = 0
     if not is_combined:
