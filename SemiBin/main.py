@@ -443,16 +443,15 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
          '{}/contig_DB'.format(output)],
         stdout=None,
     )
-    os.makedirs(os.path.join(output, 'mmseqs_annotation'), exist_ok=True)
+    os.makedirs(os.path.join(output, 'mmseqs_contig_annotation'), exist_ok=True)
     subprocess.run(
         ['mmseqs',
          'taxonomy',
-         '{}/contig_DB'.format(output),
+         os.path.join(output, 'contig_DB'),
          GTDB_path,
-         os.path.join(output, 'mmseqs_annotation/mmseqs_annotation'),
+         os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
          os.path.join(output, 'mmseqs_tmp'),
-         '--tax-lineage',
-         str(1),
+         '--tax-lineage', '1',
          ],
         check=True,
         stdout=None,
@@ -461,8 +460,8 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
         ['mmseqs',
          'createtsv',
          '{}/contig_DB'.format(output),
-         os.path.join(output, 'mmseqs_annotation/mmseqs_annotation'),
-         os.path.join(output, 'mmseqs_annotation/taxonomyResult.tsv')
+         os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
+         os.path.join(output, 'mmseqs_contig_annotation/taxonomyResult.tsv')
          ],
         stdout=None,
     )
@@ -477,7 +476,7 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
             num_must_link += 1
     os.makedirs(os.path.join(output, 'cannot'), exist_ok=True)
     generate_cannot_link(
-        os.path.join(output, 'mmseqs_annotation/taxonomyResult.tsv'),
+        os.path.join(output, 'mmseqs_contig_annotation/taxonomyResult.tsv'),
         namelist, num_must_link,
         os.path.join(output, 'cannot'), cannot_name)
 
