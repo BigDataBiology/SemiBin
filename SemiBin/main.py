@@ -272,11 +272,15 @@ def parse_args(args):
 
 def generate_cov(bam_file, bam_index, out, threshold,
                  is_combined, contig_threshold, logger):
-    logger.info('Processing {}'.format(bam_file))
+    logger.info('Processing `{}`'.format(bam_file))
     bam_name = os.path.split(bam_file)[-1] + '_{}'.format(bam_index)
     bam_depth = os.path.join(out, '{}_depth.txt'.format(bam_name))
-    os.system(
-        'bedtools genomecov -bga -ibam {0} > {1}'.format(bam_file, bam_depth))
+    with open(bam_depth, 'wb') as bedtools_out:
+        subprocess.check_call(
+            ['bedtools', 'genomecov',
+                '-bga',
+                '-ibam', bam_file],
+            stdout=bedtools_out)
 
     if is_combined:
         contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined,
@@ -308,11 +312,15 @@ def generate_cov(bam_file, bam_index, out, threshold,
 
 def generate_cov_multiple(bam_file, bam_index, out, threshold,
                           is_combined, sep, binned_threshold_dict, logger):
-    logger.info('Processing {}'.format(bam_file))
+    logger.info('Processing `{}`'.format(bam_file))
     bam_name = os.path.split(bam_file)[-1] + '_{}'.format(bam_index)
     bam_depth = os.path.join(out, '{}_depth.txt'.format(bam_name))
-    os.system(
-        'bedtools genomecov -bga -ibam {0} > {1}'.format(bam_file, bam_depth))
+    with open(bam_depth, 'wb') as bedtools_out:
+        subprocess.check_call(
+            ['bedtools', 'genomecov',
+                '-bga',
+                '-ibam', bam_file],
+            stdout=bedtools_out)
     if is_combined:
         contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined,
                                                               sep=sep, binned_thre_dict=binned_threshold_dict)
@@ -492,28 +500,18 @@ def generate_data_single(bams, num_process, logger,
     n_sample = len(bams)
     is_combined = n_sample >= 5
     bam_list = bams
-    if num_process != 0:
-        pool = multiprocessing.Pool(num_process)
-    else:
-        pool = multiprocessing.Pool()
 
     logger.info('Calculating coverage for every sample.')
 
     for bam_index in range(n_sample):
-        pool.apply_async(
-            generate_cov,
-            args=(
-                bam_list[bam_index],
-                bam_index,
-                output,
-                must_link_threshold,
-                is_combined,
-                1000 if binned_short else 2500,
-                logger,
-            ),
-            callback=_checkback)
-    pool.close()
-    pool.join()
+        generate_cov(
+            bam_list[bam_index],
+            bam_index,
+            output,
+            must_link_threshold,
+            is_combined,
+            1000 if binned_short else 2500,
+            logger)
 
     logger.info('Start generating kmer features from fasta file.')
     kmer_whole = generate_kmer_features_from_fasta(
@@ -552,13 +550,8 @@ def generate_data_multi(bams, num_process,separator,
     n_sample = len(bams)
     is_combined = n_sample >= 5
     bam_list = bams
-    if num_process != 0:
-        pool = multiprocessing.Pool(num_process)
-    else:
-        pool = multiprocessing.Pool()
 
     # Gererate contig file for every sample
-    from collections import defaultdict
     sample_list = list()
     contig_sample_list = []
     contig_length_list = []
@@ -607,20 +600,15 @@ def generate_data_multi(bams, num_process,separator,
             else binning_threshold[2500].append(sample)
 
     for bam_index in range(n_sample):
-        pool.apply_async(generate_cov_multiple,
-                         args=(
-                             bam_list[bam_index],
-                             bam_index,
-                             os.path.join(output, 'samples'),
-                             must_link_threshold,
-                             is_combined,
-                             separator,
-                             binning_threshold,
-                             logger
-                         ),
-                         callback=_checkback)
-    pool.close()
-    pool.join()
+        generate_cov_multiple(
+                 bam_list[bam_index],
+                 bam_index,
+                 os.path.join(output, 'samples'),
+                 must_link_threshold,
+                 is_combined,
+                 separator,
+                 binning_threshold,
+                 logger)
     # Generate cov features for every sample
     data_cov = pd.read_csv(os.path.join(output, 'samples', '{}_data_cov.csv'.format(
         os.path.split(bam_list[0])[-1] + '_{}'.format(0))), index_col=0)
