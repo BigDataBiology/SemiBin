@@ -440,16 +440,16 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
         ['mmseqs',
          'createdb',
          contig_fasta,
-         '{}/contig_DB'.format(output)],
+         os.path.join(output, 'contig_DB')],
         stdout=None,
     )
-    os.makedirs(os.path.join(output, 'mmseqs_annotation'), exist_ok=True)
+    os.makedirs(os.path.join(output, 'mmseqs_contig_annotation'), exist_ok=True)
     subprocess.run(
         ['mmseqs',
          'taxonomy',
-         '{}/contig_DB'.format(output),
+         os.path.join(output, 'contig_DB'),
          GTDB_path,
-         os.path.join(output, 'mmseqs_annotation/mmseqs_annotation'),
+         os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
          os.path.join(output, 'mmseqs_tmp'),
          '--tax-lineage',
          str(1),
@@ -460,9 +460,9 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
     subprocess.check_call(
         ['mmseqs',
          'createtsv',
-         '{}/contig_DB'.format(output),
-         os.path.join(output, 'mmseqs_annotation/mmseqs_annotation'),
-         os.path.join(output, 'mmseqs_annotation/taxonomyResult.tsv')
+         os.path.join(output, 'contig_DB'),
+         os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
+         os.path.join(output, 'mmseqs_contig_annotation/taxonomyResult.tsv')
          ],
         stdout=None,
     )
@@ -477,7 +477,7 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
             num_must_link += 1
     os.makedirs(os.path.join(output, 'cannot'), exist_ok=True)
     generate_cannot_link(
-        os.path.join(output, 'mmseqs_annotation/taxonomyResult.tsv'),
+        os.path.join(output, 'mmseqs_contig_annotation/taxonomyResult.tsv'),
         namelist, num_must_link,
         os.path.join(output, 'cannot'), cannot_name)
 
@@ -760,8 +760,8 @@ def binning(bams, num_process, data,
     data = pd.read_csv(data, index_col=0)
     data.index = data.index.astype(str)
 
-    if device == 'cpu':
-        model = torch.load(model_path, map_location='cpu')
+    if device == torch.device('cpu'):
+        model = torch.load(model_path, map_location=torch.device('cpu'))
     else:
         model = torch.load(model_path)
     cluster(
