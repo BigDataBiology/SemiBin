@@ -8,6 +8,7 @@ from Bio import SeqIO
 import sys
 import pandas as pd
 import random
+import shutil
 
 def validate_args(args):
 
@@ -142,12 +143,12 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
     if not os.path.exists(contig_output + '.faa'):
         frag_out_log = open(contig_output + '.out', 'w')
         subprocess.check_call(
-            ['run_FragGeneScan.pl',
-             '-genome={}'.format(fasta_path),
-             '-out={}'.format(contig_output),
-             '-complete=0',
-             '-train=complete',
-             '-thread={}'.format(num_process),
+            [shutil.which('FragGeneScan'),
+             '-s', fasta_path,
+             '-o', contig_output,
+             '-w', str(0),
+             '-t', 'complete',
+             '-p', str(num_process),
              ],
             stdout=frag_out_log,
         )
