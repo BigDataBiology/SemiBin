@@ -276,7 +276,7 @@ def generate_cov(bam_file, bam_index, out, threshold,
     bam_name = os.path.split(bam_file)[-1] + '_{}'.format(bam_index)
     bam_depth = os.path.join(out, '{}_depth.txt'.format(bam_name))
     os.system(
-        'bedtools genomecov -bga -ibam {0} > {1}'.format(bam_file, bam_depth))
+        'bedtools genomecov -bga -ibam \'{0}\' > \'{1}\''.format(bam_file, bam_depth))
 
     if is_combined:
         contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined,
@@ -312,7 +312,7 @@ def generate_cov_multiple(bam_file, bam_index, out, threshold,
     bam_name = os.path.split(bam_file)[-1] + '_{}'.format(bam_index)
     bam_depth = os.path.join(out, '{}_depth.txt'.format(bam_name))
     os.system(
-        'bedtools genomecov -bga -ibam {0} > {1}'.format(bam_file, bam_depth))
+        'bedtools genomecov -bga -ibam \'{0}\' > \'{1}\''.format(bam_file, bam_depth))
     if is_combined:
         contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined,
                                                               sep=sep, binned_thre_dict=binned_threshold_dict)
