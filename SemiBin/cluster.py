@@ -12,6 +12,11 @@ import shutil
 
 def cluster(model, data, device, max_edges, max_node, is_combined,
             logger, n_sample, contig_length_dict, out, contig_dict, binned_short,num_process,minfasta,recluster,random_seed):
+    """
+    Cluster contigs into bins
+    max_edges: max edges of one contig considered in binning
+    max_node: max percentage of contigs considered in binning
+    """
     train_data = data.values
     if not is_combined:
         train_data_input = train_data[:, 0:136]
@@ -49,7 +54,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     while (threshold < 1):
         threshold += 0.05
         num = len(list(set(np.where(embedding_matrix > threshold)[0])))
-        if round(num / len(embedding_matrix), 2) < 1:
+        if round(num / len(embedding_matrix), 2) < max_node:
             break
     threshold -= 0.05
 

@@ -10,6 +10,9 @@ from tqdm import tqdm
 import sys
 
 class Semi_encoding_multiple(torch.nn.Module):
+    """
+    Model for combined features
+    """
     def __init__(self, num):
         super(Semi_encoding_multiple, self).__init__()
         self.encoder1 = torch.nn.Sequential(
@@ -48,6 +51,9 @@ class Semi_encoding_multiple(torch.nn.Module):
 
 
 class Semi_encoding_single(torch.nn.Module):
+    """
+    Model for k-mer features
+    """
     def __init__(self, num):
         super(Semi_encoding_single, self).__init__()
         self.encoder1 = torch.nn.Sequential(
@@ -110,7 +116,6 @@ def loss_function(embedding1, embedding2, label, raw_x_1,
 
 
 class feature_Dataset(Dataset):
-
     def __init__(self, embedding1_lists, embedding2_lists, label_lists):
         self.embedding1_lists = embedding1_lists
         self.embedding2_lists = embedding2_lists
@@ -137,6 +142,9 @@ class unsupervised_feature_Dataset(Dataset):
 
 def train(out, contig_fastas, binned_shorts, logger, datas, data_splits, cannot_links, is_combined=True,
           batchsize=2048, epoches=20, device=None, num_process = 8, mode = 'single'):
+    """
+    Train model from one sample(--mode single) or several samples(--mode several)
+    """
     dataloader_list = []
     un_dataloader_list = []
 

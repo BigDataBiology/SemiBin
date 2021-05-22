@@ -11,7 +11,6 @@ import random
 import shutil
 
 def validate_args(args):
-
     def expect_file(f):
         if f is not None:
             if not os.path.exists(f):
@@ -246,6 +245,9 @@ def write_bins(namelist, contig_labels, output, contig_dict,
 
 
 def cal_kl(m1, m2, v1, v2):
+    """
+    Calculate KL divergence
+    """
     m1 = np.clip(m1, 1e-6, None)
     m2 = np.clip(m2, 1e-6, None)
     v1 = np.clip(v1, 1.0, None)

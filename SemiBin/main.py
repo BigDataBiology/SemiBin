@@ -305,6 +305,7 @@ def parse_args(args):
     return parser.parse_args(args)
 
 ###https://stackoverflow.com/questions/6728236/exception-thrown-in-multiprocessing-pool-not-detected
+### Return error message when using multiprocessing
 def error(msg, *args):
     return multiprocessing.get_logger().error(msg, *args)
 
@@ -316,7 +317,6 @@ class LogExceptions(object):
         try:
             result = self.__callable(*args, **kwargs)
         except Exception as e:
-
             error(traceback.format_exc())
             raise
 
@@ -328,6 +328,16 @@ class LoggingPool(Pool):
 
 def generate_cov(bam_file, bam_index, out, threshold,
                  is_combined, contig_threshold, logger, sep = None):
+    """
+    Call bedtools and generate coverage file
+
+    bam_file: bam files used
+    out: output
+    threshold: threshold of contigs that will be binned
+    is_combined: if using abundance feature in deep learning. True: use
+    contig_threshold: threshold of contigs for must-link constraints
+    sep: separator for multi-sample binning
+    """
     logger.info('Processing `{}`'.format(bam_file))
     bam_name = os.path.split(bam_file)[-1] + '_{}'.format(bam_index)
     bam_depth = os.path.join(out, '{}_depth.txt'.format(bam_name))
@@ -378,6 +388,9 @@ def _checkback(msg):
     msg[1].info('Processed:{}'.format(msg[0]))
 
 def get_file_md5(fname):
+    """
+    Calculate Md5 for downloaded file
+    """
     m = hashlib.md5()
     with open(fname,'rb') as fobj:
         while True:
@@ -389,7 +402,11 @@ def get_file_md5(fname):
     return m.hexdigest()
 
 def download(logger, GTDB_path):
-    logger.info('Downloading GTDB.  will take a while..')
+    """
+    Download GTDB.
+    GTDB_path: defalt path is $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB
+    """
+    logger.info('Downloading GTDB.  It will take a while..')
     GTDB_dir = os.path.split(GTDB_path)[0]
     os.makedirs(GTDB_dir, exist_ok=True)
 
@@ -436,9 +453,12 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
                      must_link_threshold):
     """
     Predict taxonomy using mmseqs and generate cannot-link file
-    :param handle: handle to read fasta file
-    :param binned_short: binning contigs > 1000bp or 2500 bp
-    :param must_link_threshold: threshold for generating must-link pair
+
+    contig_fasta: contig file used
+    GTDB_reference: GTDB path
+    cannot_name: name for cannot-link constraint
+    binned_short: threshold for contigs used in binning
+    must_link_threshold: threshold of contigs for must-link constraints
     """
     download_GTDB(logger, GTDB_reference)
     GTDB_default = os.path.join(
@@ -502,9 +522,10 @@ def generate_data_single(bams, num_process, logger,
                          output, contig_fasta, binned_short,
                          must_link_threshold):
     """
-    Generate data.csv and data_split.csv for training and clustering.
+    Generate data.csv and data_split.csv for training and clustering of single-sample and co-assembly binning mode.
     data.csv has the features(kmer and abundance) for original contigs.
     data_split.csv has the features(kmer and abundace) for contigs that are breaked up as must-link pair.
+
     """
     n_sample = len(bams)
     is_combined = n_sample >= 5
@@ -567,6 +588,11 @@ def generate_data_single(bams, num_process, logger,
 
 def generate_data_multi(bams, num_process,separator,
                         logger, output, contig_fasta):
+    """
+    Generate data.csv and data_split.csv for every sample of multi-sample binning mode.
+    data.csv has the features(kmer and abundance) for original contigs.
+    data_split.csv has the features(kmer and abundace) for contigs that are breaked up as must-link pair.
+    """
     n_sample = len(bams)
     is_combined = n_sample >= 5
     bam_list = bams
@@ -740,8 +766,9 @@ def training(contig_fasta, bams, num_process, data,
             logger, output, device, mode):
     """
     Training the model
-    """
 
+    model: [single/several]
+    """
 
     binned_shorts= []
     num_cpu = multiprocessing.cpu_count() if num_process == 0 else num_process
@@ -791,12 +818,16 @@ def training(contig_fasta, bams, num_process, data,
         mode = mode)
 
 
-
 def binning(bams, num_process, data,
             max_edges, max_node, minfasta, logger, output,
             binned_short, device, contig_length_dict, contig_dict,recluster,model_path, random_seed):
     """
     Clustering the contigs to get the final bins.
+
+    contig_length_dict: {contig_id:length,...}
+    contig_dict: {contig_id:seq,...}
+    recluster: if reclustering
+    model_path: path to the trained model
     """
     logger.info('Start binning.')
     n_sample = len(bams)
@@ -828,6 +859,9 @@ def binning(bams, num_process, data,
 
 def single_easy_binning(args, logger, output, binned_short,
                         must_link_threshold, device, contig_length_dict, contig_dict, recluster,random_seed):
+    """
+    contain `predict_taxonomy`, `generate_data_single`, `train`, `bin` in one command for single-sample and co-assembly binning
+    """
     logger.info('Running mmseqs and generate cannot-link file.')
     predict_taxonomy(
         args.contig_fasta,
@@ -853,6 +887,9 @@ def single_easy_binning(args, logger, output, binned_short,
 
 
 def multi_easy_binning(args, logger, output, device, recluster, random_seed):
+    """
+    contain `predict_taxonomy`, `generate_data_multi`, `train`, `bin` in one command for multi-sample binning
+    """
     logger.info('Multi-samples binning.')
     logger.info('Generate training data.')
     sample_list = generate_data_multi(
