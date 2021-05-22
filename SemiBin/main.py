@@ -65,9 +65,7 @@ def parse_args(args):
                                             help='Generate training data (files data.csv and data_split.csv) '
                                                 'for the semi-supervised deep learning model training (multi-sample)')
 
-
     download_GTDB = subparsers.add_parser('download_GTDB', help='Download GTDB reference genomes.')
-
 
     training = subparsers.add_parser('train',
                                     help='Train the model.')
@@ -85,18 +83,21 @@ def parse_args(args):
 
     training.add_argument('--data',
                          required=True,
+                         nargs='*',
                          help='Path to the input data.csv file.',
                          dest='data',
                          default=None,
                          )
     training.add_argument('--data-split',
                          required=True,
+                         nargs='*',
                          help='Path to the input data_split.csv file.',
                          dest='data_split',
                          default=None,
                          )
     training.add_argument('-c', '--cannot-link',
                          required=True,
+                          nargs='*',
                          help='Path to the input cannot link file. '
                          'The file format: `contig_1,contig_2` '
                          '(one row for each cannot link constraint).',
@@ -116,6 +117,46 @@ def parse_args(args):
                    help='Batch size used in the training process (Default: 2048).',
                    dest='batchsize',
                    default=2048, )
+
+    training.add_argument('--mode',
+                          required=True,
+                          type=str,
+                          help='[single/several]Train models from one sample or several samples(train model across several samples with single-sample binning can get better pre-trained model.).'
+                               'In several mode, must input data, data_split, cannot, fasta files for corresponding sample with same order.',
+                          dest='mode',
+                          default='single')
+
+    training.add_argument('-i', '--input-fasta',
+                   required=True,
+                   nargs='*',
+                   help='Path to the input fasta file.',
+                   dest='contig_fasta',
+                   default=None, )
+
+    training.add_argument('-b', '--input-bam',
+                   required=False,
+                   nargs='*',
+                   help='Path to the input BAM file(Only need when training mode is single). '
+                        'If using multiple samples, you can input multiple files.',
+                   dest='bams',
+                   default=None,
+                   )
+
+    training.add_argument('-o', '--output',
+                   required=True,
+                   help='Output directory (will be created if non-existent)',
+                   dest='output',
+                   default=None,
+                   )
+
+    training.add_argument('-p', '--processes', '-t', '--threads',
+                   required=False,
+                   type=int,
+                   help='Number of CPUs used (pass the value 0 to use all CPUs)',
+                   dest='num_process',
+                   default=0,
+                   metavar=''
+                   )
 
     binning.add_argument('--data',
                          required=True,
@@ -155,7 +196,7 @@ def parse_args(args):
                          default=None,
                          help='Path to the trained semi-supervised deep learning model.')
 
-    for p in [single_easy_bin, multi_easy_bin, predict_taxonomy, generate_data_single, generate_data_multi, binning, training]:
+    for p in [single_easy_bin, multi_easy_bin, predict_taxonomy, generate_data_single, generate_data_multi, binning]:
         p.add_argument('-i', '--input-fasta',
                                 required=True,
                                 help='Path to the input fasta file.',
@@ -168,15 +209,7 @@ def parse_args(args):
                             default=None,
                             )
 
-    for p in [single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi, binning, training]:
-        p.add_argument('-b', '--input-bam',
-                            required=True,
-                            nargs='*',
-                            help='Path to the input BAM file. '
-                                 'If using multiple sample binning, you can input multiple files.',
-                            dest='bams',
-                            default=None,
-                            )
+    for p in [single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi, binning]:
 
         p.add_argument('-p', '--processes', '-t', '--threads',
                                      required=False,
@@ -271,7 +304,7 @@ def parse_args(args):
         sys.exit()
     return parser.parse_args(args)
 
-
+###https://stackoverflow.com/questions/6728236/exception-thrown-in-multiprocessing-pool-not-detected
 def error(msg, *args):
     return multiprocessing.get_logger().error(msg, *args)
 
@@ -704,21 +737,48 @@ def generate_data_multi(bams, num_process,separator,
 
 def training(contig_fasta, bams, num_process, data,
             data_split, cannot_link, batchsize, epoches,
-            logger, output, binned_short, device):
+            logger, output, device, mode):
     """
     Training the model
     """
-    logger.info('Start training.')
-    n_sample = len(bams)
-    is_combined = n_sample >= 5
+
+
+    binned_shorts= []
     num_cpu = multiprocessing.cpu_count() if num_process == 0 else num_process
-    data = pd.read_csv(data, index_col=0)
-    data.index = data.index.astype(str)
-    data_split = pd.read_csv(data_split, index_col=0)
+
+    if mode == 'single':
+        logger.info('Start training from one sample.')
+
+        whole_contig_bp = 0
+        contig_bp_2500 = 0
+
+        for seq_record in SeqIO.parse(contig_fasta[0], "fasta"):
+            if len(seq_record) >= 1000 and len(seq_record) <= 2500:
+                contig_bp_2500 += len(seq_record)
+            whole_contig_bp += len(seq_record)
+        binned_short = contig_bp_2500 / whole_contig_bp < 0.05
+        binned_shorts.append(binned_short)
+        n_sample = len(bams)
+        is_combined = n_sample >= 5
+
+
+    else:
+        logger.info('Start training from multiple samples.')
+        is_combined = False
+        for contig_index in contig_fasta:
+            whole_contig_bp = 0
+            contig_bp_2500 = 0
+            for seq_record in SeqIO.parse(contig_index, "fasta"):
+                if len(seq_record) >= 1000 and len(seq_record) <= 2500:
+                    contig_bp_2500 += len(seq_record)
+                whole_contig_bp += len(seq_record)
+            binned_short = contig_bp_2500 / whole_contig_bp < 0.05
+            binned_shorts.append(binned_short)
+
     model = train(
         output,
         contig_fasta,
-        binned_short,
+        binned_shorts,
         logger,
         data,
         data_split,
@@ -727,7 +787,8 @@ def training(contig_fasta, bams, num_process, data,
         batchsize,
         epoches,
         device,
-        num_cpu)
+        num_cpu,
+        mode = mode)
 
 
 
@@ -890,20 +951,39 @@ def main():
         device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
 
-        if os.path.splitext(args.contig_fasta)[1] == '.gz':
-            contig_name = args.contig_fasta.replace(".gz", "")
-            ungz_file = gzip.GzipFile(args.contig_fasta)
-            open(contig_name, "wb+").write(ungz_file.read())
-            ungz_file.close()
-            args.contig_fasta = contig_name
-        elif os.path.splitext(args.contig_fasta)[1] == '.bz2':
-            contig_name = args.contig_fasta.replace(".bz2", "")
-            unbz2_file = bz2.BZ2File(args.contig_fasta)
-            open(contig_name, "wb+").write(unbz2_file.read())
-            unbz2_file.close()
-            args.contig_fasta = contig_name
+        if args.cmd != 'train':
+            if os.path.splitext(args.contig_fasta)[1] == '.gz':
+                contig_name = args.contig_fasta.replace(".gz", "")
+                ungz_file = gzip.GzipFile(args.contig_fasta)
+                open(contig_name, "wb+").write(ungz_file.read())
+                ungz_file.close()
+                args.contig_fasta = contig_name
+            elif os.path.splitext(args.contig_fasta)[1] == '.bz2':
+                contig_name = args.contig_fasta.replace(".bz2", "")
+                unbz2_file = bz2.BZ2File(args.contig_fasta)
+                open(contig_name, "wb+").write(unbz2_file.read())
+                unbz2_file.close()
+                args.contig_fasta = contig_name
+        else:
+            contig_fastas = []
+            for contig in args.contig_fasta:
+                if os.path.splitext(contig)[1] == '.gz':
+                    contig_name = args.contig_fasta.replace(".gz", "")
+                    ungz_file = gzip.GzipFile(args.contig_fasta)
+                    open(contig_name, "wb+").write(ungz_file.read())
+                    ungz_file.close()
+                    contig_fastas.append(contig_name)
+                elif os.path.splitext(contig)[1] == '.bz2':
+                    contig_name = args.contig_fasta.replace(".bz2", "")
+                    unbz2_file = bz2.BZ2File(args.contig_fasta)
+                    open(contig_name, "wb+").write(unbz2_file.read())
+                    unbz2_file.close()
+                    contig_fastas.append(contig_name)
+                else:
+                    contig_fastas.append(contig)
+            args.contig_fasta = contig_fastas
 
-    if args.cmd in ['predict_taxonomy', 'generate_data_single', 'bin','single_easy_bin','train']:
+    if args.cmd in ['predict_taxonomy', 'generate_data_single', 'bin','single_easy_bin']:
         whole_contig_bp = 0
         contig_bp_2500 = 0
         contig_length_list = []
@@ -955,7 +1035,7 @@ def main():
             set_random_seed(args.random_seed)
         training(args.contig_fasta, args.bams, args.num_process, args.data,
             args.data_split, args.cannot_link, args.batchsize, args.epoches,
-            logger, out, binned_short, device)
+            logger, out, device, args.mode)
 
 
     if args.cmd == 'bin':

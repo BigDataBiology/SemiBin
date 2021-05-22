@@ -135,139 +135,155 @@ class unsupervised_feature_Dataset(Dataset):
         return len(self.embedding1_lists)
 
 
-def train(out, contig_fasta, binned_short, logger, data, data_split, cannot_link, is_combined=True,
-          batchsize=2048, epoches=20, device=None,num_process = 8):
-    contig_output = os.path.join(out, os.path.split(contig_fasta)[1] + '.frag')
-    hmm_output = os.path.join(out, os.path.split(contig_fasta)[1] + '.hmmout')
-    seed_output = os.path.join(out, os.path.split(contig_fasta)[1] + '.seed')
+def train(out, contig_fastas, binned_shorts, logger, datas, data_splits, cannot_links, is_combined=True,
+          batchsize=2048, epoches=20, device=None, num_process = 8, mode = 'single'):
+    dataloader_list = []
+    un_dataloader_list = []
+
+    for sample_index in range(len(contig_fastas)):
+        contig_output = os.path.join(out, os.path.split(contig_fastas[sample_index])[1] + '.frag')
+        hmm_output = os.path.join(out, os.path.split(contig_fastas[sample_index])[1] + '.hmmout')
+        seed_output = os.path.join(out, os.path.split(contig_fastas[sample_index])[1] + '.seed')
 
 
-    cal_num_bins(
-        contig_fasta,
-        contig_output,
-        hmm_output,
-        seed_output,
-        binned_short,
-        num_process)
+        cal_num_bins(
+            contig_fastas[sample_index],
+            contig_output,
+            hmm_output,
+            seed_output,
+            binned_shorts[sample_index],
+            num_process)
 
+        logger.info('Generate training data of {}:'.format(sample_index))
 
+        # #generate two inputs
+        train_input_1 = []
+        train_input_2 = []
+        train_labels = []
 
-    logger.info('Generate training data:')
+        # cannot link
 
-    # #generate two inputs
-    train_input_1 = []
-    train_input_2 = []
-    train_labels = []
+        if not os.path.getsize(cannot_links[sample_index]):
+            sys.stderr.write(
+                f"Error: Cannot-link file is empty!\n")
+            sys.exit(1)
 
-    # cannot link
+        cannot_link = pd.read_csv(cannot_links[sample_index], sep=',', header=None).values
+        data = pd.read_csv(datas[sample_index], index_col=0)
+        data.index = data.index.astype(str)
+        data_split = pd.read_csv(data_splits[sample_index], index_col=0)
 
-    if not os.path.getsize(cannot_link):
-        sys.stderr.write(
-            f"Error: Cannot-link file is empty!\n")
-        sys.exit(1)
+        if mode == 'several':
+            if data.shape[1] != 138 or data_split.shape[1] != 138:
+                sys.stderr.write(
+                    f"Error: training mode with several only used in single-sample binning!\n")
+                sys.exit(1)
 
-    cannot_link = pd.read_csv(cannot_link, sep=',', header=None).values
+        namelist = data.index.tolist()
+        mapObj = dict(zip(namelist, range(len(namelist))))
+        train_data = data.values
+        train_data_must_link = data_split.values
 
-    namelist = data.index.tolist()
-    mapObj = dict(zip(namelist, range(len(namelist))))
-    train_data = data.values
-    train_data_must_link = data_split.values
+        if not is_combined:
+            train_data_input = train_data[:, 0:136]
+            train_data_split_input = train_data_must_link
+        else:
+            train_data_input = train_data
+            train_data_split_input = train_data_must_link
 
-    if not is_combined:
-        train_data_input = train_data[:, 0:136]
-        train_data_split_input = train_data_must_link
-    else:
-        train_data_input = train_data
-        train_data_split_input = train_data_must_link
+        # can not link from contig annotation
+        for link in cannot_link:
+            train_input_1.append(train_data_input[mapObj[str(link[0])]])
+            train_input_2.append(train_data_input[mapObj[str(link[1])]])
+            train_labels.append(0)
 
-    # can not link from contig annotation
-    for link in cannot_link:
-        train_input_1.append(train_data_input[mapObj[str(link[0])]])
-        train_input_2.append(train_data_input[mapObj[str(link[1])]])
-        train_labels.append(0)
+        # cannot link from bin seed
+        if os.path.exists(seed_output):
+            seed = open(seed_output).read().split('\n')
+            seed = [contig for contig in seed if contig != '']
+            for i in range(len(seed)):
+                for j in range(i + 1, len(seed)):
+                    train_input_1.append(train_data_input[mapObj[str(seed[i])]])
+                    train_input_2.append(train_data_input[mapObj[str(seed[j])]])
+                    train_labels.append(0)
 
-    # cannot link from bin seed
-    if os.path.exists(seed_output):
-        seed = open(seed_output).read().split('\n')
-        seed = [contig for contig in seed if contig != '']
-        for i in range(len(seed)):
-            for j in range(i + 1, len(seed)):
-                train_input_1.append(train_data_input[mapObj[str(seed[i])]])
-                train_input_2.append(train_data_input[mapObj[str(seed[j])]])
-                train_labels.append(0)
+        # must link from breaking up
+        for i in range(0, len(train_data_must_link), 2):
+            train_input_1.append(train_data_split_input[i])
+            train_input_2.append(train_data_split_input[i + 1])
+            train_labels.append(1)
 
-    # must link from breaking up
-    for i in range(0, len(train_data_must_link), 2):
-        train_input_1.append(train_data_split_input[i])
-        train_input_2.append(train_data_split_input[i + 1])
-        train_labels.append(1)
+        logger.info('Number of must link pair:{}'.format(train_labels.count(1)))
+        logger.info('Number of can not link pair:{}'.format(train_labels.count(0)))
 
-    logger.info('Number of must link pair:{}'.format(train_labels.count(1)))
-    logger.info('Number of can not link pair:{}'.format(train_labels.count(0)))
+        dataset = feature_Dataset(train_input_1, train_input_2, train_labels)
+        train_loader = DataLoader(
+            dataset=dataset,
+            batch_size=batchsize,
+            shuffle=True,
+            num_workers=0)
+
+        unlabeled_x = train_data_input
+        unlabeled_train_input1 = []
+        unlabeled_train_input2 = []
+        for i in range(len(unlabeled_x)):
+            unlabeled_train_input1.append(unlabeled_x[i])
+            unlabeled_train_input2.append(unlabeled_x[i])
+
+        dataset_unlabeled = unsupervised_feature_Dataset(
+            unlabeled_train_input1, unlabeled_train_input2)
+        train_loader_unlabeled = DataLoader(
+            dataset=dataset_unlabeled,
+            batch_size=batchsize,
+            shuffle=True,
+            num_workers=16)
+
+        dataloader_list.append(train_loader)
+        un_dataloader_list.append(train_loader_unlabeled)
 
     logger.info('Training model...')
-
-    dataset = feature_Dataset(train_input_1, train_input_2, train_labels)
-    train_loader = DataLoader(
-        dataset=dataset,
-        batch_size=batchsize,
-        shuffle=True,
-        num_workers=0)
-
-    unlabeled_x = train_data_input
-    unlabeled_train_input1 = []
-    unlabeled_train_input2 = []
-    for i in range(len(unlabeled_x)):
-        unlabeled_train_input1.append(unlabeled_x[i])
-        unlabeled_train_input2.append(unlabeled_x[i])
-
-    dataset_unlabeled = unsupervised_feature_Dataset(
-        unlabeled_train_input1, unlabeled_train_input2)
-    train_loader_unlabeled = DataLoader(
-        dataset=dataset_unlabeled,
-        batch_size=batchsize,
-        shuffle=True,
-        num_workers=16)
 
     if not is_combined:
         model = Semi_encoding_single(train_data_input.shape[1]).to(device)
     else:
         model = Semi_encoding_multiple(train_data_input.shape[1]).to(device)
+
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     scheduler = lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)
 
     for epoch in tqdm(range(epoches)):
-        for train_input1, train_input2, train_label in train_loader:
-            model.train()
-            train_input1 = train_input1.to(device)
-            train_input2 = train_input2.to(device)
-            train_label = train_label.to(device)
-            embedding1, embedding2 = model.forward(
-                train_input1.float(), train_input2.float())
-            decoder1, decoder2 = model.decoder(embedding1, embedding2)
-            optimizer.zero_grad()
-            loss, supervised_loss, unsupervised_loss = loss_function(embedding1.double(), embedding2.double(),
-                                                                     train_label.double(), train_input1.double(),
-                                                                     train_input2.double(), decoder1.double(),
-                                                                     decoder2.double())
-            loss = loss.to(device)
-            loss.backward()
-            optimizer.step()
+        for data_index in range(len(dataloader_list)):
+            for train_input1, train_input2, train_label in dataloader_list[data_index]:
+                model.train()
+                train_input1 = train_input1.to(device)
+                train_input2 = train_input2.to(device)
+                train_label = train_label.to(device)
+                embedding1, embedding2 = model.forward(
+                    train_input1.float(), train_input2.float())
+                decoder1, decoder2 = model.decoder(embedding1, embedding2)
+                optimizer.zero_grad()
+                loss, supervised_loss, unsupervised_loss = loss_function(embedding1.double(), embedding2.double(),
+                                                                         train_label.double(), train_input1.double(),
+                                                                         train_input2.double(), decoder1.double(),
+                                                                         decoder2.double())
+                loss = loss.to(device)
+                loss.backward()
+                optimizer.step()
 
-        for unlabeled_train_input1, unlabeled_train_input2 in train_loader_unlabeled:
-            model.train()
-            unlabeled_train_input1 = unlabeled_train_input1.to(device)
-            unlabeled_train_input2 = unlabeled_train_input2.to(device)
-            embedding1, embedding2 = model.forward(
-                unlabeled_train_input1.float(), unlabeled_train_input1.float())
-            decoder1, decoder2 = model.decoder(embedding1, embedding2)
-            optimizer.zero_grad()
-            loss = loss_function(embedding1.double(), embedding2.double(),
-                                 None, unlabeled_train_input1.double(),
-                                 unlabeled_train_input2.double(), decoder1.double(),
-                                 decoder2.double(), is_label=False).to(device)
-            loss.backward()
-            optimizer.step()
+            for unlabeled_train_input1, unlabeled_train_input2 in un_dataloader_list[data_index]:
+                model.train()
+                unlabeled_train_input1 = unlabeled_train_input1.to(device)
+                unlabeled_train_input2 = unlabeled_train_input2.to(device)
+                embedding1, embedding2 = model.forward(
+                    unlabeled_train_input1.float(), unlabeled_train_input1.float())
+                decoder1, decoder2 = model.decoder(embedding1, embedding2)
+                optimizer.zero_grad()
+                loss = loss_function(embedding1.double(), embedding2.double(),
+                                     None, unlabeled_train_input1.double(),
+                                     unlabeled_train_input2.double(), decoder1.double(),
+                                     decoder2.double(), is_label=False).to(device)
+                loss.backward()
+                optimizer.step()
         scheduler.step()
 
     logger.info('Training finished.')

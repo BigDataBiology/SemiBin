@@ -21,18 +21,18 @@ def test_train():
         contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
 
     os.makedirs('output_train',exist_ok=True)
-    training(contig_fasta='test/train_data/input.fasta',
-            bams=['test/train_data/input.sorted.bam'],
-            num_process=1,
-            data='test/train_data/data.csv',
-            data_split='test/train_data/data_split.csv',
-            cannot_link='test/train_data/cannot.txt',
-            batchsize=2048,
-            epoches=1,
-            logger=logger,
-            output='output_train',
-            binned_short=True,
-            device='cpu',
+    training(contig_fasta = ['test/train_data/input.fasta'],
+            bams = ['test/train_data/input.sorted.bam'],
+            num_process = 1,
+            data = ['test/train_data/data.csv'],
+            data_split = ['test/train_data/data_split.csv'],
+            cannot_link = ['test/train_data/cannot.txt'],
+            batchsize = 2048,
+            epoches = 1,
+            logger = logger,
+            output = 'output_train',
+            device = 'cpu',
+            mode = 'single'
             )
 
     assert os.path.exists('output_train/model.h5')
