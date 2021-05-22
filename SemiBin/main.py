@@ -7,6 +7,7 @@ import subprocess
 import gzip
 import bz2
 from Bio import SeqIO
+from multiprocessing.pool import Pool
 import multiprocessing
 from .generate_coverage import calculate_coverage
 from atomicwrites import atomic_write
@@ -23,6 +24,7 @@ import requests
 import sys
 import hashlib
 import tarfile
+import traceback
 
 from .semibin_version import __version__ as ver
 
@@ -270,24 +272,54 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
+def error(msg, *args):
+    return multiprocessing.get_logger().error(msg, *args)
+
+class LogExceptions(object):
+    def __init__(self, callable):
+        self.__callable = callable
+
+    def __call__(self, *args, **kwargs):
+        try:
+            result = self.__callable(*args, **kwargs)
+        except Exception as e:
+
+            error(traceback.format_exc())
+            raise
+
+        return result
+
+class LoggingPool(Pool):
+    def apply_async(self, func, args=(), kwds={}, callback=None):
+        return Pool.apply_async(self, LogExceptions(func), args, kwds, callback)
+
 def generate_cov(bam_file, bam_index, out, threshold,
-                 is_combined, contig_threshold, logger):
-    logger.info('Processing {}'.format(bam_file))
+                 is_combined, contig_threshold, logger, sep = None):
+    logger.info('Processing `{}`'.format(bam_file))
     bam_name = os.path.split(bam_file)[-1] + '_{}'.format(bam_index)
     bam_depth = os.path.join(out, '{}_depth.txt'.format(bam_name))
-    os.system(
-        'bedtools genomecov -bga -ibam \'{0}\' > \'{1}\''.format(bam_file, bam_depth))
+
+    with open(bam_depth, 'wb') as bedtools_out:
+        subprocess.check_call(
+            ['bedtools', 'genomecov',
+             '-bga',
+             '-ibam', bam_file],
+            stdout=bedtools_out)
 
     if is_combined:
-        contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined,
+        if sep is None:
+            contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined,
                                                               contig_threshold=contig_threshold)
+        else:
+            contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined,
+                                                                  sep=sep, binned_thre_dict=contig_threshold)
         contig_cov = contig_cov.apply(lambda x: x + 1e-5)
         must_link_contig_cov = must_link_contig_cov.apply(lambda x: x + 1e-5)
-        abun_scale = (contig_cov.mean() / 100).apply(np.ceil) * 100
-        abun_split_scale = (must_link_contig_cov.mean() / 100).apply(np.ceil) * 100
-        contig_cov = contig_cov.div(abun_scale)
-        must_link_contig_cov = must_link_contig_cov.div(abun_split_scale)
-
+        if sep is None:
+            abun_scale = (contig_cov.mean() / 100).apply(np.ceil) * 100
+            abun_split_scale = (must_link_contig_cov.mean() / 100).apply(np.ceil) * 100
+            contig_cov = contig_cov.div(abun_scale)
+            must_link_contig_cov = must_link_contig_cov.div(abun_split_scale)
 
         with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
             contig_cov.to_csv(ofile)
@@ -295,43 +327,19 @@ def generate_cov(bam_file, bam_index, out, threshold,
         with atomic_write(os.path.join(out, '{}_data_split_cov.csv'.format(bam_name)), overwrite=True) as ofile:
             must_link_contig_cov.to_csv(ofile)
     else:
-        contig_cov = calculate_coverage(
-            bam_depth,
-            threshold,
-            is_combined=is_combined,
-            contig_threshold=contig_threshold)
+        if sep is None:
+            contig_cov = calculate_coverage(
+                bam_depth,
+                threshold,
+                is_combined=is_combined,
+                contig_threshold=contig_threshold)
+        else:
+            contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined, sep=sep,
+                                            binned_thre_dict=contig_threshold)
         contig_cov = contig_cov.apply(lambda x: x + 1e-5)
         with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
             contig_cov.to_csv(ofile)
     return (bam_file, logger)
-
-
-def generate_cov_multiple(bam_file, bam_index, out, threshold,
-                          is_combined, sep, binned_threshold_dict, logger):
-    logger.info('Processing {}'.format(bam_file))
-    bam_name = os.path.split(bam_file)[-1] + '_{}'.format(bam_index)
-    bam_depth = os.path.join(out, '{}_depth.txt'.format(bam_name))
-    os.system(
-        'bedtools genomecov -bga -ibam \'{0}\' > \'{1}\''.format(bam_file, bam_depth))
-    if is_combined:
-        contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined,
-                                                              sep=sep, binned_thre_dict=binned_threshold_dict)
-        contig_cov = contig_cov.apply(lambda x: x + 1e-5)
-        must_link_contig_cov = must_link_contig_cov.apply(lambda x: x + 1e-5)
-
-        with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
-            contig_cov.to_csv(ofile)
-
-        with atomic_write(os.path.join(out, '{}_data_split_cov.csv'.format(bam_name)), overwrite=True) as ofile:
-            must_link_contig_cov.to_csv(ofile)
-    else:
-        contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined, sep=sep,
-                                        binned_thre_dict=binned_threshold_dict)
-        contig_cov = contig_cov.apply(lambda x: x + 1e-5)
-        with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
-            contig_cov.to_csv(ofile)
-    return (bam_file, logger)
-
 
 def _checkback(msg):
     msg[1].info('Processed:{}'.format(msg[0]))
@@ -347,22 +355,13 @@ def get_file_md5(fname):
 
     return m.hexdigest()
 
-def download_GTDB(logger,GTDB_reference):
-    GTDB_default = os.path.join(
-        os.environ['HOME'],
-        '.cache',
-        'SemiBin',
-        'mmseqs2-GTDB',
-        'GTDB')
-
-    GTDB_path = GTDB_reference if GTDB_reference is not None else GTDB_default
-    logger.info('Downloading GTDB.')
+def download(logger, GTDB_path):
+    logger.info('Downloading GTDB.  will take a while..')
     GTDB_dir = os.path.split(GTDB_path)[0]
     os.makedirs(GTDB_dir, exist_ok=True)
 
     download_url = 'https://zenodo.org/record/4751564/files/GTDB_v95.tar.gz?download=1'
     download_path = os.path.join(GTDB_dir, 'GTDB_v95.tar.gz')
-
 
     with requests.get(download_url, stream=True) as r:
         with open(download_path, 'wb') as f:
@@ -377,7 +376,7 @@ def download_GTDB(logger,GTDB_reference):
             tar.close()
         except Exception:
             sys.stderr.write(
-                    f"Error: cannot unzip the file.")
+                f"Error: cannot unzip the file.")
             sys.exit(1)
 
         os.remove(download_path)
@@ -386,6 +385,17 @@ def download_GTDB(logger,GTDB_reference):
         sys.stderr.write(
             f"Error: MD5 check failed, removing '{download_path}'.\n")
         sys.exit(1)
+
+def download_GTDB(logger,GTDB_reference):
+    GTDB_default = os.path.join(
+        os.environ['HOME'],
+        '.cache',
+        'SemiBin',
+        'mmseqs2-GTDB',
+        'GTDB')
+
+    GTDB_path = GTDB_reference if GTDB_reference is not None else GTDB_default
+    download(logger, GTDB_path)
 
 def predict_taxonomy(contig_fasta, GTDB_reference,
                      cannot_name, logger,
@@ -397,6 +407,7 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
     :param binned_short: binning contigs > 1000bp or 2500 bp
     :param must_link_threshold: threshold for generating must-link pair
     """
+    download_GTDB(logger, GTDB_reference)
     GTDB_default = os.path.join(
         os.environ['HOME'],
         '.cache',
@@ -406,35 +417,7 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
     GTDB_path = GTDB_reference
     if GTDB_reference is None:
         if not os.path.exists(GTDB_default):
-            logger.info('Downloading GTDB. It will take a while..')
-            GTDB_dir = os.path.split(GTDB_default)[0]
-            os.makedirs(GTDB_dir, exist_ok=True)
-
-            download_url = 'https://zenodo.org/record/4751564/files/GTDB_v95.tar.gz?download=1'
-            download_path = os.path.join(GTDB_dir,'GTDB_v95.tar.gz')
-
-            with requests.get(download_url, stream=True) as r:
-                with open(download_path, 'wb') as f:
-                    shutil.copyfileobj(r.raw, f)
-            logger.info('Download finished. Checking MD5...')
-            if get_file_md5(download_path) == '4a70301c54104e87d5615e3f2383c8b5':
-                try:
-                    tar = tarfile.open(download_path, "r:gz")
-                    file_names = tar.getnames()
-                    for file_name in file_names:
-                        tar.extract(file_name, GTDB_dir)
-                    tar.close()
-                except Exception:
-                    sys.stderr.write(
-                        f"Error: cannot unzip the file.")
-                    sys.exit(1)
-                os.remove(download_path)
-            else:
-                os.remove(download_path)
-                sys.stderr.write(
-                    f"Error: MD5 check failed, removing '{download_path}'.\n")
-                sys.exit(1)
-
+            download(logger, GTDB_default)
         GTDB_path = GTDB_default
     subprocess.check_call(
         ['mmseqs',
@@ -494,9 +477,9 @@ def generate_data_single(bams, num_process, logger,
     is_combined = n_sample >= 5
     bam_list = bams
     if num_process != 0:
-        pool = multiprocessing.Pool(num_process)
+        pool = LoggingPool(num_process)
     else:
-        pool = multiprocessing.Pool()
+        pool = LoggingPool()
 
     logger.info('Calculating coverage for every sample.')
 
@@ -511,6 +494,7 @@ def generate_data_single(bams, num_process, logger,
                 is_combined,
                 1000 if binned_short else 2500,
                 logger,
+                None
             ),
             callback=_checkback)
     pool.close()
@@ -554,9 +538,9 @@ def generate_data_multi(bams, num_process,separator,
     is_combined = n_sample >= 5
     bam_list = bams
     if num_process != 0:
-        pool = multiprocessing.Pool(num_process)
+        pool = LoggingPool(num_process)
     else:
-        pool = multiprocessing.Pool()
+        pool = LoggingPool()
 
     # Gererate contig file for every sample
     from collections import defaultdict
@@ -608,16 +592,16 @@ def generate_data_multi(bams, num_process,separator,
             else binning_threshold[2500].append(sample)
 
     for bam_index in range(n_sample):
-        pool.apply_async(generate_cov_multiple,
+        pool.apply_async(generate_cov,
                          args=(
                              bam_list[bam_index],
                              bam_index,
                              os.path.join(output, 'samples'),
                              must_link_threshold,
                              is_combined,
-                             separator,
                              binning_threshold,
-                             logger
+                             logger,
+                             separator,
                          ),
                          callback=_checkback)
     pool.close()
