@@ -38,11 +38,50 @@ def validate_args(args):
         expect_file_list(args.bams)
 
     if args.cmd == 'train':
-        expect_file(args.contig_fasta)
-        expect_file_list(args.bams)
-        expect_file(args.data)
-        expect_file(args.data_split)
-        expect_file(args.cannot_link)
+        if args.mode == 'single':
+            if len(args.contig_fasta) > 1:
+                sys.stderr.write(
+                    f"Error: Expected one fasta file with single mode.\n")
+                sys.exit(1)
+
+            if len(args.data) > 1:
+                sys.stderr.write(
+                    f"Error: Expected one data.csv file with single mode.\n")
+                sys.exit(1)
+
+            if len(args.data_split) > 1:
+                sys.stderr.write(
+                    f"Error: Expected one data_split.csv file with single mode.\n")
+                sys.exit(1)
+
+            if len(args.cannot_link) > 1:
+                sys.stderr.write(
+                    f"Error: Expected one cannot.txt file with single mode.\n")
+                sys.exit(1)
+
+            if args.bams is None:
+                sys.stderr.write(
+                    f"Error: Need to input bams used with single mode.\n")
+                sys.exit(1)
+
+            expect_file(args.contig_fasta[0])
+            expect_file_list(args.bams)
+            expect_file(args.data[0])
+            expect_file(args.data_split[0])
+            expect_file(args.cannot_link[0])
+
+        elif args.mode == 'several':
+            assert len(args.contig_fasta) == len(args.data) == len(args.data_split) == len(args.cannot_link), 'Must input same number of fasta, data, data_split, cannot files!'
+
+            expect_file_list(args.contig_fasta)
+            expect_file_list(args.data)
+            expect_file_list(args.data_split)
+            expect_file_list(args.cannot_link)
+
+        else:
+            sys.stderr.write(
+                f"Error: Please use training mode with [single/several].\n")
+            sys.exit(1)
 
     if args.cmd == 'bin':
         expect_file(args.contig_fasta)
