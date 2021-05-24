@@ -219,6 +219,14 @@ def parse_args(args):
                                      default=0,
                                      metavar=''
                                      )
+        p.add_argument('-b', '--input-bam',
+                              required=False,
+                              nargs='*',
+                              help='Path to the input BAM file(Only need when training mode is single). '
+                                   'If using multiple samples, you can input multiple files.',
+                              dest='bams',
+                              default=None,
+                              )
 
     for p in [single_easy_bin, multi_easy_bin, predict_taxonomy]:
         p.add_argument('-r', '--reference-db',
@@ -460,7 +468,6 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
     binned_short: threshold for contigs used in binning
     must_link_threshold: threshold of contigs for must-link constraints
     """
-    download_GTDB(logger, GTDB_reference)
     GTDB_default = os.path.join(
         os.environ['HOME'],
         '.cache',
@@ -878,9 +885,9 @@ def single_easy_binning(args, logger, output, binned_short,
     logger.info('Training model and clustering.')
     data_path = os.path.join(output,'data.csv')
     data_split_path = os.path.join(output,'data_split.csv')
-    training(args.contig_fasta, args.bams, args.num_process, data_path,
-            data_split_path, os.path.join(
-                output, 'cannot', 'cannot.txt'), args.batchsize, args.epoches, logger, output, binned_short, device)
+    training([args.contig_fasta], args.bams, args.num_process, [data_path],
+            [data_split_path], [os.path.join(
+                output, 'cannot', 'cannot.txt')], args.batchsize, args.epoches, logger, output, device, mode='single')
 
     binning(args.bams, args.num_process, data_path,
             args.max_edges, args.max_node, args.minfasta_kb * 1000, logger, output, binned_short, device, contig_length_dict, contig_dict,recluster, os.path.join(output, 'model.h5'),random_seed)
@@ -934,8 +941,8 @@ def multi_easy_binning(args, logger, output, device, recluster, random_seed):
         sample_cannot = os.path.join(
             output, 'samples', sample, 'cannot/{}.txt'.format(sample))
         logger.info('Training model and clustering for {}.'.format(sample))
-        training(sample_fasta, args.bams, args.num_process, sample_data,
-                 sample_data_split, sample_cannot, args.batchsize, args.epoches, logger, os.path.join(output, 'samples', sample), binned_short, device)
+        training([sample_fasta], args.bams, args.num_process, [sample_data],
+                 [sample_data_split], [sample_cannot], args.batchsize, args.epoches, logger, os.path.join(output, 'samples', sample), device, mode='single')
 
         binning(args.bams, args.num_process, sample_data,
                 args.max_edges, args.max_node, args.minfasta_kb * 1000, logger, os.path.join(output, 'samples', sample), binned_short, device,

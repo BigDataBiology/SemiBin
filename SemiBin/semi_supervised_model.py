@@ -182,7 +182,7 @@ def train(out, contig_fastas, binned_shorts, logger, datas, data_splits, cannot_
         data_split = pd.read_csv(data_splits[sample_index], index_col=0)
 
         if mode == 'several':
-            if data.shape[1] != 138 or data_split.shape[1] != 138:
+            if data.shape[1] != 138 or data_split.shape[1] != 136:
                 sys.stderr.write(
                     f"Error: training mode with several only used in single-sample binning!\n")
                 sys.exit(1)
