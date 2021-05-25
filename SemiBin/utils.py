@@ -255,3 +255,120 @@ def cal_kl(m1, m2, v1, v2):
     value = np.log(np.sqrt(v2 / v1)) + \
         np.divide(np.add(v1, np.square(m1 - m2)), 2 * v2) - 0.5
     return np.clip(value, 1e-6, 1 - 1e-6)
+
+def get_file_md5(fname):
+    """
+    Calculate Md5 for downloaded file
+    """
+    import hashlib
+    m = hashlib.md5()
+    with open(fname,'rb') as fobj:
+        while True:
+            data = fobj.read(4096)
+            if not data:
+                break
+            m.update(data)
+
+    return m.hexdigest()
+
+def download(logger, GTDB_path):
+    """
+    Download GTDB.
+    GTDB_path: defalt path is $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB
+    """
+    import requests
+    import tarfile
+    logger.info('Downloading GTDB.  It will take a while..')
+    GTDB_dir = os.path.split(GTDB_path)[0]
+    os.makedirs(GTDB_dir, exist_ok=True)
+
+    download_url = 'https://zenodo.org/record/4751564/files/GTDB_v95.tar.gz?download=1'
+    download_path = os.path.join(GTDB_dir, 'GTDB_v95.tar.gz')
+
+    with requests.get(download_url, stream=True) as r:
+        with open(download_path, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
+    logger.info('Download finished. Checking MD5...')
+    if get_file_md5(download_path) == '4a70301c54104e87d5615e3f2383c8b5':
+        try:
+            tar = tarfile.open(download_path, "r:gz")
+            file_names = tar.getnames()
+            for file_name in file_names:
+                tar.extract(file_name, GTDB_dir)
+            tar.close()
+        except Exception:
+            sys.stderr.write(
+                f"Error: cannot unzip the file.")
+            sys.exit(1)
+
+        os.remove(download_path)
+    else:
+        os.remove(download_path)
+        sys.stderr.write(
+            f"Error: MD5 check failed, removing '{download_path}'.\n")
+        sys.exit(1)
+
+
+def set_random_seed(seed):
+    import torch
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+
+def process_fasta(fasta_path):
+    """
+    Return contig length, contig seq
+    """
+    whole_contig_bp = 0
+    contig_bp_2500 = 0
+    contig_length_list = []
+    contig_length_dict = {}
+    contig_dict = {}
+
+    for seq_record in SeqIO.parse(fasta_path, "fasta"):
+        if len(seq_record) >= 1000 and len(seq_record) <= 2500:
+            contig_bp_2500 += len(seq_record)
+        contig_length_list.append(len(seq_record))
+        whole_contig_bp += len(seq_record)
+        contig_length_dict[str(seq_record.id).strip(
+            '')] = len((seq_record.seq))
+        contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
+
+    binned_short = contig_bp_2500 / whole_contig_bp < 0.05
+    must_link_threshold = get_threshold(contig_length_list)
+    return binned_short, must_link_threshold, contig_length_dict, contig_dict
+
+def unzip_fasta(suffix, contig_path):
+    import gzip
+    import bz2
+    if suffix == 'gz':
+        contig_name = contig_path.replace(".gz", "")
+        ungz_file = gzip.GzipFile(contig_path)
+        open(contig_name, "wb+").write(ungz_file.read())
+        ungz_file.close()
+        return contig_name
+
+    if suffix == 'bz2':
+        contig_name = contig_path.replace(".bz2", "")
+        unbz2_file = bz2.BZ2File(contig_path)
+        open(contig_name, "wb+").write(unbz2_file.read())
+        unbz2_file.close()
+        return contig_name
+
+def split_data(data, sample, separator):
+    """
+    split data according their sample in multi-sample binning
+    """
+    part_data = data[data['contig_name'].str.contains(
+        '{}'.format(sample + separator))]
+    part_data = part_data.set_index('contig_name')
+    part_data.index.name = None
+    index_list = part_data.index.tolist()
+    index_list = [temp.split(separator)[1] for temp in index_list]
+    part_data.index = index_list
+    abun_scale = (part_data.mean() / 100).apply(np.ceil) * 100
+    part_data = part_data.div(abun_scale)
+
+    return part_data
