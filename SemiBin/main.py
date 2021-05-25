@@ -1,31 +1,22 @@
 import argparse
-import sys
 import logging
 import os
-from .utils import validate_args, get_threshold, generate_cannot_link
-import subprocess
-import gzip
-import bz2
-from Bio import SeqIO
-from multiprocessing.pool import Pool
 import multiprocessing
-from .generate_coverage import calculate_coverage
+import subprocess
+import pandas as pd
+import torch
+import shutil
+import sys
+from .utils import validate_args, get_threshold, generate_cannot_link, \
+    download, set_random_seed, unzip_fasta, process_fasta, split_data
+from Bio import SeqIO
+from .generate_coverage import generate_cov, combine_cov
 from atomicwrites import atomic_write
 from .generate_kmer import generate_kmer_features_from_fasta
-import pandas as pd
 from Bio.SeqRecord import SeqRecord
 from .semi_supervised_model import train
-import torch
 from .cluster import cluster
-import shutil
-import numpy as np
-import random
-import requests
-import sys
-import hashlib
-import tarfile
-import traceback
-
+from .error import LoggingPool
 from .semibin_version import __version__ as ver
 
 
@@ -133,29 +124,11 @@ def parse_args(args):
                    dest='contig_fasta',
                    default=None, )
 
-    training.add_argument('-b', '--input-bam',
-                   required=False,
-                   nargs='*',
-                   help='Path to the input BAM file(Only need when training mode is single). '
-                        'If using multiple samples, you can input multiple files.',
-                   dest='bams',
-                   default=None,
-                   )
-
     training.add_argument('-o', '--output',
                    required=True,
                    help='Output directory (will be created if non-existent)',
                    dest='output',
                    default=None,
-                   )
-
-    training.add_argument('-p', '--processes', '-t', '--threads',
-                   required=False,
-                   type=int,
-                   help='Number of CPUs used (pass the value 0 to use all CPUs)',
-                   dest='num_process',
-                   default=0,
-                   metavar=''
                    )
 
     binning.add_argument('--data',
@@ -209,7 +182,7 @@ def parse_args(args):
                             default=None,
                             )
 
-    for p in [single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi, binning]:
+    for p in [single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi, binning, training]:
 
         p.add_argument('-p', '--processes', '-t', '--threads',
                                      required=False,
@@ -312,137 +285,10 @@ def parse_args(args):
         sys.exit()
     return parser.parse_args(args)
 
-###https://stackoverflow.com/questions/6728236/exception-thrown-in-multiprocessing-pool-not-detected
-### Return error message when using multiprocessing
-def error(msg, *args):
-    return multiprocessing.get_logger().error(msg, *args)
-
-class LogExceptions(object):
-    def __init__(self, callable):
-        self.__callable = callable
-
-    def __call__(self, *args, **kwargs):
-        try:
-            result = self.__callable(*args, **kwargs)
-        except Exception as e:
-            error(traceback.format_exc())
-            raise
-
-        return result
-
-class LoggingPool(Pool):
-    def apply_async(self, func, args=(), kwds={}, callback=None):
-        return Pool.apply_async(self, LogExceptions(func), args, kwds, callback)
-
-def generate_cov(bam_file, bam_index, out, threshold,
-                 is_combined, contig_threshold, logger, sep = None):
-    """
-    Call bedtools and generate coverage file
-
-    bam_file: bam files used
-    out: output
-    threshold: threshold of contigs that will be binned
-    is_combined: if using abundance feature in deep learning. True: use
-    contig_threshold: threshold of contigs for must-link constraints
-    sep: separator for multi-sample binning
-    """
-    logger.info('Processing `{}`'.format(bam_file))
-    bam_name = os.path.split(bam_file)[-1] + '_{}'.format(bam_index)
-    bam_depth = os.path.join(out, '{}_depth.txt'.format(bam_name))
-
-    with open(bam_depth, 'wb') as bedtools_out:
-        subprocess.check_call(
-            ['bedtools', 'genomecov',
-             '-bga',
-             '-ibam', bam_file],
-            stdout=bedtools_out)
-
-    if is_combined:
-        if sep is None:
-            contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined,
-                                                              contig_threshold=contig_threshold)
-        else:
-            contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined,
-                                                                  sep=sep, binned_thre_dict=contig_threshold)
-        contig_cov = contig_cov.apply(lambda x: x + 1e-5)
-        must_link_contig_cov = must_link_contig_cov.apply(lambda x: x + 1e-5)
-        if sep is None:
-            abun_scale = (contig_cov.mean() / 100).apply(np.ceil) * 100
-            abun_split_scale = (must_link_contig_cov.mean() / 100).apply(np.ceil) * 100
-            contig_cov = contig_cov.div(abun_scale)
-            must_link_contig_cov = must_link_contig_cov.div(abun_split_scale)
-
-        with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
-            contig_cov.to_csv(ofile)
-
-        with atomic_write(os.path.join(out, '{}_data_split_cov.csv'.format(bam_name)), overwrite=True) as ofile:
-            must_link_contig_cov.to_csv(ofile)
-    else:
-        if sep is None:
-            contig_cov = calculate_coverage(
-                bam_depth,
-                threshold,
-                is_combined=is_combined,
-                contig_threshold=contig_threshold)
-        else:
-            contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined, sep=sep,
-                                            binned_thre_dict=contig_threshold)
-        contig_cov = contig_cov.apply(lambda x: x + 1e-5)
-        with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
-            contig_cov.to_csv(ofile)
-    return (bam_file, logger)
 
 def _checkback(msg):
     msg[1].info('Processed:{}'.format(msg[0]))
 
-def get_file_md5(fname):
-    """
-    Calculate Md5 for downloaded file
-    """
-    m = hashlib.md5()
-    with open(fname,'rb') as fobj:
-        while True:
-            data = fobj.read(4096)
-            if not data:
-                break
-            m.update(data)
-
-    return m.hexdigest()
-
-def download(logger, GTDB_path):
-    """
-    Download GTDB.
-    GTDB_path: defalt path is $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB
-    """
-    logger.info('Downloading GTDB.  It will take a while..')
-    GTDB_dir = os.path.split(GTDB_path)[0]
-    os.makedirs(GTDB_dir, exist_ok=True)
-
-    download_url = 'https://zenodo.org/record/4751564/files/GTDB_v95.tar.gz?download=1'
-    download_path = os.path.join(GTDB_dir, 'GTDB_v95.tar.gz')
-
-    with requests.get(download_url, stream=True) as r:
-        with open(download_path, 'wb') as f:
-            shutil.copyfileobj(r.raw, f)
-    logger.info('Download finished. Checking MD5...')
-    if get_file_md5(download_path) == '4a70301c54104e87d5615e3f2383c8b5':
-        try:
-            tar = tarfile.open(download_path, "r:gz")
-            file_names = tar.getnames()
-            for file_name in file_names:
-                tar.extract(file_name, GTDB_dir)
-            tar.close()
-        except Exception:
-            sys.stderr.write(
-                f"Error: cannot unzip the file.")
-            sys.exit(1)
-
-        os.remove(download_path)
-    else:
-        os.remove(download_path)
-        sys.stderr.write(
-            f"Error: MD5 check failed, removing '{download_path}'.\n")
-        sys.exit(1)
 
 def download_GTDB(logger,GTDB_reference):
     GTDB_default = os.path.join(
@@ -455,10 +301,10 @@ def download_GTDB(logger,GTDB_reference):
     GTDB_path = GTDB_reference if GTDB_reference is not None else GTDB_default
     download(logger, GTDB_path)
 
-def predict_taxonomy(contig_fasta, GTDB_reference,
-                     cannot_name, logger,
-                     output, binned_short,
-                     must_link_threshold):
+
+def predict_taxonomy(logger, contig_fasta,
+                     cannot_name, GTDB_reference,
+                     binned_short, must_link_threshold,output):
     """
     Predict taxonomy using mmseqs and generate cannot-link file
 
@@ -525,9 +371,9 @@ def predict_taxonomy(contig_fasta, GTDB_reference,
         os.path.join(output, 'cannot'), cannot_name)
 
 
-def generate_data_single(bams, num_process, logger,
-                         output, contig_fasta, binned_short,
-                         must_link_threshold):
+def generate_data_single(logger, contig_fasta,
+                         bams, binned_short,
+                         must_link_threshold, num_process, output):
     """
     Generate data.csv and data_split.csv for training and clustering of single-sample and co-assembly binning mode.
     data.csv has the features(kmer and abundance) for original contigs.
@@ -571,20 +417,17 @@ def generate_data_single(bams, num_process, logger,
     data_split = kmer_split
     data.index = data.index.astype(str)
 
-    for bam_index, bam_file in enumerate(bam_list):
-        cov = pd.read_csv(os.path.join(output, '{}_data_cov.csv'.format(
-            os.path.split(bam_file)[-1] + '_{}'.format(bam_index))), index_col=0)
-        cov.index = cov.index.astype(str)
-        data = pd.merge(data, cov, how='inner', on=None,
-                        left_index=True, right_index=True, sort=False, copy=True)
-        if is_combined:
-            cov_split = pd.read_csv(os.path.join(output, '{}_data_split_cov.csv'.format(
-                os.path.split(bam_file)[-1] + '_{}'.format(bam_index))), index_col=0)
-
-            data_split = pd.merge(data_split, cov_split, how='inner', on=None,
+    if is_combined:
+        data_cov, data_split_cov = combine_cov(output, bam_list, is_combined)
+        data_split = pd.merge(data_split, data_split_cov, how='inner', on=None,
                                   left_index=True, right_index=True, sort=False, copy=True)
-    if not is_combined:
+    else:
+        data_cov = combine_cov(output, bam_list, is_combined)
         data_split = kmer_split
+
+    data = pd.merge(data, data_cov, how='inner', on=None,
+                                  left_index=True, right_index=True, sort=False, copy=True)
+
 
     with atomic_write(os.path.join(output, 'data.csv'), overwrite=True) as ofile:
         data.to_csv(ofile)
@@ -593,8 +436,9 @@ def generate_data_single(bams, num_process, logger,
         data_split.to_csv(ofile)
 
 
-def generate_data_multi(bams, num_process,separator,
-                        logger, output, contig_fasta):
+def generate_data_multi(logger, contig_fasta,
+                        bams, num_process,
+                        separator, output):
     """
     Generate data.csv and data_split.csv for every sample of multi-sample binning mode.
     data.csv has the features(kmer and abundance) for original contigs.
@@ -646,14 +490,7 @@ def generate_data_multi(bams, num_process,separator,
 
     binning_threshold = {1000: [], 2500: []}
     for sample in sample_list:
-        whole_contig_bp = 0
-        contig_bp_2500 = 0
-        for seq_record in SeqIO.parse(os.path.join(
-                output, 'samples/{}.fasta'.format(sample)), "fasta"):
-            if len(seq_record) >= 1000 and len(seq_record) <= 2500:
-                contig_bp_2500 += len(seq_record)
-            whole_contig_bp += len(seq_record)
-        binned_short = contig_bp_2500 / whole_contig_bp < 0.05
+        binned_short ,_ ,_ ,_ = process_fasta(os.path.join(output, 'samples/{}.fasta'.format(sample)))
         binning_threshold[1000].append(sample) if binned_short \
             else binning_threshold[2500].append(sample)
 
@@ -672,67 +509,31 @@ def generate_data_multi(bams, num_process,separator,
                          callback=_checkback)
     pool.close()
     pool.join()
+
     # Generate cov features for every sample
-    data_cov = pd.read_csv(os.path.join(output, 'samples', '{}_data_cov.csv'.format(
-        os.path.split(bam_list[0])[-1] + '_{}'.format(0))), index_col=0)
     if is_combined:
-        data_split_cov = pd.read_csv(os.path.join(
-            output, 'samples', '{}_data_split_cov.csv'.format(
-                os.path.split(bam_list[0])[-1] + '_{}'.format(0))), index_col=0)
-    data_cov.index = data_cov.index.astype(str)
-    for bam_index, bam_file in enumerate(bam_list):
-        if bam_index == 0:
-            continue
-        cov = pd.read_csv(
-            os.path.join(output, 'samples', '{}_data_cov.csv'.format(
-                os.path.split(bam_file)[-1] + '_{}'.format(bam_index))),
-            index_col=0)
-        cov.index = cov.index.astype(str)
-        data_cov = pd.merge(data_cov, cov, how='inner', on=None,
-                            left_index=True, right_index=True, sort=False, copy=True)
-
-        if is_combined:
-            cov_split = pd.read_csv(os.path.join(output, 'samples', '{}_data_split_cov.csv'.format(
-                os.path.split(bam_file)[-1] + '_{}'.format(bam_index))), index_col=0)
-
-            data_split_cov = pd.merge(data_split_cov, cov_split, how='inner', on=None,
-                                      left_index=True, right_index=True, sort=False, copy=True)
+        data_cov, data_split_cov = combine_cov(os.path.join(output, 'samples'), bam_list, is_combined)
+        data_split_cov = data_split_cov.reset_index()
+        columns_list = list(data_split_cov.columns)
+        columns_list[0] = 'contig_name'
+        data_split_cov.columns = columns_list
+    else:
+        data_cov = combine_cov(os.path.join(output, 'samples'), bam_list, is_combined)
 
     data_cov = data_cov.reset_index()
     columns_list = list(data_cov.columns)
     columns_list[0] = 'contig_name'
     data_cov.columns = columns_list
 
-    if is_combined:
-        data_split_cov = data_split_cov.reset_index()
-        columns_list = list(data_split_cov.columns)
-        columns_list[0] = 'contig_name'
-        data_split_cov.columns = columns_list
-
     for sample in sample_list:
         output_path = os.path.join(output, 'samples', sample)
         os.makedirs(output_path, exist_ok=True)
-        part_data = data_cov[data_cov['contig_name'].str.contains(
-            '{}'.format(sample + separator))]
-        part_data = part_data.set_index('contig_name')
-        part_data.index.name = None
-        index_list = part_data.index.tolist()
-        index_list = [temp.split(separator)[1] for temp in index_list]
-        part_data.index = index_list
-        abun_scale = (part_data.mean() / 100).apply(np.ceil) * 100
-        part_data = part_data.div(abun_scale)
+
+        part_data = split_data(data_cov, sample, separator)
         part_data.to_csv(os.path.join(output_path, 'data_cov.csv'))
+
         if is_combined:
-            part_data = data_split_cov[data_split_cov['contig_name'].str.contains(
-                '{}'.format(sample + separator))]
-            part_data = part_data.set_index('contig_name')
-            part_data.index.name = None
-            index_list = part_data.index.tolist()
-            index_list = [temp.split(separator)[1]
-                          for temp in index_list]
-            part_data.index = index_list
-            abun_scale = (part_data.mean() / 100).apply(np.ceil) * 100
-            part_data = part_data.div(abun_scale)
+            part_data = split_data(data_split_cov, sample, separator)
             part_data.to_csv(os.path.join(
                 output_path, 'data_split_cov.csv'))
 
@@ -745,9 +546,7 @@ def generate_data_multi(bams, num_process,separator,
             sample_contig_fasta, 1000, 4, split=True, threshold=must_link_threshold)
 
 
-        sample_cov = pd.read_csv(os.path.join(
-            output_path, 'data_cov.csv'),
-            index_col=0)
+        sample_cov = pd.read_csv(os.path.join(output_path, 'data_cov.csv'),index_col=0)
         kmer_whole.index = kmer_whole.index.astype(str)
         sample_cov.index = sample_cov.index.astype(str)
         data = pd.merge(kmer_whole, sample_cov, how='inner', on=None,
@@ -768,9 +567,10 @@ def generate_data_multi(bams, num_process,separator,
 
     return sample_list
 
-def training(contig_fasta, bams, num_process, data,
-            data_split, cannot_link, batchsize, epoches,
-            logger, output, device, mode):
+
+def training(logger, contig_fasta, bams, num_process,
+             data, data_split, cannot_link, batchsize,
+             epoches,  output, device, mode):
     """
     Training the model
 
@@ -782,15 +582,7 @@ def training(contig_fasta, bams, num_process, data,
 
     if mode == 'single':
         logger.info('Start training from one sample.')
-
-        whole_contig_bp = 0
-        contig_bp_2500 = 0
-
-        for seq_record in SeqIO.parse(contig_fasta[0], "fasta"):
-            if len(seq_record) >= 1000 and len(seq_record) <= 2500:
-                contig_bp_2500 += len(seq_record)
-            whole_contig_bp += len(seq_record)
-        binned_short = contig_bp_2500 / whole_contig_bp < 0.05
+        binned_short, _, _, _ = process_fasta(contig_fasta[0])
         binned_shorts.append(binned_short)
         n_sample = len(bams)
         is_combined = n_sample >= 5
@@ -800,13 +592,7 @@ def training(contig_fasta, bams, num_process, data,
         logger.info('Start training from multiple samples.')
         is_combined = False
         for contig_index in contig_fasta:
-            whole_contig_bp = 0
-            contig_bp_2500 = 0
-            for seq_record in SeqIO.parse(contig_index, "fasta"):
-                if len(seq_record) >= 1000 and len(seq_record) <= 2500:
-                    contig_bp_2500 += len(seq_record)
-                whole_contig_bp += len(seq_record)
-            binned_short = contig_bp_2500 / whole_contig_bp < 0.05
+            binned_short, _, _, _ = process_fasta(contig_index)
             binned_shorts.append(binned_short)
 
     model = train(
@@ -825,9 +611,11 @@ def training(contig_fasta, bams, num_process, data,
         mode = mode)
 
 
-def binning(bams, num_process, data,
-            max_edges, max_node, minfasta, logger, output,
-            binned_short, device, contig_length_dict, contig_dict,recluster,model_path, random_seed):
+def binning(logger,bams, num_process, data,
+            max_edges, max_node, minfasta,
+            binned_short, contig_length_dict,
+            contig_dict,recluster,model_path,
+            random_seed,output, device):
     """
     Clustering the contigs to get the final bins.
 
@@ -861,50 +649,63 @@ def binning(bams, num_process, data,
         contig_dict,
         binned_short,
         num_cpu,
-        minfasta,recluster,random_seed)
+        minfasta,
+        recluster,
+        random_seed)
 
 
-def single_easy_binning(args, logger, output, binned_short,
-                        must_link_threshold, device, contig_length_dict, contig_dict, recluster,random_seed):
+def single_easy_binning(args, logger, binned_short,
+                        must_link_threshold, contig_length_dict,
+                        contig_dict, recluster,random_seed, output, device):
     """
     contain `predict_taxonomy`, `generate_data_single`, `train`, `bin` in one command for single-sample and co-assembly binning
     """
     logger.info('Running mmseqs and generate cannot-link file.')
     predict_taxonomy(
-        args.contig_fasta,
-        args.GTDB_reference,
-        args.cannot_name,
         logger,
-        output, binned_short, must_link_threshold)
+        args.contig_fasta,
+        args.cannot_name,
+        args.GTDB_reference,
+        binned_short,
+        must_link_threshold,
+        output)
     logger.info('Generate training data.')
     generate_data_single(
-        args.bams,
-        args.num_process,
         logger,
-        output, args.contig_fasta, binned_short, must_link_threshold)
+        args.contig_fasta,
+        args.bams,
+        binned_short,
+        must_link_threshold,
+        args.num_process,
+        output)
     logger.info('Training model and clustering.')
     data_path = os.path.join(output,'data.csv')
     data_split_path = os.path.join(output,'data_split.csv')
-    training([args.contig_fasta], args.bams, args.num_process, [data_path],
-            [data_split_path], [os.path.join(
-                output, 'cannot', 'cannot.txt')], args.batchsize, args.epoches, logger, output, device, mode='single')
+    training(logger, [args.contig_fasta], args.bams,
+             args.num_process, [data_path], [data_split_path],
+             [os.path.join(output, 'cannot', 'cannot.txt')],
+             args.batchsize, args.epoches, output, device, mode='single')
 
-    binning(args.bams, args.num_process, data_path,
-            args.max_edges, args.max_node, args.minfasta_kb * 1000, logger, output, binned_short, device, contig_length_dict, contig_dict,recluster, os.path.join(output, 'model.h5'),random_seed)
+    binning(logger, args.bams, args.num_process, data_path,
+            args.max_edges, args.max_node, args.minfasta_kb * 1000,
+            binned_short, contig_length_dict, contig_dict,recluster,
+            os.path.join(output, 'model.h5'),random_seed, output,  device, )
 
 
-def multi_easy_binning(args, logger, output, device, recluster, random_seed):
+def multi_easy_binning(args, logger, recluster,
+                       random_seed, output, device):
     """
     contain `predict_taxonomy`, `generate_data_multi`, `train`, `bin` in one command for multi-sample binning
     """
     logger.info('Multi-samples binning.')
     logger.info('Generate training data.')
     sample_list = generate_data_multi(
+        logger,
+        args.contig_fasta,
         args.bams,
         args.num_process,
         args.separator,
-        logger,
-        output, args.contig_fasta)
+        output, )
     for sample in sample_list:
         logger.info(
             'Running mmseqs and generate cannot-link file of {}.'.format(sample))
@@ -914,39 +715,28 @@ def multi_easy_binning(args, logger, output, device, recluster, random_seed):
         sample_data_split = os.path.join(
             output, 'samples', sample, 'data_split.csv')
 
-        whole_contig_bp = 0
-        contig_bp_2500 = 0
-        contig_length_list = []
-        contig_length_dict = {}
-        contig_dict = {}
-        handle = sample_fasta
-        for seq_record in SeqIO.parse(handle, "fasta"):
-            if len(seq_record) >= 1000 and len(seq_record) <= 2500:
-                contig_bp_2500 += len(seq_record)
-            contig_length_list.append(len(seq_record))
-            whole_contig_bp += len(seq_record)
-            contig_length_dict[str(seq_record.id).strip(
-                '')] = len((seq_record.seq))
-            contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
-
-        binned_short = contig_bp_2500 / whole_contig_bp < 0.05
-        must_link_threshold = get_threshold(contig_length_list)
-
+        binned_short, must_link_threshold, contig_length_dict, contig_dict = process_fasta(sample_fasta)
         predict_taxonomy(
-            sample_fasta,
-            args.GTDB_reference,
-            sample,
             logger,
-            os.path.join(output, 'samples', sample), binned_short, must_link_threshold,)
+            sample_fasta,
+            sample,
+            args.GTDB_reference,
+            binned_short,
+            must_link_threshold,
+            os.path.join(output, 'samples', sample))
         sample_cannot = os.path.join(
             output, 'samples', sample, 'cannot/{}.txt'.format(sample))
         logger.info('Training model and clustering for {}.'.format(sample))
-        training([sample_fasta], args.bams, args.num_process, [sample_data],
-                 [sample_data_split], [sample_cannot], args.batchsize, args.epoches, logger, os.path.join(output, 'samples', sample), device, mode='single')
+        training(logger, [sample_fasta], args.bams, args.num_process,
+                 [sample_data], [sample_data_split], [sample_cannot],
+                 args.batchsize, args.epoches, os.path.join(output, 'samples', sample),
+                 device, mode='single')
 
-        binning(args.bams, args.num_process, sample_data,
-                args.max_edges, args.max_node, args.minfasta_kb * 1000, logger, os.path.join(output, 'samples', sample), binned_short, device,
-                contig_length_dict, contig_dict, recluster, os.path.join(output, 'samples', sample, 'model.h5'), random_seed)
+        binning(logger, args.bams, args.num_process, sample_data,
+                args.max_edges, args.max_node, args.minfasta_kb * 1000,
+                binned_short, contig_length_dict, contig_dict, recluster,
+                os.path.join(output, 'samples', sample, 'model.h5'), random_seed ,
+                os.path.join(output, 'samples', sample),  device)
 
     os.makedirs(os.path.join(output, 'bins'), exist_ok=True)
     for sample in sample_list:
@@ -969,12 +759,6 @@ def multi_easy_binning(args, logger, output, device, recluster, random_seed):
                 new_path = os.path.join(output, 'bins', new_file)
                 shutil.copyfile(original_path, new_path)
 
-def set_random_seed(seed):
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    random.seed(seed)
-    np.random.seed(seed)
 
 def main():
     args = sys.argv[1:]
@@ -997,98 +781,74 @@ def main():
 
         if args.cmd != 'train':
             if os.path.splitext(args.contig_fasta)[1] == '.gz':
-                contig_name = args.contig_fasta.replace(".gz", "")
-                ungz_file = gzip.GzipFile(args.contig_fasta)
-                open(contig_name, "wb+").write(ungz_file.read())
-                ungz_file.close()
+                contig_name = unzip_fasta('gz', args.contig_fasta)
                 args.contig_fasta = contig_name
             elif os.path.splitext(args.contig_fasta)[1] == '.bz2':
-                contig_name = args.contig_fasta.replace(".bz2", "")
-                unbz2_file = bz2.BZ2File(args.contig_fasta)
-                open(contig_name, "wb+").write(unbz2_file.read())
-                unbz2_file.close()
+                contig_name = unzip_fasta('bz2', args.contig_fasta)
                 args.contig_fasta = contig_name
         else:
             contig_fastas = []
             for contig in args.contig_fasta:
                 if os.path.splitext(contig)[1] == '.gz':
-                    contig_name = args.contig_fasta.replace(".gz", "")
-                    ungz_file = gzip.GzipFile(args.contig_fasta)
-                    open(contig_name, "wb+").write(ungz_file.read())
-                    ungz_file.close()
+                    contig_name = unzip_fasta('gz', args.contig_fasta)
                     contig_fastas.append(contig_name)
                 elif os.path.splitext(contig)[1] == '.bz2':
-                    contig_name = args.contig_fasta.replace(".bz2", "")
-                    unbz2_file = bz2.BZ2File(args.contig_fasta)
-                    open(contig_name, "wb+").write(unbz2_file.read())
-                    unbz2_file.close()
+                    contig_name = unzip_fasta('bz2', args.contig_fasta)
                     contig_fastas.append(contig_name)
                 else:
                     contig_fastas.append(contig)
             args.contig_fasta = contig_fastas
 
     if args.cmd in ['predict_taxonomy', 'generate_data_single', 'bin','single_easy_bin']:
-        whole_contig_bp = 0
-        contig_bp_2500 = 0
-        contig_length_list = []
-        contig_length_dict = {}
-        contig_dict = {}
-
-        for seq_record in SeqIO.parse(args.contig_fasta, "fasta"):
-            if len(seq_record) >= 1000 and len(seq_record) <= 2500:
-                contig_bp_2500 += len(seq_record)
-            contig_length_list.append(len(seq_record))
-            whole_contig_bp += len(seq_record)
-            contig_length_dict[str(seq_record.id).strip(
-                '')] = len((seq_record.seq))
-            contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
-
-        binned_short = contig_bp_2500 / whole_contig_bp < 0.05
-        must_link_threshold = get_threshold(contig_length_list)
+        binned_short, must_link_threshold, contig_length_dict, contig_dict = process_fasta(args.contig_fasta)
 
     if args.cmd == 'download_GTDB':
         download_GTDB(logger,args.GTDB_reference)
 
     if args.cmd == 'predict_taxonomy':
         predict_taxonomy(
-            args.contig_fasta,
-            args.GTDB_reference,
-            args.cannot_name,
             logger,
-            out, binned_short, must_link_threshold)
+            args.contig_fasta,
+            args.cannot_name,
+            args.GTDB_reference,
+            binned_short,
+            must_link_threshold,
+            out)
 
     if args.cmd == 'generate_data_single':
         generate_data_single(
-            args.bams,
-            args.num_process,
             logger,
+            args.contig_fasta,
+            args.bams,
+            binned_short,
+            must_link_threshold,
+            args.num_process,
             out,
-            args.contig_fasta, binned_short, must_link_threshold)
+              )
 
     if args.cmd == 'generate_data_multi':
         generate_data_multi(
+            logger,
+            args.contig_fasta,
             args.bams,
             args.num_process,
             args.separator,
-            logger,
-            out,
-            args.contig_fasta)
+            out)
 
     if args.cmd == 'train':
         if args.random_seed is not None:
             set_random_seed(args.random_seed)
-        training(args.contig_fasta, args.bams, args.num_process, args.data,
-            args.data_split, args.cannot_link, args.batchsize, args.epoches,
-            logger, out, device, args.mode)
+        training(logger, args.contig_fasta, args.bams, args.num_process,
+                 args.data, args.data_split, args.cannot_link,
+                 args.batchsize, args.epoches, out, device, args.mode)
 
 
     if args.cmd == 'bin':
         if args.random_seed is not None:
             set_random_seed(args.random_seed)
-        binning(args.bams, args.num_process, args.data,
-                args.max_edges, args.max_node,
-                args.minfasta_kb * 1000, logger,
-                out, binned_short, device, contig_length_dict, contig_dict, args.recluster, args.model_path, args.random_seed)
+        binning(logger,args.bams, args.num_process, args.data, args.max_edges,
+                args.max_node, args.minfasta_kb * 1000, binned_short,contig_length_dict,
+                contig_dict, args.recluster, args.model_path, args.random_seed,out, device)
 
 
     if args.cmd == 'single_easy_bin':
@@ -1097,14 +857,14 @@ def main():
         single_easy_binning(
             args,
             logger,
-            out,
             binned_short,
             must_link_threshold,
-            device,
             contig_length_dict,
             contig_dict,
             args.recluster,
-            args.random_seed)
+            args.random_seed,
+            out,
+            device)
 
     if args.cmd == 'multi_easy_bin':
         if args.random_seed is not None:
@@ -1112,10 +872,10 @@ def main():
         multi_easy_binning(
             args,
             logger,
-            out,
-            device,
             args.recluster,
-            args.random_seed)
+            args.random_seed,
+            out,
+            device)
 
 
 if __name__ == '__main__':
