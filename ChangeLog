@@ -1,6 +1,15 @@
-Unreleased
-	* Download mmseqs database with `--remove-tmp-file 1`
+Version 0.2.0 Fri May 28 by BigDataBiology
+	* Change name to `SemiBin`
+	* Add support for training with several samples
 	* Test with Python 3.9
+	* Download mmseqs database with `--remove-tmp-file 1`
+	* Better output names
+	* Fix bugs when paths have spaces
+	* Fix installation issues by listing all the dependencies
+	* Add `download_GTDB` command
+	* Add `--no-recluster` option
+
+
 
 Version 0.1.1 Sun 21 Mar 2021 by BigDataBiology
 	* Fix bug with --minfasta-kbs
