@@ -36,6 +36,7 @@ def test_bin():
             model_path='test/bin_data/model.h5',
             recluster=True,
             random_seed=None,
+            environment=None,
             )
 
     assert len(os.listdir('output_bin/output_bins')) > 0

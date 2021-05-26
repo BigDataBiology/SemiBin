@@ -8,7 +8,7 @@ import torch
 import shutil
 import sys
 from .utils import validate_args, get_threshold, generate_cannot_link, \
-    download, set_random_seed, unzip_fasta, process_fasta, split_data
+    download, set_random_seed, unzip_fasta, process_fasta, split_data, get_model_path
 from Bio import SeqIO
 from .generate_coverage import generate_cov, combine_cov
 from atomicwrites import atomic_write
@@ -163,11 +163,19 @@ def parse_args(args):
                    help='Fraction of contigs that considered to be binned (should be between 0 and 1; default: 1).')
 
     binning.add_argument('--model',
-                         required=True,
+                         required=False,
                          type=str,
                          dest='model_path',
                          default=None,
                          help='Path to the trained semi-supervised deep learning model.')
+
+    for p in [single_easy_bin, binning]:
+        p.add_argument('--environment',
+                       required=False,
+                       help='environment for the built-in model(human_gut/dog_gut/ocean).',
+                       dest='environment',
+                       default=None,
+                       )
 
     for p in [single_easy_bin, multi_easy_bin, predict_taxonomy, generate_data_single, generate_data_multi, binning]:
         p.add_argument('-i', '--input-fasta',
@@ -182,8 +190,24 @@ def parse_args(args):
                             default=None,
                             )
 
-    for p in [single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi, binning, training]:
+    training.add_argument('-p', '--processes', '-t', '--threads',
+                   required=False,
+                   type=int,
+                   help='Number of CPUs used (pass the value 0 to use all CPUs)',
+                   dest='num_process',
+                   default=0,
+                   metavar=''
+                   )
+    training.add_argument('-b', '--input-bam',
+                   required=False,
+                   nargs='*',
+                   help='Path to the input BAM file(Only need when training mode is single). '
+                        'If using multiple samples, you can input multiple files.',
+                   dest='bams',
+                   default=None,
+                   )
 
+    for p in [single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi, binning]:
         p.add_argument('-p', '--processes', '-t', '--threads',
                                      required=False,
                                      type=int,
@@ -193,9 +217,9 @@ def parse_args(args):
                                      metavar=''
                                      )
         p.add_argument('-b', '--input-bam',
-                              required=False,
+                              required=True,
                               nargs='*',
-                              help='Path to the input BAM file(Only need when training mode is single). '
+                              help='Path to the input BAM file. '
                                    'If using multiple samples, you can input multiple files.',
                               dest='bams',
                               default=None,
@@ -615,7 +639,7 @@ def binning(logger,bams, num_process, data,
             max_edges, max_node, minfasta,
             binned_short, contig_length_dict,
             contig_dict,recluster,model_path,
-            random_seed,output, device):
+            random_seed,output, device, environment):
     """
     Clustering the contigs to get the final bins.
 
@@ -631,10 +655,17 @@ def binning(logger,bams, num_process, data,
     data = pd.read_csv(data, index_col=0)
     data.index = data.index.astype(str)
 
-    if device == torch.device('cpu'):
-        model = torch.load(model_path, map_location=torch.device('cpu'))
+    if environment is None:
+        if device == torch.device('cpu'):
+            model = torch.load(model_path, map_location=torch.device('cpu'))
+        else:
+            model = torch.load(model_path)
     else:
-        model = torch.load(model_path)
+        model_path = get_model_path(environment)
+        if device == torch.device('cpu'):
+            model = torch.load(model_path, map_location=torch.device('cpu'))
+        else:
+            model = torch.load(model_path)
     cluster(
         model,
         data,
@@ -656,19 +687,10 @@ def binning(logger,bams, num_process, data,
 
 def single_easy_binning(args, logger, binned_short,
                         must_link_threshold, contig_length_dict,
-                        contig_dict, recluster,random_seed, output, device):
+                        contig_dict, recluster,random_seed, output, device, environment):
     """
     contain `predict_taxonomy`, `generate_data_single`, `train`, `bin` in one command for single-sample and co-assembly binning
     """
-    logger.info('Running mmseqs and generate cannot-link file.')
-    predict_taxonomy(
-        logger,
-        args.contig_fasta,
-        args.cannot_name,
-        args.GTDB_reference,
-        binned_short,
-        must_link_threshold,
-        output)
     logger.info('Generate training data.')
     generate_data_single(
         logger,
@@ -678,18 +700,35 @@ def single_easy_binning(args, logger, binned_short,
         must_link_threshold,
         args.num_process,
         output)
-    logger.info('Training model and clustering.')
-    data_path = os.path.join(output,'data.csv')
-    data_split_path = os.path.join(output,'data_split.csv')
-    training(logger, [args.contig_fasta], args.bams,
-             args.num_process, [data_path], [data_split_path],
-             [os.path.join(output, 'cannot', 'cannot.txt')],
-             args.batchsize, args.epoches, output, device, mode='single')
+    data_path = os.path.join(output, 'data.csv')
+    data_split_path = os.path.join(output, 'data_split.csv')
 
-    binning(logger, args.bams, args.num_process, data_path,
-            args.max_edges, args.max_node, args.minfasta_kb * 1000,
-            binned_short, contig_length_dict, contig_dict,recluster,
-            os.path.join(output, 'model.h5'),random_seed, output,  device, )
+    if environment is None:
+        logger.info('Running mmseqs and generate cannot-link file.')
+        predict_taxonomy(
+            logger,
+            args.contig_fasta,
+            args.cannot_name,
+            args.GTDB_reference,
+            binned_short,
+            must_link_threshold,
+            output)
+        logger.info('Training model and clustering.')
+        training(logger, [args.contig_fasta], args.bams,
+                 args.num_process, [data_path], [data_split_path],
+                 [os.path.join(output, 'cannot', 'cannot.txt')],
+                 args.batchsize, args.epoches, output, device, mode='single')
+
+        binning(logger, args.bams, args.num_process, data_path,
+                args.max_edges, args.max_node, args.minfasta_kb * 1000,
+                binned_short, contig_length_dict, contig_dict,recluster,
+                os.path.join(output, 'model.h5'),random_seed, output,  device, None)
+
+    else:
+        binning(logger, args.bams, args.num_process, data_path,
+                args.max_edges, args.max_node, args.minfasta_kb * 1000,
+                binned_short, contig_length_dict, contig_dict,recluster,
+                None,random_seed, output,  device, environment)
 
 
 def multi_easy_binning(args, logger, recluster,
@@ -736,7 +775,7 @@ def multi_easy_binning(args, logger, recluster,
                 args.max_edges, args.max_node, args.minfasta_kb * 1000,
                 binned_short, contig_length_dict, contig_dict, recluster,
                 os.path.join(output, 'samples', sample, 'model.h5'), random_seed ,
-                os.path.join(output, 'samples', sample),  device)
+                os.path.join(output, 'samples', sample),  device, None)
 
     os.makedirs(os.path.join(output, 'bins'), exist_ok=True)
     for sample in sample_list:
@@ -823,8 +862,7 @@ def main():
             binned_short,
             must_link_threshold,
             args.num_process,
-            out,
-              )
+            out)
 
     if args.cmd == 'generate_data_multi':
         generate_data_multi(
@@ -848,7 +886,7 @@ def main():
             set_random_seed(args.random_seed)
         binning(logger,args.bams, args.num_process, args.data, args.max_edges,
                 args.max_node, args.minfasta_kb * 1000, binned_short,contig_length_dict,
-                contig_dict, args.recluster, args.model_path, args.random_seed,out, device)
+                contig_dict, args.recluster, args.model_path, args.random_seed,out, device, args.environment)
 
 
     if args.cmd == 'single_easy_bin':
@@ -864,7 +902,7 @@ def main():
             args.recluster,
             args.random_seed,
             out,
-            device)
+            device, args.environment)
 
     if args.cmd == 'multi_easy_bin':
         if args.random_seed is not None:

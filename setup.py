@@ -38,7 +38,7 @@ setup(name='SemiBin',
           'requests',
       ],
       package_data={
-          'SemiBin': ['*.hmm','*.pl']},
+          'SemiBin': ['*.hmm','*.pl','*.h5']},
       zip_safe=False,
       entry_points={
             'console_scripts': ['SemiBin=SemiBin.main:main'],

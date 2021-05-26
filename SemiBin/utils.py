@@ -83,6 +83,21 @@ def validate_args(args):
             sys.exit(1)
 
     if args.cmd == 'bin':
+        if args.environment is None and args.model_path is None:
+            sys.stderr.write(
+                f"Error: Please choose input a model path or use our built-in model for [human_gut/dog_gut/ocean].\n")
+            sys.exit(1)
+        if args.environment is not None and args.model_path is not None:
+            sys.stderr.write(
+                f"Error: Please choose input a model path or use our built-in model for [human_gut/dog_gut/ocean].\n")
+            sys.exit(1)
+        if args.environment is not None:
+            if args.environment not in ['human_gut', 'dog_gut', 'ocean']:
+                sys.stderr.write(
+                    f"Error: Please choose a built-in model in [human_gut/dog_gut/ocean].\n")
+                sys.exit(1)
+        if args.model_path is not None:
+            expect_file(args.model_path)
         expect_file(args.contig_fasta)
         expect_file_list(args.bams)
         expect_file(args.data)
@@ -372,3 +387,14 @@ def split_data(data, sample, separator):
     part_data = part_data.div(abun_scale)
 
     return part_data
+
+def get_model_path(env):
+    if env == 'human_gut':
+        model_path = os.path.join(os.path.split(__file__)[0], 'human_gut_model.h5')
+        return model_path
+    if env == 'dog_gut':
+        model_path = os.path.join(os.path.split(__file__)[0], 'dog_gut_model.h5')
+        return model_path
+    if env == 'ocean':
+        model_path = os.path.join(os.path.split(__file__)[0], 'ocean_model.h5')
+        return model_path
