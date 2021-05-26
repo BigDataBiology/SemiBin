@@ -314,6 +314,7 @@ def predict_taxonomy(logger, contig_fasta,
     binned_short: threshold for contigs used in binning
     must_link_threshold: threshold of contigs for must-link constraints
     """
+    import tempfile
     GTDB_default = os.path.join(
         os.environ['HOME'],
         '.cache',
@@ -332,19 +333,19 @@ def predict_taxonomy(logger, contig_fasta,
         stdout=None,
     )
     os.makedirs(os.path.join(output, 'mmseqs_contig_annotation'), exist_ok=True)
-    subprocess.run(
-        ['mmseqs',
-         'taxonomy',
-         os.path.join(output, 'contig_DB'),
-         GTDB_path,
-         os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
-         os.path.join(output, 'mmseqs_tmp'),
-         '--tax-lineage',
-         str(1),
-         ],
-        check=True,
-        stdout=None,
-    )
+    with tempfile.TemporaryDirectory() as tdir:
+        subprocess.run(
+            ['mmseqs',
+             'taxonomy',
+             os.path.join(output, 'contig_DB'),
+             GTDB_reference,
+             os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
+             tdir,
+             '--tax-lineage', '1',
+             ],
+            check=True,
+            stdout=None,
+        )
     subprocess.check_call(
         ['mmseqs',
          'createtsv',
