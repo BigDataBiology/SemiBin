@@ -51,6 +51,7 @@ Reconstruct bins with single or co-assembly binning using one line command.
 * `--max-node`: Percentage of contigs that considered to be binned(Default: 1).
 * `--max-edges`: The maximum number of edges that can be connected to one contig(Default: 200).
 * `--random-seed`: Random seed to reproduce results.
+* `--environment`: Environment for the built-in model(human_gut/dog_gut/ocean).
 
 #### multi_easy_bin
 
@@ -105,6 +106,7 @@ Generate training data(data.csv;data_split.csv) for multi-samples binning.
 * `--batch-size`: Batch size used in the training process(Default: 2048).
 * `-p/--processes/-t/--threads`: Number of CPUs used(0: use whole).
 * `--random-seed`: Random seed to reproduce results.
+* `--mode`:  [single/several]Train models from one sample or several samples(train model across several samples can get better pre-trained model for single-sample binning.) In several mode, must input data, data_split, cannot, fasta files for corresponding sample with same order.
 
 #### bin
 
@@ -121,6 +123,7 @@ Training the model and clustering contigs into bins.
 * `-p/--processes/-t/--threads`: Number of CPUs used(0: use whole).
 * `--random-seed`: Random seed to reproduce results.
 * `--model`: Path to the trained model.
+* `--environment`: Environment for the built-in model(human_gut/dog_gut/ocean).
 
 #### download_GTDB
 

@@ -44,11 +44,41 @@ You can run individual steps by yourself, which can enable using compute
 clusters to make the binning process faster (especially in multi-samples
 binning mode). 
 
-In advanced-bin mode, you can also use pre-trained model(in the models directory) that can be transfered to other samples(`SemiBin bin --data data.csv --model model.h5 ...`). Here we provide pre-trained models for human gut, dog gut and tara environment in single-sample binning mode. You can just use these models for single-sample binning and it will save much time for contig annotations and model training. 
+In advanced-bin mode, you can also use our built-in pre-trained model in single-sample binning mode. Here we provide pre-trained models for human gut, dog gut and tara environment. You can just use these models for single-sample binning and it will save much time for contig annotations and model training. 
 
 In our experiments, we found that training for every sample then binning would get the best results, but it need much time. Using our provided trained model is a good option and it can also get very good results and significantly perform better than Metabat2. 
 
-Another suggestion for running with pre-trained model is that you can get a pre-trained model from your dataset, which is a better way that we think can save time and get good results at the same time. For example, you can subsample several samples(i.e. 5) as training samples and several samples as testing samples. Then you can train models from every training samples and test the models in the testing samples.  Finally you can use the best model in other samples and get the binning results.
+A very easy way to run SemiBin with a built-in model([human_gut/dog_gut/ocean]):
+
+```bash
+SemiBin single_easy_bin -i contig.fna -b *.bam -o output --environment human_gut
+```
+
+Another suggestion for running with pre-trained model is that you can get a pre-trained model from your dataset, which is a better way that we think can save time and get good results at the same time. For example, you can subsample several samples(i.e. 10 or 15) as training samples. Then you can train a good pre-trained model from these sample and then you can use this pre-trained model for binning. 
+
+(1) Generate data.csv/data_split.csv for every sample
+
+```bash
+SemiBin generate_data_single -i contig.fna -b *.bam -o output
+```
+
+(2) Generate cannot-link for every sample
+
+```bash
+SemiBin predict_taxonomy -i contig.fna -o output
+```
+
+(3) Train a pre-trained model across several samples
+
+```bash
+SemiBin train -i *.fna --data *.csv --data-split *.csv -c cannot*.txt -o output --mode several
+```
+
+(4) Bin with the trained model
+
+```bash
+SemiBin bin -i contig.fna --model model.h5 --data data.csv -o output 
+```
 
 For more details on usage, including information on how to run individual steps
 separately, [read the docs](https://semibin.readthedocs.io/en/latest/usage/).
@@ -72,6 +102,12 @@ SemiBin single_easy_bin -i contig.fna -b *.bam -o output
 In this example, SemiBin will download GTDB to
 `$HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB`. You can change this default using the
 `-r` argument. You can set `--recluster` to use the reclustering part with single-copy genes described in the paper, which can make results a little better.
+
+You can use `--environment` with(human_gut, dog_gut and ocean) to use our built-in model.
+
+```bash
+SemiBin single_easy_bin -i contig.fna -b *.bam -o output --environment human_gut
+```
 
 ## Easy multi-samples binning mode
 
@@ -128,7 +164,7 @@ The output folder will contain
 
 4. Some intermediate files.
 
-For every sample, reconstructed bins are in `output_recluster_bins` directory.
+For every sample, reconstructed bins are in `output_bins` directory. Using reclustering, reconstructed bins are in `output_recluster_bins` directory.
 
 For more details about the output, [read the docs](https://semibin.readthedocs.io/en/latest/output/).
 

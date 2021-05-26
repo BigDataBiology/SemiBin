@@ -2,8 +2,6 @@
 
 ## Version 0.2
 
-*Released 28 May 2021*
-
 ### User-visible improvements
 - Change name to `SemiBin`
 - Add support for training with several samples
@@ -13,10 +11,13 @@
 - Fix bugs when paths have spaces
 - Fix installation issues by listing all the dependencies
 - Add `download_GTDB` command
-- Add `--no-recluster` option
+- Add `--recluster` option
+- Add `--environment` option
+- Add `--mode` option
 
 ### Internal improvements
 - All around more robust code by including more error checking &amp; testing
+- Better built-in models
 
 ## Version 0.1.1
 
