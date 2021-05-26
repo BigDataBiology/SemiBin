@@ -26,13 +26,11 @@ Install dependence packages using conda: [MMseqs2](https://github.com/soedinglab
 
 ```bash
 conda install -c conda-forge -c bioconda mmseqs2=13.45111
-```
-```bash
 conda install -c bioconda bedtools hmmer fraggenescan
-```
-```bash
 conda install -c anaconda cmake=3.19.6
 ```
+
+Once the dependencies are installed, you can install by running:
 
 ```bash
 python setup.py install
