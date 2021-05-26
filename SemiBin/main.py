@@ -320,11 +320,10 @@ def predict_taxonomy(logger, contig_fasta,
         'SemiBin',
         'mmseqs2-GTDB',
         'GTDB')
-    GTDB_path = GTDB_reference
     if GTDB_reference is None:
         if not os.path.exists(GTDB_default):
             download(logger, GTDB_default)
-        GTDB_path = GTDB_default
+        GTDB_reference = GTDB_default
     subprocess.check_call(
         ['mmseqs',
          'createdb',
