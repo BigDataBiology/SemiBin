@@ -779,24 +779,14 @@ def multi_easy_binning(args, logger, recluster,
 
     os.makedirs(os.path.join(output, 'bins'), exist_ok=True)
     for sample in sample_list:
-        if recluster:
-            bin_file = os.listdir(os.path.join(
-                output, 'samples', sample, 'output_recluster_bins'))
-            for bin in bin_file:
-                original_path = os.path.join(
-                    output, 'samples', sample, 'output_recluster_bins', bin)
-                new_file = '{0}_{1}'.format(sample, bin)
-                new_path = os.path.join(output, 'bins', new_file)
-                shutil.copyfile(original_path, new_path)
-        else:
-            bin_file = os.listdir(os.path.join(
-                output, 'samples', sample, 'output_bins'))
-            for bin in bin_file:
-                original_path = os.path.join(
-                    output, 'samples', sample, 'output_bins', bin)
-                new_file = '{0}_{1}'.format(sample, bin)
-                new_path = os.path.join(output, 'bins', new_file)
-                shutil.copyfile(original_path, new_path)
+        bin_dir_name = 'output_recluster_bins' if recluster else 'output_bins'
+        for bf in os.listdir(os.path.join(
+            output, 'samples', sample, bin_dir_name)):
+            original_path = os.path.join(
+                output, 'samples', sample, bin_dir_name, bf)
+            new_file = '{0}_{1}'.format(sample, bf)
+            new_path = os.path.join(output, 'bins', new_file)
+            shutil.copyfile(original_path, new_path)
 
 
 def main():
