@@ -7,6 +7,9 @@ import pandas as pd
 import torch
 import shutil
 import sys
+import warnings
+from torch.serialization import SourceChangeWarning
+warnings.filterwarnings("ignore", category=SourceChangeWarning)
 from .utils import validate_args, get_threshold, generate_cannot_link, \
     download, set_random_seed, unzip_fasta, process_fasta, split_data, get_model_path
 from Bio import SeqIO

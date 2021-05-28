@@ -19,6 +19,14 @@ more open-ended discussions or questions.
 
 SemiBin runs on Python 3.6-3.9.
 
+### Install from bioconda ###
+
+```bash
+conda create conda create -n SemiBin python==3.7
+conda activate SemiBin
+conda install -c bioconda semibin=0.2=pyh5e36f6f_1
+```
+
 ### Install from source
 
 You can download the source code from github and install.
@@ -26,13 +34,11 @@ You can download the source code from github and install.
 Install dependence packages using conda:
 [MMseqs2](https://github.com/soedinglab/MMseqs2),
 [Bedtools](http://bedtools.readthedocs.org/]), [Hmmer](http://hmmer.org/),
-[Fraggenescan](https://sourceforge.net/projects/fraggenescan/) and
-[cmake](https://cmake.org/).
+[Fraggenescan](https://sourceforge.net/projects/fraggenescan/).
 
 ```bash
 conda install -c conda-forge -c bioconda mmseqs2=13.45111
 conda install -c bioconda bedtools hmmer fraggenescan
-conda install -c anaconda cmake=3.19.6
 ```
 
 Once the dependencies are installed, you can install by running:
