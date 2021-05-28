@@ -1,6 +1,7 @@
 # What's New
 
 ## Version 0.2
+*Release 27 May 2021*
 
 ### User-visible improvements
 - Change name to `SemiBin`

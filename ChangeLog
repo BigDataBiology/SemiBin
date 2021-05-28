@@ -1,4 +1,4 @@
-Version 0.2.0 by BigDataBiology
+Version 0.2.0 Thu May 27 2021 by BigDataBiology
 	* Change name to `SemiBin`
 	* Add support for training with several samples
 	* Test with Python 3.9
@@ -10,11 +10,8 @@ Version 0.2.0 by BigDataBiology
 	* Add `--no-recluster` option
 	* Add `--environment` option
 	* Add `--mode` option
-
-	* All around more robust code by including more error checking &amp; testing
+	* All around more robust code by including more error checking & testing
 	* Better built-in models
-
-
 
 Version 0.1.1 Sun 21 Mar 2021 by BigDataBiology
 	* Fix bug with --minfasta-kbs

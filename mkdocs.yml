@@ -1,5 +1,5 @@
 site_name: "SemiBin"
-repo_url: "https://github.com/psj1997/SemiBin"
+repo_url: "https://github.com/BigDataBiology/SemiBin"
 
 nav:
         - 'SemiBin': index.md
