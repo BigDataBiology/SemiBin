@@ -4,7 +4,6 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 import os
 from .utils import cal_num_bins
-import pandas as pd
 from torch.optim import lr_scheduler
 from tqdm import tqdm
 import sys
@@ -145,6 +144,7 @@ def train(out, contig_fastas, binned_shorts, logger, datas, data_splits, cannot_
     """
     Train model from one sample(--mode single) or several samples(--mode several)
     """
+    import pandas as pd
     dataloader_list = []
     un_dataloader_list = []
 

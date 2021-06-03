@@ -1,31 +1,31 @@
+from torch.serialization import SourceChangeWarning
+import warnings
+warnings.filterwarnings("ignore", category=SourceChangeWarning)
+from .semibin_version import __version__ as ver
 import argparse
 import logging
 import os
 import multiprocessing
 import subprocess
-import pandas as pd
-import torch
+from atomicwrites import atomic_write
 import shutil
 import sys
-import warnings
-from torch.serialization import SourceChangeWarning
-warnings.filterwarnings("ignore", category=SourceChangeWarning)
+from Bio import SeqIO
 from .utils import validate_args, get_threshold, generate_cannot_link, \
     download, set_random_seed, unzip_fasta, process_fasta, split_data, get_model_path
-from Bio import SeqIO
 from .generate_coverage import generate_cov, combine_cov
-from atomicwrites import atomic_write
 from .generate_kmer import generate_kmer_features_from_fasta
 from Bio.SeqRecord import SeqRecord
 from .semi_supervised_model import train
 from .cluster import cluster
 from .error import LoggingPool
-from .semibin_version import __version__ as ver
+
 
 
 def parse_args(args):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                     description='Semi-supervised siamese neural network for metagenomic binning')
+                                     description='Semi-supervised siamese neural '
+                                                 'network for metagenomic binning')
 
     parser.version = ver
 
@@ -56,7 +56,7 @@ def parse_args(args):
 
 
     generate_data_multi = subparsers.add_parser('generate_data_multi',
-                                            help='Generate training data (files data.csv and data_split.csv) '
+                                            help='Generate training data(files data.csv and data_split.csv) '
                                                 'for the semi-supervised deep learning model training (multi-sample)')
 
     download_GTDB = subparsers.add_parser('download_GTDB', help='Download GTDB reference genomes.')
@@ -115,7 +115,8 @@ def parse_args(args):
     training.add_argument('--mode',
                           required=True,
                           type=str,
-                          help='[single/several]Train models from one sample or several samples(train model across several samples with single-sample binning can get better pre-trained model.).'
+                          help='[single/several]Train models from one sample or several samples'
+                               '(train model across several samples with single-sample binning can get better pre-trained model.).'
                                'In several mode, must input data, data_split, cannot, fasta files for corresponding sample with same order.',
                           dest='mode',
                           default='single')
@@ -392,10 +393,8 @@ def predict_taxonomy(logger, contig_fasta,
         if len(seq_record) >= must_link_threshold:
             num_must_link += 1
     os.makedirs(os.path.join(output, 'cannot'), exist_ok=True)
-    generate_cannot_link(
-        os.path.join(output, 'mmseqs_contig_annotation/taxonomyResult.tsv'),
-        namelist, num_must_link,
-        os.path.join(output, 'cannot'), cannot_name)
+    generate_cannot_link(os.path.join(output, 'mmseqs_contig_annotation/taxonomyResult.tsv'),
+        namelist, num_must_link, os.path.join(output, 'cannot'), cannot_name)
 
 
 def generate_data_single(logger, contig_fasta,
@@ -407,13 +406,11 @@ def generate_data_single(logger, contig_fasta,
     data_split.csv has the features(kmer and abundace) for contigs that are breaked up as must-link pair.
 
     """
+    import pandas as pd
     n_sample = len(bams)
     is_combined = n_sample >= 5
     bam_list = bams
-    if num_process != 0:
-        pool = LoggingPool(num_process)
-    else:
-        pool = LoggingPool()
+    pool = LoggingPool(num_process) if num_process != 0 else LoggingPool()
 
     logger.info('Calculating coverage for every sample.')
 
@@ -471,6 +468,7 @@ def generate_data_multi(logger, contig_fasta,
     data.csv has the features(kmer and abundance) for original contigs.
     data_split.csv has the features(kmer and abundace) for contigs that are breaked up as must-link pair.
     """
+    import pandas as pd
     n_sample = len(bams)
     is_combined = n_sample >= 5
     bam_list = bams
@@ -614,7 +612,6 @@ def training(logger, contig_fasta, bams, num_process,
         n_sample = len(bams)
         is_combined = n_sample >= 5
 
-
     else:
         logger.info('Start training from multiple samples.')
         is_combined = False
@@ -651,6 +648,8 @@ def binning(logger,bams, num_process, data,
     recluster: if reclustering
     model_path: path to the trained model
     """
+    import torch
+    import pandas as pd
     logger.info('Start binning.')
     n_sample = len(bams)
     is_combined = n_sample >= 5
@@ -658,17 +657,12 @@ def binning(logger,bams, num_process, data,
     data = pd.read_csv(data, index_col=0)
     data.index = data.index.astype(str)
 
-    if environment is None:
-        if device == torch.device('cpu'):
-            model = torch.load(model_path, map_location=torch.device('cpu'))
-        else:
-            model = torch.load(model_path)
+    model_path = model_path if environment is None else get_model_path(environment)
+
+    if device == torch.device('cpu'):
+        model = torch.load(model_path, map_location=torch.device('cpu'))
     else:
-        model_path = get_model_path(environment)
-        if device == torch.device('cpu'):
-            model = torch.load(model_path, map_location=torch.device('cpu'))
-        else:
-            model = torch.load(model_path)
+        model = torch.load(model_path)
     cluster(
         model,
         data,
@@ -722,16 +716,11 @@ def single_easy_binning(args, logger, binned_short,
                  [os.path.join(output, 'cannot', 'cannot.txt')],
                  args.batchsize, args.epoches, output, device, mode='single')
 
-        binning(logger, args.bams, args.num_process, data_path,
-                args.max_edges, args.max_node, args.minfasta_kb * 1000,
-                binned_short, contig_length_dict, contig_dict,recluster,
-                os.path.join(output, 'model.h5'),random_seed, output,  device, None)
-
-    else:
-        binning(logger, args.bams, args.num_process, data_path,
-                args.max_edges, args.max_node, args.minfasta_kb * 1000,
-                binned_short, contig_length_dict, contig_dict,recluster,
-                None,random_seed, output,  device, environment)
+    binning(logger, args.bams, args.num_process, data_path,
+            args.max_edges, args.max_node, args.minfasta_kb * 1000,
+            binned_short, contig_length_dict, contig_dict,recluster,
+            os.path.join(output, 'model.h5') if environment is None else None,
+            random_seed, output,  device, environment if environment is not None else None)
 
 
 def multi_easy_binning(args, logger, recluster,
@@ -758,6 +747,7 @@ def multi_easy_binning(args, logger, recluster,
             output, 'samples', sample, 'data_split.csv')
 
         binned_short, must_link_threshold, contig_length_dict, contig_dict = process_fasta(sample_fasta)
+
         predict_taxonomy(
             logger,
             sample_fasta,
@@ -766,6 +756,7 @@ def multi_easy_binning(args, logger, recluster,
             binned_short,
             must_link_threshold,
             os.path.join(output, 'samples', sample))
+
         sample_cannot = os.path.join(
             output, 'samples', sample, 'cannot/{}.txt'.format(sample))
         logger.info('Training model and clustering for {}.'.format(sample))
@@ -805,6 +796,7 @@ def main():
     validate_args(args)
 
     if args.cmd != 'download_GTDB':
+        import torch
         out = args.output
         os.makedirs(out, exist_ok=True)
 

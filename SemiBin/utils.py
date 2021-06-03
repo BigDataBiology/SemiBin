@@ -1,4 +1,3 @@
-import numpy as np
 import os
 import subprocess
 from atomicwrites import atomic_write
@@ -6,7 +5,6 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 import sys
-import pandas as pd
 import random
 import shutil
 
@@ -118,6 +116,7 @@ def get_threshold(contig_len):
     """
     calculate the threshold length for must link breaking up
     """
+    import numpy as np
     basepair_sum = 0
     threshold = 0
     whole_len = np.sum(contig_len)
@@ -161,6 +160,8 @@ def parse_mmseqs(mmseqs_result):
 
 def generate_cannot_link(mmseqs_path,namelist,num_threshold,output,sample):
     import itertools
+    import numpy as np
+    import pandas as pd
     mmseqs_result = pd.read_csv(mmseqs_path, sep='\t', header=None)
     mmseqs_result.columns = ['contig_name', 'taxon_ID', 'rank_name', 'scientific_name', 'temp_1', 'temp_2', 'temp_3',
                              'score', 'lineage']
@@ -263,6 +264,7 @@ def cal_kl(m1, m2, v1, v2):
     """
     Calculate KL divergence
     """
+    import numpy as np
     m1 = np.clip(m1, 1e-6, None)
     m2 = np.clip(m2, 1e-6, None)
     v1 = np.clip(v1, 1.0, None)
@@ -326,6 +328,7 @@ def download(logger, GTDB_path):
 
 def set_random_seed(seed):
     import torch
+    import numpy as np
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -376,6 +379,7 @@ def split_data(data, sample, separator):
     """
     split data according their sample in multi-sample binning
     """
+    import numpy as np
     part_data = data[data['contig_name'].str.contains(
         '{}'.format(sample + separator))]
     part_data = part_data.set_index('contig_name')

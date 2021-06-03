@@ -1,13 +1,10 @@
 """
 https://github.com/BinPro/CONCOCT/blob/develop/scripts/fasta_to_features.py
 """
-
-import numpy as np
 from itertools import product
 from Bio import SeqIO
 from itertools import tee
 from collections import Counter, OrderedDict
-import pandas as pd
 from Bio.SeqRecord import SeqRecord
 
 
@@ -34,6 +31,8 @@ def generate_feature_mapping(kmer_len):
 
 def generate_kmer_features_from_fasta(
         fasta_file, length_threshold, kmer_len, split=False, threshold=0):
+    import numpy as np
+    import pandas as pd
     kmer_dict, nr_features = generate_feature_mapping(kmer_len)
     composition_d = OrderedDict()
     contig_lengths = OrderedDict()

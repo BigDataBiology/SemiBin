@@ -1,7 +1,5 @@
-import torch
 from sklearn.neighbors import kneighbors_graph
 from igraph import Graph
-import numpy as np
 from .utils import cal_kl, write_bins, cal_num_bins
 import os
 import math
@@ -17,11 +15,10 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     max_edges: max edges of one contig considered in binning
     max_node: max percentage of contigs considered in binning
     """
+    import torch
+    import numpy as np
     train_data = data.values
-    if not is_combined:
-        train_data_input = train_data[:, 0:136]
-    else:
-        train_data_input = train_data
+    train_data_input = train_data[:, 0:136] if not is_combined else train_data
 
     depth = data.values[:, 136:len(data.values[0])]
     namelist = data.index.tolist()
@@ -91,9 +88,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     g.add_vertices(list(range(len(matrix))))
     g.add_edges(edges)
     length_weight = np.array([contig_length_dict[name] for name in namelist])
-    result = g.community_infomap(
-        edge_weights=edges_weight,
-        vertex_weights=length_weight)
+    result = g.community_infomap(edge_weights=edges_weight, vertex_weights=length_weight)
     contig_labels = np.zeros(shape=(len(matrix)), dtype=np.int)
 
     for i, r in enumerate(result):

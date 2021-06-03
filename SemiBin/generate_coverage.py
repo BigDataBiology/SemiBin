@@ -1,5 +1,3 @@
-import numpy as np
-import pandas as pd
 import os
 import subprocess
 from atomicwrites import atomic_write
@@ -9,6 +7,8 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
     """
     Input is position depth file generated from mosdepth or bedtools genomecov
     """
+    import pandas as pd
+    import numpy as np
     data_contig_list = []
     coverage = []
     var = []
@@ -37,6 +37,14 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
                 mean = np.mean(depth_value2)
                 split_coverage.append(mean)
 
+    def get_thre(depth_contig):
+        if sep is None:
+            cov_threshold = contig_threshold
+        else:
+            sample_name = depth_contig.split(sep)[0]
+            cov_threshold = 1000 if sample_name in binned_thre_dict[1000] else 2500
+        return cov_threshold
+
     depth_value = []
     depth_contig = None
 
@@ -51,11 +59,7 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
         if contig_name == depth_contig:
             depth_value.extend([value] * length)
         if contig_name != depth_contig:
-            if sep is None:
-                cov_threshold = contig_threshold
-            else:
-                sample_name = depth_contig.split(sep)[0]
-                cov_threshold = 1000 if sample_name in binned_thre_dict[1000] else 2500
+            cov_threshold = get_thre(depth_contig)
 
             if len(depth_value) <= cov_threshold:
                 depth_contig = contig_name
@@ -69,18 +73,16 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
             depth_value.extend([value] * length)
 
     if depth_value != []:
-        if sep is None:
-            cov_threshold = contig_threshold
-        else:
-            sample_name = depth_contig.split(sep)[0]
-            cov_threshold = 1000 if sample_name in binned_thre_dict[1000] else 2500
+        cov_threshold = get_thre(depth_contig)
+
         if len(depth_value) > cov_threshold:
             process(depth_value, depth_contig)
 
+    data_contig_list = np.expand_dims(np.array(data_contig_list), axis=1)
+    coverage = np.expand_dims(np.array(coverage), axis=1)
+    contig_cov = np.concatenate((data_contig_list, coverage), axis=1)
+
     if is_combined:
-        data_contig_list = np.expand_dims(np.array(data_contig_list), axis=1)
-        coverage = np.expand_dims(np.array(coverage), axis=1)
-        contig_cov = np.concatenate((data_contig_list, coverage), axis=1)
         contig_cov = pd.DataFrame(
             data=contig_cov[:, 1:], index=contig_cov[:, 0], columns=['cov'])
         contig_cov['cov'] = contig_cov['cov'].astype('float')
@@ -93,10 +95,7 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
         split_contig_cov['cov'] = split_contig_cov['cov'].astype('float')
         return contig_cov, split_contig_cov
     else:
-        data_contig_list = np.expand_dims(np.array(data_contig_list), axis=1)
-        coverage = np.expand_dims(np.array(coverage), axis=1)
         var = np.expand_dims(np.array(var), axis=1)
-        contig_cov = np.concatenate((data_contig_list, coverage), axis=1)
         contig_cov = np.concatenate((contig_cov, var), axis=1)
         contig_cov = pd.DataFrame(
             data=contig_cov[:, 1:], index=contig_cov[:, 0], columns=['mean', 'var'])
@@ -117,6 +116,7 @@ def generate_cov(bam_file, bam_index, out, threshold,
     contig_threshold: threshold of contigs for must-link constraints
     sep: separator for multi-sample binning
     """
+    import numpy as np
     logger.info('Processing `{}`'.format(bam_file))
     bam_name = os.path.split(bam_file)[-1] + '_{}'.format(bam_index)
     bam_depth = os.path.join(out, '{}_depth.txt'.format(bam_name))
@@ -129,12 +129,10 @@ def generate_cov(bam_file, bam_index, out, threshold,
             stdout=bedtools_out)
 
     if is_combined:
-        if sep is None:
-            contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined,
-                                                              contig_threshold=contig_threshold)
-        else:
-            contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined,
-                                                                  sep=sep, binned_thre_dict=contig_threshold)
+        contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined = is_combined, sep = sep,
+                                                              contig_threshold = contig_threshold if sep is None else 1000,
+                                                              binned_thre_dict=  contig_threshold if sep is not None else None)
+
         contig_cov = contig_cov.apply(lambda x: x + 1e-5)
         must_link_contig_cov = must_link_contig_cov.apply(lambda x: x + 1e-5)
         if sep is None:
@@ -149,38 +147,33 @@ def generate_cov(bam_file, bam_index, out, threshold,
         with atomic_write(os.path.join(out, '{}_data_split_cov.csv'.format(bam_name)), overwrite=True) as ofile:
             must_link_contig_cov.to_csv(ofile)
     else:
-        if sep is None:
-            contig_cov = calculate_coverage(
-                bam_depth,
-                threshold,
-                is_combined=is_combined,
-                contig_threshold=contig_threshold)
-        else:
-            contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined, sep=sep,
-                                            binned_thre_dict=contig_threshold)
+        contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined, sep = sep,
+                                        contig_threshold = contig_threshold if sep is None else 1000,
+                                        binned_thre_dict=  contig_threshold if sep is not None else None)
+
         contig_cov = contig_cov.apply(lambda x: x + 1e-5)
+
         with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
             contig_cov.to_csv(ofile)
+
     return (bam_file, logger)
 
 def combine_cov(cov_dir, bam_list, is_combined):
     """
     generate cov/cov_split for every sample in one file
     """
+    import pandas as pd
     data_cov = pd.read_csv(os.path.join(cov_dir, '{}_data_cov.csv'.format(
         os.path.split(bam_list[0])[-1] + '_{}'.format(0))), index_col=0)
     if is_combined:
-        data_split_cov = pd.read_csv(os.path.join(
-            cov_dir, '{}_data_split_cov.csv'.format(
-                os.path.split(bam_list[0])[-1] + '_{}'.format(0))), index_col=0)
+        data_split_cov = pd.read_csv(os.path.join(cov_dir, '{}_data_split_cov.csv'
+                                    .format(os.path.split(bam_list[0])[-1] + '_{}'.format(0))), index_col=0)
 
     for bam_index, bam_file in enumerate(bam_list):
         if bam_index == 0:
             continue
-        cov = pd.read_csv(
-            os.path.join(cov_dir, '{}_data_cov.csv'.format(
-                os.path.split(bam_file)[-1] + '_{}'.format(bam_index))),
-            index_col=0)
+        cov = pd.read_csv(os.path.join(cov_dir, '{}_data_cov.csv'.format(
+                os.path.split(bam_file)[-1] + '_{}'.format(bam_index))),index_col=0)
         cov.index = cov.index.astype(str)
         data_cov = pd.merge(data_cov, cov, how='inner', on=None,
                             left_index=True, right_index=True, sort=False, copy=True)
@@ -191,9 +184,9 @@ def combine_cov(cov_dir, bam_list, is_combined):
 
             data_split_cov = pd.merge(data_split_cov, cov_split, how='inner', on=None,
                                       left_index=True, right_index=True, sort=False, copy=True)
+    data_cov.index = data_cov.index.astype(str)
     if is_combined:
         return data_cov, data_split_cov
-
     else:
         return data_cov
 
