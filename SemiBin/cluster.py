@@ -96,6 +96,8 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
             contig_labels[infomap_index] = i
 
     output_bin_path = os.path.join(out, 'output_bins')
+    if os.path.exists(output_bin_path):
+        shutil.rmtree(output_bin_path)
     os.makedirs(output_bin_path, exist_ok=True)
 
     write_bins(namelist, contig_labels, output_bin_path, contig_dict,minfasta=minfasta)
@@ -115,6 +117,12 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
 
         bin_files = os.listdir(output_bin_path)
         logger.info('Reclustering.')
+
+        output_recluster_bin_path = os.path.join(out, 'output_recluster_bins')
+        if os.path.exists(output_recluster_bin_path):
+            shutil.rmtree(output_recluster_bin_path)
+
+        os.makedirs(output_recluster_bin_path, exist_ok=True)
 
         for bin in bin_files:
             if os.path.exists(os.path.join(output_bin_path, bin)):
@@ -136,8 +144,6 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                     pass
                 contig_index = [mapObj[temp] for temp in contig_list]
                 re_bin_features = embedding_new[contig_index]
-                if not os.path.exists(os.path.join(out, 'output_recluster_bins')):
-                    os.mkdir(os.path.join(out, 'output_recluster_bins'))
 
                 if os.path.exists(seed_output):
                     seed = open(seed_output).read().split('\n')
