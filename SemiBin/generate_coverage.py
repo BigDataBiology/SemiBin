@@ -80,7 +80,7 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
 
     data_contig_list = np.expand_dims(np.array(data_contig_list), axis=1)
     coverage = np.expand_dims(np.array(coverage), axis=1)
-    contig_cov = np.concatenate((data_contig_list, coverage), axis=1)
+    contig_cov = np.concatenate((data_contig_list, coverage), axis=1, dtype=object)
 
     if is_combined:
         contig_cov = pd.DataFrame(
@@ -89,14 +89,14 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
         split_contig_list = np.expand_dims(np.array(split_contig_list), axis=1)
         split_coverage = np.expand_dims(np.array(split_coverage), axis=1)
         split_contig_cov = np.concatenate(
-            (split_contig_list, split_coverage), axis=1)
+            (split_contig_list, split_coverage), axis=1, dtype=object)
         split_contig_cov = pd.DataFrame(
             data=split_contig_cov[:, 1:], index=split_contig_cov[:, 0], columns=['cov'])
         split_contig_cov['cov'] = split_contig_cov['cov'].astype('float')
         return contig_cov, split_contig_cov
     else:
         var = np.expand_dims(np.array(var), axis=1)
-        contig_cov = np.concatenate((contig_cov, var), axis=1)
+        contig_cov = np.concatenate((contig_cov, var), axis=1, dtype=object)
         contig_cov = pd.DataFrame(
             data=contig_cov[:, 1:], index=contig_cov[:, 0], columns=['mean', 'var'])
         contig_cov['mean'] = contig_cov['mean'].astype('float')
