@@ -41,6 +41,8 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
             p=2,
             n_jobs=-1).toarray()
         embedding_matrix[kmer_matrix == 0] = 0
+    kmer_matrix = None
+    del kmer_matrix
 
     embedding_matrix[embedding_matrix >= 1] = 1
     embedding_matrix[embedding_matrix == 0] = 1
@@ -58,7 +60,6 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     embedding_matrix[embedding_matrix <= threshold] = 0
     if not is_combined:
         logger.info('Calculating depth matrix.')
-        depth_matrix = np.zeros(shape=embedding_matrix.shape)
         for i in range(len(embedding_matrix)):
             for j in range(i + 1, len(embedding_matrix)):
                 if embedding_matrix[i][j] > 0:
@@ -67,29 +68,25 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                         temp_depth += 1 - \
                             cal_kl(depth[i][2 * k], depth[j][2 * k],
                                    depth[i][2 * k + 1], depth[j][2 * k + 1])
-                    depth_matrix[i][j] = temp_depth / n_sample
-
-        matrix = embedding_matrix * depth_matrix
-    else:
-        matrix = embedding_matrix
+                    embedding_matrix[i][j] = embedding_matrix[i][j] * (temp_depth / n_sample)
 
     edges = []
     edges_weight = []
 
-    for i in range(len(matrix)):
-        for j in range(i + 1, len(matrix)):
-            if matrix[i][j] > 1e-6:
+    for i in range(len(embedding_matrix)):
+        for j in range(i + 1, len(embedding_matrix)):
+            if embedding_matrix[i][j] > 1e-6:
                 edges.append((i, j))
-                edges_weight.append(matrix[i][j])
+                edges_weight.append(embedding_matrix[i][j])
 
     logger.info('Edges:{}'.format(len(edges)))
 
     g = Graph()
-    g.add_vertices(list(range(len(matrix))))
+    g.add_vertices(list(range(len(embedding_matrix))))
     g.add_edges(edges)
     length_weight = np.array([contig_length_dict[name] for name in namelist])
     result = g.community_infomap(edge_weights=edges_weight, vertex_weights=length_weight)
-    contig_labels = np.zeros(shape=(len(matrix)), dtype=np.int)
+    contig_labels = np.zeros(shape=(len(embedding_matrix)), dtype=np.int)
 
     for i, r in enumerate(result):
         for infomap_index in r:
