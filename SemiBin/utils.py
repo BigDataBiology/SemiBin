@@ -222,7 +222,7 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
         )
 
     if not os.path.exists(seed_output):
-        getmarker = os.path.split(__file__)[0] + '/test_getmarker.pl'
+        getmarker = os.path.split(__file__)[0] + '/getmarker.pl'
         subprocess.check_call(
             ['perl', getmarker,
              hmm_output,

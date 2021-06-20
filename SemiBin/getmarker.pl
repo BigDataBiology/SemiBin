@@ -1,3 +1,4 @@
+#script from Maxbin2 https://sourceforge.net/projects/maxbin2/
 #!/usr/bin/perl -w
 use strict;
 
