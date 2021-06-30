@@ -78,7 +78,7 @@ In this example, SemiBin will download GTDB to
 You can set `--recluster` to use the reclustering step with single-copy genes
 described in the paper, which can make results a little better.
 
-You can use `--environment` with (`human_gut`, `dog_gut`, or `ocean`) to use one of our built-in models.
+You can use `--environment` with (`human_gut`, `dog_gut`, or `ocean`) to use one of our built-in models. (**Note:** Recommended way, which will save much time for contig annotations and model training, and also get very good results) 
 
 ```bash
 SemiBin single_easy_bin -i contig.fna -b *.bam -o output --environment human_gut
@@ -197,6 +197,12 @@ SemiBin train -i *.fna --data *.csv --data-split *.csv -c cannot*.txt -o output 
 
 ```bash
 SemiBin bin -i contig.fna --model model.h5 --data data.csv -o output
+```
+
+Or our built-in model(human_gut, dog_gut or ocean)
+
+```bash
+SemiBin bin -i contig.fna --data data.csv -o output --environment human_gut
 ```
 
 For more details on usage, including information on how to run individual steps

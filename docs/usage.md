@@ -18,7 +18,7 @@ SemiBin single_easy_bin -i contig.fna -b *.bam -r /mmseqs_data/GTDB -o output
 
 If you do not set the path of GTDB, SemiBin will download GTDB  to $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB. You can set `--recluster` to use the reclustering part with single-copy genes described in the paper.
 
-You can use `--environment` with(human_gut, dog_gut and ocean) to use our built-in model.
+You can use `--environment` with(human_gut, dog_gut and ocean) to use our built-in model. (**Note:** Recommended way, which will save much time for contig annotations and model training, and also get very good results) 
 
 ```bash
 SemiBin single_easy_bin -i contig.fna -b *.bam -o output --environment human_gut
