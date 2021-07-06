@@ -38,7 +38,7 @@ Install dependence packages using conda:
 
 ```bash
 conda install -c conda-forge -c bioconda mmseqs2=13.45111
-conda install -c bioconda bedtools hmmer fraggenescan
+conda install -c bioconda bedtools hmmer fraggenescan==1.30
 ```
 
 Once the dependencies are installed, you can install by running:

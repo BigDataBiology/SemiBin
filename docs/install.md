@@ -18,7 +18,7 @@ Install dependence packages using conda: [MMseqs2](https://github.com/soedinglab
 conda install -c conda-forge -c bioconda mmseqs2=13.45111
 ```
 ```bash
-conda install -c bioconda bedtools hmmer fraggenescan
+conda install -c bioconda bedtools hmmer fraggenescan==1.30
 ```
 
 ```bash
