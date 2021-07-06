@@ -196,7 +196,7 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
                  seed_output, binned_short,num_process):
     if not os.path.exists(contig_output + '.faa'):
         frag_out_log = open(contig_output + '.out', 'w')
-        subprocess.check_call(
+        subprocess.call(
             [shutil.which('FragGeneScan'),
              '-s', fasta_path,
              '-o', contig_output,
