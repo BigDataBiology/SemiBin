@@ -260,17 +260,21 @@ def write_bins(namelist, contig_labels, output, contig_dict,
                 SeqIO.write(bin, ofile, 'fasta')
 
 
-def cal_kl(m1, m2, v1, v2):
+def cal_kl(m, v):
     """
     Calculate KL divergence
     """
     import numpy as np
-    m1 = np.clip(m1, 1e-6, None)
-    m2 = np.clip(m2, 1e-6, None)
-    v1 = np.clip(v1, 1.0, None)
-    v2 = np.clip(v2, 1.0, None)
-    value = np.log(np.sqrt(v2 / v1)) + \
-        np.divide(np.add(v1, np.square(m1 - m2)), 2 * v2) - 0.5
+    m = np.clip(m, 1e-6, None)
+    v = np.clip(v, 1.0, None)
+    m1 = m.reshape(1, len(m))
+    m2 = m.reshape(len(m), 1)
+
+    v1 = v.reshape(1, len(v))
+    v2 = v.reshape(len(v), 1)
+
+    value = np.log(np.sqrt(v1 / v2)) +  np.divide(np.square(m1 - m2) + v2, 2 * v1) - 0.5
+
     return np.clip(value, 1e-6, 1 - 1e-6)
 
 def get_file_md5(fname):
