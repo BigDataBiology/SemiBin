@@ -169,3 +169,5 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                     shutil.copy(os.path.join(
                         output_bin_path, bin), os.path.join(out, 'output_recluster_bins'))
 
+    logger.info('Binning finish.')
+
