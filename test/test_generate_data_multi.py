@@ -27,11 +27,13 @@ def test_generate_data_multi():
                          logger=logger,
                          output='output_multi',
                          contig_fasta='test/multi_samples_data/input_multi.fasta',
+                         ratio=None,
+                         min_length=None,
+                         ml_threshold=None,
                          )
 
     for i in range(10):
         data = pd.read_csv('output_multi/samples/S{}/data.csv'.format(i+1),index_col=0)
         data_split = pd.read_csv('output_multi/samples/S{}/data_split.csv'.format(i+1),index_col=0)
-
         assert data.shape == (20,146)
         assert data_split.shape == (40,146)

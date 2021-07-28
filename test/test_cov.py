@@ -31,7 +31,7 @@ def test_cov(tmpdir):
 
     cov, cov_split = calculate_coverage(
         depth_file,
-        threshold=0,
+        must_link_threshold=0,
         is_combined=True,
         contig_threshold=0)
     assert_frame_equal(cov, pd.DataFrame([2.581818, 2.627907], index=[
@@ -41,7 +41,7 @@ def test_cov(tmpdir):
 
     cov = calculate_coverage(
         depth_file,
-        threshold=0,
+        must_link_threshold=0,
         is_combined=False,
         contig_threshold=0)
     assert_frame_equal(cov, pd.DataFrame([[2.581818, 0.606942], [

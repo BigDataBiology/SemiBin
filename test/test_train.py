@@ -32,7 +32,9 @@ def test_train():
             logger = logger,
             output = 'output_train',
             device = 'cpu',
-            mode = 'single'
+            mode = 'single',
+            ratio=None,
+            min_length=None,
             )
 
     assert os.path.exists('output_train/model.h5')

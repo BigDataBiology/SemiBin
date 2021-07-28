@@ -252,6 +252,7 @@ def parse_args(args):
                             dest='GTDB_reference',
                             metavar='',
                             default=None)
+
     for p in [single_easy_bin, predict_taxonomy]:
         p.add_argument('--cannot-name',
                             required=False,
@@ -322,6 +323,14 @@ def parse_args(args):
                        default=None,
                        )
 
+    for p in [predict_taxonomy, generate_data_single, generate_data_multi, single_easy_bin, multi_easy_bin]:
+        p.add_argument('--ml-threshold',
+                       required=False,
+                       type=int,
+                       help='Length threshold for generating must-link constraints.(By default, the threshold is calculated from the contig, and the default minimum value is 4,000 bp)',
+                       dest='ml_threshold',
+                       default=None)
+
     if not args:
         parser.print_help(sys.stderr)
         sys.exit()
@@ -366,10 +375,18 @@ def predict_taxonomy(logger, contig_fasta,
         if not os.path.exists(GTDB_default):
             download(logger, GTDB_default)
         GTDB_reference = GTDB_default
+
+    filtered_fasta = []
+    for seq_record in SeqIO.parse(contig_fasta, "fasta"):
+        if len(seq_record) > binned_length:
+            filtered_fasta.append(seq_record)
+
+    SeqIO.write(filtered_fasta, os.path.join(output, 'filtered.fasta'), 'fasta')
+    filtered_fasta = os.path.join(output, 'filtered.fasta')
     subprocess.check_call(
         ['mmseqs',
          'createdb',
-         contig_fasta,
+         filtered_fasta,
          os.path.join(output, 'contig_DB')],
         stdout=None,
     )
@@ -475,7 +492,7 @@ def generate_data_single(logger, contig_fasta,
 
 def generate_data_multi(logger, contig_fasta,
                         bams, num_process,
-                        separator, ratio, min_length, output):
+                        separator, ratio, min_length, ml_threshold, output):
     """
     Generate data.csv and data_split.csv for every sample of multi-sample binning mode.
     data.csv has the features(kmer and abundance) for original contigs.
@@ -523,7 +540,9 @@ def generate_data_multi(logger, contig_fasta,
                     os.path.join(
                         output, 'samples', '{}.fasta'.format(flag_name)), 'fasta')
 
-    must_link_threshold = get_threshold(contig_length_list)
+
+    must_link_threshold = get_threshold(contig_length_list) if ml_threshold is None else ml_threshold
+
     logger.info('Calculating coverage for every sample.')
 
     binning_threshold = {}
@@ -605,7 +624,7 @@ def generate_data_multi(logger, contig_fasta,
         with atomic_write(os.path.join(output_path, 'data_split.csv'), overwrite=True) as ofile:
             data_split.to_csv(ofile)
 
-    return sample_list
+    return sample_list, must_link_threshold
 
 
 def training(logger, contig_fasta, bams, num_process,
@@ -751,7 +770,7 @@ def multi_easy_binning(args, logger, recluster,
     """
     logger.info('Multi-sample binning.')
     logger.info('Generate training data.')
-    sample_list = generate_data_multi(
+    sample_list, must_link_threshold = generate_data_multi(
         logger,
         args.contig_fasta,
         args.bams,
@@ -759,6 +778,7 @@ def multi_easy_binning(args, logger, recluster,
         args.separator,
         args.ratio,
         args.min_length,
+        args.ml_threshold,
         output, )
     for sample in sample_list:
         logger.info(
@@ -769,7 +789,7 @@ def multi_easy_binning(args, logger, recluster,
         sample_data_split = os.path.join(
             output, 'samples', sample, 'data_split.csv')
 
-        binned_short, must_link_threshold, contig_length_dict, contig_dict = process_fasta(sample_fasta, args.ratio)
+        binned_short, _ , contig_length_dict, contig_dict = process_fasta(sample_fasta, args.ratio)
 
         if args.min_length is None:
             binned_length = 1000 if binned_short else 2500
@@ -858,6 +878,9 @@ def main():
         else:
             binned_length = args.min_len
 
+    if args.ml_threshold is not None:
+        must_link_threshold = args.ml_threshold
+
     if args.cmd == 'download_GTDB':
         download_GTDB(logger,args.GTDB_reference)
 
@@ -890,6 +913,7 @@ def main():
             args.separator,
             args.ratio,
             args.min_len,
+            args.ml_threshold,
             out)
 
     if args.cmd == 'train':
@@ -897,7 +921,7 @@ def main():
             set_random_seed(args.random_seed)
         training(logger, args.contig_fasta, args.bams, args.num_process,
                  args.data, args.data_split, args.cannot_link,
-                 args.batchsize, args.epoches, out, device, args.ratio, args.min_len,                        args.mode)
+                 args.batchsize, args.epoches, out, device, args.ratio, args.min_len, args.mode)
 
 
     if args.cmd == 'bin':

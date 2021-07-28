@@ -29,7 +29,7 @@ def test_bin():
             minfasta=0,
             logger=logger,
             output='output_bin',
-            binned_short=True,
+            binned_length=1000,
             device='cpu',
             contig_length_dict=contig_length_dict,
             contig_dict=contig_dict,

@@ -17,7 +17,7 @@ def test_generate_data_single():
                          logger=logger,
                          output='output_single',
                          contig_fasta='test/single_sample_data/input.fasta',
-                         binned_short=False,
+                         binned_length=2500,
                          must_link_threshold=4000
                          )
 
