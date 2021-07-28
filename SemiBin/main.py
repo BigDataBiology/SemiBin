@@ -173,6 +173,23 @@ def parse_args(args):
                          default=None,
                          help='Path to the trained semi-supervised deep learning model.')
 
+    training.add_argument('-p', '--processes', '-t', '--threads',
+                   required=False,
+                   type=int,
+                   help='Number of CPUs used (pass the value 0 to use all CPUs)',
+                   dest='num_process',
+                   default=0,
+                   metavar=''
+                   )
+    training.add_argument('-b', '--input-bam',
+                   required=False,
+                   nargs='*',
+                   help='Path to the input BAM file(Only need when training mode is single). '
+                        'If using multiple samples, you can input multiple files.',
+                   dest='bams',
+                   default=None,
+                   )
+
     for p in [single_easy_bin, binning]:
         p.add_argument('--environment',
                        required=False,
@@ -193,23 +210,20 @@ def parse_args(args):
                             dest='output',
                             default=None,
                             )
-
-    training.add_argument('-p', '--processes', '-t', '--threads',
-                   required=False,
-                   type=int,
-                   help='Number of CPUs used (pass the value 0 to use all CPUs)',
-                   dest='num_process',
-                   default=0,
-                   metavar=''
-                   )
-    training.add_argument('-b', '--input-bam',
-                   required=False,
-                   nargs='*',
-                   help='Path to the input BAM file(Only need when training mode is single). '
-                        'If using multiple samples, you can input multiple files.',
-                   dest='bams',
-                   default=None,
-                   )
+    for p in [single_easy_bin, multi_easy_bin, predict_taxonomy, generate_data_single, generate_data_multi, binning, training]:
+        p.add_argument('-m', '--min-len',
+                       required=False,
+                       type=int,
+                       help='Minimal length for contigs in binning. If you use SemiBin with multi steps and you use this parameter, please use this                              parameter consistently with all subcommands.(Default: SemiBin chooses 1000bp or 2500 bp according the ratio of the number of base pairs of contigs between 1000-2500 bp)',
+                       dest='min_len',
+                       default=None,
+                       )
+        p.add_argument('--ratio',
+                       required=False,
+                       type=float,
+                       help='If the ratio of the number of base pairs of contigs between 1000-2500 bp smaller than this value, the minimal length will be set as 1000bp, otherwise 2500bp. If you set -m parameter, you do not need to use this parameter. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands.(Default: 0.05)',
+                       dest='ratio',
+                       default=0.05)
 
     for p in [single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi, binning]:
         p.add_argument('-p', '--processes', '-t', '--threads',
@@ -323,8 +337,7 @@ def download_GTDB(logger,GTDB_reference):
         os.environ['HOME'],
         '.cache',
         'SemiBin',
-        'mmseqs2-GTDB',
-        'GTDB')
+        'mmseqs2-GTDB')
 
     GTDB_path = GTDB_reference if GTDB_reference is not None else GTDB_default
     download(logger, GTDB_path)
@@ -332,7 +345,7 @@ def download_GTDB(logger,GTDB_reference):
 
 def predict_taxonomy(logger, contig_fasta,
                      cannot_name, GTDB_reference,
-                     binned_short, must_link_threshold,output):
+                     binned_length, must_link_threshold,output):
     """
     Predict taxonomy using mmseqs and generate cannot-link file
 
@@ -386,9 +399,9 @@ def predict_taxonomy(logger, contig_fasta,
 
     namelist = []
     num_must_link = 0
-    binned_threshold = 1000 if binned_short else 2500
+
     for seq_record in SeqIO.parse(contig_fasta, "fasta"):
-        if len(seq_record) > binned_threshold:
+        if len(seq_record) > binned_length:
             namelist.append(seq_record.id)
         if len(seq_record) >= must_link_threshold:
             num_must_link += 1
@@ -398,7 +411,7 @@ def predict_taxonomy(logger, contig_fasta,
 
 
 def generate_data_single(logger, contig_fasta,
-                         bams, binned_short,
+                         bams, binned_length,
                          must_link_threshold, num_process, output):
     """
     Generate data.csv and data_split.csv for training and clustering of single-sample and co-assembly binning mode.
@@ -423,7 +436,7 @@ def generate_data_single(logger, contig_fasta,
                 output,
                 must_link_threshold,
                 is_combined,
-                1000 if binned_short else 2500,
+                binned_length,
                 logger,
                 None
             ),
@@ -433,7 +446,7 @@ def generate_data_single(logger, contig_fasta,
 
     logger.info('Start generating kmer features from fasta file.')
     kmer_whole = generate_kmer_features_from_fasta(
-        contig_fasta, 1000 if binned_short else 2500, 4)
+        contig_fasta, binned_length, 4)
     kmer_split = generate_kmer_features_from_fasta(
         contig_fasta, 1000, 4, split=True, threshold=must_link_threshold)
 
@@ -462,7 +475,7 @@ def generate_data_single(logger, contig_fasta,
 
 def generate_data_multi(logger, contig_fasta,
                         bams, num_process,
-                        separator, output):
+                        separator, ratio, min_length, output):
     """
     Generate data.csv and data_split.csv for every sample of multi-sample binning mode.
     data.csv has the features(kmer and abundance) for original contigs.
@@ -513,11 +526,13 @@ def generate_data_multi(logger, contig_fasta,
     must_link_threshold = get_threshold(contig_length_list)
     logger.info('Calculating coverage for every sample.')
 
-    binning_threshold = {1000: [], 2500: []}
+    binning_threshold = {}
     for sample in sample_list:
-        binned_short ,_ ,_ ,_ = process_fasta(os.path.join(output, 'samples/{}.fasta'.format(sample)))
-        binning_threshold[1000].append(sample) if binned_short \
-            else binning_threshold[2500].append(sample)
+        if min_length is not None:
+            binning_threshold[sample] = min_length
+        else:
+            binned_short ,_ ,_ ,_ = process_fasta(os.path.join(output, 'samples/{}.fasta'.format(sample)), ratio)
+            binning_threshold[sample] = 1000 if binned_short else 2500
 
     for bam_index in range(n_sample):
         pool.apply_async(generate_cov,
@@ -564,9 +579,9 @@ def generate_data_multi(logger, contig_fasta,
 
         sample_contig_fasta = os.path.join(
             output, 'samples/{}.fasta'.format(sample))
-        binned_short = True if sample in binning_threshold[1000] else False
+        binned_length =  binning_threshold[sample]
         kmer_whole = generate_kmer_features_from_fasta(
-            sample_contig_fasta, 1000 if binned_short else 2500, 4)
+            sample_contig_fasta, binned_length, 4)
         kmer_split = generate_kmer_features_from_fasta(
             sample_contig_fasta, 1000, 4, split=True, threshold=must_link_threshold)
 
@@ -595,20 +610,23 @@ def generate_data_multi(logger, contig_fasta,
 
 def training(logger, contig_fasta, bams, num_process,
              data, data_split, cannot_link, batchsize,
-             epoches,  output, device, mode):
+             epoches,  output, device, ratio, min_length, mode):
     """
     Training the model
 
     model: [single/several]
     """
 
-    binned_shorts= []
+    binned_lengths = []
     num_cpu = multiprocessing.cpu_count() if num_process == 0 else num_process
 
     if mode == 'single':
         logger.info('Start training from one sample.')
-        binned_short, _, _, _ = process_fasta(contig_fasta[0])
-        binned_shorts.append(binned_short)
+        if min_length is None:
+            binned_short, _, _, _ = process_fasta(contig_fasta[0], ratio)
+            binned_lengths.append(1000) if binned_short else binned_lengths.append(2500)
+        else:
+            binned_lengths.append(min_length)
         n_sample = len(bams)
         is_combined = n_sample >= 5
 
@@ -616,13 +634,16 @@ def training(logger, contig_fasta, bams, num_process,
         logger.info('Start training from multiple samples.')
         is_combined = False
         for contig_index in contig_fasta:
-            binned_short, _, _, _ = process_fasta(contig_index)
-            binned_shorts.append(binned_short)
+            if min_length is None:
+                binned_short, _, _, _ = process_fasta(contig_index, ratio)
+                binned_lengths.append(1000) if binned_short else binned_lengths.append(2500)
+            else:
+                binned_lengths.append(min_length)
 
     model = train(
         output,
         contig_fasta,
-        binned_shorts,
+        binned_lengths,
         logger,
         data,
         data_split,
@@ -637,7 +658,7 @@ def training(logger, contig_fasta, bams, num_process,
 
 def binning(logger,bams, num_process, data,
             max_edges, max_node, minfasta,
-            binned_short, contig_length_dict,
+            binned_length, contig_length_dict,
             contig_dict,recluster,model_path,
             random_seed,output, device, environment):
     """
@@ -675,14 +696,14 @@ def binning(logger,bams, num_process, data,
         contig_length_dict,
         output,
         contig_dict,
-        binned_short,
+        binned_length,
         num_cpu,
         minfasta,
         recluster,
         random_seed)
 
 
-def single_easy_binning(args, logger, binned_short,
+def single_easy_binning(args, logger, binned_length,
                         must_link_threshold, contig_length_dict,
                         contig_dict, recluster,random_seed, output, device, environment):
     """
@@ -693,7 +714,7 @@ def single_easy_binning(args, logger, binned_short,
         logger,
         args.contig_fasta,
         args.bams,
-        binned_short,
+        binned_length,
         must_link_threshold,
         args.num_process,
         output)
@@ -707,7 +728,7 @@ def single_easy_binning(args, logger, binned_short,
             args.contig_fasta,
             args.cannot_name,
             args.GTDB_reference,
-            binned_short,
+            binned_length,
             must_link_threshold,
             output)
         logger.info('Training model and clustering.')
@@ -718,7 +739,7 @@ def single_easy_binning(args, logger, binned_short,
 
     binning(logger, args.bams, args.num_process, data_path,
             args.max_edges, args.max_node, args.minfasta_kb * 1000,
-            binned_short, contig_length_dict, contig_dict,recluster,
+            binned_length, contig_length_dict, contig_dict,recluster,
             os.path.join(output, 'model.h5') if environment is None else None,
             random_seed, output,  device, environment if environment is not None else None)
 
@@ -728,7 +749,7 @@ def multi_easy_binning(args, logger, recluster,
     """
     contain `predict_taxonomy`, `generate_data_multi`, `train`, `bin` in one command for multi-sample binning
     """
-    logger.info('Multi-samples binning.')
+    logger.info('Multi-sample binning.')
     logger.info('Generate training data.')
     sample_list = generate_data_multi(
         logger,
@@ -736,6 +757,8 @@ def multi_easy_binning(args, logger, recluster,
         args.bams,
         args.num_process,
         args.separator,
+        args.ratio,
+        args.min_length,
         output, )
     for sample in sample_list:
         logger.info(
@@ -746,14 +769,19 @@ def multi_easy_binning(args, logger, recluster,
         sample_data_split = os.path.join(
             output, 'samples', sample, 'data_split.csv')
 
-        binned_short, must_link_threshold, contig_length_dict, contig_dict = process_fasta(sample_fasta)
+        binned_short, must_link_threshold, contig_length_dict, contig_dict = process_fasta(sample_fasta, args.ratio)
+
+        if args.min_length is None:
+            binned_length = 1000 if binned_short else 2500
+        else:
+            binned_length = args.min_length
 
         predict_taxonomy(
             logger,
             sample_fasta,
             sample,
             args.GTDB_reference,
-            binned_short,
+            binned_length,
             must_link_threshold,
             os.path.join(output, 'samples', sample))
 
@@ -763,11 +791,11 @@ def multi_easy_binning(args, logger, recluster,
         training(logger, [sample_fasta], args.bams, args.num_process,
                  [sample_data], [sample_data_split], [sample_cannot],
                  args.batchsize, args.epoches, os.path.join(output, 'samples', sample),
-                 device, mode='single')
+                 device, args.ratio, args.min_length, mode='single')
 
         binning(logger, args.bams, args.num_process, sample_data,
                 args.max_edges, args.max_node, args.minfasta_kb * 1000,
-                binned_short, contig_length_dict, contig_dict, recluster,
+                binned_length, contig_length_dict, contig_dict, recluster,
                 os.path.join(output, 'samples', sample, 'model.h5'), random_seed ,
                 os.path.join(output, 'samples', sample),  device, None)
 
@@ -824,7 +852,11 @@ def main():
             args.contig_fasta = contig_fastas
 
     if args.cmd in ['predict_taxonomy', 'generate_data_single', 'bin','single_easy_bin']:
-        binned_short, must_link_threshold, contig_length_dict, contig_dict = process_fasta(args.contig_fasta)
+        binned_short, must_link_threshold, contig_length_dict, contig_dict = process_fasta(args.contig_fasta, args.ratio)
+        if args.min_len is None:
+            binned_length = 1000 if binned_short else 2500
+        else:
+            binned_length = args.min_len
 
     if args.cmd == 'download_GTDB':
         download_GTDB(logger,args.GTDB_reference)
@@ -835,7 +867,7 @@ def main():
             args.contig_fasta,
             args.cannot_name,
             args.GTDB_reference,
-            binned_short,
+            binned_length,
             must_link_threshold,
             out)
 
@@ -844,7 +876,7 @@ def main():
             logger,
             args.contig_fasta,
             args.bams,
-            binned_short,
+            binned_length,
             must_link_threshold,
             args.num_process,
             out)
@@ -856,6 +888,8 @@ def main():
             args.bams,
             args.num_process,
             args.separator,
+            args.ratio,
+            args.min_len,
             out)
 
     if args.cmd == 'train':
@@ -863,14 +897,14 @@ def main():
             set_random_seed(args.random_seed)
         training(logger, args.contig_fasta, args.bams, args.num_process,
                  args.data, args.data_split, args.cannot_link,
-                 args.batchsize, args.epoches, out, device, args.mode)
+                 args.batchsize, args.epoches, out, device, args.ratio, args.min_len,                        args.mode)
 
 
     if args.cmd == 'bin':
         if args.random_seed is not None:
             set_random_seed(args.random_seed)
         binning(logger,args.bams, args.num_process, args.data, args.max_edges,
-                args.max_node, args.minfasta_kb * 1000, binned_short,contig_length_dict,
+                args.max_node, args.minfasta_kb * 1000, binned_length,contig_length_dict,
                 contig_dict, args.recluster, args.model_path, args.random_seed,out, device, args.environment)
 
 
@@ -880,7 +914,7 @@ def main():
         single_easy_binning(
             args,
             logger,
-            binned_short,
+            binned_length,
             must_link_threshold,
             contig_length_dict,
             contig_dict,

@@ -193,7 +193,7 @@ def generate_cannot_link(mmseqs_path,namelist,num_threshold,output,sample):
             out_cannot_link.write(f'{cannot[0]},{cannot[1]}\n')
 
 def cal_num_bins(fasta_path, contig_output, hmm_output,
-                 seed_output, binned_short,num_process):
+                 seed_output, binned_length, num_process):
     if not os.path.exists(contig_output + '.faa'):
         frag_out_log = open(contig_output + '.out', 'w')
         subprocess.call(
@@ -227,7 +227,7 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
             ['perl', getmarker,
              hmm_output,
              fasta_path,
-             ('1001' if binned_short else '2501'), # threshold
+             binned_length, # threshold
              seed_output,
              ],
             stdout=subprocess.DEVNULL,
@@ -300,7 +300,7 @@ def download(logger, GTDB_path):
     import requests
     import tarfile
     logger.info('Downloading GTDB.  It will take a while..')
-    GTDB_dir = os.path.split(GTDB_path)[0]
+    GTDB_dir = GTDB_path
     os.makedirs(GTDB_dir, exist_ok=True)
 
     download_url = 'https://zenodo.org/record/4751564/files/GTDB_v95.tar.gz?download=1'
@@ -339,7 +339,7 @@ def set_random_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
 
-def process_fasta(fasta_path):
+def process_fasta(fasta_path, ratio):
     """
     Return contig length, contig seq
     """
@@ -358,7 +358,7 @@ def process_fasta(fasta_path):
             '')] = len((seq_record.seq))
         contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
 
-    binned_short = contig_bp_2500 / whole_contig_bp < 0.05
+    binned_short = contig_bp_2500 / whole_contig_bp < ratio
     must_link_threshold = get_threshold(contig_length_list)
     return binned_short, must_link_threshold, contig_length_dict, contig_dict
 

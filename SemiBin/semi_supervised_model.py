@@ -139,7 +139,7 @@ class unsupervised_feature_Dataset(Dataset):
         return len(self.embedding1_lists)
 
 
-def train(out, contig_fastas, binned_shorts, logger, datas, data_splits, cannot_links, is_combined=True,
+def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot_links, is_combined=True,
           batchsize=2048, epoches=20, device=None, num_process = 8, mode = 'single'):
     """
     Train model from one sample(--mode single) or several samples(--mode several)
@@ -159,7 +159,7 @@ def train(out, contig_fastas, binned_shorts, logger, datas, data_splits, cannot_
             contig_output,
             hmm_output,
             seed_output,
-            binned_shorts[sample_index],
+            binned_lengths[sample_index],
             num_process)
 
         logger.info('Generate training data of {}:'.format(sample_index))

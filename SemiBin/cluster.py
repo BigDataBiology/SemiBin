@@ -9,7 +9,7 @@ import shutil
 
 
 def cluster(model, data, device, max_edges, max_node, is_combined,
-            logger, n_sample, contig_length_dict, out, contig_dict, binned_short,num_process,minfasta,recluster,random_seed):
+            logger, n_sample, contig_length_dict, out, contig_dict, binned_length,num_process,minfasta,recluster,random_seed):
     """
     Cluster contigs into bins
     max_edges: max edges of one contig considered in binning
@@ -133,7 +133,8 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                         contig_output,
                         hmm_output,
                         seed_output,
-                        binned_short,num_process)
+                        binned_length,
+                        num_process)
                 except BaseException:
                     pass
                 contig_index = [mapObj[temp] for temp in contig_list]

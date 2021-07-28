@@ -2,8 +2,8 @@ import os
 import subprocess
 from atomicwrites import atomic_write
 
-def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
-                       contig_threshold=1000, sep=None, binned_thre_dict=None):
+def calculate_coverage(depth_file, must_link_threshold, edge=75, is_combined=False,
+                       contig_threshold=1000, sep=None, contig_threshold_dict=None):
     """
     Input is position depth file generated from mosdepth or bedtools genomecov
     """
@@ -24,7 +24,7 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
         var.append(np.var(depth_value_))
         data_contig_list.append(contig_name)
         if is_combined:
-            if len(depth_value) >= threshold:
+            if len(depth_value) >= must_link_threshold:
                 depth_value1 = depth_value[0:len(depth_value) // 2]
                 depth_value2 = depth_value[len(
                     depth_value) // 2: len(depth_value)]
@@ -42,7 +42,7 @@ def calculate_coverage(depth_file, threshold, edge=75, is_combined=False,
             cov_threshold = contig_threshold
         else:
             sample_name = depth_contig.split(sep)[0]
-            cov_threshold = 1000 if sample_name in binned_thre_dict[1000] else 2500
+            cov_threshold = contig_threshold_dict[sample_name]
         return cov_threshold
 
     depth_value = []
@@ -131,7 +131,7 @@ def generate_cov(bam_file, bam_index, out, threshold,
     if is_combined:
         contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined = is_combined, sep = sep,
                                                               contig_threshold = contig_threshold if sep is None else 1000,
-                                                              binned_thre_dict=  contig_threshold if sep is not None else None)
+                                                              contig_threshold_dict =  contig_threshold if sep is not None else None)
 
         contig_cov = contig_cov.apply(lambda x: x + 1e-5)
         must_link_contig_cov = must_link_contig_cov.apply(lambda x: x + 1e-5)
@@ -149,7 +149,7 @@ def generate_cov(bam_file, bam_index, out, threshold,
     else:
         contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined, sep = sep,
                                         contig_threshold = contig_threshold if sep is None else 1000,
-                                        binned_thre_dict=  contig_threshold if sep is not None else None)
+                                        contig_threshold_dict =  contig_threshold if sep is not None else None)
 
         contig_cov = contig_cov.apply(lambda x: x + 1e-5)
 
