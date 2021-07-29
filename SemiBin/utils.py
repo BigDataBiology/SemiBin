@@ -227,7 +227,7 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
             ['perl', getmarker,
              hmm_output,
              fasta_path,
-             binned_length + 1, # threshold
+             str(binned_length + 1), # threshold
              seed_output,
              ],
             stdout=subprocess.DEVNULL,
