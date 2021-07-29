@@ -33,7 +33,7 @@ def test_train():
             output = 'output_train',
             device = 'cpu',
             mode = 'single',
-            ratio=None,
+            ratio=0.05,
             min_length=None,
             )
 
