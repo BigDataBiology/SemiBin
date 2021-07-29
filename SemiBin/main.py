@@ -624,7 +624,7 @@ def generate_data_multi(logger, contig_fasta,
         with atomic_write(os.path.join(output_path, 'data_split.csv'), overwrite=True) as ofile:
             data_split.to_csv(ofile)
 
-    return sample_list, must_link_threshold
+    return sample_list
 
 
 def training(logger, contig_fasta, bams, num_process,
@@ -770,7 +770,7 @@ def multi_easy_binning(args, logger, recluster,
     """
     logger.info('Multi-sample binning.')
     logger.info('Generate training data.')
-    sample_list, must_link_threshold = generate_data_multi(
+    sample_list = generate_data_multi(
         logger,
         args.contig_fasta,
         args.bams,
@@ -789,7 +789,7 @@ def multi_easy_binning(args, logger, recluster,
         sample_data_split = os.path.join(
             output, 'samples', sample, 'data_split.csv')
 
-        binned_short, _ , contig_length_dict, contig_dict = process_fasta(sample_fasta, args.ratio)
+        binned_short, must_link_threshold , contig_length_dict, contig_dict = process_fasta(sample_fasta, args.ratio)
 
         if args.min_length is None:
             binned_length = 1000 if binned_short else 2500
