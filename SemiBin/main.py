@@ -69,8 +69,7 @@ def parse_args(args):
 
     download_GTDB.add_argument('-r', '--reference-db',
                             required=False,
-                            help='GTDB reference file path to download(~/path/GTDB). (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB).'
-                            'If not set --reference-db, we will download GTDB to the default path.',
+                            help='GTDB reference file path to download(~/path). (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB). If not set --reference-db, we will download GTDB to the default path.',
                             dest='GTDB_reference',
                             metavar='',
                             default=None)
@@ -115,9 +114,7 @@ def parse_args(args):
     training.add_argument('--mode',
                           required=True,
                           type=str,
-                          help='[single/several]Train models from one sample or several samples'
-                               '(train model across several samples with single-sample binning can get better pre-trained model.).'
-                               'In several mode, must input data, data_split, cannot, fasta files for corresponding sample with same order.',
+                          help='[single/several]Train models from one sample or several samples (train model across several samples with single-sample binning can get better pre-trained model.). In several mode, must input data, data_split, cannot, fasta files for corresponding sample with same order. Note: You can just set `several` with this option when single-sample binning. Training from several samples with multi-sample binning is not support.',
                           dest='mode',
                           default='single')
 
@@ -176,7 +173,7 @@ def parse_args(args):
     training.add_argument('-p', '--processes', '-t', '--threads',
                    required=False,
                    type=int,
-                   help='Number of CPUs used (pass the value 0 to use all CPUs)',
+                   help='Number of CPUs used (pass the value 0 to use all CPUs, default: 0)',
                    dest='num_process',
                    default=0,
                    metavar=''
@@ -214,7 +211,7 @@ def parse_args(args):
         p.add_argument('-m', '--min-len',
                        required=False,
                        type=int,
-                       help='Minimal length for contigs in binning. If you use SemiBin with multi steps and you use this parameter, please use this                              parameter consistently with all subcommands.(Default: SemiBin chooses 1000bp or 2500 bp according the ratio of the number of base pairs of contigs between 1000-2500 bp)',
+                       help='Minimal length for contigs in binning. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands.(Default: SemiBin chooses 1000bp or 2500 bp according the ratio of the number of base pairs of contigs between 1000-2500 bp)',
                        dest='min_len',
                        default=None,
                        )
@@ -229,7 +226,7 @@ def parse_args(args):
         p.add_argument('-p', '--processes', '-t', '--threads',
                                      required=False,
                                      type=int,
-                                     help='Number of CPUs used (pass the value 0 to use all CPUs)',
+                                     help='Number of CPUs used (pass the value 0 to use all CPUs, default: 0)',
                                      dest='num_process',
                                      default=0,
                                      metavar=''
@@ -247,8 +244,7 @@ def parse_args(args):
         p.add_argument('-r', '--reference-db',
                             required=False,
                             help='GTDB reference storage path. (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB).'
-                            'If not set --reference-db and SemiBin cannot find GTDB in $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB, '
-                            'SemiBin will download GTDB (Note that >100GB of disk space are required).',
+                            'If not set --reference-db and SemiBin cannot find GTDB in $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB, SemiBin will download GTDB (Note that >100GB of disk space are required).',
                             dest='GTDB_reference',
                             metavar='',
                             default=None)
@@ -256,7 +252,7 @@ def parse_args(args):
     for p in [single_easy_bin, predict_taxonomy]:
         p.add_argument('--cannot-name',
                             required=False,
-                            help='Name for the cannot-link file.',
+                            help='Name for the cannot-link file(default: cannot).',
                             dest='cannot_name',
                             default='cannot',
                             metavar=''
@@ -390,7 +386,9 @@ def predict_taxonomy(logger, contig_fasta,
          os.path.join(output, 'contig_DB')],
         stdout=None,
     )
-    os.makedirs(os.path.join(output, 'mmseqs_contig_annotation'), exist_ok=True)
+    if os.path.exists(os.path.join(output, 'mmseqs_contig_annotation')):
+        shutil.rmtree(os.path.join(output, 'mmseqs_contig_annotation'))
+    os.makedirs(os.path.join(output, 'mmseqs_contig_annotation'))
     with tempfile.TemporaryDirectory() as tdir:
         subprocess.run(
             ['mmseqs',
@@ -754,7 +752,7 @@ def single_easy_binning(args, logger, binned_length,
         training(logger, [args.contig_fasta], args.bams,
                  args.num_process, [data_path], [data_split_path],
                  [os.path.join(output, 'cannot', 'cannot.txt')],
-                 args.batchsize, args.epoches, output, device, mode='single')
+                 args.batchsize, args.epoches, output, device, args.ratio, args.min_len,  mode='single')
 
     binning(logger, args.bams, args.num_process, data_path,
             args.max_edges, args.max_node, args.minfasta_kb * 1000,
@@ -777,7 +775,7 @@ def multi_easy_binning(args, logger, recluster,
         args.num_process,
         args.separator,
         args.ratio,
-        args.min_length,
+        args.min_len,
         args.ml_threshold,
         output, )
     for sample in sample_list:
@@ -791,10 +789,10 @@ def multi_easy_binning(args, logger, recluster,
 
         binned_short, must_link_threshold , contig_length_dict, contig_dict = process_fasta(sample_fasta, args.ratio)
 
-        if args.min_length is None:
+        if args.min_len is None:
             binned_length = 1000 if binned_short else 2500
         else:
-            binned_length = args.min_length
+            binned_length = args.min_len
 
         predict_taxonomy(
             logger,
@@ -811,7 +809,7 @@ def multi_easy_binning(args, logger, recluster,
         training(logger, [sample_fasta], args.bams, args.num_process,
                  [sample_data], [sample_data_split], [sample_cannot],
                  args.batchsize, args.epoches, os.path.join(output, 'samples', sample),
-                 device, args.ratio, args.min_length, mode='single')
+                 device, args.ratio, args.min_len, mode='single')
 
         binning(logger, args.bams, args.num_process, sample_data,
                 args.max_edges, args.max_node, args.minfasta_kb * 1000,
@@ -878,8 +876,9 @@ def main():
         else:
             binned_length = args.min_len
 
-    if args.ml_threshold is not None:
-        must_link_threshold = args.ml_threshold
+    if args.cmd in ['predict_taxonomy', 'generate_data_single', 'generate_data_multi', 'single_easy_bin', 'multi_easy_bin']:
+        if args.ml_threshold is not None:
+            must_link_threshold = args.ml_threshold
 
     if args.cmd == 'download_GTDB':
         download_GTDB(logger,args.GTDB_reference)
