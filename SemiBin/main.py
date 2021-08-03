@@ -186,7 +186,14 @@ def parse_args(args):
                    dest='bams',
                    default=None,
                    )
-
+    predict_taxonomy.add_argument('-p', '--processes', '-t', '--threads',
+                   required=False,
+                   type=int,
+                   help='Number of CPUs used (pass the value 0 to use all CPUs, default: 0)',
+                   dest='num_process',
+                   default=0,
+                   metavar=''
+                   )
     for p in [single_easy_bin, binning]:
         p.add_argument('--environment',
                        required=False,
@@ -349,7 +356,7 @@ def download_GTDB(logger,GTDB_reference):
 
 
 def predict_taxonomy(logger, contig_fasta,
-                     cannot_name, GTDB_reference,
+                     cannot_name, GTDB_reference, num_process,
                      binned_length, must_link_threshold,output):
     """
     Predict taxonomy using mmseqs and generate cannot-link file
@@ -361,6 +368,7 @@ def predict_taxonomy(logger, contig_fasta,
     must_link_threshold: threshold of contigs for must-link constraints
     """
     import tempfile
+    num_cpu = multiprocessing.cpu_count() if num_process == 0 else num_process
     GTDB_default = os.path.join(
         os.environ['HOME'],
         '.cache',
@@ -398,6 +406,7 @@ def predict_taxonomy(logger, contig_fasta,
              os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
              tdir,
              '--tax-lineage', '1',
+             '--threads', str(num_cpu),
              ],
             check=True,
             stdout=None,
@@ -889,6 +898,7 @@ def main():
             args.contig_fasta,
             args.cannot_name,
             args.GTDB_reference,
+            args.num_process,
             binned_length,
             must_link_threshold,
             out)

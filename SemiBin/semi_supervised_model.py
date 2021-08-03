@@ -249,6 +249,8 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
         dataloader_list.append(train_loader)
         un_dataloader_list.append(train_loader_unlabeled)
 
+    torch.set_num_threads(num_process)
+
     logger.info('Training model...')
 
     if not is_combined:
