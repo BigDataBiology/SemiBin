@@ -747,6 +747,8 @@ def single_easy_binning(args, logger, binned_length,
     data_path = os.path.join(output, 'data.csv')
     data_split_path = os.path.join(output, 'data_split.csv')
 
+    num_cpu = multiprocessing.cpu_count() if args.num_process == 0 else args.num_process
+
     if environment is None:
         logger.info('Running mmseqs and generate cannot-link file.')
         predict_taxonomy(
@@ -754,6 +756,7 @@ def single_easy_binning(args, logger, binned_length,
             args.contig_fasta,
             args.cannot_name,
             args.GTDB_reference,
+            num_cpu,
             binned_length,
             must_link_threshold,
             output)
@@ -777,6 +780,9 @@ def multi_easy_binning(args, logger, recluster,
     """
     logger.info('Multi-sample binning.')
     logger.info('Generate training data.')
+
+    num_cpu = multiprocessing.cpu_count() if args.num_process == 0 else args.num_process
+
     sample_list = generate_data_multi(
         logger,
         args.contig_fasta,
@@ -808,6 +814,7 @@ def multi_easy_binning(args, logger, recluster,
             sample_fasta,
             sample,
             args.GTDB_reference,
+            num_cpu,
             binned_length,
             must_link_threshold,
             os.path.join(output, 'samples', sample))
