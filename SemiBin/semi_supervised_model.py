@@ -244,7 +244,7 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
             dataset=dataset_unlabeled,
             batch_size=batchsize,
             shuffle=True,
-            num_workers=16)
+            num_workers=0)
 
         dataloader_list.append(train_loader)
         un_dataloader_list.append(train_loader_unlabeled)
