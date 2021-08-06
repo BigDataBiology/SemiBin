@@ -33,13 +33,13 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
             n_neighbors=min(max_edges, train_data.shape[0] - 1),
             mode='distance',
             p=2,
-            n_jobs=-1).toarray()
+            n_jobs=num_process).toarray()
         kmer_matrix = kneighbors_graph(
             train_data_input,
             n_neighbors=min(max_edges, train_data.shape[0] - 1),
             mode='distance',
             p=2,
-            n_jobs=-1).toarray()
+            n_jobs=num_process).toarray()
         embedding_matrix[kmer_matrix == 0] = 0
     kmer_matrix = None
     del kmer_matrix
