@@ -11,7 +11,7 @@ from atomicwrites import atomic_write
 import shutil
 import sys
 from Bio import SeqIO
-from .utils import validate_args, get_threshold, generate_cannot_link, \
+from .utils import validate_args, get_must_link_threshold, generate_cannot_link, \
     download, set_random_seed, unzip_fasta, process_fasta, split_data, get_model_path
 from .generate_coverage import generate_cov, combine_cov
 from .generate_kmer import generate_kmer_features_from_fasta
@@ -555,7 +555,7 @@ def generate_data_multi(logger, contig_fasta,
                         output, 'samples', '{}.fasta'.format(flag_name)), 'fasta')
 
 
-    must_link_threshold = get_threshold(contig_length_list) if ml_threshold is None else ml_threshold
+    must_link_threshold = get_must_link_threshold(contig_length_list) if ml_threshold is None else ml_threshold
 
     logger.info('Calculating coverage for every sample.')
 

@@ -29,6 +29,7 @@ jobs:
         pip install numpy
         pip install .
         pip install pytest
+        pip install hypothesis
         pip install atomicwrites
         pip install Biopython
         pip install python-igraph
@@ -46,3 +47,4 @@ jobs:
         python -m pytest ./test/test_generate_data_coassembly.py
         python -m pytest ./test/test_train.py
         python -m pytest ./test/test_bin.py
+        python -m pytest ./test/test_utils.py

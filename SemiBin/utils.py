@@ -112,22 +112,18 @@ def validate_args(args):
         expect_file(args.contig_fasta)
         expect_file_list(args.bams)
 
-def get_threshold(contig_len):
+
+def get_must_link_threshold(contig_lens):
     """
     calculate the threshold length for must link breaking up
     """
     import numpy as np
-    basepair_sum = 0
-    threshold = 0
-    whole_len = np.sum(contig_len)
-    contig_len.sort(reverse=True)
-    index = 0
-    while(basepair_sum / whole_len < 0.98):
-        basepair_sum += contig_len[index]
-        threshold = contig_len[index]
-        index += 1
+    contig_lens = np.array(contig_lens)
+    contig_lens.sort()
+    frac = np.cumsum(contig_lens)/np.sum(contig_lens)
+    ix = np.argmax(frac > 0.02) # argmax finds first True element
+    threshold = contig_lens[ix]
     return np.clip(threshold, 4000, None)
-
 
 def parse_mmseqs(mmseqs_result):
     species_result = mmseqs_result.query('rank_name == "species" and score > 0.95').values
@@ -359,7 +355,7 @@ def process_fasta(fasta_path, ratio):
         contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
 
     binned_short = contig_bp_2500 / whole_contig_bp < ratio
-    must_link_threshold = get_threshold(contig_length_list)
+    must_link_threshold = get_must_link_threshold(contig_length_list)
     return binned_short, must_link_threshold, contig_length_dict, contig_dict
 
 def unzip_fasta(suffix, contig_path):

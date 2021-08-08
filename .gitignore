@@ -2,3 +2,4 @@
 /dist/
 /SemiBin.egg-info/
 __pycache__/
+.hypothesis/
