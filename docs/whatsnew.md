@@ -5,24 +5,23 @@
 *Release 10 August 2021*
 
 ### User-visible improvements
-- Remove output_bin_path if output_bin_path exists
-- Support train from several samples
-- Add --min-len
-- Add --ratio
-- Add --ml-threshold
-- Add -p for SemiBin predict_taxonomy
+- Support training from several samples
+- Remove `output_bin_path` if `output_bin_path` exists
+- Make several internal parameters configuable: (1) minimum length of contigs to bin (`--min-len` parameter); (2) minimum length of contigs to break up in order to generate _must-link_ constraints (`--ml-threshold` parameter); (3) the ratio of the number of base pairs of contigs between 1000-2500 bp smaller than this value, the minimal length will be set as 1000bp, otherwise 2500bp.
+- Add `--ratio`
+- Add `-p` argument for `predict_taxonomy` mode
 
 ### Internal improvements
-- Better code
-- Fix np.concatenate warning
+- Better code overall
+- Fix `np.concatenate` warning
 - Remove redundant matrix when clustering
 - Better pretrained models
 - Faster calculating dapth using Numpy
-- Add  -p in kneighbors_graph()
+- Use correct number of threads in `kneighbors_graph()`
 
 ### Bugfixes
 
-- Fix bug -p does not work when training [(Issue 34)](https://github.com/BigDataBiology/SemiBin/issues/34)
+- Respect number of threads (`-p` argument) when training [(issue 34)](https://github.com/BigDataBiology/SemiBin/issues/34)
 
 ## Version 0.2
 

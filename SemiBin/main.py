@@ -114,7 +114,9 @@ def parse_args(args):
     training.add_argument('--mode',
                           required=True,
                           type=str,
-                          help='[single/several]Train models from one sample or several samples (train model across several samples with single-sample binning can get better pre-trained model.). In several mode, must input data, data_split, cannot, fasta files for corresponding sample with same order. Note: You can just set `several` with this option when single-sample binning. Training from several samples with multi-sample binning is not support.',
+                          help='[single/several] Train models from one sample or several samples (train model across several samples with single-sample binning can get better pre-trained model). '
+                          'In `several` mode, you must provide data, data_split, cannot, and fasta files for corresponding samples in the same order. '
+                          'Note: You can only use `several` mode when performing single-sample binning. Training from several samples with multi-sample binning is not supported.',
                           dest='mode',
                           default='single')
 
@@ -218,14 +220,19 @@ def parse_args(args):
         p.add_argument('-m', '--min-len',
                        required=False,
                        type=int,
-                       help='Minimal length for contigs in binning. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands.(Default: SemiBin chooses 1000bp or 2500 bp according the ratio of the number of base pairs of contigs between 1000-2500 bp)',
+                       help='Minimal length for contigs in binning. '
+                            'If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands. '
+                            '(Default: SemiBin chooses 1000bp or 2500bp according the ratio of the number of base pairs of contigs between 1000-2500bp).',
                        dest='min_len',
                        default=None,
                        )
         p.add_argument('--ratio',
                        required=False,
                        type=float,
-                       help='If the ratio of the number of base pairs of contigs between 1000-2500 bp smaller than this value, the minimal length will be set as 1000bp, otherwise 2500bp. If you set -m parameter, you do not need to use this parameter. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands.(Default: 0.05)',
+                       help='If the ratio of the number of base pairs of contigs between 1000-2500 bp smaller than this value, the minimal length will be set as 1000bp, otherwise 2500bp. '
+                       'Note that setting `--min-length/-m` overrules this parameter. '
+                       'If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands. '
+                       '(Default: 0.05)',
                        dest='ratio',
                        default=0.05)
 
@@ -330,7 +337,7 @@ def parse_args(args):
         p.add_argument('--ml-threshold',
                        required=False,
                        type=int,
-                       help='Length threshold for generating must-link constraints.(By default, the threshold is calculated from the contig, and the default minimum value is 4,000 bp)',
+                       help='Length threshold for generating must-link constraints. (By default, the threshold is calculated from the contig, and the default minimum value is 4,000 bp)',
                        dest='ml_threshold',
                        default=None)
 
