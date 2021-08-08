@@ -1,6 +1,31 @@
 # What's New
 
+## Version 0.3
+
+*Release 10 August 2021*
+
+### User-visible improvements
+- Remove output_bin_path if output_bin_path exists
+- Support train from several samples
+- Add --min-len
+- Add --ratio
+- Add --ml-threshold
+- Add -p for SemiBin predict_taxonomy
+
+### Internal improvements
+- Better code
+- Fix np.concatenate warning
+- Remove redundant matrix when clustering
+- Better pretrained models
+- Faster calculating dapth using Numpy
+- Add  -p in kneighbors_graph()
+
+### Bugfixes
+
+- Fix bug -p does not work when training [(Issue 34)](https://github.com/BigDataBiology/SemiBin/issues/34)
+
 ## Version 0.2
+
 *Release 27 May 2021*
 
 ### User-visible improvements

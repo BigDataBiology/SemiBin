@@ -424,7 +424,7 @@ def predict_taxonomy(logger, contig_fasta,
     namelist = []
     num_must_link = 0
 
-    for seq_record in SeqIO.parse(contig_fasta, "fasta"):
+    for seq_record in SeqIO.parse(filtered_fasta, "fasta"):
         if len(seq_record) > binned_length:
             namelist.append(seq_record.id)
         if len(seq_record) >= must_link_threshold:
@@ -793,6 +793,7 @@ def multi_easy_binning(args, logger, recluster,
         args.min_len,
         args.ml_threshold,
         output, )
+
     for sample in sample_list:
         logger.info(
             'Running mmseqs and generate cannot-link file of {}.'.format(sample))
@@ -808,7 +809,8 @@ def multi_easy_binning(args, logger, recluster,
             binned_length = 1000 if binned_short else 2500
         else:
             binned_length = args.min_len
-
+        if args.ml_threshold is not None:
+            must_link_threshold = args.ml_threshold
         predict_taxonomy(
             logger,
             sample_fasta,
