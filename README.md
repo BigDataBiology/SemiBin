@@ -24,7 +24,7 @@ SemiBin runs on Python 3.6-3.9.
 ```bash
 conda create conda create -n SemiBin python==3.7
 conda activate SemiBin
-conda install -c bioconda semibin=0.2=pyh5e36f6f_1
+conda install -c bioconda semibin
 ```
 
 ### Install from source
@@ -50,7 +50,7 @@ python setup.py install
 ## Examples
 
 **NOTE**: The `SemiBin` API is a work-in-progress. The examples refer to
-version `0.2`, but this may change in the near future (after the release of
+version `0.3`, but this may change in the near future (after the release of
 version 1.0, we expect to freeze the API for [at least 5
 years](https://big-data-biology.org/software/commitments/). We are very happy
 to [hear any feedback on API

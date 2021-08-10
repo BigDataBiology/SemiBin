@@ -1,3 +1,22 @@
+Version 0.3.0 Mon Aug  9 2021 by BigDataBiology
+	* Support training from several samples
+	* Remove `output_bin_path` if `output_bin_path` exists
+	* Make several internal parameters configuable (1) minimum length of
+	contigs to bin (`--min-len` parameter); (2) minimum length of contigs to
+	break up in order to generate _must-link_ constraints (`--ml-threshold`
+	parameter); (3) the ratio of the number of base pairs of contigs between
+	1000-2500 bp smaller than this value, the minimal length will be set as
+	1000bp, otherwise 2500bp
+	* Add `-p` argument for `predict_taxonomy` mode
+	* Fix `np.concatenate` warning
+	* Remove redundant matrix when clustering
+	* Better pretrained models
+	* Faster calculating dapth using Numpy
+	* Use correct number of threads in `kneighbors_graph()`
+	* Respect number of threads (`-p` argument) when training (issue 34)
+
+
+
 Version 0.2.0 Thu May 27 2021 by BigDataBiology
 	* Change name to `SemiBin`
 	* Add support for training with several samples
