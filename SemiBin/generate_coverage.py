@@ -83,24 +83,27 @@ def calculate_coverage(depth_file, must_link_threshold, edge=75, is_combined=Fal
     contig_cov = np.concatenate((data_contig_list, coverage), axis=1, dtype=object)
 
     if is_combined:
+        column_name = '{0}_cov'.format(depth_file)
         contig_cov = pd.DataFrame(
-            data=contig_cov[:, 1:], index=contig_cov[:, 0], columns=['cov'])
-        contig_cov['cov'] = contig_cov['cov'].astype('float')
+            data=contig_cov[:, 1:], index=contig_cov[:, 0], columns=[column_name])
+        contig_cov[column_name] = contig_cov[column_name].astype('float')
         split_contig_list = np.expand_dims(np.array(split_contig_list), axis=1)
         split_coverage = np.expand_dims(np.array(split_coverage), axis=1)
         split_contig_cov = np.concatenate(
             (split_contig_list, split_coverage), axis=1, dtype=object)
         split_contig_cov = pd.DataFrame(
-            data=split_contig_cov[:, 1:], index=split_contig_cov[:, 0], columns=['cov'])
-        split_contig_cov['cov'] = split_contig_cov['cov'].astype('float')
+            data=split_contig_cov[:, 1:], index=split_contig_cov[:, 0], columns=[column_name])
+        split_contig_cov[column_name] = split_contig_cov[column_name].astype('float')
         return contig_cov, split_contig_cov
     else:
+        column_name_mean = '{0}_mean'.format(depth_file)
+        column_name_var = '{0}_var'.format(depth_file)
         var = np.expand_dims(np.array(var), axis=1)
         contig_cov = np.concatenate((contig_cov, var), axis=1, dtype=object)
         contig_cov = pd.DataFrame(
-            data=contig_cov[:, 1:], index=contig_cov[:, 0], columns=['mean', 'var'])
-        contig_cov['mean'] = contig_cov['mean'].astype('float')
-        contig_cov['var'] = contig_cov['var'].astype('float')
+            data=contig_cov[:, 1:], index=contig_cov[:, 0], columns=[column_name_mean, column_name_var])
+        contig_cov[column_name_mean] = contig_cov[column_name_mean].astype('float')
+        contig_cov[column_name_var] = contig_cov[column_name_var].astype('float')
         return contig_cov
 
 
@@ -129,9 +132,7 @@ def generate_cov(bam_file, bam_index, out, threshold,
             stdout=bedtools_out)
 
     if is_combined:
-        contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined = is_combined, sep = sep,
-                                                              contig_threshold = contig_threshold if sep is None else 1000,
-                                                              contig_threshold_dict =  contig_threshold if sep is not None else None)
+        contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined = is_combined, sep = sep, contig_threshold = contig_threshold if sep is None else 1000, contig_threshold_dict =  contig_threshold if sep is not None else None)
 
         contig_cov = contig_cov.apply(lambda x: x + 1e-5)
         must_link_contig_cov = must_link_contig_cov.apply(lambda x: x + 1e-5)

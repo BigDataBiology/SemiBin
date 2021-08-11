@@ -34,6 +34,8 @@ def test_cov(tmpdir):
         must_link_threshold=0,
         is_combined=True,
         contig_threshold=0)
+    cov.columns = ['cov']
+    cov_split.columns = ['cov']
     assert_frame_equal(cov, pd.DataFrame([2.581818, 2.627907], index=[
                        'k141_63080', 'k141_0'], columns=['cov']))
     assert_frame_equal(cov_split, pd.DataFrame([2.609756, 2.554217, 2.682243, 2.574074], index=[
@@ -44,5 +46,6 @@ def test_cov(tmpdir):
         must_link_threshold=0,
         is_combined=False,
         contig_threshold=0)
+    cov.columns = ['mean', 'var']
     assert_frame_equal(cov, pd.DataFrame([[2.581818, 0.606942], [
                        2.627907, 0.252244]], index=['k141_63080', 'k141_0'], columns=['mean', 'var']))
