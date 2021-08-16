@@ -75,7 +75,7 @@ Considering the issue that contig annotations and model training requires signif
 
 (1) Trained a model from one sample or several samples (Or used our built-in pretrained model)
 
-(2) Directly applied this sample to other samples.
+(2) Directly applied this model to other samples.
 
 For the details and examples of every command to run SemiBin with these binning modes,  please read [read the docs](https://semibin.readthedocs.io/en/latest/usage/).
 
