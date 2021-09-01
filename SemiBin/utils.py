@@ -191,35 +191,35 @@ def generate_cannot_link(mmseqs_path,namelist,num_threshold,output,sample):
 def cal_num_bins(fasta_path, contig_output, hmm_output,
                  seed_output, binned_length, num_process):
     if not os.path.exists(contig_output + '.faa'):
-        frag_out_log = open(contig_output + '.out', 'w')
-        # We need to call FragGeneScan instead of the Perl wrapper because the
-        # Perl wrapper does not handle filepaths correctly if they contain spaces
-        # This binary does not handle return codes correctly, though, so we
-        # cannot use `check_call`:
-        subprocess.call(
-            [shutil.which('FragGeneScan'),
-             '-s', fasta_path,
-             '-o', contig_output,
-             '-w', str(0),
-             '-t', 'complete',
-             '-p', str(num_process),
-             ],
-            stdout=frag_out_log,
-        )
+        with open(contig_output + '.out', 'w') as frag_out_log:
+            # We need to call FragGeneScan instead of the Perl wrapper because the
+            # Perl wrapper does not handle filepaths correctly if they contain spaces
+            # This binary does not handle return codes correctly, though, so we
+            # cannot use `check_call`:
+            subprocess.call(
+                [shutil.which('FragGeneScan'),
+                 '-s', fasta_path,
+                 '-o', contig_output,
+                 '-w', str(0),
+                 '-t', 'complete',
+                 '-p', str(num_process),
+                 ],
+                stdout=frag_out_log,
+            )
 
     if not os.path.exists(hmm_output):
-        hmm_out_log = open(hmm_output + '.out', 'w')
-        subprocess.check_call(
-            ['hmmsearch',
-             '--domtblout',
-             hmm_output,
-             '--cut_tc',
-             '--cpu', str(num_process),
-             os.path.split(__file__)[0] + '/marker.hmm',
-             contig_output + '.faa',
-             ],
-            stdout=hmm_out_log,
-        )
+        with open(hmm_output + '.out', 'w') as hmm_out_log:
+            subprocess.check_call(
+                ['hmmsearch',
+                 '--domtblout',
+                 hmm_output,
+                 '--cut_tc',
+                 '--cpu', str(num_process),
+                 os.path.split(__file__)[0] + '/marker.hmm',
+                 contig_output + '.faa',
+                 ],
+                stdout=hmm_out_log,
+            )
 
     if not os.path.exists(seed_output):
         getmarker = os.path.split(__file__)[0] + '/getmarker.pl'
