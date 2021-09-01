@@ -337,12 +337,15 @@ def set_random_seed(seed):
 
 def process_fasta(fasta_path, ratio):
     """
-    Return contig length, contig seq
+    Returns
+
+    binned_short: whether to include short contigs
+    must_link_threshold: threshold to break up contigs
+    contigs: dictionary ID -> contig
     """
     whole_contig_bp = 0
     contig_bp_2500 = 0
     contig_length_list = []
-    contig_length_dict = {}
     contig_dict = {}
 
     for seq_record in SeqIO.parse(fasta_path, "fasta"):
@@ -350,13 +353,11 @@ def process_fasta(fasta_path, ratio):
             contig_bp_2500 += len(seq_record)
         contig_length_list.append(len(seq_record))
         whole_contig_bp += len(seq_record)
-        contig_length_dict[str(seq_record.id).strip(
-            '')] = len((seq_record.seq))
         contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
 
     binned_short = contig_bp_2500 / whole_contig_bp < ratio
     must_link_threshold = get_must_link_threshold(contig_length_list)
-    return binned_short, must_link_threshold, contig_length_dict, contig_dict
+    return binned_short, must_link_threshold, contig_dict
 
 def unzip_fasta(suffix, contig_path):
     import gzip
