@@ -192,6 +192,10 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
                  seed_output, binned_length, num_process):
     if not os.path.exists(contig_output + '.faa'):
         frag_out_log = open(contig_output + '.out', 'w')
+        # We need to call FragGeneScan instead of the Perl wrapper because the
+        # Perl wrapper does not handle filepaths correctly if they contain spaces
+        # This binary does not handle return codes correctly, though, so we
+        # cannot use `check_call`:
         subprocess.call(
             [shutil.which('FragGeneScan'),
              '-s', fasta_path,
