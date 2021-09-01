@@ -1,9 +1,9 @@
 from SemiBin.main import binning
+from SemiBin.fasta import fasta_iter
 import os
 import pytest
 import logging
 import pandas as pd
-from Bio import SeqIO
 
 def test_bin():
     logger = logging.getLogger('SemiBin')
@@ -12,10 +12,7 @@ def test_bin():
     sh.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
     logger.addHandler(sh)
 
-    contig_dict = {}
-    handle = 'test/bin_data/input.fasta'
-    for seq_record in SeqIO.parse(handle, "fasta"):
-        contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
+    contig_dict = {h:seq for h,seq in fasta_iter('test/bin_data/input.fasta')}
 
     os.makedirs('output_bin',exist_ok=True)
     binning(bams=['test/bin_data/input.sorted.bam'],

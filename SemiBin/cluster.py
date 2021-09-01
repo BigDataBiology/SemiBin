@@ -1,11 +1,12 @@
 from sklearn.neighbors import kneighbors_graph
 from igraph import Graph
-from .utils import cal_kl, write_bins, cal_num_bins
 import os
 import math
-from Bio import SeqIO
 from sklearn.cluster import KMeans
 import shutil
+
+from .utils import cal_kl, write_bins, cal_num_bins
+from .fasta import fasta_iter
 
 
 def cluster(model, data, device, max_edges, max_node, is_combined,
@@ -121,9 +122,9 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
         for bin in bin_files:
             if os.path.exists(os.path.join(output_bin_path, bin)):
                 contig_list = []
-                for seq_record in SeqIO.parse(
-                        os.path.join(output_bin_path, bin), "fasta"):
-                    contig_list.append(seq_record.id)
+                for h,_ in fasta_iter(
+                        os.path.join(output_bin_path, bin)):
+                    contig_list.append(h)
                 contig_output = os.path.join(output_bin_path, bin) + '.frag'
                 hmm_output = os.path.join(output_bin_path, bin) + '.hmmout'
                 seed_output = os.path.join(output_bin_path, bin) + '.seed'

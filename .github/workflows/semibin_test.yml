@@ -31,7 +31,6 @@ jobs:
         pip install pytest
         pip install hypothesis
         pip install atomicwrites
-        pip install Biopython
         pip install python-igraph
         pip install torch
         pip install scikit-learn

@@ -27,7 +27,6 @@ setup(name='SemiBin',
       packages = ['SemiBin'],
       install_requires=[
           'numpy',
-          'Biopython',
           'tqdm',
           'pyyaml',
           'atomicwrites',

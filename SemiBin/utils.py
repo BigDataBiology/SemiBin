@@ -1,12 +1,11 @@
 import os
 import subprocess
 from atomicwrites import atomic_write
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-from Bio import SeqIO
 import sys
 import random
 import shutil
+
+from .fasta import fasta_iter
 
 def validate_args(args):
     def expect_file(f):
@@ -248,16 +247,16 @@ def write_bins(namelist, contig_labels, output, contig_dict,
         bin = []
         whole_bin_bp = 0
         for contig in res[label]:
-            rec = SeqRecord(
-                Seq(str(contig_dict[contig])), id=contig, description='')
+            rec = (contig, str(contig_dict[contig]))
             bin.append(rec)
-            whole_bin_bp += len(str(contig_dict[contig]))
+            whole_bin_bp += len(rec[1])
 
         ofname = f'bin.{label}.fa' if not recluster \
                     else f'recluster_{origin_label}.bin.{label}.fa'
         if whole_bin_bp >= minfasta:
             with atomic_write(os.path.join(output, ofname), overwrite=True) as ofile:
-                SeqIO.write(bin, ofile, 'fasta')
+                for h, seq in bin:
+                    ofile.write(f'>{h}\n{seq}\n')
 
 
 def cal_kl(m, v):
@@ -352,12 +351,12 @@ def process_fasta(fasta_path, ratio):
     contig_length_list = []
     contig_dict = {}
 
-    for seq_record in SeqIO.parse(fasta_path, "fasta"):
-        if len(seq_record) >= 1000 and len(seq_record) <= 2500:
-            contig_bp_2500 += len(seq_record)
-        contig_length_list.append(len(seq_record))
-        whole_contig_bp += len(seq_record)
-        contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
+    for h, seq in fasta_iter(fasta_path):
+        if 1000 <= len(seq) <= 2500:
+            contig_bp_2500 += len(seq)
+        contig_length_list.append(len(seq))
+        whole_contig_bp += len(seq)
+        contig_dict[h] = seq
 
     binned_short = contig_bp_2500 / whole_contig_bp < ratio
     must_link_threshold = get_must_link_threshold(contig_length_list)

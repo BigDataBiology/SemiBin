@@ -1,9 +1,9 @@
 from SemiBin.main import training
+from SemiBin.fasta import fasta_iter
 import os
 import pytest
 import logging
 import pandas as pd
-from Bio import SeqIO
 
 def test_train():
     logger = logging.getLogger('SemiBin')
@@ -12,13 +12,7 @@ def test_train():
     sh.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
     logger.addHandler(sh)
 
-    contig_length_dict = {}
-    contig_dict = {}
-    handle = 'test/train_data/input.fasta'
-    for seq_record in SeqIO.parse(handle, "fasta"):
-        contig_length_dict[str(seq_record.id).strip(
-            '')] = len((seq_record.seq))
-        contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
+    contig_dict = {h:seq for h,seq in fasta_iter('test/train_data/input.fasta')}
 
     os.makedirs('output_train',exist_ok=True)
     training(contig_fasta = ['test/train_data/input.fasta'],
