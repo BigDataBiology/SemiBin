@@ -479,7 +479,7 @@ def generate_data_single(logger, contig_fasta,
     kmer_whole = generate_kmer_features_from_fasta(
         contig_fasta, binned_length, 4)
     kmer_split = generate_kmer_features_from_fasta(
-        contig_fasta, 1000, 4, split=True, threshold=must_link_threshold)
+        contig_fasta, 1000, 4, split=True, split_threshold=must_link_threshold)
 
     data = kmer_whole
     data_split = kmer_split
@@ -616,7 +616,7 @@ def generate_data_multi(logger, contig_fasta,
         kmer_whole = generate_kmer_features_from_fasta(
             sample_contig_fasta, binned_length, 4)
         kmer_split = generate_kmer_features_from_fasta(
-            sample_contig_fasta, 1000, 4, split=True, threshold=must_link_threshold)
+            sample_contig_fasta, 1000, 4, split=True, split_threshold=must_link_threshold)
 
 
         sample_cov = pd.read_csv(os.path.join(output_path, 'data_cov.csv'),index_col=0)
