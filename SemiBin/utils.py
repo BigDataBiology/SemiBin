@@ -362,22 +362,6 @@ def process_fasta(fasta_path, ratio):
     must_link_threshold = get_must_link_threshold(contig_length_list)
     return binned_short, must_link_threshold, contig_dict
 
-def unzip_fasta(suffix, contig_path):
-    import gzip
-    import bz2
-    if suffix == 'gz':
-        contig_name = contig_path.replace(".gz", "")
-        ungz_file = gzip.GzipFile(contig_path)
-        open(contig_name, "wb+").write(ungz_file.read())
-        ungz_file.close()
-        return contig_name
-
-    if suffix == 'bz2':
-        contig_name = contig_path.replace(".bz2", "")
-        unbz2_file = bz2.BZ2File(contig_path)
-        open(contig_name, "wb+").write(unbz2_file.read())
-        unbz2_file.close()
-        return contig_name
 
 def split_data(data, sample, separator):
     """

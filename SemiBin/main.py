@@ -13,7 +13,7 @@ import sys
 from itertools import groupby
 
 from .utils import validate_args, get_must_link_threshold, generate_cannot_link, \
-    download, set_random_seed, unzip_fasta, process_fasta, split_data, get_model_path
+    download, set_random_seed, process_fasta, split_data, get_model_path
 from .generate_coverage import generate_cov, combine_cov
 from .generate_kmer import generate_kmer_features_from_fasta
 from .semi_supervised_model import train
@@ -856,26 +856,6 @@ def main():
 
         device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
-
-        if args.cmd != 'train':
-            if os.path.splitext(args.contig_fasta)[1] == '.gz':
-                contig_name = unzip_fasta('gz', args.contig_fasta)
-                args.contig_fasta = contig_name
-            elif os.path.splitext(args.contig_fasta)[1] == '.bz2':
-                contig_name = unzip_fasta('bz2', args.contig_fasta)
-                args.contig_fasta = contig_name
-        else:
-            contig_fastas = []
-            for contig in args.contig_fasta:
-                if os.path.splitext(contig)[1] == '.gz':
-                    contig_name = unzip_fasta('gz', args.contig_fasta)
-                    contig_fastas.append(contig_name)
-                elif os.path.splitext(contig)[1] == '.bz2':
-                    contig_name = unzip_fasta('bz2', args.contig_fasta)
-                    contig_fastas.append(contig_name)
-                else:
-                    contig_fastas.append(contig)
-            args.contig_fasta = contig_fastas
 
     if args.cmd in ['predict_taxonomy', 'generate_data_single', 'bin','single_easy_bin']:
         binned_short, must_link_threshold, contig_dict = process_fasta(args.contig_fasta, args.ratio)
