@@ -9,102 +9,62 @@ def calculate_coverage(depth_file, must_link_threshold, edge=75, is_combined=Fal
     """
     import pandas as pd
     import numpy as np
-    data_contig_list = []
-    coverage = []
+    from itertools import groupby
+
+    contigs = []
+    mean_coverage = []
     var = []
 
-    split_contig_list = []
+    split_contigs = []
     split_coverage = []
-    f = open(depth_file)
 
-    def process(depth_value, contig_name):
-        depth_value_ = depth_value[edge:len(depth_value) - edge]
+    for contig_name, lines in groupby(open(depth_file), lambda ell: ell.split('\t', 1)[0]):
+        depth_value = []
+        for line in lines:
+            line_split = line.strip().split('\t')
+            length = int(line_split[2]) - int(line_split[1])
+            value = int(line_split[3])
+            depth_value.extend([value] * length)
+
+        if sep is None:
+            cov_threshold = contig_threshold
+        else:
+            sample_name = contig_name.split(sep)[0]
+            cov_threshold = contig_threshold_dict[sample_name]
+        if len(depth_value) <= cov_threshold:
+            continue
+        depth_value_ = depth_value[edge:-edge]
         mean = np.mean(depth_value_)
-        coverage.append(mean)
+        mean_coverage.append(mean)
         var.append(np.var(depth_value_))
-        data_contig_list.append(contig_name)
+        contigs.append(contig_name)
         if is_combined:
             if len(depth_value) >= must_link_threshold:
                 depth_value1 = depth_value[0:len(depth_value) // 2]
                 depth_value2 = depth_value[len(
                     depth_value) // 2: len(depth_value)]
-                split_contig_list.append(contig_name + '_1')
-                split_contig_list.append(contig_name + '_2')
-                depth_value1 = depth_value1[edge:len(depth_value1)]
+                split_contigs.append(contig_name + '_1')
+                split_contigs.append(contig_name + '_2')
+                depth_value1 = depth_value1[edge:]
                 mean = np.mean(depth_value1)
                 split_coverage.append(mean)
-                depth_value2 = depth_value2[0:len(depth_value2) - edge]
+                depth_value2 = depth_value2[:-edge]
                 mean = np.mean(depth_value2)
                 split_coverage.append(mean)
 
-    def get_thre(depth_contig):
-        if sep is None:
-            cov_threshold = contig_threshold
-        else:
-            sample_name = depth_contig.split(sep)[0]
-            cov_threshold = contig_threshold_dict[sample_name]
-        return cov_threshold
-
-    depth_value = []
-    depth_contig = None
-
-    for line in f:
-        line_split = line.strip().split('\t')
-        contig_name = line_split[0]
-        length = int(line_split[2]) - int(line_split[1])
-        value = int(line_split[3])
-
-        if depth_contig is None:
-            depth_contig = contig_name
-        if contig_name == depth_contig:
-            depth_value.extend([value] * length)
-        if contig_name != depth_contig:
-            cov_threshold = get_thre(depth_contig)
-
-            if len(depth_value) <= cov_threshold:
-                depth_contig = contig_name
-                depth_value = []
-                depth_value.extend([value] * length)
-                continue
-
-            process(depth_value, depth_contig)
-            depth_contig = contig_name
-            depth_value = []
-            depth_value.extend([value] * length)
-
-    if depth_value != []:
-        cov_threshold = get_thre(depth_contig)
-
-        if len(depth_value) > cov_threshold:
-            process(depth_value, depth_contig)
-
-    data_contig_list = np.expand_dims(np.array(data_contig_list), axis=1)
-    coverage = np.expand_dims(np.array(coverage), axis=1)
-    contig_cov = np.concatenate((data_contig_list, coverage), axis=1, dtype=object)
-
     if is_combined:
-        column_name = '{0}_cov'.format(depth_file)
         contig_cov = pd.DataFrame(
-            data=contig_cov[:, 1:], index=contig_cov[:, 0], columns=[column_name])
-        contig_cov[column_name] = contig_cov[column_name].astype('float')
-        split_contig_list = np.expand_dims(np.array(split_contig_list), axis=1)
-        split_coverage = np.expand_dims(np.array(split_coverage), axis=1)
-        split_contig_cov = np.concatenate(
-            (split_contig_list, split_coverage), axis=1, dtype=object)
+                { '{0}_cov'.format(depth_file): mean_coverage,
+                }, index=contigs)
         split_contig_cov = pd.DataFrame(
-            data=split_contig_cov[:, 1:], index=split_contig_cov[:, 0], columns=[column_name])
-        split_contig_cov[column_name] = split_contig_cov[column_name].astype('float')
+                { '{0}_cov'.format(depth_file): split_coverage,
+                }, index=split_contigs)
         return contig_cov, split_contig_cov
     else:
-        column_name_mean = '{0}_mean'.format(depth_file)
-        column_name_var = '{0}_var'.format(depth_file)
-        var = np.expand_dims(np.array(var), axis=1)
-        contig_cov = np.concatenate((contig_cov, var), axis=1, dtype=object)
-        contig_cov = pd.DataFrame(
-            data=contig_cov[:, 1:], index=contig_cov[:, 0], columns=[column_name_mean, column_name_var])
-        contig_cov[column_name_mean] = contig_cov[column_name_mean].astype('float')
-        contig_cov[column_name_var] = contig_cov[column_name_var].astype('float')
-        return contig_cov
+        return pd.DataFrame({
+            '{0}_mean'.format(depth_file): mean_coverage,
+            '{0}_var'.format(depth_file): var,
+            }, index=contigs)
 
 
 def generate_cov(bam_file, bam_index, out, threshold,
