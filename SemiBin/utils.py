@@ -243,20 +243,15 @@ def write_bins(namelist, contig_labels, output, contig_dict,
 
     os.makedirs(output, exist_ok=True)
 
-    for label in res:
-        bin = []
-        whole_bin_bp = 0
-        for contig in res[label]:
-            rec = (contig, str(contig_dict[contig]))
-            bin.append(rec)
-            whole_bin_bp += len(rec[1])
+    for label, contigs in res.items():
+        whole_bin_bp = sum(len(contig_dict[contig]) for contig in contigs)
 
-        ofname = f'bin.{label}.fa' if not recluster \
-                    else f'recluster_{origin_label}.bin.{label}.fa'
         if whole_bin_bp >= minfasta:
+            ofname = f'bin.{label}.fa' if not recluster \
+                    else f'recluster_{origin_label}.bin.{label}.fa'
             with atomic_write(os.path.join(output, ofname), overwrite=True) as ofile:
-                for h, seq in bin:
-                    ofile.write(f'>{h}\n{seq}\n')
+                for contig in contigs:
+                    ofile.write(f'>{contig}\n{contig_dict[contig]}\n')
 
 
 def cal_kl(m, v):
