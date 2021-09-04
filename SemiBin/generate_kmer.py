@@ -32,7 +32,7 @@ def generate_kmer_features_from_fasta(
                 yield (h + '_2', seq[half:])
 
     kmer_dict, nr_features = generate_feature_mapping(kmer_len)
-    composition_d = OrderedDict()
+    composition = OrderedDict()
     for h, seq in seq_list():
         if len(seq) <= length_threshold:
             continue
@@ -40,11 +40,8 @@ def generate_kmer_features_from_fasta(
         kmers = [kmer_dict[norm_seq[i:i+kmer_len]]
                 for i in range(len(norm_seq) - kmer_len + 1)
                 if norm_seq[i:i+kmer_len] in kmer_dict] # ignore kmers with non-canonical bases
-        kmers.append(nr_features - 1)
-        composition_v = np.bincount(np.array(kmers, dtype=np.int64))
-        composition_v[-1] -= 1
-        composition_d[h] = composition_v
-    df = pd.DataFrame.from_dict(composition_d, orient='index', dtype=float)
+        composition[h] = np.bincount(np.array(kmers, dtype=np.int64), minlength=nr_features)
+    df = pd.DataFrame.from_dict(composition, orient='index', dtype=float)
 
     df = df.apply(lambda x: x + 1e-5)
     df = df.div(df.sum(axis=1), axis=0)

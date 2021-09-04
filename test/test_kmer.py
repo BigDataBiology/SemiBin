@@ -58,5 +58,6 @@ def test_kmer_with_ns(tmpdir):
     kmer = generate_kmer_features_from_fasta(
         fasta_file, 0, kmer_len=4, split=False, split_threshold=0)
     kmer = kmer.squeeze()
+    assert len(kmer) == 136
     assert kmer.max() > 0.95
 
