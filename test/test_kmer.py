@@ -47,3 +47,17 @@ def test_kmer(tmpdir):
                        pd.DataFrame([[0.131579, 0.06578949619112093, 0.177632, 0.07236843923128998, 0.03947372403044471, 0.151316, 0.157895, 0.098684, 0.07894738227145903, 0.02631583795010661],
                                     [0.202614, 0.0915032735272722, 0.117647, 0.07843138664615251, 0.07843138664615251, 0.084967, 0.130719, 0.111111, 0.05228761288391314, 0.05228761288391314]],
                                                 index=['example_1', 'example_2']))
+
+def test_kmer_with_ns(tmpdir):
+    fasta_file = path.join(tmpdir, 'contig.fna')
+
+    with open(fasta_file, 'wt') as out_fasta:
+        out_fasta.write(f'>example\n')
+        out_fasta.write('AAAAAAAAAAAAAAANAAAAAAAAAAAA\n')
+
+    kmer = generate_kmer_features_from_fasta(
+        fasta_file, 0, kmer_len=4, split=False, split_threshold=0)
+    kmer = kmer.squeeze()
+    assert len(kmer) == 136
+    assert kmer.max() > 0.95
+
