@@ -112,22 +112,18 @@ def validate_args(args):
         expect_file(args.contig_fasta)
         expect_file_list(args.bams)
 
-def get_threshold(contig_len):
+
+def get_must_link_threshold(contig_lens):
     """
     calculate the threshold length for must link breaking up
     """
     import numpy as np
-    basepair_sum = 0
-    threshold = 0
-    whole_len = np.sum(contig_len)
-    contig_len.sort(reverse=True)
-    index = 0
-    while(basepair_sum / whole_len < 0.98):
-        basepair_sum += contig_len[index]
-        threshold = contig_len[index]
-        index += 1
+    contig_lens = np.array(contig_lens)
+    contig_lens.sort()
+    frac = np.cumsum(contig_lens)/np.sum(contig_lens)
+    ix = np.argmax(frac > 0.02) # argmax finds first True element
+    threshold = contig_lens[ix]
     return np.clip(threshold, 4000, None)
-
 
 def parse_mmseqs(mmseqs_result):
     species_result = mmseqs_result.query('rank_name == "species" and score > 0.95').values
@@ -195,31 +191,35 @@ def generate_cannot_link(mmseqs_path,namelist,num_threshold,output,sample):
 def cal_num_bins(fasta_path, contig_output, hmm_output,
                  seed_output, binned_length, num_process):
     if not os.path.exists(contig_output + '.faa'):
-        frag_out_log = open(contig_output + '.out', 'w')
-        subprocess.call(
-            [shutil.which('FragGeneScan'),
-             '-s', fasta_path,
-             '-o', contig_output,
-             '-w', str(0),
-             '-t', 'complete',
-             '-p', str(num_process),
-             ],
-            stdout=frag_out_log,
-        )
+        with open(contig_output + '.out', 'w') as frag_out_log:
+            # We need to call FragGeneScan instead of the Perl wrapper because the
+            # Perl wrapper does not handle filepaths correctly if they contain spaces
+            # This binary does not handle return codes correctly, though, so we
+            # cannot use `check_call`:
+            subprocess.call(
+                [shutil.which('FragGeneScan'),
+                 '-s', fasta_path,
+                 '-o', contig_output,
+                 '-w', str(0),
+                 '-t', 'complete',
+                 '-p', str(num_process),
+                 ],
+                stdout=frag_out_log,
+            )
 
     if not os.path.exists(hmm_output):
-        hmm_out_log = open(hmm_output + '.out', 'w')
-        subprocess.check_call(
-            ['hmmsearch',
-             '--domtblout',
-             hmm_output,
-             '--cut_tc',
-             '--cpu', str(num_process),
-             os.path.split(__file__)[0] + '/marker.hmm',
-             contig_output + '.faa',
-             ],
-            stdout=hmm_out_log,
-        )
+        with open(hmm_output + '.out', 'w') as hmm_out_log:
+            subprocess.check_call(
+                ['hmmsearch',
+                 '--domtblout',
+                 hmm_output,
+                 '--cut_tc',
+                 '--cpu', str(num_process),
+                 os.path.split(__file__)[0] + '/marker.hmm',
+                 contig_output + '.faa',
+                 ],
+                stdout=hmm_out_log,
+            )
 
     if not os.path.exists(seed_output):
         getmarker = os.path.split(__file__)[0] + '/getmarker.pl'
@@ -341,12 +341,15 @@ def set_random_seed(seed):
 
 def process_fasta(fasta_path, ratio):
     """
-    Return contig length, contig seq
+    Returns
+
+    binned_short: whether to include short contigs
+    must_link_threshold: threshold to break up contigs
+    contigs: dictionary ID -> contig
     """
     whole_contig_bp = 0
     contig_bp_2500 = 0
     contig_length_list = []
-    contig_length_dict = {}
     contig_dict = {}
 
     for seq_record in SeqIO.parse(fasta_path, "fasta"):
@@ -354,13 +357,11 @@ def process_fasta(fasta_path, ratio):
             contig_bp_2500 += len(seq_record)
         contig_length_list.append(len(seq_record))
         whole_contig_bp += len(seq_record)
-        contig_length_dict[str(seq_record.id).strip(
-            '')] = len((seq_record.seq))
         contig_dict[str(seq_record.id).strip('')] = str(seq_record.seq)
 
     binned_short = contig_bp_2500 / whole_contig_bp < ratio
-    must_link_threshold = get_threshold(contig_length_list)
-    return binned_short, must_link_threshold, contig_length_dict, contig_dict
+    must_link_threshold = get_must_link_threshold(contig_length_list)
+    return binned_short, must_link_threshold, contig_dict
 
 def unzip_fasta(suffix, contig_path):
     import gzip

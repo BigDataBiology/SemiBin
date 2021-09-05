@@ -11,7 +11,7 @@ from atomicwrites import atomic_write
 import shutil
 import sys
 from Bio import SeqIO
-from .utils import validate_args, get_threshold, generate_cannot_link, \
+from .utils import validate_args, get_must_link_threshold, generate_cannot_link, \
     download, set_random_seed, unzip_fasta, process_fasta, split_data, get_model_path
 from .generate_coverage import generate_cov, combine_cov
 from .generate_kmer import generate_kmer_features_from_fasta
@@ -479,7 +479,7 @@ def generate_data_single(logger, contig_fasta,
     kmer_whole = generate_kmer_features_from_fasta(
         contig_fasta, binned_length, 4)
     kmer_split = generate_kmer_features_from_fasta(
-        contig_fasta, 1000, 4, split=True, threshold=must_link_threshold)
+        contig_fasta, 1000, 4, split=True, split_threshold=must_link_threshold)
 
     data = kmer_whole
     data_split = kmer_split
@@ -555,7 +555,7 @@ def generate_data_multi(logger, contig_fasta,
                         output, 'samples', '{}.fasta'.format(flag_name)), 'fasta')
 
 
-    must_link_threshold = get_threshold(contig_length_list) if ml_threshold is None else ml_threshold
+    must_link_threshold = get_must_link_threshold(contig_length_list) if ml_threshold is None else ml_threshold
 
     logger.info('Calculating coverage for every sample.')
 
@@ -564,7 +564,7 @@ def generate_data_multi(logger, contig_fasta,
         if min_length is not None:
             binning_threshold[sample] = min_length
         else:
-            binned_short ,_ ,_ ,_ = process_fasta(os.path.join(output, 'samples/{}.fasta'.format(sample)), ratio)
+            binned_short ,_ ,_ = process_fasta(os.path.join(output, 'samples/{}.fasta'.format(sample)), ratio)
             binning_threshold[sample] = 1000 if binned_short else 2500
 
     for bam_index in range(n_sample):
@@ -616,7 +616,7 @@ def generate_data_multi(logger, contig_fasta,
         kmer_whole = generate_kmer_features_from_fasta(
             sample_contig_fasta, binned_length, 4)
         kmer_split = generate_kmer_features_from_fasta(
-            sample_contig_fasta, 1000, 4, split=True, threshold=must_link_threshold)
+            sample_contig_fasta, 1000, 4, split=True, split_threshold=must_link_threshold)
 
 
         sample_cov = pd.read_csv(os.path.join(output_path, 'data_cov.csv'),index_col=0)
@@ -656,7 +656,7 @@ def training(logger, contig_fasta, bams, num_process,
     if mode == 'single':
         logger.info('Start training from one sample.')
         if min_length is None:
-            binned_short, _, _, _ = process_fasta(contig_fasta[0], ratio)
+            binned_short, _, _ = process_fasta(contig_fasta[0], ratio)
             binned_lengths.append(1000) if binned_short else binned_lengths.append(2500)
         else:
             binned_lengths.append(min_length)
@@ -668,7 +668,7 @@ def training(logger, contig_fasta, bams, num_process,
         is_combined = False
         for contig_index in contig_fasta:
             if min_length is None:
-                binned_short, _, _, _ = process_fasta(contig_index, ratio)
+                binned_short, _, _ = process_fasta(contig_index, ratio)
                 binned_lengths.append(1000) if binned_short else binned_lengths.append(2500)
             else:
                 binned_lengths.append(min_length)
@@ -691,13 +691,11 @@ def training(logger, contig_fasta, bams, num_process,
 
 def binning(logger,bams, num_process, data,
             max_edges, max_node, minfasta,
-            binned_length, contig_length_dict,
-            contig_dict,recluster,model_path,
+            binned_length, contig_dict, recluster,model_path,
             random_seed,output, device, environment):
     """
     Clustering the contigs to get the final bins.
 
-    contig_length_dict: {contig_id:length,...}
     contig_dict: {contig_id:seq,...}
     recluster: if reclustering
     model_path: path to the trained model
@@ -726,7 +724,6 @@ def binning(logger,bams, num_process, data,
         is_combined,
         logger,
         n_sample,
-        contig_length_dict,
         output,
         contig_dict,
         binned_length,
@@ -737,7 +734,7 @@ def binning(logger,bams, num_process, data,
 
 
 def single_easy_binning(args, logger, binned_length,
-                        must_link_threshold, contig_length_dict,
+                        must_link_threshold,
                         contig_dict, recluster,random_seed, output, device, environment):
     """
     contain `predict_taxonomy`, `generate_data_single`, `train`, `bin` in one command for single-sample and co-assembly binning
@@ -775,7 +772,7 @@ def single_easy_binning(args, logger, binned_length,
 
     binning(logger, args.bams, args.num_process, data_path,
             args.max_edges, args.max_node, args.minfasta_kb * 1000,
-            binned_length, contig_length_dict, contig_dict,recluster,
+            binned_length, contig_dict, recluster,
             os.path.join(output, 'model.h5') if environment is None else None,
             random_seed, output,  device, environment if environment is not None else None)
 
@@ -810,7 +807,7 @@ def multi_easy_binning(args, logger, recluster,
         sample_data_split = os.path.join(
             output, 'samples', sample, 'data_split.csv')
 
-        binned_short, must_link_threshold , contig_length_dict, contig_dict = process_fasta(sample_fasta, args.ratio)
+        binned_short, must_link_threshold, contig_dict = process_fasta(sample_fasta, args.ratio)
 
         if args.min_len is None:
             binned_length = 1000 if binned_short else 2500
@@ -838,7 +835,7 @@ def multi_easy_binning(args, logger, recluster,
 
         binning(logger, args.bams, args.num_process, sample_data,
                 args.max_edges, args.max_node, args.minfasta_kb * 1000,
-                binned_length, contig_length_dict, contig_dict, recluster,
+                binned_length, contig_dict, recluster,
                 os.path.join(output, 'samples', sample, 'model.h5'), random_seed ,
                 os.path.join(output, 'samples', sample),  device, None)
 
@@ -895,7 +892,7 @@ def main():
             args.contig_fasta = contig_fastas
 
     if args.cmd in ['predict_taxonomy', 'generate_data_single', 'bin','single_easy_bin']:
-        binned_short, must_link_threshold, contig_length_dict, contig_dict = process_fasta(args.contig_fasta, args.ratio)
+        binned_short, must_link_threshold, contig_dict = process_fasta(args.contig_fasta, args.ratio)
         if args.min_len is None:
             binned_length = 1000 if binned_short else 2500
         else:
@@ -953,7 +950,7 @@ def main():
         if args.random_seed is not None:
             set_random_seed(args.random_seed)
         binning(logger,args.bams, args.num_process, args.data, args.max_edges,
-                args.max_node, args.minfasta_kb * 1000, binned_length,contig_length_dict,
+                args.max_node, args.minfasta_kb * 1000, binned_length,
                 contig_dict, args.recluster, args.model_path, args.random_seed,out, device, args.environment)
 
 
@@ -965,7 +962,6 @@ def main():
             logger,
             binned_length,
             must_link_threshold,
-            contig_length_dict,
             contig_dict,
             args.recluster,
             args.random_seed,

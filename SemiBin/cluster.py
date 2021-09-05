@@ -9,7 +9,7 @@ import shutil
 
 
 def cluster(model, data, device, max_edges, max_node, is_combined,
-            logger, n_sample, contig_length_dict, out, contig_dict, binned_length,num_process,minfasta,recluster,random_seed):
+            logger, n_sample, out, contig_dict, binned_length, num_process, minfasta, recluster, random_seed):
     """
     Cluster contigs into bins
     max_edges: max edges of one contig considered in binning
@@ -81,7 +81,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     g = Graph()
     g.add_vertices(list(range(len(embedding_matrix))))
     g.add_edges(edges)
-    length_weight = np.array([contig_length_dict[name] for name in namelist])
+    length_weight = np.array([len(contig_dict[name]) for name in namelist])
     result = g.community_infomap(edge_weights=edges_weight, vertex_weights=length_weight)
     contig_labels = np.zeros(shape=(len(embedding_matrix)), dtype=np.int)
 
@@ -149,7 +149,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                     for temp in init_seed:
                         seed_index.append(row_index.index(temp))
                     length_weight = np.array(
-                        [contig_length_dict[name] for name in contig_list])
+                        [len(contig_dict[name]) for name in contig_list])
                     seeds_embedding = embedding_new[seed_index]
                     if random_seed is not None:
                         kmeans = KMeans(
