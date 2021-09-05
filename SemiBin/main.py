@@ -10,14 +10,15 @@ import subprocess
 from atomicwrites import atomic_write
 import shutil
 import sys
-from Bio import SeqIO
+from itertools import groupby
+
 from .utils import validate_args, get_must_link_threshold, generate_cannot_link, \
-    download, set_random_seed, unzip_fasta, process_fasta, split_data, get_model_path
+    download, set_random_seed, process_fasta, split_data, get_model_path
 from .generate_coverage import generate_cov, combine_cov
 from .generate_kmer import generate_kmer_features_from_fasta
-from Bio.SeqRecord import SeqRecord
 from .semi_supervised_model import train
 from .cluster import cluster
+from .fasta import fasta_iter
 from .error import LoggingPool
 
 
@@ -387,13 +388,12 @@ def predict_taxonomy(logger, contig_fasta,
             download(logger, GTDB_default)
         GTDB_reference = GTDB_default
 
-    filtered_fasta = []
-    for seq_record in SeqIO.parse(contig_fasta, "fasta"):
-        if len(seq_record) > binned_length:
-            filtered_fasta.append(seq_record)
-
-    SeqIO.write(filtered_fasta, os.path.join(output, 'filtered.fasta'), 'fasta')
     filtered_fasta = os.path.join(output, 'filtered.fasta')
+    with open(filtered_fasta, 'wt') as out:
+        for h,seq in fasta_iter(contig_fasta):
+            if len(seq) > binned_length:
+                out.write(f'>{h}\n{seq}\n')
+
     subprocess.check_call(
         ['mmseqs',
          'createdb',
@@ -431,9 +431,9 @@ def predict_taxonomy(logger, contig_fasta,
     namelist = []
     num_must_link = 0
 
-    for seq_record in SeqIO.parse(filtered_fasta, "fasta"):
-        if len(seq_record) > binned_length:
-            namelist.append(seq_record.id)
+    for h,seq in fasta_iter(filtered_fasta):
+        if len(seq) > binned_length:
+            namelist.append(h)
         if len(seq_record) >= must_link_threshold:
             num_must_link += 1
     os.makedirs(os.path.join(output, 'cannot'), exist_ok=True)
@@ -522,38 +522,24 @@ def generate_data_multi(logger, contig_fasta,
         pool = LoggingPool()
 
     # Gererate contig file for every sample
-    from collections import defaultdict
-    sample_list = list()
+    sample_list = []
     contig_sample_list = []
     contig_length_list = []
     flag_name = None
 
     os.makedirs(os.path.join(output, 'samples'), exist_ok=True)
 
-    for seq_record in SeqIO.parse(contig_fasta, "fasta"):
-        sample_name, contig_name = seq_record.id.split(separator)
-        if flag_name is None:
-            flag_name = sample_name
-        if sample_name == flag_name:
-            rec = SeqRecord(seq_record.seq, id=contig_name, description='')
-            contig_sample_list.append(rec)
-        if sample_name != flag_name:
-            SeqIO.write(contig_sample_list,
-                        os.path.join(
-                            output, 'samples', '{}.fasta'.format(flag_name)), 'fasta')
-            flag_name = sample_name
-            contig_sample_list = []
-            rec = SeqRecord(seq_record.seq, id=contig_name, description='')
-            contig_sample_list.append(rec)
-        if sample_name not in sample_list:
-            sample_list.append(sample_name)
-        contig_length_list.append(len(seq_record))
+    def fasta_sample_iter(fn):
+        for h,seq in fasta_iter(fn):
+            sample_name, contig_name = h.split(separator)
+            yield sample_name, contig_name, seq
 
-    if contig_sample_list != []:
-        SeqIO.write(contig_sample_list,
-                    os.path.join(
-                        output, 'samples', '{}.fasta'.format(flag_name)), 'fasta')
-
+    for sample_name, contigs in groupby(fasta_sample_iter(contig_fasta), lambda sn_cn_seq : sn_cn_seq[0]):
+        with open(os.path.join( output, 'samples', '{}.fasta'.format(sample_name)), 'wt') as out:
+            for _, contig_name, seq in contigs:
+                out.write(f'>{contig_name}\n{seq}\n')
+                contig_length_list.append(len(seq))
+        sample_list.append(sample_name)
 
     must_link_threshold = get_must_link_threshold(contig_length_list) if ml_threshold is None else ml_threshold
 
@@ -870,26 +856,6 @@ def main():
 
         device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
-
-        if args.cmd != 'train':
-            if os.path.splitext(args.contig_fasta)[1] == '.gz':
-                contig_name = unzip_fasta('gz', args.contig_fasta)
-                args.contig_fasta = contig_name
-            elif os.path.splitext(args.contig_fasta)[1] == '.bz2':
-                contig_name = unzip_fasta('bz2', args.contig_fasta)
-                args.contig_fasta = contig_name
-        else:
-            contig_fastas = []
-            for contig in args.contig_fasta:
-                if os.path.splitext(contig)[1] == '.gz':
-                    contig_name = unzip_fasta('gz', args.contig_fasta)
-                    contig_fastas.append(contig_name)
-                elif os.path.splitext(contig)[1] == '.bz2':
-                    contig_name = unzip_fasta('bz2', args.contig_fasta)
-                    contig_fastas.append(contig_name)
-                else:
-                    contig_fastas.append(contig)
-            args.contig_fasta = contig_fastas
 
     if args.cmd in ['predict_taxonomy', 'generate_data_single', 'bin','single_easy_bin']:
         binned_short, must_link_threshold, contig_dict = process_fasta(args.contig_fasta, args.ratio)

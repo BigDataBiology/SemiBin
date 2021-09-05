@@ -1,5 +1,13 @@
 # What's New
 
+## Unreleased
+
+### User-visible improvements
+- Add support for `.xz` FASTA files as input
+
+### Internal improvements
+- Removed BioPython dependency
+
 ## Version 0.3
 
 *Release 10 August 2021*

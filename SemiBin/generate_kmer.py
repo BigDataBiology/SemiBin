@@ -1,8 +1,8 @@
 # Adapted from https://github.com/BinPro/CONCOCT/blob/develop/scripts/fasta_to_features.py
 from itertools import product
-from Bio import SeqIO
 from collections import OrderedDict
 
+from .fasta import fasta_iter
 
 def generate_feature_mapping(kmer_len):
     BASE_COMPLEMENT = {"A": "T", "T": "A", "G": "C", "C": "G"}
@@ -23,13 +23,13 @@ def generate_kmer_features_from_fasta(
     import numpy as np
     import pandas as pd
     def seq_list():
-        for seq_record in SeqIO.parse(fasta_file, "fasta"):
+        for h, seq in fasta_iter(fasta_file):
             if not split:
-                yield (seq_record.id, seq_record.seq)
-            elif len(seq_record) >= split_threshold:
-                half = int(len(seq_record.seq) / 2)
-                yield (seq_record.id + '_1', seq_record.seq[:half])
-                yield (seq_record.id + '_2', seq_record.seq[half:])
+                yield h, seq
+            elif len(seq) >= split_threshold:
+                half = len(seq) // 2
+                yield (h + '_1', seq[:half])
+                yield (h + '_2', seq[half:])
 
     kmer_dict, nr_features = generate_feature_mapping(kmer_len)
     composition_d = OrderedDict()
