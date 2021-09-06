@@ -121,7 +121,7 @@ def get_must_link_threshold(contig_lens):
     contig_lens.sort()
     frac = np.cumsum(contig_lens)/np.sum(contig_lens)
     ix = np.argmax(frac > 0.02) # argmax finds first True element
-    threshold = contig_lens[ix - 1]
+    threshold = contig_lens[ix]
     return np.clip(threshold, 4000, None)
 
 def parse_mmseqs(mmseqs_result):
