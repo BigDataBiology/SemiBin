@@ -16,7 +16,6 @@ def test_train():
 
     os.makedirs('output_train',exist_ok=True)
     training(contig_fasta = ['test/train_data/input.fasta'],
-            bams = ['test/train_data/input.sorted.bam'],
             num_process = 1,
             data = ['test/train_data/data.csv'],
             data_split = ['test/train_data/data_split.csv'],

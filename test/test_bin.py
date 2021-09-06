@@ -15,8 +15,7 @@ def test_bin():
     contig_dict = {h:seq for h,seq in fasta_iter('test/bin_data/input.fasta')}
 
     os.makedirs('output_bin',exist_ok=True)
-    binning(bams=['test/bin_data/input.sorted.bam'],
-            num_process=1,
+    binning(num_process=1,
             data='test/bin_data/data.csv',
             max_edges=20,
             max_node=1,
