@@ -635,7 +635,7 @@ def training(logger, contig_fasta, num_process,
 
     model: [single/several]
     """
-
+    import pandas as pd
     binned_lengths = []
     num_cpu = multiprocessing.cpu_count() if num_process == 0 else num_process
 
@@ -646,7 +646,7 @@ def training(logger, contig_fasta, num_process,
             binned_lengths.append(1000) if binned_short else binned_lengths.append(2500)
         else:
             binned_lengths.append(min_length)
-
+        data = pd.read_csv(data[0], index_col=0)
         col_name = data.columns.tolist()[-1].split('_')[-1]
         is_combined = False if col_name == 'var' else True
 
