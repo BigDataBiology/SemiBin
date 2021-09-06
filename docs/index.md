@@ -97,7 +97,7 @@ Training the model.
 * `-c/--cannot-link` : Path to the input cannot link file generated from other additional biological information, one row for each cannot link constraint. The file format: contig_1,contig_2.
 * `--mode`:  [single/several] Train models from one sample or several samples(train model across several samples can get better pre-trained model for single-sample binning.) In several mode, must input data, data_split, cannot, fasta files for corresponding sample with same order. *Note:* You can just set `several` with this option when single-sample binning. Training from several samples with multi-sample binning is not support.
 
-The following options are the same as for `single_easy_bin`: `-i/--input-fasta`, `-b/--input-bam`, `-o/--output`, `--epoches`, `--batch-size`, `-p/--processes/-t/--threads`, `--random-seed`, `--ratio`, `--min-len`.
+The following options are the same as for `single_easy_bin`: `-i/--input-fasta`,  `-o/--output`, `--epoches`, `--batch-size`, `-p/--processes/-t/--threads`, `--random-seed`, `--ratio`, `--min-len`.
 
 #### bin
 
@@ -105,7 +105,7 @@ Clustering contigs into bins.
 
 * `--model`: Path to the trained model.
 
-The following options are the same as for `single_easy_bin`: `-i/--input-fasta`, `-b/--input-bam`, `-o/--output`, `--minfasta-kbs`, `--recluster`, `--max-node`, `--max-edges`, `-p/--processes/-t/--threads`, `--random-seed`, `--environment`, `--ratio`, `--min-len`.
+The following options are the same as for `single_easy_bin`: `-i/--input-fasta`, `-o/--output`, `--minfasta-kbs`, `--recluster`, `--max-node`, `--max-edges`, `-p/--processes/-t/--threads`, `--random-seed`, `--environment`, `--ratio`, `--min-len`.
 
 #### download_GTDB
 

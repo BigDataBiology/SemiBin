@@ -121,7 +121,7 @@ def get_must_link_threshold(contig_lens):
     contig_lens.sort()
     frac = np.cumsum(contig_lens)/np.sum(contig_lens)
     ix = np.argmax(frac > 0.02) # argmax finds first True element
-    threshold = contig_lens[ix]
+    threshold = contig_lens[ix - 1]
     return np.clip(threshold, 4000, None)
 
 def parse_mmseqs(mmseqs_result):
@@ -234,7 +234,7 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
 
 
 def write_bins(namelist, contig_labels, output, contig_dict,
-               recluster=False, origin_label=0,minfasta = 200000):
+               recluster=False, origin_label=0, minfasta = 200000):
     from collections import defaultdict
     res = defaultdict(list)
     for label, name in zip(contig_labels, namelist):
