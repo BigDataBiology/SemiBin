@@ -55,13 +55,7 @@ def validate_args(args):
                     f"Error: Expected one cannot.txt file with single mode.\n")
                 sys.exit(1)
 
-            if args.bams is None:
-                sys.stderr.write(
-                    f"Error: Need to input bams used with single mode.\n")
-                sys.exit(1)
-
             expect_file(args.contig_fasta[0])
-            expect_file_list(args.bams)
             expect_file(args.data[0])
             expect_file(args.data_split[0])
             expect_file(args.cannot_link[0])
@@ -96,7 +90,6 @@ def validate_args(args):
         if args.model_path is not None:
             expect_file(args.model_path)
         expect_file(args.contig_fasta)
-        expect_file_list(args.bams)
         expect_file(args.data)
 
     if args.cmd == 'single_easy_bin':
