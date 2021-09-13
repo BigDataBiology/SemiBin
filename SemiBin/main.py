@@ -660,9 +660,20 @@ def training(logger, contig_fasta, num_process,
             else:
                 binned_lengths.append(min_length)
 
+    contig_fasta_unzip = []
+    for fasta_index,temp_fasta in enumerate(contig_fasta):
+        if temp_fasta.endswith('.gz') or temp_fasta.endswith('.bz2') or temp_fasta.endswith('.xz'):
+            temp_fasta_unzip = os.path.join(output, 'unzip_contig_{}.fasta'.format(fasta_index))
+            with open(temp_fasta_unzip, 'wt') as out:
+                for h,seq in fasta_iter(temp_fasta):
+                        out.write(f'>{h}\n{seq}\n')
+            contig_fasta_unzip.append(temp_fasta_unzip)
+        else:
+            contig_fasta_unzip.append(temp_fasta)
+
     model = train(
         output,
-        contig_fasta,
+        contig_fasta_unzip,
         binned_lengths,
         logger,
         data,
@@ -831,10 +842,8 @@ def multi_easy_binning(args, logger, recluster,
     os.makedirs(os.path.join(output, 'bins'), exist_ok=True)
     for sample in sample_list:
         bin_dir_name = 'output_recluster_bins' if recluster else 'output_bins'
-        for bf in os.listdir(os.path.join(
-            output, 'samples', sample, bin_dir_name)):
-            original_path = os.path.join(
-                output, 'samples', sample, bin_dir_name, bf)
+        for bf in os.listdir(os.path.join(output, 'samples', sample, bin_dir_name)):
+            original_path = os.path.join(output, 'samples', sample, bin_dir_name, bf)
             new_file = '{0}_{1}'.format(sample, bf)
             new_path = os.path.join(output, 'bins', new_file)
             shutil.copyfile(original_path, new_path)
