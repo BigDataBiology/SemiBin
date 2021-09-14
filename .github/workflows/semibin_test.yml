@@ -36,6 +36,7 @@ jobs:
         pip install scikit-learn
         pip install requests
         conda install -c bioconda bedtools hmmer fraggenescan
+        python ./setup.py install
     - name: Test with pytest
       shell: bash -l {0}
       run: |
