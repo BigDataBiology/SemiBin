@@ -32,10 +32,10 @@ jobs:
         pip install hypothesis
         pip install atomicwrites
         pip install python-igraph
-        pip install torch
+        pip install torch==1.8
         pip install scikit-learn
         pip install requests
-        conda install -c bioconda bedtools hmmer fraggenescan
+        conda install -c bioconda bedtools hmmer fraggenescan==1.30
         python ./setup.py install
     - name: Test with pytest
       shell: bash -l {0}
