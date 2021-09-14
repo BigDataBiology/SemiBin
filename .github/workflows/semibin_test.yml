@@ -52,4 +52,8 @@ jobs:
       shell: bash -l {0}
       run: |
         python ./test/test_generate_data_single_command.py
+        python ./test/test_generate_data_coassembly_command.py
+        python ./test/test_generate_data_multi_command.py
+        python ./test/test_train_command.py
+        python ./test/test_bin_command.py
 
