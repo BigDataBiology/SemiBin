@@ -48,3 +48,8 @@ jobs:
         python -m pytest ./test/test_train.py
         python -m pytest ./test/test_bin.py
         python -m pytest ./test/test_utils.py
+    - name: Test with SemiBin command
+      shell: bash -l {0}
+      run: |
+        python ./test/test_generate_data_single_command.py
+
