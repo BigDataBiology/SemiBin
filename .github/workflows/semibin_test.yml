@@ -32,10 +32,11 @@ jobs:
         pip install hypothesis
         pip install atomicwrites
         pip install python-igraph
-        pip install torch
+        pip install torch==1.8
         pip install scikit-learn
         pip install requests
-        conda install -c bioconda bedtools hmmer fraggenescan
+        conda install -c bioconda bedtools hmmer fraggenescan==1.30
+        python ./setup.py install
     - name: Test with pytest
       shell: bash -l {0}
       run: |
@@ -47,3 +48,12 @@ jobs:
         python -m pytest ./test/test_train.py
         python -m pytest ./test/test_bin.py
         python -m pytest ./test/test_utils.py
+    - name: Test with SemiBin command
+      shell: bash -l {0}
+      run: |
+        python ./test/test_generate_data_single_command.py
+        python ./test/test_generate_data_coassembly_command.py
+        python ./test/test_generate_data_multi_command.py
+        python ./test/test_train_command.py
+        python ./test/test_bin_command.py
+
