@@ -531,7 +531,10 @@ def generate_data_multi(logger, contig_fasta,
 
     def fasta_sample_iter(fn):
         for h,seq in fasta_iter(fn):
-            sample_name, contig_name = h.split(separator)
+            if separator not in h:
+                raise ValueError(
+                    f"Expected contigs to contain separator character ({separator}), found {h}")
+            sample_name, contig_name = h.split(separator, 1)
             yield sample_name, contig_name, seq
 
     for sample_name, contigs in groupby(fasta_sample_iter(contig_fasta), lambda sn_cn_seq : sn_cn_seq[0]):
