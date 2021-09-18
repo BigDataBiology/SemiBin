@@ -591,11 +591,11 @@ def generate_data_multi(logger, contig_fasta,
         output_path = os.path.join(output, 'samples', sample)
         os.makedirs(output_path, exist_ok=True)
 
-        part_data = split_data(data_cov, sample, separator)
+        part_data = split_data(data_cov, sample, separator, is_combined)
         part_data.to_csv(os.path.join(output_path, 'data_cov.csv'))
 
         if is_combined:
-            part_data = split_data(data_split_cov, sample, separator)
+            part_data = split_data(data_split_cov, sample, separator, is_combined)
             part_data.to_csv(os.path.join(
                 output_path, 'data_split_cov.csv'))
 

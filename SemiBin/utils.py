@@ -351,7 +351,7 @@ def process_fasta(fasta_path, ratio):
     return binned_short, must_link_threshold, contig_dict
 
 
-def split_data(data, sample, separator):
+def split_data(data, sample, separator, is_combined = True):
     """
     split data according their sample in multi-sample binning
     """
@@ -363,9 +363,9 @@ def split_data(data, sample, separator):
     index_list = part_data.index.tolist()
     index_list = [temp.split(separator)[1] for temp in index_list]
     part_data.index = index_list
-    abun_scale = (part_data.mean() / 100).apply(np.ceil) * 100
-    part_data = part_data.div(abun_scale)
-
+    if is_combined:
+        abun_scale = (part_data.mean() / 100).apply(np.ceil) * 100
+        part_data = part_data.div(abun_scale)
     return part_data
 
 def get_model_path(env):
