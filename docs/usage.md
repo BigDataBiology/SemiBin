@@ -7,11 +7,11 @@ Input: S1.fna and S1.bam
 ### Easy single binning mode
 
 ```bash
-SemiBin single_easy_bin -i S1.fna -b S1.bam -o output
+SemiBin single_easy_bin -i S1.fna -b S1.bam -o output --recluster
 ```
 Or with our built-in model(`human_gut`/`dog_gut`/`ocean`)
 ```bash
-SemiBin single_easy_bin -i S1.fna -b S1.bam -o output --environment human_gut
+SemiBin single_easy_bin -i S1.fna -b S1.bam -o output --environment human_gut --recluster
 ```
 ### Advanced workflows
 
@@ -29,11 +29,11 @@ SemiBin train -i S1.fna --data S1_output/train.csv --data-split S1_output/train_
 ```
 (4) Bin 
 ```bash
-SemiBin bin -i S1.fna --model S1_output/model.h5 --data S1_output/data.csv -o output
+SemiBin bin -i S1.fna --model S1_output/model.h5 --data S1_output/data.csv -o output --recluster
 ```
 or with our built-in model(`human_gut`/`dog_gut`/`ocean`)
 ```bash
-SemiBin bin -i S1.fna --data S1_output/data.csv -o output --environment human_gut
+SemiBin bin -i S1.fna --data S1_output/data.csv -o output --environment human_gut --recluster
 ```
 
 ### SemiBin(pretrain)
@@ -51,7 +51,7 @@ Input: contig.fna and S1.bam, S2.bam, S3.bam
 
 ### Easy single binning mode
 ```bash
-SemiBin single_easy_bin -i contig.fna -b S1.bam S2.bam S3.bam -o output
+SemiBin single_easy_bin -i contig.fna -b S1.bam S2.bam S3.bam -o output --recluster
 ```
 ### Advanced workflows
 
@@ -69,7 +69,7 @@ SemiBin train -i contig.fna --data contig_output/train.csv --data-split contig_o
 ```
 (4) Bin
 ```bash
-SemiBin bin -i contig.fna --model contig_output/model.h5 --data contig_output/data.csv -o output
+SemiBin bin -i contig.fna --model contig_output/model.h5 --data contig_output/data.csv -o output --recluster
 ```
 
 
@@ -104,7 +104,7 @@ CAAAT
 ```
 ### Easy multi binning mode
 ```bash
-SemiBin multi_easy_bin -i combined.fna -b S1.bam S2.bam S3.bam S4.bam S5.bam -o multi_output
+SemiBin multi_easy_bin -i combined.fna -b S1.bam S2.bam S3.bam S4.bam S5.bam -o multi_output --recluster
 ```
 
 ### Advanced workflows
@@ -147,18 +147,18 @@ SemiBin train -i S5.fna --data multi_output/samples/S5/train.csv --data-split mu
 ```
 (4) Bin
 ```bash
-SemiBin bin -i S1.fna --model S1_output/model.h5 --data multi_output/samples/S1/data.csv -o output
+SemiBin bin -i S1.fna --model S1_output/model.h5 --data multi_output/samples/S1/data.csv -o output --recluster
 ```
 ```bash
-SemiBin bin -i S2.fna --model S2_output/model.h5 --data multi_output/samples/S2/data.csv -o output
+SemiBin bin -i S2.fna --model S2_output/model.h5 --data multi_output/samples/S2/data.csv -o output --recluster
 ```
 ```bash
-SemiBin bin -i S3.fna --model S3_output/model.h5 --data multi_output/samples/S3/data.csv -o output
+SemiBin bin -i S3.fna --model S3_output/model.h5 --data multi_output/samples/S3/data.csv -o output --recluster
 ```
 ```bash
-SemiBin bin -i S4.fna --model S4_output/model.h5 --data multi_output/samples/S4/data.csv -o output
+SemiBin bin -i S4.fna --model S4_output/model.h5 --data multi_output/samples/S4/data.csv -o output --recluster
 ```
 ```bash
-SemiBin bin -i S5.fna --model S5_output/model.h5 --data multi_output/samples/S5/data.csv -o output
+SemiBin bin -i S5.fna --model S5_output/model.h5 --data multi_output/samples/S5/data.csv -o output --recluster
 ```
 
