@@ -44,7 +44,7 @@ write(samtools_sort(mapped),
 ```bash
 bowtie2-build -f contig.fna contig.fna -p 16
 
-bowtie2 -q --fr contig.fna -1 reads_1.fq.gz -2 reads_2.fq.gz -S contig.sam -p 64
+bowtie2 -q --fr -x contig.fna -1 reads_1.fq.gz -2 reads_2.fq.gz -S contig.sam -p 64
 
 samtools view -h -b -S contig.sam -o contig.bam -@ 64
 

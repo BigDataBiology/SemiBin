@@ -33,7 +33,7 @@ SemiBin runs on Python 3.7-3.9.
 _Note_ : If you want to use SemiBin with GPU, you need to install Pytorch with GPU support. Or `conda install -c bioconda semibin` just install Pytorch with CPU support.
 
 ```bash
-conda create conda create -n SemiBin python==3.7
+conda create -n SemiBin python==3.7
 conda activate SemiBin
 conda install -c bioconda semibin
 conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch-lts
