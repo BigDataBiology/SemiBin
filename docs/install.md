@@ -9,7 +9,7 @@ _Note_ : If you want to use SemiBin with GPU, you need to install Pytorch with G
 ```bash
 conda create conda create -n SemiBin python==3.7
 conda activate SemiBin
-conda install -c bioconda semibin
+conda install -c conda-forge -c bioconda semibin
 conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch-lts
 ```
 
