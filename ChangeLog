@@ -1,6 +1,8 @@
-Unreleased
+Version 0.4.0 Tue Oct 10 2021 by BigDataBiology
 	* Add support for .xz FASTA files as inputs
 	* Removed BioPython dependency
+	* Fixed bug in FASTA unzipping
+	* Fixed bug in multi-sample data splitting
 
 Version 0.3.0 Mon Aug  9 2021 by BigDataBiology
 	* Support training from several samples

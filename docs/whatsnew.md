@@ -1,6 +1,8 @@
 # What's New
 
-## Unreleased
+## Version 0.4.0
+
+*Released 27 October 2021*
 
 ### User-visible improvements
 - Add support for `.xz` FASTA files as input
@@ -8,9 +10,13 @@
 ### Internal improvements
 - Removed BioPython dependency
 
+### Bug fixes
+- Fix bug when uncompressing FASTA files ([#42](https://github.com/BigDataBiology/SemiBin/issues/42))
+- Fix bug when splitting data
+
 ## Version 0.3
 
-*Release 10 August 2021*
+*Released 10 August 2021*
 
 ### User-visible improvements
 - Support training from several samples
