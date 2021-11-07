@@ -152,17 +152,11 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                     length_weight = np.array(
                         [len(contig_dict[name]) for name in contig_list])
                     seeds_embedding = embedding_new[seed_index]
-                    if random_seed is not None:
-                        kmeans = KMeans(
-                            n_clusters=num_bin,
-                            init=seeds_embedding,
-                            n_init=1,
-                            random_state=random_seed)
-                    else:
-                        kmeans = KMeans(
-                            n_clusters=num_bin,
-                            init=seeds_embedding,
-                            n_init=1)
+                    kmeans = KMeans(
+                        n_clusters=num_bin,
+                        init=seeds_embedding,
+                        n_init=1,
+                        random_state=random_seed)
                     kmeans.fit(re_bin_features, sample_weight=length_weight)
                     labels = kmeans.labels_
                     write_bins(contig_list, labels, os.path.join(out, 'output_recluster_bins'), contig_dict,
