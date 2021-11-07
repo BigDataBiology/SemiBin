@@ -16,7 +16,6 @@ from .utils import validate_args, get_must_link_threshold, generate_cannot_link,
     download, set_random_seed, process_fasta, split_data, get_model_path
 from .generate_coverage import generate_cov, combine_cov
 from .generate_kmer import generate_kmer_features_from_fasta
-from .semi_supervised_model import train
 from .cluster import cluster
 from .fasta import fasta_iter
 from .error import LoggingPool
@@ -638,6 +637,7 @@ def training(logger, contig_fasta, num_process,
 
     model: [single/several]
     """
+    from .semi_supervised_model import train
     import pandas as pd
     binned_lengths = []
     num_cpu = multiprocessing.cpu_count() if num_process == 0 else num_process

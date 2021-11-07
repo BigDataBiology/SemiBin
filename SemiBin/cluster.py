@@ -1,8 +1,5 @@
-from sklearn.neighbors import kneighbors_graph
-from igraph import Graph
 import os
 import math
-from sklearn.cluster import KMeans
 import shutil
 
 from .utils import cal_kl, write_bins, cal_num_bins
@@ -16,6 +13,9 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     max_edges: max edges of one contig considered in binning
     max_node: max percentage of contigs considered in binning
     """
+    from igraph import Graph
+    from sklearn.neighbors import kneighbors_graph
+    from sklearn.cluster import KMeans
     import torch
     import numpy as np
     train_data = data.values
