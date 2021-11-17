@@ -1,7 +1,5 @@
 # Generating the inputs to SemiBin
 
-## For single-sample mode
-
 Starting with a metagenome, you need to generate a contigs file (`contigs.fna`)
 and a sorted BAM file (`output.bam`).
 
@@ -53,5 +51,38 @@ samtools view -b -F 4 contig.bam -o contig.mapped.bam -@ 64
 samtools sort -m 1000000000 contig.mapped.bam -o contig.mapped.sorted.bam -@ 64
 
 samtools index contig.mapped.sorted.bam
+```
+
+### Generate cannot-link constraints
+
+You can also use [CAT](https://github.com/dutilh/CAT) for generating  contig taxonomic classifications and generating cannot-link file. See below for format
+specifications if you want to use CAT.
+
+```bash
+CAT contigs \
+        -c contig.fasta \
+        -d CAT_prepare_20200304/2020-03-04_CAT_database \
+        --path_to_prodigal path_to_prodigal \
+        --path_to_diamond path_to_diamond \
+        -t CAT_prepare_20200304/2020-03-04_taxonomy \
+        -o CAT_output/CAT \
+        --force \
+        -f 0.5 \
+        --top 11 \
+        --I_know_what_Im_doing \
+        --index_chunks 1
+
+CAT add_names \
+    CAT_output/CAT.contig2classification.txt \
+    -o CAT_output/CAT.out \
+    -t CAT_prepare_20200304/2020-03-04_taxonomy \
+    --force \
+    --only_official
+```
+
+Generate cannot-link constrains
+
+```bash
+python script/concatenate.py -i CAT.out -c contig.fasta -s sample-name -o output --CAT
 ```
 
