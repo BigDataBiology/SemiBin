@@ -16,7 +16,6 @@ from .utils import validate_args, get_must_link_threshold, generate_cannot_link,
     download, set_random_seed, process_fasta, split_data, get_model_path
 from .generate_coverage import generate_cov, combine_cov
 from .generate_kmer import generate_kmer_features_from_fasta
-from .semi_supervised_model import train
 from .cluster import cluster
 from .fasta import fasta_iter
 from .error import LoggingPool
@@ -70,7 +69,7 @@ def parse_args(args):
 
     download_GTDB.add_argument('-r', '--reference-db',
                             required=False,
-                            help='GTDB reference file path to download(~/path). (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB). If not set --reference-db, we will download GTDB to the default path.',
+                            help='Where to store GTDB reference data. If the required files are not present, they will be downloaded. (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB).',
                             dest='GTDB_reference',
                             metavar='',
                             default=None)
@@ -115,7 +114,7 @@ def parse_args(args):
     training.add_argument('--mode',
                           required=True,
                           type=str,
-                          help='[single/several] Train models from one sample or several samples (train model across several samples with single-sample binning can get better pre-trained model). '
+                          help='[single/several] Train models from one (single) or more samples (several). '
                           'In `several` mode, you must provide data, data_split, cannot, and fasta files for corresponding samples in the same order. '
                           'Note: You can only use `several` mode when performing single-sample binning. Training from several samples with multi-sample binning is not supported.',
                           dest='mode',
@@ -144,13 +143,13 @@ def parse_args(args):
     binning.add_argument('--minfasta-kbs',
                             required=False,
                             type=int,
-                            help='minimum bin size in Kbps (Default: 200).',
+                            help='Minimum bin size in Kbps (Default: 200).',
                             dest='minfasta_kb',
                             default=200,
                             metavar='')
     binning.add_argument('--recluster',
                    required=False,
-                   help='recluster bins.',
+                   help='Recluster bins.',
                    dest='recluster',
                    action='store_true', )
     binning.add_argument('--max-edges',
@@ -173,7 +172,8 @@ def parse_args(args):
                          default=None,
                          help='Path to the trained semi-supervised deep learning model.')
 
-    training.add_argument('-p', '--processes', '-t', '--threads',
+    for p in [training, predict_taxonomy, binning, single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi]:
+        p.add_argument('-p', '--processes', '-t', '--threads',
                    required=False,
                    type=int,
                    help='Number of CPUs used (pass the value 0 to use all CPUs, default: 0)',
@@ -182,18 +182,10 @@ def parse_args(args):
                    metavar=''
                    )
 
-    predict_taxonomy.add_argument('-p', '--processes', '-t', '--threads',
-                   required=False,
-                   type=int,
-                   help='Number of CPUs used (pass the value 0 to use all CPUs, default: 0)',
-                   dest='num_process',
-                   default=0,
-                   metavar=''
-                   )
     for p in [single_easy_bin, binning]:
         p.add_argument('--environment',
                        required=False,
-                       help='environment for the built-in model(human_gut/dog_gut/ocean).',
+                       help='Environment for the built-in model (available choices: human_gut/dog_gut/ocean).',
                        dest='environment',
                        default=None,
                        )
@@ -230,24 +222,7 @@ def parse_args(args):
                        dest='ratio',
                        default=0.05)
 
-    binning.add_argument('-p', '--processes', '-t', '--threads',
-                                     required=False,
-                                     type=int,
-                                     help='Number of CPUs used (pass the value 0 to use all CPUs, default: 0)',
-                                     dest='num_process',
-                                     default=0,
-                                     metavar=''
-                                     )
-
     for p in [single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi]:
-        p.add_argument('-p', '--processes', '-t', '--threads',
-                                     required=False,
-                                     type=int,
-                                     help='Number of CPUs used (pass the value 0 to use all CPUs, default: 0)',
-                                     dest='num_process',
-                                     default=0,
-                                     metavar=''
-                                     )
         p.add_argument('-b', '--input-bam',
                               required=True,
                               nargs='*',
@@ -331,7 +306,7 @@ def parse_args(args):
         p.add_argument('--random-seed',
                        required=False,
                        type=int,
-                       help='Random seed to reproduce results.',
+                       help='Random seed. Set it to a fixed value to reproduce results across runs. The default is that the seed is set by the system and .',
                        dest='random_seed',
                        default=None,
                        )
@@ -638,6 +613,7 @@ def training(logger, contig_fasta, num_process,
 
     model: [single/several]
     """
+    from .semi_supervised_model import train
     import pandas as pd
     binned_lengths = []
     num_cpu = multiprocessing.cpu_count() if num_process == 0 else num_process
