@@ -13,7 +13,7 @@ import sys
 from itertools import groupby
 
 from .utils import validate_args, get_must_link_threshold, generate_cannot_link, \
-    download, set_random_seed, process_fasta, split_data, get_model_path
+    download_GTDB_to, set_random_seed, process_fasta, split_data, get_model_path
 from .generate_coverage import generate_cov, combine_cov
 from .generate_kmer import generate_kmer_features_from_fasta
 from .cluster import cluster
@@ -337,7 +337,7 @@ def download_GTDB(logger,GTDB_reference):
         'mmseqs2-GTDB')
 
     GTDB_path = GTDB_reference if GTDB_reference is not None else GTDB_default
-    download(logger, GTDB_path)
+    download_GTDB_to(logger, GTDB_path)
 
 
 def predict_taxonomy(logger, contig_fasta,
@@ -362,7 +362,7 @@ def predict_taxonomy(logger, contig_fasta,
         'GTDB')
     if GTDB_reference is None:
         if not os.path.exists(GTDB_default):
-            download(logger, GTDB_default)
+            download_GTDB_to(logger, GTDB_default)
         GTDB_reference = GTDB_default
 
     filtered_fasta = os.path.join(output, 'filtered.fasta')

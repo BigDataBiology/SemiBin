@@ -279,15 +279,14 @@ def get_file_md5(fname):
 
     return m.hexdigest()
 
-def download(logger, GTDB_path):
+def download_GTDB_to(logger, GTDB_dir):
     """
     Download GTDB.
-    GTDB_path: defalt path is $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB
+    GTDB_dir: where to store the data
     """
     import requests
     import tarfile
     logger.info('Downloading GTDB.  It will take a while..')
-    GTDB_dir = GTDB_path
     os.makedirs(GTDB_dir, exist_ok=True)
 
     download_url = 'https://zenodo.org/record/4751564/files/GTDB_v95.tar.gz?download=1'
@@ -306,7 +305,7 @@ def download(logger, GTDB_path):
             tar.close()
         except Exception:
             sys.stderr.write(
-                f"Error: cannot unzip the file.")
+                f"Error: cannot untar the file.")
             sys.exit(1)
 
         os.remove(download_path)
