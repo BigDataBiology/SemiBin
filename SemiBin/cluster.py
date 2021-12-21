@@ -90,12 +90,17 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     embedding_matrix[embedding_matrix <= threshold] = 0
     if not is_combined:
         logger.info('Calculating depth matrix.')
-        kl_matrix = np.zeros(shape=(len(embedding_matrix), len(embedding_matrix)))
+        kl_matrix = None
         for k in range(n_sample):
             kl = cal_kl(depth[:,2*k], depth[:, 2*k + 1])
-            kl_matrix +=  1 - kl
-        kl_matrix = kl_matrix / n_sample
-        embedding_matrix = embedding_matrix * kl_matrix
+            if kl_matrix is None:
+                kl *= -1
+                kl_matrix = kl
+            else:
+                kl_matrix -= kl
+        kl_matrix += n_sample
+        kl_matrix /= n_sample
+        embedding_matrix *= kl_matrix
 
     edges = []
     edges_weight = []
