@@ -1,5 +1,6 @@
 Unreleased
 	* Faster `SemiBin --version`
+	* Lower memory usage for `bin` subcommand
 
 Version 0.4.0 Tue Oct 10 2021 by BigDataBiology
 	* Add support for .xz FASTA files as inputs

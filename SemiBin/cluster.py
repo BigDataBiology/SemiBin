@@ -2,8 +2,37 @@ import os
 import math
 import shutil
 
-from .utils import cal_kl, write_bins, cal_num_bins
+from .utils import write_bins, cal_num_bins
 from .fasta import fasta_iter
+
+def cal_kl(m, v):
+    # A naive implementation creates a lot of copies of what can
+    # become large matrices
+    import numpy as np
+
+    m = np.clip(m, 1e-6, None)
+    v = np.clip(v, 1.0, None)
+
+    m1 = m.reshape(1, len(m))
+    m2 = m.reshape(len(m), 1)
+
+    v1 = v.reshape(1, len(v))
+    v2 = v.reshape(len(v), 1)
+
+    v_div = np.log(v1) - np.log(v2)
+    v_div /= 2.0
+
+    m_dif = m1 - m2
+    m_dif **=2
+    m_dif += v2
+    m_dif /= 2 * v1
+
+    v_div += m_dif
+    v_div -= 0.5
+    np.clip(v_div, 1e-6, 1-1e-6, out=v_div)
+
+    return v_div
+
 
 
 def cluster(model, data, device, max_edges, max_node, is_combined,
