@@ -24,7 +24,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     depth = data.values[:, 136:len(data.values[0])]
     namelist = data.index.tolist()
     row_index = data._stat_axis.values.tolist()
-    mapObj = {n:i for i, n in enumerate(namelist)}
+    name2ix = {n:i for i, n in enumerate(namelist)}
     with torch.no_grad():
         model.eval()
         x = torch.from_numpy(train_data_input).to(device)
@@ -138,7 +138,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                         num_process)
                 except BaseException:
                     pass
-                contig_index = [mapObj[temp] for temp in contig_list]
+                contig_index = [name2ix[temp] for temp in contig_list]
                 re_bin_features = embedding_new[contig_index]
 
                 if os.path.exists(seed_output):
