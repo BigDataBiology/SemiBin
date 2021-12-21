@@ -2,8 +2,37 @@ import os
 import math
 import shutil
 
-from .utils import cal_kl, write_bins, cal_num_bins
+from .utils import write_bins, cal_num_bins
 from .fasta import fasta_iter
+
+def cal_kl(m, v):
+    # A naive implementation creates a lot of copies of what can
+    # become large matrices
+    import numpy as np
+
+    m = np.clip(m, 1e-6, None)
+    v = np.clip(v, 1.0, None)
+
+    m1 = m.reshape(1, len(m))
+    m2 = m.reshape(len(m), 1)
+
+    v1 = v.reshape(1, len(v))
+    v2 = v.reshape(len(v), 1)
+
+    v_div = np.log(v1) - np.log(v2)
+    v_div /= 2.0
+
+    m_dif = m1 - m2
+    m_dif **=2
+    m_dif += v2
+    m_dif /= 2 * v1
+
+    v_div += m_dif
+    v_div -= 0.5
+    np.clip(v_div, 1e-6, 1-1e-6, out=v_div)
+
+    return v_div
+
 
 
 def cluster(model, data, device, max_edges, max_node, is_combined,
@@ -21,10 +50,10 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     train_data = data.values
     train_data_input = train_data[:, 0:136] if not is_combined else train_data
 
-    depth = data.values[:, 136:len(data.values[0])]
+    depth = data.values[:, 136:len(data.values[0])].astype(np.float32)
     namelist = data.index.tolist()
     row_index = data._stat_axis.values.tolist()
-    mapObj = {n:i for i, n in enumerate(namelist)}
+    name2ix = {n:i for i, n in enumerate(namelist)}
     with torch.no_grad():
         model.eval()
         x = torch.from_numpy(train_data_input).to(device)
@@ -50,32 +79,37 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     embedding_matrix = 1 - embedding_matrix
 
     threshold = 0
-
+    max_axis1 = np.max(embedding_matrix,axis=1)
     while (threshold < 1):
         threshold += 0.05
-        num = len(list(set(np.where(embedding_matrix > threshold)[0])))
-        if round(num / len(embedding_matrix), 2) < max_node:
+        n_above = np.sum(max_axis1 > threshold)
+        if round(n_above / len(embedding_matrix), 2) < max_node:
             break
     threshold -= 0.05
 
     embedding_matrix[embedding_matrix <= threshold] = 0
     if not is_combined:
         logger.info('Calculating depth matrix.')
-        kl_matrix = np.zeros(shape=(len(embedding_matrix), len(embedding_matrix)))
+        kl_matrix = None
         for k in range(n_sample):
             kl = cal_kl(depth[:,2*k], depth[:, 2*k + 1])
-            kl_matrix +=  1 - kl
-        kl_matrix = kl_matrix / n_sample
-        embedding_matrix = embedding_matrix * kl_matrix
+            if kl_matrix is None:
+                kl *= -1
+                kl_matrix = kl
+            else:
+                kl_matrix -= kl
+        kl_matrix += n_sample
+        kl_matrix /= n_sample
+        embedding_matrix *= kl_matrix
 
-    edges = []
-    edges_weight = []
+    X, Y = np.where(embedding_matrix > 1e-6)
+    # Find above diagonal positions:
+    above_diag = Y > X
+    X = X[above_diag]
+    Y = Y[above_diag]
 
-    for i in range(len(embedding_matrix)):
-        for j in range(i + 1, len(embedding_matrix)):
-            if embedding_matrix[i][j] > 1e-6:
-                edges.append((i, j))
-                edges_weight.append(embedding_matrix[i][j])
+    edges = [(x,y) for x,y in zip(X, Y)]
+    edges_weight = embedding_matrix[X, Y]
 
     logger.info('Edges:{}'.format(len(edges)))
 
@@ -87,8 +121,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     contig_labels = np.zeros(shape=(len(embedding_matrix)), dtype=np.int)
 
     for i, r in enumerate(result):
-        for infomap_index in r:
-            contig_labels[infomap_index] = i
+        contig_labels[r] = i
 
     output_bin_path = os.path.join(out, 'output_bins')
     if os.path.exists(output_bin_path):
@@ -138,7 +171,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                         num_process)
                 except BaseException:
                     pass
-                contig_index = [mapObj[temp] for temp in contig_list]
+                contig_index = [name2ix[temp] for temp in contig_list]
                 re_bin_features = embedding_new[contig_index]
 
                 if os.path.exists(seed_output):

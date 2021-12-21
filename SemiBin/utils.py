@@ -247,23 +247,6 @@ def write_bins(namelist, contig_labels, output, contig_dict,
                     ofile.write(f'>{contig}\n{contig_dict[contig]}\n')
 
 
-def cal_kl(m, v):
-    """
-    Calculate KL divergence
-    """
-    import numpy as np
-    m = np.clip(m, 1e-6, None)
-    v = np.clip(v, 1.0, None)
-    m1 = m.reshape(1, len(m))
-    m2 = m.reshape(len(m), 1)
-
-    v1 = v.reshape(1, len(v))
-    v2 = v.reshape(len(v), 1)
-
-    value = np.log(np.sqrt(v1 / v2)) +  np.divide(np.square(m1 - m2) + v2, 2 * v1) - 0.5
-
-    return np.clip(value, 1e-6, 1 - 1e-6)
-
 def get_file_md5(fname):
     """
     Calculate Md5 for downloaded file
