@@ -50,7 +50,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     train_data = data.values
     train_data_input = train_data[:, 0:136] if not is_combined else train_data
 
-    depth = data.values[:, 136:len(data.values[0])]
+    depth = data.values[:, 136:len(data.values[0])].astype(np.float32)
     namelist = data.index.tolist()
     row_index = data._stat_axis.values.tolist()
     name2ix = {n:i for i, n in enumerate(namelist)}
@@ -79,11 +79,11 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     embedding_matrix = 1 - embedding_matrix
 
     threshold = 0
-
+    max_axis1 = np.max(embedding_matrix,axis=1)
     while (threshold < 1):
         threshold += 0.05
-        num = len(list(set(np.where(embedding_matrix > threshold)[0])))
-        if round(num / len(embedding_matrix), 2) < max_node:
+        n_above = np.sum(max_axis1 > threshold)
+        if round(n_above / len(embedding_matrix), 2) < max_node:
             break
     threshold -= 0.05
 
@@ -102,14 +102,14 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
         kl_matrix /= n_sample
         embedding_matrix *= kl_matrix
 
-    edges = []
-    edges_weight = []
+    X, Y = np.where(embedding_matrix > 1e-6)
+    # Find above diagonal positions:
+    above_diag = Y > X
+    X = X[above_diag]
+    Y = Y[above_diag]
 
-    for i in range(len(embedding_matrix)):
-        for j in range(i + 1, len(embedding_matrix)):
-            if embedding_matrix[i][j] > 1e-6:
-                edges.append((i, j))
-                edges_weight.append(embedding_matrix[i][j])
+    edges = [(x,y) for x,y in zip(X, Y)]
+    edges_weight = embedding_matrix[X, Y]
 
     logger.info('Edges:{}'.format(len(edges)))
 
@@ -121,8 +121,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     contig_labels = np.zeros(shape=(len(embedding_matrix)), dtype=np.int)
 
     for i, r in enumerate(result):
-        for infomap_index in r:
-            contig_labels[infomap_index] = i
+        contig_labels[r] = i
 
     output_bin_path = os.path.join(out, 'output_bins')
     if os.path.exists(output_bin_path):
