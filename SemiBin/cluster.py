@@ -66,6 +66,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     from igraph import Graph
     from sklearn.neighbors import kneighbors_graph
     from sklearn.cluster import KMeans
+    from scipy import sparse
     import torch
     import numpy as np
     train_data = data.values
@@ -75,6 +76,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     namelist = data.index.tolist()
     row_index = data._stat_axis.values.tolist()
     name2ix = {n:i for i, n in enumerate(namelist)}
+    num_contigs = train_data_input.shape[0]
     with torch.no_grad():
         model.eval()
         x = torch.from_numpy(train_data_input).to(device)
@@ -84,31 +86,36 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
             n_neighbors=min(max_edges, train_data.shape[0] - 1),
             mode='distance',
             p=2,
-            n_jobs=num_process).toarray()
+            n_jobs=num_process)
         kmer_matrix = kneighbors_graph(
             train_data_input,
             n_neighbors=min(max_edges, train_data.shape[0] - 1),
             mode='distance',
             p=2,
-            n_jobs=num_process).toarray()
-        embedding_matrix[kmer_matrix == 0] = 0
-    kmer_matrix = None
-    del kmer_matrix
+            n_jobs=num_process)
 
-    embedding_matrix[embedding_matrix >= 1] = 1
-    embedding_matrix[embedding_matrix == 0] = 1
-    embedding_matrix = 1 - embedding_matrix
+        # We want to intersect the matrices, so we make kmer_matrix into a
+        # matrix of 1.s and multiply
+        kmer_matrix.eliminate_zeros()
+        kmer_matrix.data.fill(1.)
+        embedding_matrix = embedding_matrix.multiply(kmer_matrix)
+        embedding_matrix.eliminate_zeros()
+        del kmer_matrix
+
+    np.clip(embedding_matrix.data, None, 1., out=embedding_matrix.data)
+    embedding_matrix.data = 1 - embedding_matrix.data
 
     threshold = 0
-    max_axis1 = np.max(embedding_matrix,axis=1)
-    while (threshold < 1):
+    max_axis1 = embedding_matrix.max(axis=1).toarray()
+    while threshold < 1:
         threshold += 0.05
         n_above = np.sum(max_axis1 > threshold)
-        if round(n_above / len(embedding_matrix), 2) < max_node:
+        if round(n_above / num_contigs, 2) < max_node:
             break
     threshold -= 0.05
 
-    embedding_matrix[embedding_matrix <= threshold] = 0
+    embedding_matrix.data[embedding_matrix.data<= threshold] = 0
+    embedding_matrix.eliminate_zeros()
     if not is_combined:
         logger.info('Calculating depth matrix.')
         kl_matrix = None
@@ -121,25 +128,26 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                 kl_matrix -= kl
         kl_matrix += n_sample
         kl_matrix /= n_sample
-        embedding_matrix *= kl_matrix
+        embedding_matrix = embedding_matrix.multiply(kl_matrix)
 
-    X, Y = np.where(embedding_matrix > 1e-6)
+    embedding_matrix.data[embedding_matrix.data <= 1e-6] = 0
+    X, Y, V = sparse.find(embedding_matrix)
     # Find above diagonal positions:
     above_diag = Y > X
     X = X[above_diag]
     Y = Y[above_diag]
 
     edges = [(x,y) for x,y in zip(X, Y)]
-    edges_weight = embedding_matrix[X, Y]
+    edge_weights = V[above_diag]
 
     logger.info('Edges:{}'.format(len(edges)))
 
     g = Graph()
-    g.add_vertices(list(range(len(embedding_matrix))))
+    g.add_vertices(np.arange(num_contigs))
     g.add_edges(edges)
     length_weight = np.array([len(contig_dict[name]) for name in namelist])
-    result = g.community_infomap(edge_weights=edges_weight, vertex_weights=length_weight)
-    contig_labels = np.zeros(shape=(len(embedding_matrix)), dtype=np.int)
+    result = g.community_infomap(edge_weights=edge_weights, vertex_weights=length_weight)
+    contig_labels = np.zeros(shape=num_contigs, dtype=np.int)
 
     for i, r in enumerate(result):
         contig_labels[r] = i
