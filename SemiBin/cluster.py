@@ -5,7 +5,7 @@ import shutil
 from .utils import write_bins, cal_num_bins
 from .fasta import fasta_iter
 
-def cal_kl(m, v):
+def cal_kl(m, v, use_ne='auto'):
     # A naive implementation creates a lot of copies of what can
     # become large matrices
     import numpy as np
@@ -19,6 +19,28 @@ def cal_kl(m, v):
     v1 = v.reshape(1, len(v))
     v2 = v.reshape(len(v), 1)
 
+
+    if use_ne != 'no':
+        try:
+            import numexpr as ne
+
+            res = ne.evaluate(
+                    '(log(v1) - log(v2))/2 + ( (m1 - m2)**2 + v2 ) / ( 2 * v1 ) - half',
+                    {
+                        'v1': v1,
+                        'v2': v2,
+                        'm1': m1,
+                        'm2': m2,
+                        # numexpr rules are that mixing with floats causes
+                        # conversion to float64
+                        # Note that this does not happen for integers
+                        'half': np.float32(0.5),
+                    })
+            np.clip(res, 1e-6, 1-1e-6, out=res)
+            return res
+        except ImportError:
+            if use_ne != 'auto':
+                raise
     v_div = np.log(v1) - np.log(v2)
     v_div /= 2.0
 
@@ -30,7 +52,6 @@ def cal_kl(m, v):
     v_div += m_dif
     v_div -= 0.5
     np.clip(v_div, 1e-6, 1-1e-6, out=v_div)
-
     return v_div
 
 
