@@ -40,7 +40,7 @@ write(samtools_sort(mapped),
 ### Mapping using bowtie2
 
 ```bash
-bowtie2-build -f contig.fna contig.fna -p 16
+bowtie2-build -f contig.fna contig.fna
 
 bowtie2 -q --fr -x contig.fna -1 reads_1.fq.gz -2 reads_2.fq.gz -S contig.sam -p 64
 
