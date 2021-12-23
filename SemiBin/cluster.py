@@ -217,13 +217,11 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                     contig_list.append(h)
                 contig_output = os.path.join(output_bin_path, bin) + '.frag'
                 hmm_output = os.path.join(output_bin_path, bin) + '.hmmout'
-                seed_output = os.path.join(output_bin_path, bin) + '.seed'
                 try:
-                    cal_num_bins(
+                    seed = cal_num_bins(
                         os.path.join(output_bin_path,bin),
                         contig_output,
                         hmm_output,
-                        seed_output,
                         binned_length,
                         num_process)
                 except BaseException:
@@ -231,13 +229,10 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                 contig_index = [name2ix[temp] for temp in contig_list]
                 re_bin_features = embedding_new[contig_index]
 
-                if os.path.exists(seed_output):
-                    seed = open(seed_output).read().split('\n')
-                    seed = [contig for contig in seed if contig != '']
-                    init_seed = seed
-                    num_bin = len(seed)
+                num_bin = len(seed)
+                if num_bin > 1:
                     seed_index = []
-                    for temp in init_seed:
+                    for temp in seed:
                         seed_index.append(row_index.index(temp))
                     length_weight = np.array(
                         [len(contig_dict[name]) for name in contig_list])

@@ -180,8 +180,47 @@ def generate_cannot_link(mmseqs_path,namelist,num_threshold,output,sample):
                 cannot_link_mix):
             out_cannot_link.write(f'{cannot[0]},{cannot[1]}\n')
 
+
+normalize_marker_trans__dict = {
+    'TIGR00388': 'TIGR00389',
+    'TIGR00471': 'TIGR00472',
+    'TIGR00408': 'TIGR00409',
+    'TIGR02386': 'TIGR02387',
+}
+
+def get_marker(hmmout, fasta_path=None, min_contig_len=None):
+    import pandas as pd
+    data = pd.read_table(hmmout, sep=r'\s+',  comment='#', header=None,
+                         usecols=(0,3,5,15,16), names=['orf', 'gene', 'qlen', 'qstart', 'qend'])
+    if not len(data):
+        return []
+    data['gene'] = data['gene'].map(lambda m: normalize_marker_trans__dict.get(m , m))
+    qlen = data[['gene','qlen']].drop_duplicates().set_index('gene').squeeze()
+
+    def contig_name(ell):
+        contig,_,_,_ = ell.rsplit( '_', 3)
+        return contig
+
+    data = data.query('(qend - qstart) / qlen > 0.4').copy()
+    data['contig'] = data['orf'].map(contig_name)
+    if min_contig_len is not None:
+        contig_len = {h:len(seq) for h,seq in fasta_iter(fasta_path)}
+        data = data[data['contig'].map(lambda c: contig_len[c] >= min_contig_len)]
+    data = data.drop_duplicates(['gene', 'contig'])
+
+    vs = data.groupby(data['gene'])['orf'].count().sort_values()
+    median = vs[len(vs) //2]
+
+    # the original version broke ties by picking the shortest query, so we
+    # replicate that here:
+    candidates = vs.index[vs == median]
+    c = qlen.loc[candidates].idxmin()
+    r = list(data[data['gene'] == c]['contig'])
+    r.sort()
+    return r
+
 def cal_num_bins(fasta_path, contig_output, hmm_output,
-                 seed_output, binned_length, num_process):
+                 binned_length, num_process):
     if not os.path.exists(contig_output + '.faa'):
         with open(contig_output + '.out', 'w') as frag_out_log:
             # We need to call FragGeneScan instead of the Perl wrapper because the
@@ -213,17 +252,7 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
                 stdout=hmm_out_log,
             )
 
-    if not os.path.exists(seed_output):
-        getmarker = os.path.split(__file__)[0] + '/getmarker.pl'
-        subprocess.check_call(
-            ['perl', getmarker,
-             hmm_output,
-             fasta_path,
-             str(binned_length + 1), # threshold
-             seed_output,
-             ],
-            stdout=subprocess.DEVNULL,
-        )
+    return get_marker(hmm_output, fasta_path, binned_length)
 
 
 def write_bins(namelist, contig_labels, output, contig_dict,

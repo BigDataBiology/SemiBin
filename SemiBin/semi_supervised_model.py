@@ -149,18 +149,13 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
     un_dataloader_list = []
 
     for sample_index in range(len(contig_fastas)):
-        contig_output = os.path.join(out, os.path.split(contig_fastas[sample_index])[1] + '.frag')
-        hmm_output = os.path.join(out, os.path.split(contig_fastas[sample_index])[1] + '.hmmout')
-        seed_output = os.path.join(out, os.path.split(contig_fastas[sample_index])[1] + '.seed')
 
-
-        cal_num_bins(
+        seed = cal_num_bins(
             contig_fastas[sample_index],
-            contig_output,
-            hmm_output,
-            seed_output,
-            binned_lengths[sample_index],
-            num_process)
+            contig_output=os.path.join(out, os.path.split(contig_fastas[sample_index])[1] + '.frag'),
+            hmm_output=os.path.join(out, os.path.split(contig_fastas[sample_index])[1] + '.hmmout'),
+            binned_length=binned_lengths[sample_index],
+            num_process=num_process)
 
         logger.info('Generate training data of {}:'.format(sample_index))
 
@@ -206,9 +201,7 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
             train_labels.append(0)
 
         # cannot link from bin seed
-        if os.path.exists(seed_output):
-            seed = open(seed_output).read().split('\n')
-            seed = [contig for contig in seed if contig != '']
+        if seed is not None:
             for i in range(len(seed)):
                 for j in range(i + 1, len(seed)):
                     train_input_1.append(train_data_input[mapObj[str(seed[i])]])
