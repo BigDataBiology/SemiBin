@@ -21,4 +21,6 @@ def test_cal_kl():
     for _ in range(32):
         m = np.random.rand(128)
         v = np.random.rand(128)
-        assert np.allclose(slow_cal_kl(m, v), cal_kl(m ,v))
+        assert np.allclose(slow_cal_kl(m, v), cal_kl(m ,v, use_ne='yes'))
+        assert np.allclose(slow_cal_kl(m, v), cal_kl(m ,v, use_ne='no'))
+        assert np.allclose(slow_cal_kl(m, v), cal_kl(m ,v, use_ne='auto'))
