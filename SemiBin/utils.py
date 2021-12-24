@@ -188,7 +188,7 @@ normalize_marker_trans__dict = {
     'TIGR02386': 'TIGR02387',
 }
 
-def get_marker(hmmout, fasta_path=None, min_contig_len=None):
+def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False):
     import pandas as pd
     data = pd.read_table(hmmout, sep=r'\s+',  comment='#', header=None,
                          usecols=(0,3,5,15,16), names=['orf', 'gene', 'qlen', 'qstart', 'qend'])
@@ -208,19 +208,33 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None):
         data = data[data['contig'].map(lambda c: contig_len[c] >= min_contig_len)]
     data = data.drop_duplicates(['gene', 'contig'])
 
-    vs = data.groupby(data['gene'])['orf'].count().sort_values()
-    median = vs[len(vs) //2]
+    def extract_seeds(vs, sel):
+        vs = vs.sort_values()
+        median = vs[len(vs) //2]
 
-    # the original version broke ties by picking the shortest query, so we
-    # replicate that here:
-    candidates = vs.index[vs == median]
-    c = qlen.loc[candidates].idxmin()
-    r = list(data[data['gene'] == c]['contig'])
-    r.sort()
-    return r
+        # the original version broke ties by picking the shortest query, so we
+        # replicate that here:
+        candidates = vs.index[vs == median]
+        c = qlen.loc[candidates].idxmin()
+        r = list(sel.query('gene == @c')['contig'])
+        r.sort()
+        return r
+
+
+    if multi_mode:
+        data['bin'] = data['orf'].str.split('.',0, expand=True)[0]
+        counts = data.groupby(['bin', 'gene'])['orf'].count()
+        res = {}
+        for b,vs in counts.groupby(level=0):
+            cs = extract_seeds(vs.droplevel(0), data.query('bin == @b', local_dict={'b':b}))
+            res[b] = [c.split('.',1)[1] for c in cs]
+        return res
+    else:
+        counts = data.groupby('gene')['orf'].count()
+        return extract_seeds(counts, data)
 
 def cal_num_bins(fasta_path, contig_output, hmm_output,
-                 binned_length, num_process):
+                 binned_length, num_process, multi_mode=False):
     if not os.path.exists(contig_output + '.faa'):
         with open(contig_output + '.out', 'w') as frag_out_log:
             # We need to call FragGeneScan instead of the Perl wrapper because the
@@ -252,7 +266,7 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
                 stdout=hmm_out_log,
             )
 
-    return get_marker(hmm_output, fasta_path, binned_length)
+    return get_marker(hmm_output, fasta_path, binned_length, multi_mode)
 
 
 def write_bins(namelist, contig_labels, output, contig_dict,

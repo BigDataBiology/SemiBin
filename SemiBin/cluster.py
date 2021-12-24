@@ -1,6 +1,7 @@
 import os
 import math
 import shutil
+import tempfile
 
 from .utils import write_bins, cal_num_bins
 from .fasta import fasta_iter
@@ -207,15 +208,24 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
 
         os.makedirs(output_recluster_bin_path, exist_ok=True)
 
-        for bin_path in bin_files:
-            contig_output = bin_path + '.frag'
-            hmm_output = bin_path + '.hmmout'
-            seed = cal_num_bins(
-                bin_path,
-                contig_output,
-                hmm_output,
+        with tempfile.TemporaryDirectory() as tdir:
+            cfasta = os.path.join(tdir, 'concatenated.fna')
+            with open(cfasta, 'wt') as concat_out:
+                for ix,f in enumerate(bin_files):
+                    for h,seq in fasta_iter(f):
+                        h = f'bin{ix:06}.{h}'
+                        concat_out.write(f'>{h}\n{seq}\n')
+            seeds = cal_num_bins(
+                cfasta,
+                cfasta + '.frag',
+                cfasta + '.hmmout',
                 binned_length,
-                num_process)
+                num_process,
+                multi_mode=True)
+
+        for ix,bin_path in enumerate(bin_files):
+            # if there are no hits, the output will be naturally empty
+            seed = seeds.get(f'bin{ix:06}', [])
             num_bin = len(seed)
 
             if num_bin > 1:
