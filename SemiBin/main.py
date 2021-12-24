@@ -317,7 +317,8 @@ def parse_args(args):
         parser.print_help(sys.stderr)
         sys.exit()
     args = parser.parse_args(args)
-    args.recluster = not args.no_recluster
+    if hasattr(args, 'no_recluster'):
+        args.recluster = not args.no_recluster
     return args
 
 

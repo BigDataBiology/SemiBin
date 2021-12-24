@@ -8,6 +8,7 @@ for ifile, odir in [
         ('input.fasta.bz2', 'output_bin_bz2'),
         ('input.fasta.xz', 'output_bin_xz'),
         ]:
+    odir = f'test-outputs/{odir}'
     subprocess.check_call(
         ['SemiBin', 'bin',
          '--data', 'test/bin_data/data.csv',
@@ -47,6 +48,7 @@ for env,odir in [
         ('dog_gut', 'output_dog_gut'),
         ('ocean', 'output_ocean'),
         ]:
+    odir = f'test-outputs/{odir}'
     subprocess.check_call(
         ['SemiBin', 'bin',
          '--data', 'test/bin_data/data.csv',
