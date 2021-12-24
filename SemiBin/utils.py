@@ -257,6 +257,11 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
 
 def write_bins(namelist, contig_labels, output, contig_dict,
                recluster=False, origin_label=0, minfasta = 200000):
+    '''
+    Write binned FASTA files
+
+    Returns: list of files written
+    '''
     from collections import defaultdict
     res = defaultdict(list)
     for label, name in zip(contig_labels, namelist):
@@ -265,15 +270,19 @@ def write_bins(namelist, contig_labels, output, contig_dict,
 
     os.makedirs(output, exist_ok=True)
 
+    written = []
     for label, contigs in res.items():
         whole_bin_bp = sum(len(contig_dict[contig]) for contig in contigs)
 
         if whole_bin_bp >= minfasta:
             ofname = f'bin.{label}.fa' if not recluster \
                     else f'recluster_{origin_label}.bin.{label}.fa'
-            with atomic_write(os.path.join(output, ofname), overwrite=True) as ofile:
+            ofname = os.path.join(output, ofname)
+            written.append(ofname)
+            with atomic_write(ofname, overwrite=True) as ofile:
                 for contig in contigs:
                     ofile.write(f'>{contig}\n{contig_dict[contig]}\n')
+    return written
 
 
 def get_file_md5(fname):
@@ -343,7 +352,7 @@ def process_fasta(fasta_path, ratio):
 
     binned_short: whether to include short contigs
     must_link_threshold: threshold to break up contigs
-    contigs: dictionary ID -> contig
+    contigs: dictionary ID -> contig sequence
     """
     whole_contig_bp = 0
     contig_bp_2500 = 0

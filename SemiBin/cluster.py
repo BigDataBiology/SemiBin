@@ -99,7 +99,6 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
 
     depth = data.values[:, 136:len(data.values[0])].astype(np.float32)
     namelist = data.index.tolist()
-    row_index = data._stat_axis.values.tolist()
     name2ix = {n:i for i, n in enumerate(namelist)}
     num_contigs = train_data_input.shape[0]
     with torch.no_grad():
@@ -185,7 +184,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
         shutil.rmtree(output_bin_path)
     os.makedirs(output_bin_path, exist_ok=True)
 
-    write_bins(namelist, contig_labels, output_bin_path, contig_dict,minfasta=minfasta)
+    bin_files = write_bins(namelist, contig_labels, output_bin_path, contig_dict,minfasta=minfasta)
     if recluster:
         if not is_combined:
             mean_index = [2 * temp for temp in range(n_sample)]
@@ -200,7 +199,6 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
         else:
             embedding_new = embedding
 
-        bin_files = os.listdir(output_bin_path)
         logger.info('Reclustering.')
 
         output_recluster_bin_path = os.path.join(out, 'output_recluster_bins')
@@ -209,46 +207,37 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
 
         os.makedirs(output_recluster_bin_path, exist_ok=True)
 
-        for bin in bin_files:
-            if os.path.exists(os.path.join(output_bin_path, bin)):
-                contig_list = []
-                for h,_ in fasta_iter(
-                        os.path.join(output_bin_path, bin)):
-                    contig_list.append(h)
-                contig_output = os.path.join(output_bin_path, bin) + '.frag'
-                hmm_output = os.path.join(output_bin_path, bin) + '.hmmout'
-                try:
-                    seed = cal_num_bins(
-                        os.path.join(output_bin_path,bin),
-                        contig_output,
-                        hmm_output,
-                        binned_length,
-                        num_process)
-                except BaseException:
-                    pass
-                contig_index = [name2ix[temp] for temp in contig_list]
+        for bin_path in bin_files:
+            contig_output = bin_path + '.frag'
+            hmm_output = bin_path + '.hmmout'
+            seed = cal_num_bins(
+                bin_path,
+                contig_output,
+                hmm_output,
+                binned_length,
+                num_process)
+            num_bin = len(seed)
+
+            if num_bin > 1:
+                contig_list = [h for h,_ in fasta_iter(bin_path)]
+                contig_index = [name2ix[c] for c in contig_list]
                 re_bin_features = embedding_new[contig_index]
 
-                num_bin = len(seed)
-                if num_bin > 1:
-                    seed_index = []
-                    for temp in seed:
-                        seed_index.append(row_index.index(temp))
-                    length_weight = np.array(
-                        [len(contig_dict[name]) for name in contig_list])
-                    seeds_embedding = embedding_new[seed_index]
-                    kmeans = KMeans(
-                        n_clusters=num_bin,
-                        init=seeds_embedding,
-                        n_init=1,
-                        random_state=random_seed)
-                    kmeans.fit(re_bin_features, sample_weight=length_weight)
-                    labels = kmeans.labels_
-                    write_bins(contig_list, labels, os.path.join(out, 'output_recluster_bins'), contig_dict,
-                               recluster=True, origin_label=int(bin.split('.')[-2]),minfasta = minfasta)
-                else:
-                    shutil.copy(os.path.join(
-                        output_bin_path, bin), os.path.join(out, 'output_recluster_bins'))
+                seed_index = [name2ix[s] for s in seed]
+                length_weight = np.array(
+                    [len(contig_dict[name]) for name in contig_list])
+                seeds_embedding = embedding_new[seed_index]
+                kmeans = KMeans(
+                    n_clusters=num_bin,
+                    init=seeds_embedding,
+                    n_init=1,
+                    random_state=random_seed)
+                kmeans.fit(re_bin_features, sample_weight=length_weight)
+                labels = kmeans.labels_
+                write_bins(contig_list, labels, os.path.join(out, 'output_recluster_bins'), contig_dict,
+                           recluster=True, origin_label=int(bin_path.split('.')[-2]),minfasta = minfasta)
+            else:
+                shutil.copy(bin_path, os.path.join(out, 'output_recluster_bins'))
 
     logger.info('Binning finish.')
 
