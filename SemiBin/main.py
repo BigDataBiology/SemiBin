@@ -140,18 +140,6 @@ def parse_args(args):
                          dest='data',
                          default=None,)
 
-    binning.add_argument('--minfasta-kbs',
-                            required=False,
-                            type=int,
-                            help='Minimum bin size in Kbps (Default: 200).',
-                            dest='minfasta_kb',
-                            default=200,
-                            metavar='')
-    binning.add_argument('--recluster',
-                   required=False,
-                   help='Recluster bins.',
-                   dest='recluster',
-                   action='store_true', )
     binning.add_argument('--max-edges',
                    required=False,
                    type=int,
@@ -250,7 +238,7 @@ def parse_args(args):
                             metavar=''
                             )
 
-    for p in [single_easy_bin, multi_easy_bin]:
+    for p in [binning, single_easy_bin, multi_easy_bin]:
         p.add_argument('--minfasta-kbs',
                             required=False,
                             type=int,
@@ -259,11 +247,17 @@ def parse_args(args):
                             default=200,
                             metavar='')
 
+        p.add_argument('--no-recluster',
+                           required=False,
+                           help='Do not recluster bins.',
+                           dest='no_recluster',
+                           action='store_true', )
         p.add_argument('--recluster',
-                            required=False,
-                            help='recluster bins.',
-                            dest='recluster',
-                            action ='store_true',)
+                           required=False,
+                           help='[Deprecated] Does nothing (current default is to perform clustering)',
+                           dest='recluster',
+                           action='store_true', )
+    for p in [single_easy_bin, multi_easy_bin]:
 
         p.add_argument('--epoches',
                           required=False,
@@ -322,7 +316,9 @@ def parse_args(args):
     if not args:
         parser.print_help(sys.stderr)
         sys.exit()
-    return parser.parse_args(args)
+    args = parser.parse_args(args)
+    args.recluster = not args.no_recluster
+    return args
 
 
 def _checkback(msg):

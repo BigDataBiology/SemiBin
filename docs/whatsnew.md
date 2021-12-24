@@ -1,5 +1,16 @@
 # What's New
 
+## Unreleased version
+
+### User-visible improvements
+- Reclustering is now the default (use `--no-recluster` to disable it; the
+  option `--recluster` is deprecated and ignored) as the computational costs
+  are much lower
+
+### Internal improvements
+- Much more efficient binning code (including lower memory usage) for binning,
+  especially if a pretrained model is used.
+
 ## Version 0.4.0
 
 *Released 27 October 2021*

@@ -1,6 +1,8 @@
 Unreleased
 	* Faster `SemiBin --version`
 	* Lower memory usage and faster speed for `bin` subcommand
+	* Reclustering is now the default (due to improved speed). Added
+	`--no-recluster` option to disable it
 
 Version 0.4.0 Tue Oct 10 2021 by BigDataBiology
 	* Add support for .xz FASTA files as inputs
