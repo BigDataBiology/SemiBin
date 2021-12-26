@@ -195,7 +195,7 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False):
     if not len(data):
         return []
     data['gene'] = data['gene'].map(lambda m: normalize_marker_trans__dict.get(m , m))
-    qlen = data[['gene','qlen']].drop_duplicates().set_index('gene').squeeze()
+    qlen = data[['gene','qlen']].drop_duplicates().set_index('gene')['qlen']
 
     def contig_name(ell):
         contig,_,_,_ = ell.rsplit( '_', 3)
