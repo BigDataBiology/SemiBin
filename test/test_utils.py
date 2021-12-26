@@ -49,3 +49,17 @@ def test_get_marker():
     rs = get_marker(StringIO(HMMOUT_TEST_SINGLE))
     assert rs == ['k119_224042']
 
+def test_get_marker_multiple():
+    rs = get_marker('test/data/concatenated.hmmout.gz', multi_mode=True)
+    # This was computed by running the previous version
+    assert rs == {
+         'bin000005': ['k119_46822'],
+         'bin000051': ['k119_368830', 'k119_419149'],
+         'bin000052': ['k119_314249', 'k119_686387'],
+         'bin000056': ['k119_266899', 'k119_447637'],
+         'bin000057': ['k119_464254'],
+         'bin000078': ['k119_162461', 'k119_278484', 'k119_678785', 'k119_684640'],
+         'bin000085': ['k119_232333', 'k119_549069'],
+         'bin000110': ['k119_276145', 'k119_50857']}
+
+
