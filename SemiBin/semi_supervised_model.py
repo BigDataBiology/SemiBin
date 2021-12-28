@@ -5,7 +5,6 @@ from torch.utils.data import Dataset, DataLoader
 import os
 from .utils import cal_num_bins
 from torch.optim import lr_scheduler
-from tqdm import tqdm
 import sys
 
 class Semi_encoding_multiple(torch.nn.Module):
@@ -144,6 +143,7 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
     """
     Train model from one sample(--mode single) or several samples(--mode several)
     """
+    from tqdm import tqdm
     import pandas as pd
     dataloader_list = []
     un_dataloader_list = []
