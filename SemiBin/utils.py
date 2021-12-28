@@ -1,6 +1,7 @@
 import os
 import subprocess
 from atomicwrites import atomic_write
+import tempfile
 import sys
 import random
 import shutil
@@ -233,9 +234,17 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False):
         counts = data.groupby('gene')['orf'].count()
         return extract_seeds(counts, data)
 
-def cal_num_bins(fasta_path, contig_output, hmm_output,
-                 binned_length, num_process, multi_mode=False):
-    if not os.path.exists(contig_output + '.faa'):
+def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False):
+    '''Estimate number of bins from a FASTA file
+
+    Parameters
+    fasta_path: path
+    binned_length: int (minimal contig length)
+    num_process: int (number of CPUs to use)
+    multi_mode: bool, optional (if True, treat input as resulting from concatenating multiple files)
+    '''
+    with tempfile.TemporaryDirectory() as tdir:
+        contig_output = os.path.join(tdir, 'contigs.faa')
         with open(contig_output + '.out', 'w') as frag_out_log:
             # We need to call FragGeneScan instead of the Perl wrapper because the
             # Perl wrapper does not handle filepaths correctly if they contain spaces
@@ -252,7 +261,7 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
                 stdout=frag_out_log,
             )
 
-    if not os.path.exists(hmm_output):
+        hmm_output = os.path.join(tdir, 'markers.hmmout')
         with open(hmm_output + '.out', 'w') as hmm_out_log:
             subprocess.check_call(
                 ['hmmsearch',
@@ -266,7 +275,7 @@ def cal_num_bins(fasta_path, contig_output, hmm_output,
                 stdout=hmm_out_log,
             )
 
-    return get_marker(hmm_output, fasta_path, binned_length, multi_mode)
+        return get_marker(hmm_output, fasta_path, binned_length, multi_mode)
 
 
 def write_bins(namelist, contig_labels, output, contig_dict,

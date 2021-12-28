@@ -152,8 +152,6 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
 
         seed = cal_num_bins(
             contig_fastas[sample_index],
-            contig_output=os.path.join(out, os.path.split(contig_fastas[sample_index])[1] + '.frag'),
-            hmm_output=os.path.join(out, os.path.split(contig_fastas[sample_index])[1] + '.hmmout'),
             binned_length=binned_lengths[sample_index],
             num_process=num_process)
 

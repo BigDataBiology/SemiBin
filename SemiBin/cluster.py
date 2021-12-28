@@ -217,8 +217,6 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                         concat_out.write(f'>{h}\n{seq}\n')
             seeds = cal_num_bins(
                 cfasta,
-                cfasta + '.frag',
-                cfasta + '.hmmout',
                 binned_length,
                 num_process,
                 multi_mode=True)
