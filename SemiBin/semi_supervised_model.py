@@ -145,100 +145,13 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
     """
     from tqdm import tqdm
     import pandas as pd
-    dataloader_list = []
-    un_dataloader_list = []
 
-    for sample_index in range(len(contig_fastas)):
+    train_data = pd.read_csv(datas[0], index_col=0).values
+    if not is_combined:
+        train_data_input = train_data[:, 0:136]
+    else:
+        train_data_input = train_data
 
-        seed = cal_num_bins(
-            contig_fastas[sample_index],
-            binned_length=binned_lengths[sample_index],
-            num_process=num_process)
-
-        logger.info('Generate training data of {}:'.format(sample_index))
-
-        # #generate two inputs
-        train_input_1 = []
-        train_input_2 = []
-        train_labels = []
-
-        # cannot link
-
-        if not os.path.getsize(cannot_links[sample_index]):
-            sys.stderr.write(
-                f"Error: Cannot-link file is empty!\n")
-            sys.exit(1)
-
-        cannot_link = pd.read_csv(cannot_links[sample_index], sep=',', header=None).values
-        data = pd.read_csv(datas[sample_index], index_col=0)
-        data.index = data.index.astype(str)
-        data_split = pd.read_csv(data_splits[sample_index], index_col=0)
-
-        if mode == 'several':
-            if data.shape[1] != 138 or data_split.shape[1] != 136:
-                sys.stderr.write(
-                    f"Error: training mode with several only used in single-sample binning!\n")
-                sys.exit(1)
-
-        namelist = data.index.tolist()
-        mapObj = dict(zip(namelist, range(len(namelist))))
-        train_data = data.values
-        train_data_must_link = data_split.values
-
-        if not is_combined:
-            train_data_input = train_data[:, 0:136]
-            train_data_split_input = train_data_must_link
-        else:
-            train_data_input = train_data
-            train_data_split_input = train_data_must_link
-
-        # can not link from contig annotation
-        for link in cannot_link:
-            train_input_1.append(train_data_input[mapObj[str(link[0])]])
-            train_input_2.append(train_data_input[mapObj[str(link[1])]])
-            train_labels.append(0)
-
-        # cannot link from bin seed
-        if seed is not None:
-            for i in range(len(seed)):
-                for j in range(i + 1, len(seed)):
-                    train_input_1.append(train_data_input[mapObj[str(seed[i])]])
-                    train_input_2.append(train_data_input[mapObj[str(seed[j])]])
-                    train_labels.append(0)
-
-        # must link from breaking up
-        for i in range(0, len(train_data_must_link), 2):
-            train_input_1.append(train_data_split_input[i])
-            train_input_2.append(train_data_split_input[i + 1])
-            train_labels.append(1)
-
-        logger.info('Number of must link pair:{}'.format(train_labels.count(1)))
-        logger.info('Number of can not link pair:{}'.format(train_labels.count(0)))
-
-        dataset = feature_Dataset(train_input_1, train_input_2, train_labels)
-        train_loader = DataLoader(
-            dataset=dataset,
-            batch_size=batchsize,
-            shuffle=True,
-            num_workers=0)
-
-        unlabeled_x = train_data_input
-        unlabeled_train_input1 = []
-        unlabeled_train_input2 = []
-        for i in range(len(unlabeled_x)):
-            unlabeled_train_input1.append(unlabeled_x[i])
-            unlabeled_train_input2.append(unlabeled_x[i])
-
-        dataset_unlabeled = unsupervised_feature_Dataset(
-            unlabeled_train_input1, unlabeled_train_input2)
-        train_loader_unlabeled = DataLoader(
-            dataset=dataset_unlabeled,
-            batch_size=batchsize,
-            shuffle=True,
-            num_workers=0)
-
-        dataloader_list.append(train_loader)
-        un_dataloader_list.append(train_loader_unlabeled)
 
     torch.set_num_threads(num_process)
 
@@ -253,8 +166,102 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
     scheduler = lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)
 
     for epoch in tqdm(range(epoches)):
-        for data_index in range(len(dataloader_list)):
-            for train_input1, train_input2, train_label in dataloader_list[data_index]:
+        for data_index in range(len(contig_fastas)):
+            seed = cal_num_bins(
+                contig_fastas[data_index],
+                binned_length=binned_lengths[data_index],
+                num_process=num_process)
+            if epoch == 0:
+                logger.info('Generate training data of {}:'.format(data_index))
+
+            # #generate two inputs
+            train_input_1 = []
+            train_input_2 = []
+            train_labels = []
+
+            # cannot link
+
+            if not os.path.getsize(cannot_links[data_index]):
+                sys.stderr.write(
+                    f"Error: Cannot-link file is empty!\n")
+                sys.exit(1)
+
+            cannot_link = pd.read_csv(cannot_links[data_index], sep=',',
+                                      header=None).values
+            data = pd.read_csv(datas[data_index], index_col=0)
+            data.index = data.index.astype(str)
+            data_split = pd.read_csv(data_splits[data_index], index_col=0)
+
+            if mode == 'several':
+                if data.shape[1] != 138 or data_split.shape[1] != 136:
+                    sys.stderr.write(
+                        f"Error: training mode with several only used in single-sample binning!\n")
+                    sys.exit(1)
+
+            namelist = data.index.tolist()
+            mapObj = dict(zip(namelist, range(len(namelist))))
+            train_data = data.values
+            train_data_must_link = data_split.values
+
+            if not is_combined:
+                train_data_input = train_data[:, 0:136]
+                train_data_split_input = train_data_must_link
+            else:
+                train_data_input = train_data
+                train_data_split_input = train_data_must_link
+
+            # can not link from contig annotation
+            for link in cannot_link:
+                train_input_1.append(train_data_input[mapObj[str(link[0])]])
+                train_input_2.append(train_data_input[mapObj[str(link[1])]])
+                train_labels.append(0)
+
+            # cannot link from bin seed
+            if seed is not None:
+                for i in range(len(seed)):
+                    for j in range(i + 1, len(seed)):
+                        train_input_1.append(
+                            train_data_input[mapObj[str(seed[i])]])
+                        train_input_2.append(
+                            train_data_input[mapObj[str(seed[j])]])
+                        train_labels.append(0)
+
+            # must link from breaking up
+            for i in range(0, len(train_data_must_link), 2):
+                train_input_1.append(train_data_split_input[i])
+                train_input_2.append(train_data_split_input[i + 1])
+                train_labels.append(1)
+
+            if epoch == 0:
+                logger.info(
+                    'Number of must link pair:{}'.format(train_labels.count(1)))
+                logger.info(
+                    'Number of can not link pair:{}'.format(train_labels.count(0)))
+
+            dataset = feature_Dataset(train_input_1, train_input_2,
+                                      train_labels)
+            train_loader = DataLoader(
+                dataset=dataset,
+                batch_size=batchsize,
+                shuffle=True,
+                num_workers=0)
+
+            unlabeled_x = train_data_input
+            unlabeled_train_input1 = []
+            unlabeled_train_input2 = []
+            for i in range(len(unlabeled_x)):
+                unlabeled_train_input1.append(unlabeled_x[i])
+                unlabeled_train_input2.append(unlabeled_x[i])
+
+            dataset_unlabeled = unsupervised_feature_Dataset(
+                unlabeled_train_input1, unlabeled_train_input2)
+            train_loader_unlabeled = DataLoader(
+                dataset=dataset_unlabeled,
+                batch_size=batchsize,
+                shuffle=True,
+                num_workers=0)
+
+            for train_input1, train_input2, train_label in train_loader:
                 model.train()
                 train_input1 = train_input1.to(device)
                 train_input2 = train_input2.to(device)
@@ -271,7 +278,7 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
                 loss.backward()
                 optimizer.step()
 
-            for unlabeled_train_input1, unlabeled_train_input2 in un_dataloader_list[data_index]:
+            for unlabeled_train_input1, unlabeled_train_input2 in train_loader_unlabeled:
                 model.train()
                 unlabeled_train_input1 = unlabeled_train_input1.to(device)
                 unlabeled_train_input2 = unlabeled_train_input2.to(device)
