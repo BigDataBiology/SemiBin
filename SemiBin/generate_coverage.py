@@ -19,12 +19,19 @@ def calculate_coverage(depth_file, must_link_threshold, edge=75, is_combined=Fal
     split_coverage = []
 
     for contig_name, lines in groupby(open(depth_file), lambda ell: ell.split('\t', 1)[0]):
-        depth_value = []
+        lengths = []
+        values = []
         for line in lines:
             line_split = line.strip().split('\t')
             length = int(line_split[2]) - int(line_split[1])
             value = int(line_split[3])
-            depth_value.extend([value] * length)
+            lengths.append(length)
+            values.append(value)
+        depth_value = np.zeros(sum(lengths), dtype=int)
+        s = 0
+        for ell,v in zip(lengths, values):
+            depth_value[s:s+ell] = v
+            s += ell
 
         if sep is None:
             cov_threshold = contig_threshold
@@ -34,23 +41,18 @@ def calculate_coverage(depth_file, must_link_threshold, edge=75, is_combined=Fal
         if len(depth_value) <= cov_threshold:
             continue
         depth_value_ = depth_value[edge:-edge]
-        mean = np.mean(depth_value_)
-        mean_coverage.append(mean)
-        var.append(np.var(depth_value_))
+        mean_coverage.append(depth_value_.mean())
+        var.append(depth_value_.var())
         contigs.append(contig_name)
+
         if is_combined:
             if len(depth_value) >= must_link_threshold:
-                depth_value1 = depth_value[0:len(depth_value) // 2]
-                depth_value2 = depth_value[len(
-                    depth_value) // 2: len(depth_value)]
+                middle = len(depth_value_) // 2
                 split_contigs.append(contig_name + '_1')
                 split_contigs.append(contig_name + '_2')
-                depth_value1 = depth_value1[edge:]
-                mean = np.mean(depth_value1)
-                split_coverage.append(mean)
-                depth_value2 = depth_value2[:-edge]
-                mean = np.mean(depth_value2)
-                split_coverage.append(mean)
+
+                split_coverage.append(depth_value_[:middle].mean())
+                split_coverage.append(depth_value_[middle:].mean())
 
     if is_combined:
         contig_cov = pd.DataFrame(
