@@ -1,6 +1,8 @@
 # What's New
 
-## Unreleased version
+## Version 0.5
+
+*Released January 7 2022*
 
 ### User-visible improvements
 - Reclustering is now the default (use `--no-recluster` to disable it; the
@@ -12,7 +14,9 @@
   (this is supported by several tools that perform tasks such as backups).
 
 ### Bugfixes
-
+- Fix bug with `--min-len` (minimal length). Previously, only contigs greater
+  than the given minimal length were used (instead of greater-equal to the
+  minimal length).
 - GTDB downloading was inconsistent in a few instances which have been fixed
 
 ### Internal improvements

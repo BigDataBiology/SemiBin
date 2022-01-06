@@ -1,10 +1,12 @@
-Unreleased
+Version 0.5.0 Fri Jan 7 2022 by BigDataBiology
 	* Faster `SemiBin --version`
 	* Lower memory usage and faster speed for `bin` subcommand
 	* Reclustering is now the default (due to improved speed). Added
 	`--no-recluster` option to disable it
 	* Output of bedtools is now processed as a stream instead of using a
 	(potentially large) intermediate file
+	* Fix bug with --min-len. Previously, only contigs greater than the given
+	minimal length were used (instead of greater-equal to the minimal length).
 	* Fix bugs downloading GTDB
 	* Respect $XDG_CACHE_DIR if set
 	* Implement CACHEDIR.TAG protocol for the SemiBin cache directory
