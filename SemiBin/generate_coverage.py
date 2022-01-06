@@ -2,10 +2,15 @@ import os
 import subprocess
 from atomicwrites import atomic_write
 
-def calculate_coverage(depth_file, must_link_threshold, edge=75, is_combined=False,
+def calculate_coverage(depth_stream, bam_file, must_link_threshold, edge=75, is_combined=False,
                        contig_threshold=1000, sep=None, contig_threshold_dict=None):
     """
-    Input is position depth file generated from mosdepth or bedtools genomecov
+    depth_stream : an iterable like the output of bedtools genomecov
+    bam_file : str filename
+    must_link_threshold : int
+    edge : int
+    is_combined : bool
+
     """
     import pandas as pd
     import numpy as np
@@ -18,13 +23,20 @@ def calculate_coverage(depth_file, must_link_threshold, edge=75, is_combined=Fal
     split_contigs = []
     split_coverage = []
 
-    for contig_name, lines in groupby(open(depth_file), lambda ell: ell.split('\t', 1)[0]):
-        depth_value = []
+    for contig_name, lines in groupby(depth_stream, lambda ell: ell.split('\t', 1)[0]):
+        lengths = []
+        values = []
         for line in lines:
             line_split = line.strip().split('\t')
             length = int(line_split[2]) - int(line_split[1])
             value = int(line_split[3])
-            depth_value.extend([value] * length)
+            lengths.append(length)
+            values.append(value)
+        depth_value = np.zeros(sum(lengths), dtype=int)
+        s = 0
+        for ell,v in zip(lengths, values):
+            depth_value[s:s+ell] = v
+            s += ell
 
         if sep is None:
             cov_threshold = contig_threshold
@@ -34,36 +46,31 @@ def calculate_coverage(depth_file, must_link_threshold, edge=75, is_combined=Fal
         if len(depth_value) <= cov_threshold:
             continue
         depth_value_ = depth_value[edge:-edge]
-        mean = np.mean(depth_value_)
-        mean_coverage.append(mean)
-        var.append(np.var(depth_value_))
+        mean_coverage.append(depth_value_.mean())
+        var.append(depth_value_.var())
         contigs.append(contig_name)
+
         if is_combined:
             if len(depth_value) >= must_link_threshold:
-                depth_value1 = depth_value[0:len(depth_value) // 2]
-                depth_value2 = depth_value[len(
-                    depth_value) // 2: len(depth_value)]
+                middle = len(depth_value_) // 2
                 split_contigs.append(contig_name + '_1')
                 split_contigs.append(contig_name + '_2')
-                depth_value1 = depth_value1[edge:]
-                mean = np.mean(depth_value1)
-                split_coverage.append(mean)
-                depth_value2 = depth_value2[:-edge]
-                mean = np.mean(depth_value2)
-                split_coverage.append(mean)
+
+                split_coverage.append(depth_value_[:middle].mean())
+                split_coverage.append(depth_value_[middle:].mean())
 
     if is_combined:
         contig_cov = pd.DataFrame(
-                { '{0}_cov'.format(depth_file): mean_coverage,
+                { '{0}_cov'.format(bam_file): mean_coverage,
                 }, index=contigs)
         split_contig_cov = pd.DataFrame(
-                { '{0}_cov'.format(depth_file): split_coverage,
+                { '{0}_cov'.format(bam_file): split_coverage,
                 }, index=split_contigs)
         return contig_cov, split_contig_cov
     else:
         return pd.DataFrame({
-            '{0}_mean'.format(depth_file): mean_coverage,
-            '{0}_var'.format(depth_file): var,
+            '{0}_mean'.format(bam_file): mean_coverage,
+            '{0}_var'.format(bam_file): var,
             }, index=contigs)
 
 
@@ -84,15 +91,17 @@ def generate_cov(bam_file, bam_index, out, threshold,
     bam_name = os.path.split(bam_file)[-1] + '_{}'.format(bam_index)
     bam_depth = os.path.join(out, '{}_depth.txt'.format(bam_name))
 
-    with open(bam_depth, 'wb') as bedtools_out:
-        subprocess.check_call(
-            ['bedtools', 'genomecov',
-             '-bga',
-             '-ibam', bam_file],
-            stdout=bedtools_out)
+    bed_p = subprocess.Popen(
+        ['bedtools', 'genomecov',
+         '-bga',
+         '-ibam', bam_file],
+        universal_newlines=True,
+        stdout=subprocess.PIPE)
 
     if is_combined:
-        contig_cov, must_link_contig_cov = calculate_coverage(bam_depth, threshold, is_combined = is_combined, sep = sep, contig_threshold = contig_threshold if sep is None else 1000, contig_threshold_dict =  contig_threshold if sep is not None else None)
+        contig_cov, must_link_contig_cov = calculate_coverage(bed_p.stdout, bam_file, threshold, is_combined = is_combined, sep = sep, contig_threshold = contig_threshold if sep is None else 1000, contig_threshold_dict =  contig_threshold if sep is not None else None)
+        if bed_p.wait() != 0:
+            raise OSError("Failure in running bedtools")
 
         contig_cov = contig_cov.apply(lambda x: x + 1e-5)
         must_link_contig_cov = must_link_contig_cov.apply(lambda x: x + 1e-5)
@@ -108,9 +117,11 @@ def generate_cov(bam_file, bam_index, out, threshold,
         with atomic_write(os.path.join(out, '{}_data_split_cov.csv'.format(bam_name)), overwrite=True) as ofile:
             must_link_contig_cov.to_csv(ofile)
     else:
-        contig_cov = calculate_coverage(bam_depth, threshold, is_combined=is_combined, sep = sep,
+        contig_cov = calculate_coverage(bed_p.stdout, bam_file, threshold, is_combined=is_combined, sep = sep,
                                         contig_threshold = contig_threshold if sep is None else 1000,
                                         contig_threshold_dict =  contig_threshold if sep is not None else None)
+        if bed_p.wait() != 0:
+            raise OSError("Failure in running bedtools")
 
         contig_cov = contig_cov.apply(lambda x: x + 1e-5)
 
