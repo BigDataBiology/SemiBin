@@ -8,8 +8,14 @@
   are much lower
 
 ### Internal improvements
-- Much more efficient binning code (including lower memory usage) for binning,
-  especially if a pretrained model is used.
+- Much more efficient code (including lower memory usage) for binning,
+  especially if a pretrained model is used. As an example, using a
+  deeply-sequenced ocean sample, generating the data (`generate_data_single`
+  step) goes down from 14 to 9 minutes; while binning (`bin` step, using
+  `--recluster`) goes down from 10m17s (using 20GB of RAM, at peak) to 4m33
+  (using 4.5 GB, at peak). Thus total time from BAM file to bins went down from
+  25 to 14 minutes (using 4 threads) and peak RAM is now 4.5GB, making it
+  usable on a typical laptop.
 
 ## Version 0.4.0
 
