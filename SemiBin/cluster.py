@@ -175,7 +175,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                 edge_weights=edge_weights,
                 vertex_weights=length_weight,
                 num_process=num_process)
-    contig_labels = np.zeros(shape=num_contigs, dtype=np.int)
+    contig_labels = np.zeros(shape=num_contigs, dtype=int)
 
     for i, r in enumerate(result):
         contig_labels[r] = i
