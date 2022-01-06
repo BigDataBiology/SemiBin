@@ -206,7 +206,7 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False):
     data['contig'] = data['orf'].map(contig_name)
     if min_contig_len is not None:
         contig_len = {h:len(seq) for h,seq in fasta_iter(fasta_path)}
-        data = data[data['contig'].map(lambda c: contig_len[c] > min_contig_len)]
+        data = data[data['contig'].map(lambda c: contig_len[c] >= min_contig_len)]
     data = data.drop_duplicates(['gene', 'contig'])
 
     def extract_seeds(vs, sel):

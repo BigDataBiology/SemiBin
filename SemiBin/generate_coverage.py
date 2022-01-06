@@ -43,7 +43,7 @@ def calculate_coverage(depth_stream, bam_file, must_link_threshold, edge=75, is_
         else:
             sample_name = contig_name.split(sep)[0]
             cov_threshold = contig_threshold_dict[sample_name]
-        if len(depth_value) <= cov_threshold:
+        if len(depth_value) < cov_threshold:
             continue
         depth_value_ = depth_value[edge:-edge]
         mean_coverage.append(depth_value_.mean())

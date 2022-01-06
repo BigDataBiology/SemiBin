@@ -34,7 +34,7 @@ def generate_kmer_features_from_fasta(
     kmer_dict, nr_features = generate_feature_mapping(kmer_len)
     composition = OrderedDict()
     for h, seq in seq_list():
-        if len(seq) <= length_threshold:
+        if len(seq) < length_threshold:
             continue
         norm_seq = str(seq).upper()
         kmers = [kmer_dict[norm_seq[i:i+kmer_len]]
