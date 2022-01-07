@@ -5,6 +5,9 @@ Unreleased
 	`--no-recluster` option to disable it
 	* Output of bedtools is now processed as a stream instead of using a
 	(potentially large) intermediate file
+	* Fix bugs downloading GTDB
+	* Respect $XDG_CACHE_DIR if set
+	* Implement CACHEDIR.TAG protocol for the SemiBin cache directory
 
 Version 0.4.0 Tue Oct 10 2021 by BigDataBiology
 	* Add support for .xz FASTA files as inputs

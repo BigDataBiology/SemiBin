@@ -42,7 +42,7 @@ Reconstruct bins with single or co-assembly binning using one line command.
 * `-b/--input-bam`: Path to the input BAM files. You can pass multiple BAM files, one per sample.
 * `-o/--output`: Output directory (will be created if non-existent).
 * `--cannot-name:` Name for the cannot-link file (Default: cannot).
-* `-r/--reference-db`: GTDB reference file.(Default: $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB) If not set `--reference-db` and can not find GTDB in the default path, we will download GTDB to the default path.
+* `-r/--reference-db-data-dir`: GTDB reference directory (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB). SemiBin will lazily download GTDB if it is not found there.
 * `-p/--processes/-t/--threads`: Number of CPUs used(0: use whole).
 * `--minfasta-kbs`: minimum bin size in kilo-basepairs (Default: 200).
 * `--recluster` : Recluster bins(which will take more time and better results).
@@ -64,7 +64,7 @@ Reconstruct bins with multi-samples binning using one line command.
 * `-s/--separator`: Used when multiple samples binning to separate sample name and contig name(Default is `:`).
 
 The following options (including synonyms) are the same as for
-`single_easy_bin`: `--input-fasta`, `--output`, `--reference-db`,
+`single_easy_bin`: `--input-fasta`, `--output`, `--reference-db-data-dir`,
 `--processes`, `--minfasta-kbs`, `--recluster`,`--epoches`, `--batch-size`, `--max-node`, and
 `--max-edges`, `--random-seed`, `--ratio`, `--min-len`, `--ml-threshold`.
 
@@ -72,7 +72,7 @@ The following options (including synonyms) are the same as for
 
 Run the contig annotations using mmseqs with GTDB and generate cannot-link file used in the semi-supervised deep learning model training.
 
-The following options are the same as for `single_easy_bin`: `-i/--input-fasta`, `-o/--output`, `--cannot-name`, `-r/--reference-db`, `--ratio`, `--min-len` and `--ml-threshold`.
+The following options are the same as for `single_easy_bin`: `-i/--input-fasta`, `-o/--output`, `--cannot-name`, `-r/--reference-db-data-dir`, `--ratio`, `--min-len` and `--ml-threshold`.
 
 #### generate_data_single
 
@@ -111,5 +111,7 @@ The following options are the same as for `single_easy_bin`: `-i/--input-fasta`,
 
 Download reference genomes(GTDB).
 
-* `-r/--reference-db`: GTDB reference file path to download(~/path).(Default: $HOME/.cache/SemiBin/mmseqs2-GTDB) If not set `--reference-db` , we will download GTDB to the default path.
+* `-r/--reference-db-data-dir`: Where to store the GTDB data (default: `$HOME/.cache/SemiBin/mmseqs2-GTDB`)
+* `-f/--force`: Whether to download GTDB even if the data is found at the path (default is to not download).
+
 

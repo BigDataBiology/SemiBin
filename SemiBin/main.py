@@ -13,7 +13,8 @@ import sys
 from itertools import groupby
 
 from .utils import validate_args, get_must_link_threshold, generate_cannot_link, \
-    download_GTDB_to, set_random_seed, process_fasta, split_data, get_model_path
+    set_random_seed, process_fasta, split_data, get_model_path
+from .gtdb import find_or_download_gtdb
 from .generate_coverage import generate_cov, combine_cov
 from .generate_kmer import generate_kmer_features_from_fasta
 from .cluster import cluster
@@ -67,11 +68,11 @@ def parse_args(args):
     binning = subparsers.add_parser('bin',
                                     help='Binning the contigs into bins.')
 
-    download_GTDB.add_argument('-r', '--reference-db',
+    download_GTDB.add_argument('-f', '--force',
                             required=False,
-                            help='Where to store GTDB reference data. If the required files are not present, they will be downloaded. (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB).',
-                            dest='GTDB_reference',
-                            metavar='',
+                            help='Redownload GTDB even if files are found',
+                            dest='force',
+                            action='store_true',
                             default=None)
 
     training.add_argument('--data',
@@ -220,8 +221,8 @@ def parse_args(args):
                               default=None,
                               )
 
-    for p in [single_easy_bin, multi_easy_bin, predict_taxonomy]:
-        p.add_argument('-r', '--reference-db',
+    for p in [single_easy_bin, multi_easy_bin, predict_taxonomy, download_GTDB]:
+        p.add_argument('-r', '--reference-db-data-dir', '--reference-db',
                             required=False,
                             help='GTDB reference storage path. (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB).'
                             'If not set --reference-db and SemiBin cannot find GTDB in $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB, SemiBin will download GTDB (Note that >100GB of disk space are required).',
@@ -326,16 +327,6 @@ def _checkback(msg):
     msg[1].info('Processed:{}'.format(msg[0]))
 
 
-def download_GTDB(logger,GTDB_reference):
-    GTDB_default = os.path.join(
-        os.environ['HOME'],
-        '.cache',
-        'SemiBin',
-        'mmseqs2-GTDB')
-
-    GTDB_path = GTDB_reference if GTDB_reference is not None else GTDB_default
-    download_GTDB_to(logger, GTDB_path)
-
 
 def predict_taxonomy(logger, contig_fasta,
                      cannot_name, GTDB_reference, num_process,
@@ -351,16 +342,7 @@ def predict_taxonomy(logger, contig_fasta,
     """
     import tempfile
     num_cpu = multiprocessing.cpu_count() if num_process == 0 else num_process
-    GTDB_default = os.path.join(
-        os.environ['HOME'],
-        '.cache',
-        'SemiBin',
-        'mmseqs2-GTDB',
-        'GTDB')
-    if GTDB_reference is None:
-        if not os.path.exists(GTDB_default):
-            download_GTDB_to(logger, GTDB_default)
-        GTDB_reference = GTDB_default
+    GTDB_reference = find_or_download_gtdb(logger, GTDB_reference, False)
 
     filtered_fasta = os.path.join(output, 'filtered.fasta')
     with open(filtered_fasta, 'wt') as out:
@@ -857,7 +839,7 @@ def main():
             must_link_threshold = args.ml_threshold
 
     if args.cmd == 'download_GTDB':
-        download_GTDB(logger,args.GTDB_reference)
+        find_or_download_gtdb(logger, args.GTDB_reference, args.force)
 
     if args.cmd == 'predict_taxonomy':
         predict_taxonomy(

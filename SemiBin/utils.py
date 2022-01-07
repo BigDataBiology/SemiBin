@@ -308,57 +308,6 @@ def write_bins(namelist, contig_labels, output, contig_dict,
     return written
 
 
-def get_file_md5(fname):
-    """
-    Calculate Md5 for downloaded file
-    """
-    import hashlib
-    m = hashlib.md5()
-    with open(fname,'rb') as fobj:
-        while True:
-            data = fobj.read(4096)
-            if not data:
-                break
-            m.update(data)
-
-    return m.hexdigest()
-
-def download_GTDB_to(logger, GTDB_dir):
-    """
-    Download GTDB.
-    GTDB_dir: where to store the data
-    """
-    import requests
-    import tarfile
-    logger.info('Downloading GTDB.  It will take a while..')
-    os.makedirs(GTDB_dir, exist_ok=True)
-
-    download_url = 'https://zenodo.org/record/4751564/files/GTDB_v95.tar.gz?download=1'
-    download_path = os.path.join(GTDB_dir, 'GTDB_v95.tar.gz')
-
-    with requests.get(download_url, stream=True) as r:
-        with open(download_path, 'wb') as f:
-            shutil.copyfileobj(r.raw, f)
-    logger.info('Download finished. Checking MD5...')
-    if get_file_md5(download_path) == '4a70301c54104e87d5615e3f2383c8b5':
-        try:
-            tar = tarfile.open(download_path, "r:gz")
-            file_names = tar.getnames()
-            for file_name in file_names:
-                tar.extract(file_name, GTDB_dir)
-            tar.close()
-        except Exception:
-            sys.stderr.write(
-                f"Error: cannot untar the file.")
-            sys.exit(1)
-
-        os.remove(download_path)
-    else:
-        os.remove(download_path)
-        sys.stderr.write(
-            f"Error: MD5 check failed, removing '{download_path}'.\n")
-        sys.exit(1)
-
 
 def set_random_seed(seed):
     import torch

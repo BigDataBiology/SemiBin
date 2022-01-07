@@ -6,6 +6,14 @@
 - Reclustering is now the default (use `--no-recluster` to disable it; the
   option `--recluster` is deprecated and ignored) as the computational costs
   are much lower
+- GTDB lazy downloading is now performed even if a non-standard directory is
+  used
+- The [CACHEDIR.TAG](https://bford.info/cachedir/) protocol was implemented
+  (this is supported by several tools that perform tasks such as backups).
+
+### Bugfixes
+
+- GTDB downloading was inconsistent in a few instances which have been fixed
 
 ### Internal improvements
 - Much more efficient code (including lower memory usage) for binning,
