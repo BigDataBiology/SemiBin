@@ -62,6 +62,8 @@ def parse_args(args):
 
     download_GTDB = subparsers.add_parser('download_GTDB', help='Download GTDB reference genomes.')
 
+    check_install = subparsers.add_parser('check_install', help = 'Check required dependencies.')
+
     training = subparsers.add_parser('train',
                                     help='Train the model.')
 
@@ -326,7 +328,14 @@ def parse_args(args):
 def _checkback(msg):
     msg[1].info('Processed:{}'.format(msg[0]))
 
-
+def check_install():
+    from shutil import which
+    dependence_list = ['bedtools', 'hmmsearch', 'FragGeneScan', 'mmseqs']
+    for dependence in dependence_list:
+        if not which(dependence):
+            sys.stderr.write(
+                f"Error: {dependence} does not be installed!\n")
+            sys.exit(1)
 
 def predict_taxonomy(logger, contig_fasta,
                      cannot_name, GTDB_reference, num_process,
@@ -818,8 +827,10 @@ def main():
     logger.addHandler(sh)
 
     validate_args(args)
+    if args.cmd == 'check_install':
+        check_install()
 
-    if args.cmd != 'download_GTDB':
+    if args.cmd not in ['download_GTDB', 'check_install']:
         import torch
         out = args.output
         os.makedirs(out, exist_ok=True)
@@ -891,6 +902,7 @@ def main():
 
 
     if args.cmd == 'single_easy_bin':
+        check_install()
         if args.random_seed is not None:
             set_random_seed(args.random_seed)
         single_easy_binning(
@@ -905,6 +917,7 @@ def main():
             device, args.environment)
 
     if args.cmd == 'multi_easy_bin':
+        check_install()
         if args.random_seed is not None:
             set_random_seed(args.random_seed)
         multi_easy_binning(
