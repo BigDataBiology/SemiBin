@@ -35,6 +35,7 @@ setup(name='SemiBin',
           'pandas',
           'scikit-learn',
           'requests',
+          'numexpr',
       ],
       package_data={
           'SemiBin': ['*.hmm','*.pl','*.h5']},
