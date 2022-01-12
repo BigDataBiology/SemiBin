@@ -354,10 +354,15 @@ def predict_taxonomy(logger, contig_fasta,
     GTDB_reference = find_or_download_gtdb(logger, GTDB_reference, False)
 
     filtered_fasta = os.path.join(output, 'filtered.fasta')
+    namelist = []
+    num_must_link = 0
     with open(filtered_fasta, 'wt') as out:
         for h,seq in fasta_iter(contig_fasta):
-            if len(seq) > binned_length:
+            if len(seq) >= binned_length:
                 out.write(f'>{h}\n{seq}\n')
+                namelist.append(h)
+                if len(seq) >= must_link_threshold:
+                    num_must_link += 1
 
     subprocess.check_call(
         ['mmseqs',
@@ -393,14 +398,6 @@ def predict_taxonomy(logger, contig_fasta,
         stdout=None,
     )
 
-    namelist = []
-    num_must_link = 0
-
-    for h,seq in fasta_iter(filtered_fasta):
-        if len(seq) > binned_length:
-            namelist.append(h)
-        if len(seq) >= must_link_threshold:
-            num_must_link += 1
     os.makedirs(os.path.join(output, 'cannot'), exist_ok=True)
     generate_cannot_link(os.path.join(output, 'mmseqs_contig_annotation/taxonomyResult.tsv'),
         namelist, num_must_link, os.path.join(output, 'cannot'), cannot_name)
