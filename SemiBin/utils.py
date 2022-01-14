@@ -1,5 +1,6 @@
 import os
 import subprocess
+import multiprocessing
 from atomicwrites import atomic_write
 import tempfile
 import sys
@@ -8,7 +9,8 @@ import shutil
 
 from .fasta import fasta_iter
 
-def validate_args(args):
+def validate_normalize_args(logger, args):
+    '''Validate and normalize command line arguments'''
     def expect_file(f):
         if f is not None:
             if not os.path.exists(f):
@@ -20,6 +22,10 @@ def validate_args(args):
         if fs is not None:
             for f in fs:
                 expect_file(f)
+
+    if args.num_process == 0:
+        args.num_process = multiprocessing.cpu_count()
+        logger.info(f'Setting number of CPUs to {args.num_process}')
 
     if args.cmd == 'predict_taxonomy':
         if args.GTDB_reference is not None:

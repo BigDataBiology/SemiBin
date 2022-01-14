@@ -5,14 +5,13 @@ from .semibin_version import __version__ as ver
 import argparse
 import logging
 import os
-import multiprocessing
 import subprocess
 from atomicwrites import atomic_write
 import shutil
 import sys
 from itertools import groupby
 
-from .utils import validate_args, get_must_link_threshold, generate_cannot_link, \
+from .utils import validate_normalize_args, get_must_link_threshold, generate_cannot_link, \
     set_random_seed, process_fasta, split_data, get_model_path
 from .gtdb import find_or_download_gtdb
 from .generate_coverage import generate_cov, combine_cov
@@ -350,7 +349,6 @@ def predict_taxonomy(logger, contig_fasta,
     must_link_threshold: threshold of contigs for must-link constraints
     """
     import tempfile
-    num_cpu = multiprocessing.cpu_count() if num_process == 0 else num_process
     GTDB_reference = find_or_download_gtdb(logger, GTDB_reference, False)
 
     with tempfile.TemporaryDirectory() as tdir:
@@ -383,7 +381,7 @@ def predict_taxonomy(logger, contig_fasta,
              os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
              tdir,
              '--tax-lineage', '1',
-             '--threads', str(num_cpu),
+             '--threads', str(num_process),
              ],
             check=True,
             stdout=None,
@@ -604,7 +602,6 @@ def training(logger, contig_fasta, num_process,
     from .semi_supervised_model import train
     import pandas as pd
     binned_lengths = []
-    num_cpu = multiprocessing.cpu_count() if num_process == 0 else num_process
 
     if mode == 'single':
         logger.info('Start training from one sample.')
@@ -650,7 +647,7 @@ def training(logger, contig_fasta, num_process,
         batchsize,
         epoches,
         device,
-        num_cpu,
+        num_process,
         mode = mode)
 
 
@@ -669,7 +666,6 @@ def binning(logger, num_process, data,
     import pandas as pd
     logger.info('Start binning.')
 
-    num_cpu = multiprocessing.cpu_count() if num_process == 0 else num_process
     data = pd.read_csv(data, index_col=0)
     data.index = data.index.astype(str)
 
@@ -694,7 +690,7 @@ def binning(logger, num_process, data,
         output,
         contig_dict,
         binned_length,
-        num_cpu,
+        num_process,
         minfasta,
         recluster,
         random_seed)
@@ -718,8 +714,6 @@ def single_easy_binning(args, logger, binned_length,
     data_path = os.path.join(output, 'data.csv')
     data_split_path = os.path.join(output, 'data_split.csv')
 
-    num_cpu = multiprocessing.cpu_count() if args.num_process == 0 else args.num_process
-
     if environment is None:
         logger.info('Running mmseqs and generate cannot-link file.')
         predict_taxonomy(
@@ -727,7 +721,7 @@ def single_easy_binning(args, logger, binned_length,
             args.contig_fasta,
             args.cannot_name,
             args.GTDB_reference,
-            num_cpu,
+            args.num_process,
             binned_length,
             must_link_threshold,
             output)
@@ -751,8 +745,6 @@ def multi_easy_binning(args, logger, recluster,
     """
     logger.info('Multi-sample binning.')
     logger.info('Generate training data.')
-
-    num_cpu = multiprocessing.cpu_count() if args.num_process == 0 else args.num_process
 
     sample_list = generate_data_multi(
         logger,
@@ -787,7 +779,7 @@ def multi_easy_binning(args, logger, recluster,
             sample_fasta,
             sample,
             args.GTDB_reference,
-            num_cpu,
+            args.num_process,
             binned_length,
             must_link_threshold,
             os.path.join(output, 'samples', sample))
@@ -826,7 +818,8 @@ def main():
     sh.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
     logger.addHandler(sh)
 
-    validate_args(args)
+    validate_normalize_args(logger, args)
+
     if args.cmd == 'check_install':
         check_install()
 
