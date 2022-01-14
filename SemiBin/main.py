@@ -353,32 +353,32 @@ def predict_taxonomy(logger, contig_fasta,
     num_cpu = multiprocessing.cpu_count() if num_process == 0 else num_process
     GTDB_reference = find_or_download_gtdb(logger, GTDB_reference, False)
 
-    filtered_fasta = os.path.join(output, 'filtered.fasta')
-    namelist = []
-    num_must_link = 0
-    with open(filtered_fasta, 'wt') as out:
-        for h,seq in fasta_iter(contig_fasta):
-            if len(seq) >= binned_length:
-                out.write(f'>{h}\n{seq}\n')
-                namelist.append(h)
-                if len(seq) >= must_link_threshold:
-                    num_must_link += 1
-
-    subprocess.check_call(
-        ['mmseqs',
-         'createdb',
-         filtered_fasta,
-         os.path.join(output, 'contig_DB')],
-        stdout=None,
-    )
-    if os.path.exists(os.path.join(output, 'mmseqs_contig_annotation')):
-        shutil.rmtree(os.path.join(output, 'mmseqs_contig_annotation'))
-    os.makedirs(os.path.join(output, 'mmseqs_contig_annotation'))
     with tempfile.TemporaryDirectory() as tdir:
+        filtered_fasta = os.path.join(tdir, 'SemiBinFiltered.fna')
+        namelist = []
+        num_must_link = 0
+        with open(filtered_fasta, 'wt') as out:
+            for h,seq in fasta_iter(contig_fasta):
+                if len(seq) >= binned_length:
+                    out.write(f'>{h}\n{seq}\n')
+                    namelist.append(h)
+                    if len(seq) >= must_link_threshold:
+                        num_must_link += 1
+
+        subprocess.check_call(
+            ['mmseqs',
+             'createdb',
+             filtered_fasta,
+             os.path.join(tdir, 'contig_DB')],
+            stdout=None,
+        )
+        if os.path.exists(os.path.join(output, 'mmseqs_contig_annotation')):
+            shutil.rmtree(os.path.join(output, 'mmseqs_contig_annotation'))
+        os.makedirs(os.path.join(output, 'mmseqs_contig_annotation'))
         subprocess.run(
             ['mmseqs',
              'taxonomy',
-             os.path.join(output, 'contig_DB'),
+             os.path.join(tdir, 'contig_DB'),
              GTDB_reference,
              os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
              tdir,
@@ -388,18 +388,21 @@ def predict_taxonomy(logger, contig_fasta,
             check=True,
             stdout=None,
         )
-    subprocess.check_call(
-        ['mmseqs',
-         'createtsv',
-         os.path.join(output, 'contig_DB'),
-         os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
-         os.path.join(output, 'mmseqs_contig_annotation/taxonomyResult.tsv')
-         ],
-        stdout=None,
-    )
+        taxonomy_results_fname = os.path.join(output,
+                                    'mmseqs_contig_annotation',
+                                    'taxonomyResult.tsv')
+        subprocess.check_call(
+            ['mmseqs',
+             'createtsv',
+             os.path.join(tdir, 'contig_DB'),
+             os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
+             taxonomy_results_fname,
+             ],
+            stdout=None,
+        )
 
     os.makedirs(os.path.join(output, 'cannot'), exist_ok=True)
-    generate_cannot_link(os.path.join(output, 'mmseqs_contig_annotation/taxonomyResult.tsv'),
+    generate_cannot_link(taxonomy_results_fname,
         namelist, num_must_link, os.path.join(output, 'cannot'), cannot_name)
 
 
