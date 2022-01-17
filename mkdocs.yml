@@ -6,6 +6,7 @@ nav:
         - 'Install': install.md
         - 'Usage': usage.md
         - 'Generating inputs to SemiBin': generate.md
-        - 'Output' : output.md
+        - 'Output': output.md
         - "What's New": whatsnew.md
+        - "FAQ": faq.md
 
