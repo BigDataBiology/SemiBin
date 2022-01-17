@@ -27,10 +27,11 @@ def validate_normalize_args(logger, args):
         args.num_process = multiprocessing.cpu_count()
         logger.info(f'Setting number of CPUs to {args.num_process}')
 
-    if args.cmd == 'predict_taxonomy':
+    if args.cmd == 'generate_cannot_links':
         if args.GTDB_reference is not None:
             expect_file(args.GTDB_reference)
         expect_file(args.contig_fasta)
+        expect_file(args.taxonomy_results_fname)
 
     if args.cmd == 'generate_data_single':
         expect_file(args.contig_fasta)

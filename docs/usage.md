@@ -21,7 +21,7 @@ SemiBin generate_data_single -i S1.fna -b S1.bam -o S1_output
 ```
 (2) Generate cannot-link 
 ```bash
-SemiBin predict_taxonomy -i S1.fna -o S1_output
+SemiBin generate_cannot_links -i S1.fna -o S1_output
 ```
 (3) Train
 ```bash
@@ -61,7 +61,7 @@ SemiBin generate_data_single -i contig.fna -b S1.bam S2.bam S3.bam -o contig_out
 ```
 (2) Generate cannot-link 
 ```bash
-SemiBin predict_taxonomy -i contig.fna -o contig_output
+SemiBin generate_cannot_links -i contig.fna -o contig_output
 ```
 (3) Train
 ```bash
@@ -115,19 +115,19 @@ SemiBin generate_data_multi -i combined.fna -b S1.bam S2.bam S3.bam S4.bam S5.ba
 ```
 (2) Generate cannot-link 
 ```bash
-SemiBin predict_taxonomy -i S1.fna -o S1_output
+SemiBin generate_cannot_links -i S1.fna -o S1_output
 ```
 ```bash
-SemiBin predict_taxonomy -i S2.fna -o S2_output
+SemiBin generate_cannot_links -i S2.fna -o S2_output
 ```
 ```bash
-SemiBin predict_taxonomy -i S3.fna -o S3_output
+SemiBin generate_cannot_links -i S3.fna -o S3_output
 ```
 ```bash
-SemiBin predict_taxonomy -i S4.fna -o S4_output
+SemiBin generate_cannot_links -i S4.fna -o S4_output
 ```
 ```bash
-SemiBin predict_taxonomy -i S5.fna -o S5_output
+SemiBin generate_cannot_links -i S5.fna -o S5_output
 ```
 (3) Train
 ```bash

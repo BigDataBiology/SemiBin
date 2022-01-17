@@ -1,5 +1,14 @@
 # What's New
 
+## Unreleased (development version)
+### User-visible improvements
+- Users can now pass in the output of running mmseqs2 directly and SemiBin will
+  use that instead of calling mmseqs itself (use option
+  `--taxonomy-annotation-table`).
+- The subcommand to generate cannot links is now called
+  `generate_cannot_links`. The old name (`predict_taxonomy`) is kept as a
+  deprecated alias.
+
 ## Version 0.5
 
 *Released January 7 2022*

@@ -44,7 +44,7 @@ def parse_args(args):
     multi_easy_bin = subparsers.add_parser('multi_easy_bin',
                                             help='Bin contigs (multi-sample mode) using one command.')
 
-    predict_taxonomy = subparsers.add_parser('predict_taxonomy',
+    generate_cannot_links = subparsers.add_parser('generate_cannot_links', aliases=['predict_taxonomy',],
                                              help='Run the contig annotation using mmseqs '
                                                   'with GTDB reference genome and generate '
                                                   'cannot-link file used in the semi-supervised deep learning model training. '
@@ -162,7 +162,7 @@ def parse_args(args):
                          default=None,
                          help='Path to the trained semi-supervised deep learning model.')
 
-    for p in [training, predict_taxonomy, binning, single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi]:
+    for p in [training, generate_cannot_links, binning, single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi]:
         p.add_argument('-p', '--processes', '-t', '--threads',
                    required=False,
                    type=int,
@@ -180,7 +180,7 @@ def parse_args(args):
                        default=None,
                        )
 
-    for p in [single_easy_bin, multi_easy_bin, predict_taxonomy, generate_data_single, generate_data_multi, binning]:
+    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_data_single, generate_data_multi, binning]:
         p.add_argument('-i', '--input-fasta',
                                 required=True,
                                 help='Path to the input fasta file.',
@@ -192,7 +192,7 @@ def parse_args(args):
                             dest='output',
                             default=None,
                             )
-    for p in [single_easy_bin, multi_easy_bin, predict_taxonomy, generate_data_single, generate_data_multi, binning, training]:
+    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_data_single, generate_data_multi, binning, training]:
         p.add_argument('-m', '--min-len',
                        required=False,
                        type=int,
@@ -222,7 +222,7 @@ def parse_args(args):
                               default=None,
                               )
 
-    for p in [single_easy_bin, multi_easy_bin, predict_taxonomy, download_GTDB]:
+    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, download_GTDB]:
         p.add_argument('-r', '--reference-db-data-dir', '--reference-db',
                             required=False,
                             help='GTDB reference storage path. (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB).'
@@ -231,7 +231,7 @@ def parse_args(args):
                             metavar='',
                             default=None)
 
-    for p in [single_easy_bin, predict_taxonomy]:
+    for p in [single_easy_bin, generate_cannot_links]:
         p.add_argument('--cannot-name',
                             required=False,
                             help='Name for the cannot-link file(default: cannot).',
@@ -239,6 +239,11 @@ def parse_args(args):
                             default='cannot',
                             metavar=''
                             )
+        p.add_argument('--taxonomy-annotation-table',
+                            required=False,
+                            help='Pre-computed mmseqs2 format taxonomy TSV file to bypass mmseqs2 GTDB annotation [advanced]',
+                            dest='taxonomy_results_fname',
+                            metavar='TAXONOMY_TSV')
 
     for p in [binning, single_easy_bin, multi_easy_bin]:
         p.add_argument('--minfasta-kbs',
@@ -307,7 +312,7 @@ def parse_args(args):
                        default=None,
                        )
 
-    for p in [predict_taxonomy, generate_data_single, generate_data_multi, single_easy_bin, multi_easy_bin]:
+    for p in [generate_cannot_links, generate_data_single, generate_data_multi, single_easy_bin, multi_easy_bin]:
         p.add_argument('--ml-threshold',
                        required=False,
                        type=int,
@@ -336,9 +341,9 @@ def check_install():
                 f"Error: {dependence} does not be installed!\n")
             sys.exit(1)
 
-def predict_taxonomy(logger, contig_fasta,
-                     cannot_name, GTDB_reference, num_process,
-                     binned_length, must_link_threshold,output):
+def predict_taxonomy(logger, contig_fasta, cannot_name,
+                     taxonomy_results_fname, GTDB_reference, num_process,
+                     binned_length, must_link_threshold, output):
     """
     Predict taxonomy using mmseqs and generate cannot-link file
 
@@ -349,7 +354,6 @@ def predict_taxonomy(logger, contig_fasta,
     must_link_threshold: threshold of contigs for must-link constraints
     """
     import tempfile
-    GTDB_reference = find_or_download_gtdb(logger, GTDB_reference, False)
 
     with tempfile.TemporaryDirectory() as tdir:
         filtered_fasta = os.path.join(tdir, 'SemiBinFiltered.fna')
@@ -362,42 +366,43 @@ def predict_taxonomy(logger, contig_fasta,
                     namelist.append(h)
                     if len(seq) >= must_link_threshold:
                         num_must_link += 1
-
-        subprocess.check_call(
-            ['mmseqs',
-             'createdb',
-             filtered_fasta,
-             os.path.join(tdir, 'contig_DB')],
-            stdout=None,
-        )
-        if os.path.exists(os.path.join(output, 'mmseqs_contig_annotation')):
-            shutil.rmtree(os.path.join(output, 'mmseqs_contig_annotation'))
-        os.makedirs(os.path.join(output, 'mmseqs_contig_annotation'))
-        subprocess.run(
-            ['mmseqs',
-             'taxonomy',
-             os.path.join(tdir, 'contig_DB'),
-             GTDB_reference,
-             os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
-             tdir,
-             '--tax-lineage', '1',
-             '--threads', str(num_process),
-             ],
-            check=True,
-            stdout=None,
-        )
-        taxonomy_results_fname = os.path.join(output,
-                                    'mmseqs_contig_annotation',
-                                    'taxonomyResult.tsv')
-        subprocess.check_call(
-            ['mmseqs',
-             'createtsv',
-             os.path.join(tdir, 'contig_DB'),
-             os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
-             taxonomy_results_fname,
-             ],
-            stdout=None,
-        )
+        if taxonomy_results_fname is None:
+            GTDB_reference = find_or_download_gtdb(logger, GTDB_reference, force=False)
+            subprocess.check_call(
+                ['mmseqs',
+                 'createdb',
+                 filtered_fasta,
+                 os.path.join(tdir, 'contig_DB')],
+                stdout=None,
+            )
+            if os.path.exists(os.path.join(output, 'mmseqs_contig_annotation')):
+                shutil.rmtree(os.path.join(output, 'mmseqs_contig_annotation'))
+            os.makedirs(os.path.join(output, 'mmseqs_contig_annotation'))
+            subprocess.run(
+                ['mmseqs',
+                 'taxonomy',
+                 os.path.join(tdir, 'contig_DB'),
+                 GTDB_reference,
+                 os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
+                 tdir,
+                 '--tax-lineage', '1',
+                 '--threads', str(num_process),
+                 ],
+                check=True,
+                stdout=None,
+            )
+            taxonomy_results_fname = os.path.join(output,
+                                        'mmseqs_contig_annotation',
+                                        'taxonomyResult.tsv')
+            subprocess.check_call(
+                ['mmseqs',
+                 'createtsv',
+                 os.path.join(tdir, 'contig_DB'),
+                 os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
+                 taxonomy_results_fname,
+                 ],
+                stdout=None,
+            )
 
     os.makedirs(os.path.join(output, 'cannot'), exist_ok=True)
     generate_cannot_link(taxonomy_results_fname,
@@ -700,7 +705,7 @@ def single_easy_binning(args, logger, binned_length,
                         must_link_threshold,
                         contig_dict, recluster,random_seed, output, device, environment):
     """
-    contain `predict_taxonomy`, `generate_data_single`, `train`, `bin` in one command for single-sample and co-assembly binning
+    contain `generate_cannot_links`, `generate_data_single`, `train`, `bin` in one command for single-sample and co-assembly binning
     """
     logger.info('Generate training data.')
     generate_data_single(
@@ -720,6 +725,7 @@ def single_easy_binning(args, logger, binned_length,
             logger,
             args.contig_fasta,
             args.cannot_name,
+            args.taxonomy_results_fname,
             args.GTDB_reference,
             args.num_process,
             binned_length,
@@ -741,7 +747,7 @@ def single_easy_binning(args, logger, binned_length,
 def multi_easy_binning(args, logger, recluster,
                        random_seed, output, device):
     """
-    contain `predict_taxonomy`, `generate_data_multi`, `train`, `bin` in one command for multi-sample binning
+    contain `generate_cannot_links`, `generate_data_multi`, `train`, `bin` in one command for multi-sample binning
     """
     logger.info('Multi-sample binning.')
     logger.info('Generate training data.')
@@ -779,6 +785,7 @@ def multi_easy_binning(args, logger, recluster,
             sample_fasta,
             sample,
             args.GTDB_reference,
+            args.taxonomy_results_fname,
             args.num_process,
             binned_length,
             must_link_threshold,
@@ -831,30 +838,31 @@ def main():
         device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
 
-    if args.cmd in ['predict_taxonomy', 'generate_data_single', 'bin','single_easy_bin']:
+    if args.cmd in ['generate_cannot_links', 'generate_data_single', 'bin','single_easy_bin']:
         binned_short, must_link_threshold, contig_dict = process_fasta(args.contig_fasta, args.ratio)
         if args.min_len is None:
             binned_length = 1000 if binned_short else 2500
         else:
             binned_length = args.min_len
 
-    if args.cmd in ['predict_taxonomy', 'generate_data_single', 'generate_data_multi', 'single_easy_bin', 'multi_easy_bin']:
+    if args.cmd in ['generate_cannot_links', 'generate_data_single', 'generate_data_multi', 'single_easy_bin', 'multi_easy_bin']:
         if args.ml_threshold is not None:
             must_link_threshold = args.ml_threshold
 
     if args.cmd == 'download_GTDB':
         find_or_download_gtdb(logger, args.GTDB_reference, args.force)
 
-    if args.cmd == 'predict_taxonomy':
+    if args.cmd == 'generate_cannot_links':
         predict_taxonomy(
             logger,
             args.contig_fasta,
             args.cannot_name,
-            args.GTDB_reference,
-            args.num_process,
-            binned_length,
-            must_link_threshold,
-            out)
+            taxonomy_results_fname=args.taxonomy_results_fname,
+            GTDB_reference=args.GTDB_reference,
+            num_process=args.num_process,
+            binned_length=binned_length,
+            must_link_threshold=must_link_threshold,
+            output=out)
 
     if args.cmd == 'generate_data_single':
         generate_data_single(
