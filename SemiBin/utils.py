@@ -154,15 +154,17 @@ def parse_mmseqs(mmseqs_result):
     return cannot_link_species, cannot_link_genus, cannot_link_mix
 
 
-def generate_cannot_link(mmseqs_path,namelist,num_threshold,output,sample):
+def generate_cannot_link(mmseqs_path, namelist, num_threshold, output,sample):
     import itertools
     import numpy as np
     import pandas as pd
-    mmseqs_result = pd.read_csv(mmseqs_path, sep='\t', header=None)
-    mmseqs_result.columns = ['contig_name', 'taxon_ID', 'rank_name', 'scientific_name', 'temp_1', 'temp_2', 'temp_3',
-                             'score', 'lineage']
-    mmseqs_result = mmseqs_result[[
-        'contig_name', 'rank_name', 'scientific_name', 'score', 'lineage']]
+    mmseqs_result = pd.read_csv(mmseqs_path,
+                        sep='\t',
+                        header=None,
+                        names=['contig_name', 'taxon_ID', 'rank_name',
+                                'scientific_name', 'temp_1', 'temp_2', 'temp_3', 'score', 'lineage'],
+                        usecols=['contig_name', 'rank_name', 'scientific_name', 'score', 'lineage'])
+
     mmseqs_result['contig_name'] = mmseqs_result['contig_name'].astype(str)
     mmseqs_result = mmseqs_result[mmseqs_result['contig_name'].isin(
         namelist)]
