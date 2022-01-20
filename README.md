@@ -59,10 +59,10 @@ Once the dependencies are installed, you can install by running:
 python setup.py install
 ```
 
-## Examples
+## Examples of binning
 
 **NOTE**: The `SemiBin` API is a work-in-progress. The examples refer to
-version `0.5`, but this may change in the near future (after the release of
+version `0.5`, but this may change in the near future. After the release of
 version 1.0, we expect to freeze the API for [at least 5
 years](https://big-data-biology.org/software/commitments/). We are very happy
 to [hear any feedback on API
@@ -84,7 +84,7 @@ Considering the issue that contig annotations and model training requires signif
 
 (1) Trained a model from one sample or several samples (Or used our built-in pretrained model)
 
-(2) Directly applied this model to other samples.
+(2) Directly applied this model to other samples
 
 For the details and examples of every command to run SemiBin with these binning modes,  please read [read the docs](https://semibin.readthedocs.io/en/latest/usage/).
 
