@@ -108,7 +108,7 @@ In this example, SemiBin will download GTDB to
 `-r` argument.
 
 You can set `--recluster` to use the reclustering step with single-copy genes
-described in the paper, which can make results a little better (especially when the number of samples used is larger 5).
+described in the paper, which can make results a little better (especially when the number of samples used is larger 5). ?
 
 You can use `--environment` with (`human_gut`, `dog_gut`, or `ocean`) to use one of our built-in models. (**Note:** Recommended way, which will save much time for contig annotations and model training, and also get very good results) 
 
