@@ -24,13 +24,13 @@ If you use this software in a publication please cite:
 > [https://doi.org/10.1101/2021.08.16.456517](https://doi.org/10.1101/2021.08.16.456517)
 
 
-## Install
+## Installation
 
 SemiBin runs on Python 3.7-3.9.
 
-### Install from bioconda ### 
+### Bioconda ### 
 
-_Note_ : If you want to use SemiBin with GPU, you need to install Pytorch with GPU support. Or `conda install -c bioconda semibin` just install Pytorch with CPU support.
+_Note_: If you want to use SemiBin with GPU, you need to install Pytorch with GPU support or `conda install -c bioconda semibin` just install Pytorch with CPU support.
 
 ```bash
 conda create -n SemiBin python==3.7
@@ -39,13 +39,13 @@ conda install -c conda-forge -c bioconda semibin
 conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch-lts
 ```
 
-### Install from source
+### Source
 
 You can download the source code from github and install.
 
 Install dependence packages using conda:
 [MMseqs2](https://github.com/soedinglab/MMseqs2),
-[Bedtools](http://bedtools.readthedocs.org/]), [Hmmer](http://hmmer.org/),
+[Bedtools](http://bedtools.readthedocs.org/]), [Hmmer](http://hmmer.org/), and
 [Fraggenescan](https://sourceforge.net/projects/fraggenescan/).
 
 ```bash
