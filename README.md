@@ -80,7 +80,7 @@ The basic idea of using SemiBin with single-sample and co-assembly is:
 
 When using multi-sample binning, the basic idea is very similar, the inputs are the contigs combined from several samples and bam files from severl samples. And then we also generated _data.csv_ and _data_split.csv_, training and binning for every  sample. The only difference compared to single-sample binning is the _data.csv_ and _data_split.csv_ has the abundance information from several samples.
 
-Considering the issue that contig annotations and model training requires significant computational time and the algorithm design of SemiBin, we proposed SemiBin(pretrain) for _single-sample binning_: 
+Considering the issue that contig annotations and model training requires significant computational time and the algorithm design of SemiBin ?, we proposed SemiBin(pretrain) for _single-sample binning_: 
 
 (1) Trained a model from one sample or several samples (Or used our built-in pretrained model)
 
