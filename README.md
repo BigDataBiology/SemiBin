@@ -105,7 +105,7 @@ SemiBin single_easy_bin -i contig.fna -b *.bam -o output --recluster
 
 In this example, SemiBin will download GTDB to
 `$HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB`. You can change this default using the
-`-r` argument.
+`-r` argument. ?
 
 You can set `--recluster` to use the reclustering step with single-copy genes
 described in the paper, which can make results a little better (especially when the number of samples used is larger 5).
