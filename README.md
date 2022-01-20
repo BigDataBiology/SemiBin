@@ -30,7 +30,7 @@ SemiBin runs on Python 3.7-3.9.
 
 ### Install from bioconda ### 
 
-_Note_ : If you want to use SemiBin with GPU, you need to install Pytorch with GPU support. Or `conda install -c bioconda semibin` just install Pytorch with CPU support.
+_NOTE_ : If you want to use SemiBin with GPU, you need to install Pytorch with GPU support. Or `conda install -c bioconda semibin` just install Pytorch with CPU support.
 
 ```bash
 conda create -n SemiBin python==3.7
@@ -61,7 +61,7 @@ python setup.py install
 
 ## Examples
 
-**NOTE**: The `SemiBin` API is a work-in-progress. The examples refer to
+_NOTE_: The `SemiBin` API is a work-in-progress. The examples refer to
 version `0.5`, but this may change in the near future (after the release of
 version 1.0, we expect to freeze the API for [at least 5
 years](https://big-data-biology.org/software/commitments/). We are very happy
@@ -110,7 +110,7 @@ In this example, SemiBin will download GTDB to
 You can set `--recluster` to use the reclustering step with single-copy genes
 described in the paper, which can make results a little better (especially when the number of samples used is larger 5).
 
-You can use `--environment` with (`human_gut`, `dog_gut`, or `ocean`) to use one of our built-in models. (**Note:** Recommended way, which will save much time for contig annotations and model training, and also get very good results) 
+You can use `--environment` with (`human_gut`, `dog_gut`, or `ocean`) to use one of our built-in models. (_NOTE_: This is a recommended way, which will save much time for contig annotations and model training, and also get very good results.) 
 
 ```bash
 SemiBin single_easy_bin -i contig_S1.fna -b S1.bam -o output --environment human_gut --recluster
@@ -130,7 +130,7 @@ You will need the following inputs.
 
 For every contig, format of the name is `<sample_name>:<contig_name>`, where
 `:` is the default separator (it can be changed with the `--separator`
-argument). *Note:* Make sure the sample names are unique and  the separator
+argument). _NOTE_: Make sure the sample names are unique and  the separator
 does not introduce confusion when splitting. For example:
 
 ```bash
