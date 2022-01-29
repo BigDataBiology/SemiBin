@@ -72,21 +72,21 @@ SemiBin runs on single-sample, co-assembly and multi-sample binning.
 
 The basic idea of using SemiBin with single-sample and co-assembly is:
 
-(1) Generate _data.csv_ and _data_split.csv_(used in training) for every sample
+(1) generating _data.csv_ and _data_split.csv_ (used in training) for every sample,
 
-(2) Training the model for every sample
+(2) training the model for every sample, and
 
-(3) Binning the contigs for every contig with the model trained from the same sample
+(3) binning the contigs for every contig with the model trained from the same sample.
 
-When using multi-sample binning, the basic idea is very similar, the inputs are the contigs combined from several samples and bam files from severl samples. And then we also generated _data.csv_ and _data_split.csv_, training and binning for every  sample. The only difference compared to single-sample binning is the _data.csv_ and _data_split.csv_ has the abundance information from several samples.
+When using multi-sample binning, the basic idea is very similar, the inputs are the contigs combined from several samples and bam files from several samples. And then we also generate _data.csv_ and _data_split.csv_ and do training and binning for every  sample. The only difference compared to single-sample binning is the _data.csv_ and _data_split.csv_ have the abundance information from several samples.
 
-Considering the issue that contig annotations and model training requires significant computational time and the algorithm design of SemiBin, we proposed SemiBin(pretrain) for _single-sample binning_: 
+Considering the issue that contig annotations and model training requires significant computational time and the algorithm design of SemiBin, we proposed SemiBin(pretrain) for _single-sample binning_ to: 
 
-(1) Trained a model from one sample or several samples (Or used our built-in pretrained model)
+(1) train a model from one sample or several samples (or used our built-in pretrained model) and
 
-(2) Directly applied this model to other samples.
+(2) directly apply this model to other samples.
 
-For the details and examples of every command to run SemiBin with these binning modes,  please read [read the docs](https://semibin.readthedocs.io/en/latest/usage/).
+For the details and examples of every command to run SemiBin with these binning modes,  please [read the docs](https://semibin.readthedocs.io/en/latest/usage/).
 
 ## Easy single/co-assembly binning mode
 
@@ -108,7 +108,7 @@ In this example, SemiBin will download GTDB to
 `-r` argument.
 
 You can set `--recluster` to use the reclustering step with single-copy genes
-described in the paper, which can make results a little better (especially when the number of samples used is larger 5).
+described in the paper, which can make results a little better (especially when the number of samples used is larger than 5).
 
 You can use `--environment` with (`human_gut`, `dog_gut`, or `ocean`) to use one of our built-in models. (**Note:** Recommended way, which will save much time for contig annotations and model training, and also get very good results) 
 
@@ -122,9 +122,9 @@ The `multi_easy_bin` command can be used in multi-samples binning modes (contig
 annotations using mmseqs with GTDB reference genome).
 
 
-You will need the following inputs.
+You will need the following inputs:
 
-1. A combined contig file
+1. a combined contig file
 
 2. BAM files from mapping
 
@@ -161,7 +161,7 @@ SemiBin multi_easy_bin -i contig_whole.fna -b *.bam -o output --recluster
 
 ## Output
 
-The output folder will contain
+The output folder will contain:
 
 1. Datasets used for training and clustering.
 
