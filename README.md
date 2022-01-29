@@ -184,7 +184,7 @@ You can run individual steps by yourself, which can enable using compute
 clusters to make the binning process faster (especially in multi-samples
 binning mode). For example, `single_easy_bin` includes the following steps:
 `predict_taxonomy`,`generate_data_single` and `bin`; while `multi_easy_bin`
-includes following step: `predict_taxonomy`, `generate_data_multi` and `bin`.
+includes the following steps: `predict_taxonomy`, `generate_data_multi` and `bin`.
 
 In advanced mode, you can also use our built-in pre-trained model in
 single-sample binning mode. Here we provide pre-trained models for human gut,
@@ -222,7 +222,7 @@ SemiBin generate_data_multi -i contig_combined.fna -b S1.bam S2.bam S3.bam S4.ba
 SemiBin predict_taxonomy -i contig_S1.fna -o output
 ```
 
-(3) Train a pre-trained model across several samples (For single-sample binning, Make sure the input files are corresponding)
+(3) Train a pre-trained model across several samples (For single-sample binning, make sure the input files are corresponding.)
 
 ```bash
 SemiBin train -i S1.fna S2.fna S3.fna --data S1/train.csv S2/train.csv S3/train.csv --data-split S1/train_split.csv S2/train_split.csv S3/train_split.csv -c S1/cannot.txt s2/cannot.txt S3/cannot.txt -o output --mode several 
@@ -255,7 +255,7 @@ Multi-sample binning(similar for other samples):
 SemiBin bin -i contig_S1.fna --model model.h5 --data S1/data.csv -o output --recluster
 ```
 
-Or our built-in model(human_gut, dog_gut or ocean) (Just for single-sample binning)
+Or our built-in model (human_gut, dog_gut or ocean) (just for single-sample binning)
 
 ```bash
 SemiBin bin -i contig.fna --data data.csv -o output --environment human_gut --recluster
