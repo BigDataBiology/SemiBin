@@ -2,6 +2,7 @@ Unreleased
 	* Add `check_install` command and run `check_install` before easy* command
 	* The user can now specify a pre-computed contig annotation table in
 	mmseqs format
+	* Fix bug with non-standard characters in sample names (#68)
 
 Version 0.5.0 Fri Jan 7 2022 by BigDataBiology
 	* Faster `SemiBin --version`

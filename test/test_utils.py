@@ -1,4 +1,4 @@
-from SemiBin.utils import get_must_link_threshold, get_marker
+from SemiBin.utils import get_must_link_threshold, get_marker, split_data
 from hypothesis import given, strategies as st
 from io import StringIO
 
@@ -63,3 +63,47 @@ def test_get_marker_multiple():
          'bin000110': ['k119_276145', 'k119_50857']}
 
 
+def test_split_data():
+    '''Regression test for #68
+
+    https://github.com/BigDataBiology/SemiBin/issues/68
+    '''
+    import pandas as pd
+    data = pd.DataFrame([[3.02367003e-02, 3.02367003e-02, 3.02367003e-02, 3.02367003e-02,
+            3.02367003e-02, 3.02367003e-02, 3.02367003e-02, 3.02367003e-02,
+            3.02367003e-02, 3.02367003e-02],
+           [3.02367003e-02, 3.02367003e-02, 3.02367003e-02, 3.02367003e-02,
+            3.02367003e-02, 3.02367003e-02, 3.02367003e-02, 3.02367003e-02,
+            3.02367003e-02, 3.02367003e-02],
+           [3.02367003e-02, 3.02367003e-02, 3.02367003e-02, 3.02367003e-02,
+            3.02367003e-02, 3.02367003e-02, 3.02367003e-02, 3.02367003e-02,
+            3.02367003e-02, 3.02367003e-02],
+           [3.02367003e-02, 3.02367003e-02, 3.02367003e-02, 3.02367003e-02,
+            3.02367003e-02, 3.02367003e-02, 3.02367003e-02, 3.02367003e-02,
+            3.02367003e-02, 3.02367003e-02],
+           [1.00000000e-05, 1.00000000e-05, 1.00000000e-05, 1.00000000e-05,
+            1.00000000e-05, 1.00000000e-05, 1.00000000e-05, 1.00000000e-05,
+            1.00000000e-05, 1.00000000e-05]],
+           index=[
+               'S1_2341+340_METAG:g1k_5_1',
+               'S1_2341+340_METAG:g2k_4_1',
+               'S2_2341+340_METAG:g1k_2_1',
+               'S2_2341+340_METAG:g1k_3_1',
+               'S2_2341+340_METAG:g1k_5_1'],
+            columns=[
+               'sorted10.sam_cov',
+               'sorted1.sam_cov',
+               'sorted2.sam_cov',
+               'sorted3.sam_cov',
+               'sorted4.sam_cov',
+               'sorted5.sam_cov',
+               'sorted6.sam_cov',
+               'sorted7.sam_cov',
+               'sorted8.sam_cov',
+               'sorted9.sam_cov'],
+            ).reset_index().rename(columns={'index':'contig_name'})
+
+    split1 = split_data(data, 'S1_2341+340_METAG', ':')
+    assert len(split1) == 2
+    split2 = split_data(data, 'S2_2341+340_METAG', ':')
+    assert len(split2) == 3

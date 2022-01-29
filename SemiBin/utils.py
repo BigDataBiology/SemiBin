@@ -358,12 +358,10 @@ def split_data(data, sample, separator, is_combined = True):
     """
     import numpy as np
     part_data = data[data['contig_name'].str.contains(
-        '{}'.format(sample + separator))]
+        sample + separator, regex=False)]
     part_data = part_data.set_index('contig_name')
     part_data.index.name = None
-    index_list = part_data.index.tolist()
-    index_list = [temp.split(separator)[1] for temp in index_list]
-    part_data.index = index_list
+    part_data.index = [ix.split(separator)[1] for ix in part_data.index]
     if is_combined:
         abun_scale = (part_data.mean() / 100).apply(np.ceil) * 100
         part_data = part_data.div(abun_scale)
