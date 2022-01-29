@@ -8,6 +8,13 @@
 - The subcommand to generate cannot links is now called
   `generate_cannot_links`. The old name (`predict_taxonomy`) is kept as a
   deprecated alias.
+  
+### Bugfixes
+- Fix bug with non-standard characters in sample names (#68).
+
+### Internal improvements
+- Add `check_install` command and run `check_install` before easy command
+- Provide pretrained models from soil, cat gut, human oral,pig gut, mouse gut, built environment, wastewater and whole(training from all samples).
 
 ## Version 0.5
 

@@ -371,9 +371,38 @@ def get_model_path(env):
     if env == 'human_gut':
         model_path = os.path.join(os.path.split(__file__)[0], 'human_gut_model.h5')
         return model_path
-    if env == 'dog_gut':
+    elif env == 'dog_gut':
         model_path = os.path.join(os.path.split(__file__)[0], 'dog_gut_model.h5')
         return model_path
-    if env == 'ocean':
+    elif env == 'ocean':
         model_path = os.path.join(os.path.split(__file__)[0], 'ocean_model.h5')
         return model_path
+    elif env == 'soil':
+        model_path = os.path.join(os.path.split(__file__)[0], 'soil_model.h5')
+        return model_path
+    elif env == 'cat_gut':
+        model_path = os.path.join(os.path.split(__file__)[0], 'cat_gut_model.h5')
+        return model_path
+    elif env == 'human_oral':
+        model_path = os.path.join(os.path.split(__file__)[0], 'human_oral_model.h5')
+        return model_path
+    elif env == 'mouse_gut':
+        model_path = os.path.join(os.path.split(__file__)[0], 'mouse_gut_model.h5')
+        return model_path
+    elif env == 'pig_gut':
+        model_path = os.path.join(os.path.split(__file__)[0], 'pig_gut_model.h5')
+        return model_path
+    elif env == 'built_environment':
+        model_path = os.path.join(os.path.split(__file__)[0], 'built_environment_model.h5')
+        return model_path
+    elif env == 'wastewater':
+        model_path = os.path.join(os.path.split(__file__)[0], 'wastewater_model.h5')
+        return model_path
+    elif env == 'whole':
+        model_path = os.path.join(os.path.split(__file__)[0], 'whole_model.h5')
+        return model_path
+    else:
+        sys.stderr.write(
+            f"Error: Expected environment '{env}' does not exist\n")
+        sys.exit(1)
+

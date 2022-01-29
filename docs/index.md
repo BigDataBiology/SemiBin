@@ -45,16 +45,18 @@ Reconstruct bins with single or co-assembly binning using one line command.
 * `-r/--reference-db-data-dir`: GTDB reference directory (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB). SemiBin will lazily download GTDB if it is not found there.
 * `-p/--processes/-t/--threads`: Number of CPUs used(0: use whole).
 * `--minfasta-kbs`: minimum bin size in kilo-basepairs (Default: 200).
-* `--recluster` : Recluster bins(which will take more time and better results).
+* `--recluster` : [Deprecated] Does nothing (current default is to perform clustering).
 * `--epoches`: Number of epoches used in the training process(Default: 20).
 * `--batch-size`: Batch size used in the training process(Default: 2048).
 * `--max-node`: Percentage of contigs that considered to be binned(Default: 1).
 * `--max-edges`: The maximum number of edges that can be connected to one contig(Default: 200).
 * `--random-seed`: Random seed to reproduce results.
-* `--environment`: Environment for the built-in model(human_gut/dog_gut/ocean).
+* `--environment`: Environment for the built-in model(human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/whole).
 * `--ratio` : If the ratio of the number of base pairs of contigs between 1000-2500 bp smaller than this value, the minimal length will be set as 1000bp, otherwise2500bp. If you set -m parameter, you do not need to use this parameter. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands(Default: 0.05). 
 * `-m/--min-len` : Minimal length for contigs in binning. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands.(Default: SemiBin chooses 1000bp or 2500bp according the ratio of the number of base pairs of contigs between 1000-2500 bp).
 * `--ml-threshold` : Length threshold for generating must-link constraints.(By default, the threshold is calculated from the contig, and the default minimum value is 4,000 bp)
+* `--no-recluster` : Do not recluster bins.
+* `--taxonomy-annotation-table` : TAXONOMY_TSV, Pre-computed mmseqs2 format taxonomy TSV file to bypass mmseqs2 GTDB annotation [advanced]
 
 #### multi_easy_bin
 
@@ -65,14 +67,13 @@ Reconstruct bins with multi-samples binning using one line command.
 
 The following options (including synonyms) are the same as for
 `single_easy_bin`: `--input-fasta`, `--output`, `--reference-db-data-dir`,
-`--processes`, `--minfasta-kbs`, `--recluster`,`--epoches`, `--batch-size`, `--max-node`, and
-`--max-edges`, `--random-seed`, `--ratio`, `--min-len`, `--ml-threshold`.
+`--processes`, `--minfasta-kbs`, `--recluster`,`--epoches`, `--batch-size`, `--max-node`, `--max-edges`, `--random-seed`, `--ratio`, `--min-len`, `--ml-threshold` and `--no-recluster`, .
 
-#### predict_taxonomy
+#### generate_cannot_links
 
 Run the contig annotations using mmseqs with GTDB and generate cannot-link file used in the semi-supervised deep learning model training.
 
-The following options are the same as for `single_easy_bin`: `-i/--input-fasta`, `-o/--output`, `--cannot-name`, `-r/--reference-db-data-dir`, `--ratio`, `--min-len` and `--ml-threshold`.
+The following options are the same as for `single_easy_bin`: `-i/--input-fasta`, `-o/--output`, `--cannot-name`, `-r/--reference-db-data-dir`, `--ratio`, `--min-len`, `--ml-threshold` and `--taxonomy-annotation-table`.
 
 #### generate_data_single
 
@@ -105,7 +106,7 @@ Clustering contigs into bins.
 
 * `--model`: Path to the trained model.
 
-The following options are the same as for `single_easy_bin`: `-i/--input-fasta`, `-o/--output`, `--minfasta-kbs`, `--recluster`, `--max-node`, `--max-edges`, `-p/--processes/-t/--threads`, `--random-seed`, `--environment`, `--ratio`, `--min-len`.
+The following options are the same as for `single_easy_bin`: `--data`,`-i/--input-fasta`, `-o/--output`, `--minfasta-kbs`, `--recluster`, `--max-node`, `--max-edges`, `-p/--processes/-t/--threads`, `--random-seed`, `--environment`, `--ratio`, `--min-len` and `--no-recluster`.
 
 #### download_GTDB
 
@@ -113,5 +114,3 @@ Download reference genomes(GTDB).
 
 * `-r/--reference-db-data-dir`: Where to store the GTDB data (default: `$HOME/.cache/SemiBin/mmseqs2-GTDB`)
 * `-f/--force`: Whether to download GTDB even if the data is found at the path (default is to not download).
-
-

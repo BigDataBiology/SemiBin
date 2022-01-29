@@ -101,20 +101,17 @@ binning modes (contig annotations using mmseqs with GTDB reference genome) to
 get results in a single step.
 
 ```bash
-SemiBin single_easy_bin -i contig.fna -b *.bam -o output --recluster
+SemiBin single_easy_bin -i contig.fna -b *.bam -o output
 ```
 
 In this example, SemiBin will download GTDB to
 `$HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB`. You can change this default using the
 `-r` argument.
 
-You can set `--recluster` to use the reclustering step with single-copy genes
-described in the paper, which can make results a little better (especially when the number of samples used is larger than 5).
-
-You can use `--environment` with (`human_gut`, `dog_gut`, or `ocean`) to use one of our built-in models. (_NOTE_: This is a recommended way, which will save much time for contig annotations and model training, and also get very good results.) 
+You can use `--environment` with (`human_gut`, `dog_gut`, `ocean`, `soil`,  `cat_gut`, `human_oral`, `mouse_gut`, `pig_gut`, `built_environment`, `wastewater` and `whole`) to use one of our built-in models. (_NOTE_: This is a recommended way, which will save much time for contig annotations and model training, and also get very good results.) 
 
 ```bash
-SemiBin single_easy_bin -i contig_S1.fna -b S1.bam -o output --environment human_gut --recluster
+SemiBin single_easy_bin -i contig_S1.fna -b S1.bam -o output --environment human_gut
 ```
 
 ## Easy multi-samples binning mode
@@ -153,11 +150,10 @@ AATATTTTAGAGAAAGACATAAACAATAAGAAAAGTATT
 CAAATACGAATGATTCTTTATTAGATTATCTTAATAAGAATATC
 ```
 
-You can get the results with one line of code. You can set `--recluster` to use
-the reclustering part with single-copy genes described in the paper.
+You can get the results with one line of code. 
 
 ```bash
-SemiBin multi_easy_bin -i contig_whole.fna -b *.bam -o output --recluster
+SemiBin multi_easy_bin -i contig_whole.fna -b *.bam -o output 
 ```
 
 ## Output
@@ -183,19 +179,19 @@ docs](https://semibin.readthedocs.io/en/latest/output/).
 You can run individual steps by yourself, which can enable using compute
 clusters to make the binning process faster (especially in multi-samples
 binning mode). For example, `single_easy_bin` includes the following steps:
-`predict_taxonomy`,`generate_data_single` and `bin`; while `multi_easy_bin`
-includes the following steps: `predict_taxonomy`, `generate_data_multi` and `bin`.
+`generate_cannot_links`,`generate_data_single` and `bin`; while `multi_easy_bin`
+includes the following steps: `generate_cannot_links`, `generate_data_multi` and `bin`.
 
 In advanced mode, you can also use our built-in pre-trained model in
 single-sample binning mode. Here we provide pre-trained models for human gut,
-dog gut and marine environment. You can just use these models for single-sample
+dog gut, marine, soil, cat gut, human oral, mouse gut, pig gut, built_environment, wastewater and whole (train from whole environments) environment. You can just use these models for single-sample
 binning and it will save much time for contig annotations and model training.
 
 A very easy way to run SemiBin with a built-in model
-(`human_gut`/`dog_gut`/`ocean` for single-sample binning):
+(`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`whole` for single-sample binning):
 
 ```bash
-SemiBin single_easy_bin -i contig_S1.fna -b S1.bam -o output --environment human_gut --recluster
+SemiBin single_easy_bin -i contig_S1.fna -b S1.bam -o output --environment human_gut
 ```
 
 Another suggestion is that you can pre-train a model from part of your dataset,
@@ -219,7 +215,7 @@ SemiBin generate_data_multi -i contig_combined.fna -b S1.bam S2.bam S3.bam S4.ba
 (2) Generate cannot-link for every sample
 
 ```bash
-SemiBin predict_taxonomy -i contig_S1.fna -o output
+SemiBin generate_cannot_links -i contig_S1.fna -o output
 ```
 
 (3) Train a pre-trained model across several samples (For single-sample binning, make sure the input files are corresponding.)
@@ -238,7 +234,7 @@ SemiBin train -i contig.fna --data train.csv --data-split train_split.csv -c can
 Multi-sample binning(similar for other samples) :
 
 ```bash
-SemiBin train -i contig_S1.fna --data S1/train.csv --data-split S1/train_split.csv -c S1/cannot.txt -o output --mode single --recluster
+SemiBin train -i contig_S1.fna --data S1/train.csv --data-split S1/train_split.csv -c S1/cannot.txt -o output --mode single
 ```
 
 (4) Bin with the trained model.  If you are using multi-sample binning, here the contig is the contig for every sample and the bam files are still from several samples.
@@ -246,19 +242,19 @@ SemiBin train -i contig_S1.fna --data S1/train.csv --data-split S1/train_split.c
 Single-sample/co-assembly binning:
 
 ```bash
-SemiBin bin -i contig.fna --model model.h5 --data data.csv -o output --recluster
+SemiBin bin -i contig.fna --model model.h5 --data data.csv -o output
 ```
 
 Multi-sample binning(similar for other samples):
 
 ```bash
-SemiBin bin -i contig_S1.fna --model model.h5 --data S1/data.csv -o output --recluster
+SemiBin bin -i contig_S1.fna --model model.h5 --data S1/data.csv -o output
 ```
 
 Or our built-in model (human_gut, dog_gut or ocean) (just for single-sample binning)
 
 ```bash
-SemiBin bin -i contig.fna --data data.csv -o output --environment human_gut --recluster
+SemiBin bin -i contig.fna --data data.csv -o output --environment human_gut
 ```
 
 For more details on usage, including every command on how to run SemiBin with different binning modes, please [read the docs](https://semibin.readthedocs.io/en/latest/usage/).
