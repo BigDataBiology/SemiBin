@@ -59,10 +59,10 @@ Once the dependencies are installed, you can install by running:
 python setup.py install
 ```
 
-## Examples
+## Examples of binning
 
 **NOTE**: The `SemiBin` API is a work-in-progress. The examples refer to
-version `0.5`, but this may change in the near future (after the release of
+version `0.5`, but this may change in the near future. After the release of
 version 1.0, we expect to freeze the API for [at least 5
 years](https://big-data-biology.org/software/commitments/). We are very happy
 to [hear any feedback on API
