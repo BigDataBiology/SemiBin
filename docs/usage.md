@@ -9,7 +9,7 @@ Input: S1.fna and S1.bam
 ```bash
 SemiBin single_easy_bin -i S1.fna -b S1.bam -o output 
 ```
-Or with our built-in model(`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`whole`)
+Or with our built-in model(`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`global`)
 ```bash
 SemiBin single_easy_bin -i S1.fna -b S1.bam -o output --environment human_gut
 ```
@@ -31,7 +31,7 @@ SemiBin train -i S1.fna --data S1_output/train.csv --data-split S1_output/train_
 ```bash
 SemiBin bin -i S1.fna --model S1_output/model.h5 --data S1_output/data.csv -o output
 ```
-or with our built-in model(`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`whole`)
+or with our built-in model(`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`global`)
 ```bash
 SemiBin bin -i S1.fna --data S1_output/data.csv -o output --environment human_gut
 ```

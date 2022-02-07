@@ -107,7 +107,9 @@ In this example, SemiBin will download GTDB to
 `$HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB`. You can change this default using the
 `-r` argument.
 
-You can use `--environment` with (`human_gut`, `dog_gut`, `ocean`, `soil`,  `cat_gut`, `human_oral`, `mouse_gut`, `pig_gut`, `built_environment`, `wastewater` and `whole`) to use one of our built-in models. (_NOTE_: This is a recommended way, which will save much time for contig annotations and model training, and also get very good results.) 
+You can use `--environment` with `human_gut`, `dog_gut`, `ocean`, `soil`,
+`cat_gut`, `human_oral`, `mouse_gut`, `pig_gut`, `built_environment`,
+`wastewater`, or `global` to use one of our built-in models.
 
 ```bash
 SemiBin single_easy_bin -i contig_S1.fna -b S1.bam -o output --environment human_gut
@@ -183,11 +185,12 @@ includes the following steps: `generate_cannot_links`, `generate_data_multi` and
 
 In advanced mode, you can also use our built-in pre-trained model in
 single-sample binning mode. Here we provide pre-trained models for human gut,
-dog gut, marine, soil, cat gut, human oral, mouse gut, pig gut, built_environment, wastewater and whole (train from whole environments) environment. You can just use these models for single-sample
-binning and it will save much time for contig annotations and model training.
+dog gut, marine, soil, cat gut, human oral, mouse gut, pig gut,
+built_environment, wastewater and global (train from all environments listed)
+environment.
 
 A very easy way to run SemiBin with a built-in model
-(`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`whole` for single-sample binning):
+(`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`global` for single-sample binning):
 
 ```bash
 SemiBin single_easy_bin -i contig_S1.fna -b S1.bam -o output --environment human_gut

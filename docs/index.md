@@ -43,7 +43,7 @@ Reconstruct bins with single or co-assembly binning using one line command.
 * `-o/--output`: Output directory (will be created if non-existent).
 * `--cannot-name:` Name for the cannot-link file (Default: cannot).
 * `-r/--reference-db-data-dir`: GTDB reference directory (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB). SemiBin will lazily download GTDB if it is not found there.
-* `-p/--processes/-t/--threads`: Number of CPUs used(0: use whole).
+* `-p/--processes/-t/--threads`: Number of CPUs used (0: use all).
 * `--minfasta-kbs`: minimum bin size in kilo-basepairs (Default: 200).
 * `--recluster` : [Deprecated] Does nothing (current default is to perform clustering).
 * `--epoches`: Number of epoches used in the training process(Default: 20).
@@ -51,7 +51,7 @@ Reconstruct bins with single or co-assembly binning using one line command.
 * `--max-node`: Percentage of contigs that considered to be binned(Default: 1).
 * `--max-edges`: The maximum number of edges that can be connected to one contig(Default: 200).
 * `--random-seed`: Random seed to reproduce results.
-* `--environment`: Environment for the built-in model(human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/whole).
+* `--environment`: Environment for the built-in model (`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`global`).
 * `--ratio` : If the ratio of the number of base pairs of contigs between 1000-2500 bp smaller than this value, the minimal length will be set as 1000bp, otherwise2500bp. If you set -m parameter, you do not need to use this parameter. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands(Default: 0.05). 
 * `-m/--min-len` : Minimal length for contigs in binning. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands.(Default: SemiBin chooses 1000bp or 2500bp according the ratio of the number of base pairs of contigs between 1000-2500 bp).
 * `--ml-threshold` : Length threshold for generating must-link constraints.(By default, the threshold is calculated from the contig, and the default minimum value is 4,000 bp)

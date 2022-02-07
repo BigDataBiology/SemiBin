@@ -4,7 +4,8 @@ Unreleased
 	mmseqs format
 	* Fix bug with non-standard characters in sample names (#68)
 	* Provide pretrained models from soil, cat gut, human oral,
-	pig gut, mouse gut, built environment, wastewater and whole(training from all samples).
+	pig gut, mouse gut, built environment, wastewater and global (training
+	from all environments).
 
 Version 0.5.0 Fri Jan 7 2022 by BigDataBiology
 	* Faster `SemiBin --version`
