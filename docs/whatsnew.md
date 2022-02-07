@@ -1,6 +1,7 @@
 # What's New
 
-## Unreleased (development version)
+## Version 0.6
+
 ### User-visible improvements
 - Users can now pass in the output of running mmseqs2 directly and SemiBin will
   use that instead of calling mmseqs itself (use option
@@ -8,6 +9,11 @@
 - The subcommand to generate cannot links is now called
   `generate_cannot_links`. The old name (`predict_taxonomy`) is kept as a
   deprecated alias.
+- Similarly, sequence features (_k_-mer and abundance) are generated using the
+  commands `generate_sequence_features_single` and
+  `generate_sequence_features_multi` (for single- and multi-sample modes,
+  respectively). The old names (`generate_data_single`/`generate_data_multi`)
+  are kept as deprecated aliases.
 - Provide pretrained models from soil, cat gut, human oral,pig gut, mouse gut,
   built environment, wastewater and global (training from all samples).
 - Add `check_install` command and run `check_install` before easy command

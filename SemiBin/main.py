@@ -50,14 +50,18 @@ def parse_args(args):
                                                   'cannot-link file used in the semi-supervised deep learning model training. '
                                                   'This will download the GTDB database if not downloaded before.')
 
-    generate_data_single = subparsers.add_parser('generate_data_single',
-                                            help='Generate training data (files data.csv and data_split.csv) '
-                                                  'for semi-supervised deep learning model training (single or co-assembly).')
+    generate_sequence_features_single = subparsers.add_parser('generate_sequence_features_single', aliases=['generate_sequence_features_single'],
+                                            help='Generate sequence features (kmer and abundance) as training data'
+                                                  ' for semi-supervised deep learning model training (single or co-assembly mode).'
+                                                  ' This will produce the data.csv and data_split.csv files.'
+                                                  )
 
 
-    generate_data_multi = subparsers.add_parser('generate_data_multi',
-                                            help='Generate training data(files data.csv and data_split.csv) '
-                                                'for the semi-supervised deep learning model training (multi-sample)')
+    generate_sequence_features_multi = subparsers.add_parser('generate_sequence_features_multi', aliases=['generate_sequence_features_multi'],
+                                            help='Generate sequence features (kmer and abundance) as training data'
+                                                  ' for semi-supervised deep learning model training (multi-sample mode).'
+                                                  ' This will produce the data.csv and data_split.csv files.'
+                                                  )
 
     download_GTDB = subparsers.add_parser('download_GTDB', help='Download GTDB reference genomes.')
 
@@ -67,7 +71,7 @@ def parse_args(args):
                                     help='Train the model.')
 
     binning = subparsers.add_parser('bin',
-                                    help='Binning the contigs into bins.')
+                                    help='Group the contigs into bins.')
 
     download_GTDB.add_argument('-f', '--force',
                             required=False,
@@ -162,7 +166,7 @@ def parse_args(args):
                          default=None,
                          help='Path to the trained semi-supervised deep learning model.')
 
-    for p in [training, generate_cannot_links, binning, single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi]:
+    for p in [training, generate_cannot_links, binning, single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi]:
         p.add_argument('-p', '--processes', '-t', '--threads',
                    required=False,
                    type=int,
@@ -180,7 +184,7 @@ def parse_args(args):
                        default=None,
                        )
 
-    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_data_single, generate_data_multi, binning]:
+    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_sequence_features_single, generate_sequence_features_multi, binning]:
         p.add_argument('-i', '--input-fasta',
                                 required=True,
                                 help='Path to the input fasta file.',
@@ -192,7 +196,7 @@ def parse_args(args):
                             dest='output',
                             default=None,
                             )
-    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_data_single, generate_data_multi, binning, training]:
+    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_sequence_features_single, generate_sequence_features_multi, binning, training]:
         p.add_argument('-m', '--min-len',
                        required=False,
                        type=int,
@@ -212,7 +216,7 @@ def parse_args(args):
                        dest='ratio',
                        default=0.05)
 
-    for p in [single_easy_bin, multi_easy_bin, generate_data_single, generate_data_multi]:
+    for p in [single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi]:
         p.add_argument('-b', '--input-bam',
                               required=True,
                               nargs='*',
@@ -294,7 +298,7 @@ def parse_args(args):
                           default=1,
                           help='Fraction of contigs that considered to be binned (should be between 0 and 1; default: 1).')
 
-    for p in [multi_easy_bin, generate_data_multi]:
+    for p in [multi_easy_bin, generate_sequence_features_multi]:
         p.add_argument('-s', '--separator',
                            required=False,
                            type=str,
@@ -312,7 +316,7 @@ def parse_args(args):
                        default=None,
                        )
 
-    for p in [generate_cannot_links, generate_data_single, generate_data_multi, single_easy_bin, multi_easy_bin]:
+    for p in [generate_cannot_links, generate_sequence_features_single, generate_sequence_features_multi, single_easy_bin, multi_easy_bin]:
         p.add_argument('--ml-threshold',
                        required=False,
                        type=int,
@@ -409,7 +413,7 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
         namelist, num_must_link, os.path.join(output, 'cannot'), cannot_name)
 
 
-def generate_data_single(logger, contig_fasta,
+def generate_sequence_features_single(logger, contig_fasta,
                          bams, binned_length,
                          must_link_threshold, num_process, output):
     """
@@ -472,7 +476,7 @@ def generate_data_single(logger, contig_fasta,
         data_split.to_csv(ofile)
 
 
-def generate_data_multi(logger, contig_fasta,
+def generate_sequence_features_multi(logger, contig_fasta,
                         bams, num_process,
                         separator, ratio, min_length, ml_threshold, output):
     """
@@ -705,10 +709,10 @@ def single_easy_binning(args, logger, binned_length,
                         must_link_threshold,
                         contig_dict, recluster,random_seed, output, device, environment):
     """
-    contain `generate_cannot_links`, `generate_data_single`, `train`, `bin` in one command for single-sample and co-assembly binning
+    contain `generate_cannot_links`, `generate_sequence_features_single`, `train`, `bin` in one command for single-sample and co-assembly binning
     """
     logger.info('Generate training data.')
-    generate_data_single(
+    generate_sequence_features_single(
         logger,
         args.contig_fasta,
         args.bams,
@@ -747,12 +751,12 @@ def single_easy_binning(args, logger, binned_length,
 def multi_easy_binning(args, logger, recluster,
                        random_seed, output, device):
     """
-    contain `generate_cannot_links`, `generate_data_multi`, `train`, `bin` in one command for multi-sample binning
+    contain `generate_cannot_links`, `generate_sequence_features_multi`, `train`, `bin` in one command for multi-sample binning
     """
     logger.info('Multi-sample binning.')
     logger.info('Generate training data.')
 
-    sample_list = generate_data_multi(
+    sample_list = generate_sequence_features_multi(
         logger,
         args.contig_fasta,
         args.bams,
@@ -838,14 +842,14 @@ def main():
         device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
 
-    if args.cmd in ['generate_cannot_links', 'generate_data_single', 'bin','single_easy_bin']:
+    if args.cmd in ['generate_cannot_links', 'generate_sequence_features_single', 'bin','single_easy_bin']:
         binned_short, must_link_threshold, contig_dict = process_fasta(args.contig_fasta, args.ratio)
         if args.min_len is None:
             binned_length = 1000 if binned_short else 2500
         else:
             binned_length = args.min_len
 
-    if args.cmd in ['generate_cannot_links', 'generate_data_single', 'generate_data_multi', 'single_easy_bin', 'multi_easy_bin']:
+    if args.cmd in ['generate_cannot_links', 'generate_sequence_features_single', 'generate_sequence_features_multi', 'single_easy_bin', 'multi_easy_bin']:
         if args.ml_threshold is not None:
             must_link_threshold = args.ml_threshold
 
@@ -864,8 +868,8 @@ def main():
             must_link_threshold=must_link_threshold,
             output=out)
 
-    if args.cmd == 'generate_data_single':
-        generate_data_single(
+    if args.cmd == 'generate_sequence_features_single':
+        generate_sequence_features_single(
             logger,
             args.contig_fasta,
             args.bams,
@@ -874,8 +878,8 @@ def main():
             args.num_process,
             out)
 
-    if args.cmd == 'generate_data_multi':
-        generate_data_multi(
+    if args.cmd == 'generate_sequence_features_multi':
+        generate_sequence_features_multi(
             logger,
             args.contig_fasta,
             args.bams,

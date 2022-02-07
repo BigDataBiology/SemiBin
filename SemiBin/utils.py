@@ -33,11 +33,11 @@ def validate_normalize_args(logger, args):
         expect_file(args.contig_fasta)
         expect_file(args.taxonomy_results_fname)
 
-    if args.cmd == 'generate_data_single':
+    if args.cmd == 'generate_sequence_features_single':
         expect_file(args.contig_fasta)
         expect_file_list(args.bams)
 
-    if args.cmd == 'generate_data_multi':
+    if args.cmd == 'generate_sequence_features_multi':
         expect_file(args.contig_fasta)
         expect_file_list(args.bams)
 

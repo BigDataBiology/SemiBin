@@ -75,15 +75,15 @@ Run the contig annotations using mmseqs with GTDB and generate cannot-link file 
 
 The following options are the same as for `single_easy_bin`: `-i/--input-fasta`, `-o/--output`, `--cannot-name`, `-r/--reference-db-data-dir`, `--ratio`, `--min-len`, `--ml-threshold` and `--taxonomy-annotation-table`.
 
-#### generate_data_single
+#### generate_sequence_features_single
 
-Generate training data(data.csv;data_split.csv) for single and co-assembly binning.
+Generate training data (data.csv;data_split.csv) for single and co-assembly binning.
 
 The following options are the same as for `single_easy_bin`: `-i/--input-fasta`,  `-b/--input-bam`, `-o/--output`, `-p/--processes/-t/--threads`, `--ratio`, `--min-len`, `--ml-threshold`.
 
-#### generate_data_multi
+#### generate_sequence_features_multi
 
-Generate training data(data.csv;data_split.csv) for multi-samples binning.
+Generate training data (data.csv;data_split.csv) for multi-samples binning.
 
 The following options are the same as for `single_easy_bin`: `-i/--input-fasta`, `-o/--output`, `-p/--processes/-t/--threads`, `--ratio`, `--min-len`, `--ml-threshold`.
 
@@ -102,7 +102,7 @@ The following options are the same as for `single_easy_bin`: `-i/--input-fasta`,
 
 #### bin
 
-Clustering contigs into bins.
+Cluster contigs into bins.
 
 * `--model`: Path to the trained model.
 
