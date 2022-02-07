@@ -13,7 +13,7 @@ Yes. There are two approaches:
    formatted file and is likely to produce nonsensical results if a different
    format is provided.
 
-The approach one is more complex but can make sense as part of a larger
+The second approach is more complex but can make sense as part of a larger
 pipeline where taxonomic annotation of contigs is performed for multiple
 reasons (not only for the benefit of SemiBin).
 

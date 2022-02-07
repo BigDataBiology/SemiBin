@@ -2,7 +2,11 @@
 
 ## Version 0.6
 
+*Released February 7 2022*
+
 ### User-visible improvements
+- Provide pretrained models from soil, cat gut, human oral,pig gut, mouse gut,
+  built environment, wastewater and global (training from all samples).
 - Users can now pass in the output of running mmseqs2 directly and SemiBin will
   use that instead of calling mmseqs itself (use option
   `--taxonomy-annotation-table`).
@@ -14,8 +18,6 @@
   `generate_sequence_features_multi` (for single- and multi-sample modes,
   respectively). The old names (`generate_data_single`/`generate_data_multi`)
   are kept as deprecated aliases.
-- Provide pretrained models from soil, cat gut, human oral,pig gut, mouse gut,
-  built environment, wastewater and global (training from all samples).
 - Add `check_install` command and run `check_install` before easy command
 
 ### Bugfixes

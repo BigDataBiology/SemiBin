@@ -1,11 +1,13 @@
-Unreleased
+Version 0.6.0 Mon 7 Feb 2022 by BigDataBiology
+	* Provide pretrained models from soil, cat gut, human oral,
+	pig gut, mouse gut, built environment, wastewater and global (training
+	from all environments).
 	* Add `check_install` command and run `check_install` before easy* command
 	* The user can now specify a pre-computed contig annotation table in
 	mmseqs format
 	* Fix bug with non-standard characters in sample names (#68)
-	* Provide pretrained models from soil, cat gut, human oral,
-	pig gut, mouse gut, built environment, wastewater and global (training
-	from all environments).
+	* Better subcommand names (`generate_sequence_features_*` and
+	`generate_cannot_links`)
 
 Version 0.5.0 Fri Jan 7 2022 by BigDataBiology
 	* Faster `SemiBin --version`
