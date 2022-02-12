@@ -28,7 +28,7 @@ If you use this software in a publication please cite:
 
 SemiBin runs on Python 3.7-3.9.
 
-_NOTE_: SemiBin runs on Linux (some dependencies will fail on Mac machine).
+_NOTE_: SemiBin runs on Linux (some dependencies will fail on Mac machine (see [Issues 73](https://github.com/BigDataBiology/SemiBin/issues/73))).
 
 ### Bioconda ###
 
