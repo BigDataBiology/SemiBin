@@ -170,7 +170,8 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
             seed = cal_num_bins(
                 contig_fastas[data_index],
                 binned_length=binned_lengths[data_index],
-                num_process=num_process)
+                num_process=num_process,
+                output=out)
             if epoch == 0:
                 logger.info('Generate training data of {}:'.format(data_index))
 

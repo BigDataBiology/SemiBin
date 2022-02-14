@@ -1,3 +1,6 @@
+Version 0.7.0
+    * Reuse markers.hmmout to make the training from several samples faster
+
 Version 0.6.0 Mon 7 Feb 2022 by BigDataBiology
 	* Provide pretrained models from soil, cat gut, human oral,
 	pig gut, mouse gut, built environment, wastewater and global (training

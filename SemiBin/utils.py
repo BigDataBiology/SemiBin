@@ -243,7 +243,7 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False):
         counts = data.groupby('gene')['orf'].count()
         return extract_seeds(counts, data)
 
-def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False):
+def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, output = None):
     '''Estimate number of bins from a FASTA file
 
     Parameters
@@ -253,6 +253,15 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False):
     multi_mode: bool, optional (if True, treat input as resulting from concatenating multiple files)
     '''
     with tempfile.TemporaryDirectory() as tdir:
+        if output is not None:
+            if os.path.exists(os.path.join(output, 'markers.hmmout')):
+                print('do not need cal')
+                return get_marker(os.path.join(output, 'markers.hmmout'), fasta_path, binned_length, multi_mode)
+            else:
+                print('cal')
+                target_dir = output
+        else:
+            target_dir = tdir
         contig_output = os.path.join(tdir, 'contigs.faa')
         with open(contig_output + '.out', 'w') as frag_out_log:
             # We need to call FragGeneScan instead of the Perl wrapper because the
@@ -270,8 +279,8 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False):
                 stdout=frag_out_log,
             )
 
-        hmm_output = os.path.join(tdir, 'markers.hmmout')
-        with open(hmm_output + '.out', 'w') as hmm_out_log:
+        hmm_output = os.path.join(target_dir, 'markers.hmmout')
+        with open(os.path.join(tdir, 'markers.hmmout.out'), 'w') as hmm_out_log:
             subprocess.check_call(
                 ['hmmsearch',
                  '--domtblout',
