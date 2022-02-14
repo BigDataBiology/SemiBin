@@ -23,9 +23,10 @@ def validate_normalize_args(logger, args):
             for f in fs:
                 expect_file(f)
 
-    if args.num_process == 0:
-        args.num_process = multiprocessing.cpu_count()
-        logger.info(f'Setting number of CPUs to {args.num_process}')
+    if args.cmd != 'download_GTDB' and args.cmd != 'check_install':
+        if args.num_process == 0:
+            args.num_process = multiprocessing.cpu_count()
+            logger.info(f'Setting number of CPUs to {args.num_process}')
 
     if args.cmd == 'generate_cannot_links':
         if args.GTDB_reference is not None:
