@@ -256,10 +256,8 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
     with tempfile.TemporaryDirectory() as tdir:
         if output is not None:
             if os.path.exists(os.path.join(output, 'markers.hmmout')):
-                print('do not need cal')
                 return get_marker(os.path.join(output, 'markers.hmmout'), fasta_path, binned_length, multi_mode)
             else:
-                print('cal')
                 target_dir = output
         else:
             target_dir = tdir
