@@ -374,7 +374,7 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
     else:
         tdir = tmp_output
 
-    filtered_fasta = os.path.join(tdir, 'SemiBinFiltered.fna')
+    filtered_fasta = os.path.join(tdir, 'SemiBinFiltered.fa')
     namelist = []
     num_must_link = 0
     with open(filtered_fasta, 'wt') as out:
@@ -524,7 +524,7 @@ def generate_sequence_features_multi(logger, contig_fasta,
             yield sample_name, contig_name, seq
 
     for sample_name, contigs in groupby(fasta_sample_iter(contig_fasta), lambda sn_cn_seq : sn_cn_seq[0]):
-        with open(os.path.join( output, 'samples', '{}.fasta'.format(sample_name)), 'wt') as out:
+        with open(os.path.join( output, 'samples', '{}.fa'.format(sample_name)), 'wt') as out:
             for _, contig_name, seq in contigs:
                 out.write(f'>{contig_name}\n{seq}\n')
                 contig_length_list.append(len(seq))
@@ -539,7 +539,7 @@ def generate_sequence_features_multi(logger, contig_fasta,
         if min_length is not None:
             binning_threshold[sample] = min_length
         else:
-            binned_short ,_ ,_ = process_fasta(os.path.join(output, 'samples/{}.fasta'.format(sample)), ratio)
+            binned_short ,_ ,_ = process_fasta(os.path.join(output, 'samples/{}.fa'.format(sample)), ratio)
             binning_threshold[sample] = 1000 if binned_short else 2500
 
     for bam_index in range(n_sample):
@@ -586,7 +586,7 @@ def generate_sequence_features_multi(logger, contig_fasta,
                 output_path, 'data_split_cov.csv'))
 
         sample_contig_fasta = os.path.join(
-            output, 'samples/{}.fasta'.format(sample))
+            output, 'samples/{}.fa'.format(sample))
         binned_length =  binning_threshold[sample]
         kmer_whole = generate_kmer_features_from_fasta(
             sample_contig_fasta, binned_length, 4)
@@ -652,7 +652,7 @@ def training(logger, contig_fasta, num_process,
     contig_fasta_unzip = []
     for fasta_index,temp_fasta in enumerate(contig_fasta):
         if temp_fasta.endswith('.gz') or temp_fasta.endswith('.bz2') or temp_fasta.endswith('.xz'):
-            temp_fasta_unzip = os.path.join(output, 'unzip_contig_{}.fasta'.format(fasta_index))
+            temp_fasta_unzip = os.path.join(output, 'unzip_contig_{}.fa'.format(fasta_index))
             with open(temp_fasta_unzip, 'wt') as out:
                 for h,seq in fasta_iter(temp_fasta):
                         out.write(f'>{h}\n{seq}\n')
@@ -790,7 +790,7 @@ def multi_easy_binning(args, logger, recluster,
         logger.info(
             'Running mmseqs and generate cannot-link file of {}.'.format(sample))
         sample_fasta = os.path.join(
-            output, 'samples', '{}.fasta'.format(sample))
+            output, 'samples', '{}.fa'.format(sample))
         sample_data = os.path.join(output, 'samples', sample, 'data.csv')
         sample_data_split = os.path.join(
             output, 'samples', sample, 'data_split.csv')
