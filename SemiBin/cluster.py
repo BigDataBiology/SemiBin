@@ -83,7 +83,7 @@ def cal_kl(m, v, use_ne='auto'):
 
 
 def cluster(model, data, device, max_edges, max_node, is_combined,
-            logger, n_sample, out, contig_dict, binned_length, num_process, minfasta, recluster, random_seed):
+            logger, n_sample, out, contig_dict, binned_length, num_process, minfasta, recluster, random_seed, tmp_output = None):
     """
     Cluster contigs into bins
     max_edges: max edges of one contig considered in binning
@@ -208,18 +208,26 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
 
         os.makedirs(output_recluster_bin_path, exist_ok=True)
 
-        with tempfile.TemporaryDirectory() as tdir:
-            cfasta = os.path.join(tdir, 'concatenated.fna')
-            with open(cfasta, 'wt') as concat_out:
-                for ix,f in enumerate(bin_files):
-                    for h,seq in fasta_iter(f):
-                        h = f'bin{ix:06}.{h}'
-                        concat_out.write(f'>{h}\n{seq}\n')
-            seeds = cal_num_bins(
-                cfasta,
-                binned_length,
-                num_process,
-                multi_mode=True)
+        if not tmp_output:
+            tdir = tempfile.TemporaryDirectory()
+        else:
+            tdir = tmp_output
+
+        cfasta = os.path.join(tdir, 'concatenated.fna')
+        with open(cfasta, 'wt') as concat_out:
+            for ix,f in enumerate(bin_files):
+                for h,seq in fasta_iter(f):
+                    h = f'bin{ix:06}.{h}'
+                    concat_out.write(f'>{h}\n{seq}\n')
+        seeds = cal_num_bins(
+            cfasta,
+            binned_length,
+            num_process,
+            multi_mode=True,
+            tmp_output=tmp_output)
+
+        if not tmp_output:
+            tdir.close()
 
         for ix,bin_path in enumerate(bin_files):
             # if there are no hits, the output will be naturally empty
