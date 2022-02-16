@@ -209,7 +209,8 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
         os.makedirs(output_recluster_bin_path, exist_ok=True)
 
         if not tmp_output:
-            tdir = tempfile.TemporaryDirectory()
+            tmp = tempfile.TemporaryDirectory()
+            tdir = tmp.name
         else:
             tdir = tmp_output
 
@@ -225,9 +226,6 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
             num_process,
             multi_mode=True,
             tmp_output=tmp_output)
-
-        if not tmp_output:
-            tdir.close()
 
         for ix,bin_path in enumerate(bin_files):
             # if there are no hits, the output will be naturally empty
@@ -254,6 +252,10 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                            recluster=True, origin_label=int(bin_path.split('.')[-2]),minfasta = minfasta)
             else:
                 shutil.copy(bin_path, os.path.join(out, 'output_recluster_bins'))
+
+
+        if not tmp_output:
+            tmp.cleanup()
 
     logger.info('Binning finish.')
 

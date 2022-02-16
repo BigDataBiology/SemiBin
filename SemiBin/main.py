@@ -369,7 +369,8 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
     import tempfile
 
     if not tmp_output:
-        tdir = tempfile.TemporaryDirectory()
+        tmp = tempfile.TemporaryDirectory()
+        tdir = tmp.name
     else:
         tdir = tmp_output
 
@@ -421,7 +422,7 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
             stdout=None,
         )
     if not tmp_output:
-        tdir.close()
+        tmp.cleanup()
 
     os.makedirs(os.path.join(output, 'cannot'), exist_ok=True)
     generate_cannot_link(taxonomy_results_fname,

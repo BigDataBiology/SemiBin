@@ -254,7 +254,8 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
     multi_mode: bool, optional (if True, treat input as resulting from concatenating multiple files)
     '''
     if not tmp_output:
-        tdir = tempfile.TemporaryDirectory()
+        tmp = tempfile.TemporaryDirectory()
+        tdir = tmp.name
     else:
         tdir = tmp_output
 
@@ -295,10 +296,13 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
              ],
             stdout=hmm_out_log,
         )
-    if not tmp_output:
-        tdir.close()
 
-    return get_marker(hmm_output, fasta_path, binned_length, multi_mode)
+    marker = get_marker(hmm_output, fasta_path, binned_length, multi_mode)
+
+    if not tmp_output:
+        tmp.cleanup()
+
+    return marker
 
 
 def write_bins(namelist, contig_labels, output, contig_dict,
