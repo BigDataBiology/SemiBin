@@ -29,6 +29,7 @@ def test_bin():
             recluster=True,
             random_seed=None,
             environment=None,
+            tmp_output=None,
             )
 
     assert len(os.listdir('output_bin/output_bins')) > 0
