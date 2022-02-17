@@ -139,7 +139,7 @@ class unsupervised_feature_Dataset(Dataset):
 
 
 def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot_links, is_combined=True,
-          batchsize=2048, epoches=20, device=None, num_process = 8, mode = 'single', tmp_output = None):
+          batchsize=2048, epoches=20, device=None, num_process = 8, mode = 'single'):
     """
     Train model from one sample(--mode single) or several samples(--mode several)
     """
@@ -171,8 +171,7 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
                 contig_fastas[data_index],
                 binned_length=binned_lengths[data_index],
                 num_process=num_process,
-                output=out,
-                tmp_output=tmp_output)
+                output=out)
             if epoch == 0:
                 logger.info('Generate training data of {}:'.format(data_index))
 

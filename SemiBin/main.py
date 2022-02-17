@@ -167,10 +167,10 @@ def parse_args(args):
                          help='Path to the trained semi-supervised deep learning model.')
 
     for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, training, binning]:
-        p.add_argument('--tmp-output',
+        p.add_argument('--tmpdir',
                        required=False,
                        type=str,
-                       help='output for the intermediate files',
+                       help='option to set temporary directory',
                        dest='tmp_output',
                        default=None,
     )
@@ -356,7 +356,7 @@ def check_install():
 
 def predict_taxonomy(logger, contig_fasta, cannot_name,
                      taxonomy_results_fname, GTDB_reference, num_process,
-                     binned_length, must_link_threshold, output, tmp_output = None):
+                     binned_length, must_link_threshold, output):
     """
     Predict taxonomy using mmseqs and generate cannot-link file
 
@@ -368,61 +368,54 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
     """
     import tempfile
 
-    if not tmp_output:
-        tmp = tempfile.TemporaryDirectory()
-        tdir = tmp.name
-    else:
-        tdir = tmp_output
-
-    filtered_fasta = os.path.join(tdir, 'SemiBinFiltered.fa')
-    namelist = []
-    num_must_link = 0
-    with open(filtered_fasta, 'wt') as out:
-        for h,seq in fasta_iter(contig_fasta):
-            if len(seq) >= binned_length:
-                out.write(f'>{h}\n{seq}\n')
-                namelist.append(h)
-                if len(seq) >= must_link_threshold:
-                    num_must_link += 1
-    if taxonomy_results_fname is None:
-        GTDB_reference = find_or_download_gtdb(logger, GTDB_reference, force=False)
-        subprocess.check_call(
-            ['mmseqs',
-             'createdb',
-             filtered_fasta,
-             os.path.join(tdir, 'contig_DB')],
-            stdout=None,
-        )
-        if os.path.exists(os.path.join(output, 'mmseqs_contig_annotation')):
-            shutil.rmtree(os.path.join(output, 'mmseqs_contig_annotation'))
-        os.makedirs(os.path.join(output, 'mmseqs_contig_annotation'))
-        subprocess.run(
-            ['mmseqs',
-             'taxonomy',
-             os.path.join(tdir, 'contig_DB'),
-             GTDB_reference,
-             os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
-             tdir,
-             '--tax-lineage', '1',
-             '--threads', str(num_process),
-             ],
-            check=True,
-            stdout=None,
-        )
-        taxonomy_results_fname = os.path.join(output,
-                                    'mmseqs_contig_annotation',
-                                    'taxonomyResult.tsv')
-        subprocess.check_call(
-            ['mmseqs',
-             'createtsv',
-             os.path.join(tdir, 'contig_DB'),
-             os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
-             taxonomy_results_fname,
-             ],
-            stdout=None,
-        )
-    if not tmp_output:
-        tmp.cleanup()
+    with tempfile.TemporaryDirectory() as tdir:
+        filtered_fasta = os.path.join(tdir, 'SemiBinFiltered.fa')
+        namelist = []
+        num_must_link = 0
+        with open(filtered_fasta, 'wt') as out:
+            for h,seq in fasta_iter(contig_fasta):
+                if len(seq) >= binned_length:
+                    out.write(f'>{h}\n{seq}\n')
+                    namelist.append(h)
+                    if len(seq) >= must_link_threshold:
+                        num_must_link += 1
+        if taxonomy_results_fname is None:
+            GTDB_reference = find_or_download_gtdb(logger, GTDB_reference, force=False)
+            subprocess.check_call(
+                ['mmseqs',
+                 'createdb',
+                 filtered_fasta,
+                 os.path.join(tdir, 'contig_DB')],
+                stdout=None,
+            )
+            if os.path.exists(os.path.join(output, 'mmseqs_contig_annotation')):
+                shutil.rmtree(os.path.join(output, 'mmseqs_contig_annotation'))
+            os.makedirs(os.path.join(output, 'mmseqs_contig_annotation'))
+            subprocess.run(
+                ['mmseqs',
+                 'taxonomy',
+                 os.path.join(tdir, 'contig_DB'),
+                 GTDB_reference,
+                 os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
+                 tdir,
+                 '--tax-lineage', '1',
+                 '--threads', str(num_process),
+                 ],
+                check=True,
+                stdout=None,
+            )
+            taxonomy_results_fname = os.path.join(output,
+                                        'mmseqs_contig_annotation',
+                                        'taxonomyResult.tsv')
+            subprocess.check_call(
+                ['mmseqs',
+                 'createtsv',
+                 os.path.join(tdir, 'contig_DB'),
+                 os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
+                 taxonomy_results_fname,
+                 ],
+                stdout=None,
+            )
 
     os.makedirs(os.path.join(output, 'cannot'), exist_ok=True)
     generate_cannot_link(taxonomy_results_fname,
@@ -618,7 +611,7 @@ def generate_sequence_features_multi(logger, contig_fasta,
 
 def training(logger, contig_fasta, num_process,
              data, data_split, cannot_link, batchsize,
-             epoches,  output, device, ratio, min_length, mode, tmp_output = None):
+             epoches,  output, device, ratio, min_length, mode):
     """
     Training the model
 
@@ -673,14 +666,13 @@ def training(logger, contig_fasta, num_process,
         epoches,
         device,
         num_process,
-        mode = mode,
-        tmp_output = tmp_output)
+        mode = mode)
 
 
 def binning(logger, num_process, data,
             max_edges, max_node, minfasta,
             binned_length, contig_dict, recluster,model_path,
-            random_seed,output, device, environment, tmp_output = None):
+            random_seed,output, device, environment):
     """
     Clustering the contigs to get the final bins.
 
@@ -719,13 +711,12 @@ def binning(logger, num_process, data,
         num_process,
         minfasta,
         recluster,
-        random_seed,
-        tmp_output)
+        random_seed)
 
 
 def single_easy_binning(args, logger, binned_length,
                         must_link_threshold,
-                        contig_dict, recluster,random_seed, output, device, environment, tmp_output = None):
+                        contig_dict, recluster,random_seed, output, device, environment):
     """
     contain `generate_cannot_links`, `generate_sequence_features_single`, `train`, `bin` in one command for single-sample and co-assembly binning
     """
@@ -752,23 +743,22 @@ def single_easy_binning(args, logger, binned_length,
             args.num_process,
             binned_length,
             must_link_threshold,
-            output,
-            tmp_output=tmp_output)
+            output)
         logger.info('Training model and clustering.')
         training(logger, [args.contig_fasta],
                  args.num_process, [data_path], [data_split_path],
                  [os.path.join(output, 'cannot', 'cannot.txt')],
-                 args.batchsize, args.epoches, output, device, args.ratio, args.min_len,  mode='single', tmp_output=tmp_output)
+                 args.batchsize, args.epoches, output, device, args.ratio, args.min_len,  mode='single')
 
     binning(logger, args.num_process, data_path,
             args.max_edges, args.max_node, args.minfasta_kb * 1000,
             binned_length, contig_dict, recluster,
             os.path.join(output, 'model.h5') if environment is None else None,
-            random_seed, output,  device, environment if environment is not None else None, tmp_output=tmp_output)
+            random_seed, output,  device, environment if environment is not None else None)
 
 
 def multi_easy_binning(args, logger, recluster,
-                       random_seed, output, device, tmp_output = None):
+                       random_seed, output, device):
     """
     contain `generate_cannot_links`, `generate_sequence_features_multi`, `train`, `bin` in one command for multi-sample binning
     """
@@ -812,8 +802,7 @@ def multi_easy_binning(args, logger, recluster,
             args.num_process,
             binned_length,
             must_link_threshold,
-            os.path.join(output, 'samples', sample),
-            tmp_output=tmp_output)
+            os.path.join(output, 'samples', sample))
 
         sample_cannot = os.path.join(
             output, 'samples', sample, 'cannot/{}.txt'.format(sample))
@@ -821,13 +810,13 @@ def multi_easy_binning(args, logger, recluster,
         training(logger, [sample_fasta], args.num_process,
                  [sample_data], [sample_data_split], [sample_cannot],
                  args.batchsize, args.epoches, os.path.join(output, 'samples', sample),
-                 device, args.ratio, args.min_len, mode='single', tmp_output=tmp_output)
+                 device, args.ratio, args.min_len, mode='single')
 
         binning(logger, args.num_process, sample_data,
                 args.max_edges, args.max_node, args.minfasta_kb * 1000,
                 binned_length, contig_dict, recluster,
                 os.path.join(output, 'samples', sample, 'model.h5'), random_seed ,
-                os.path.join(output, 'samples', sample),  device, None, tmp_output=tmp_output)
+                os.path.join(output, 'samples', sample),  device, None)
 
     os.makedirs(os.path.join(output, 'bins'), exist_ok=True)
     for sample in sample_list:
@@ -865,6 +854,7 @@ def main():
     if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'generate_cannot_links', 'train', 'bin']:
         tmp_output = args.tmp_output
         if tmp_output is not None:
+            os.environ['TMPDIR'] = tmp_output
             os.makedirs(tmp_output, exist_ok=True)
 
     if args.cmd in ['generate_cannot_links', 'generate_sequence_features_single', 'bin','single_easy_bin']:
@@ -891,8 +881,7 @@ def main():
             num_process=args.num_process,
             binned_length=binned_length,
             must_link_threshold=must_link_threshold,
-            output=out,
-            tmp_output = tmp_output)
+            output=out)
 
     if args.cmd == 'generate_sequence_features_single':
         generate_sequence_features_single(
@@ -921,7 +910,7 @@ def main():
             set_random_seed(args.random_seed)
         training(logger, args.contig_fasta, args.num_process,
                  args.data, args.data_split, args.cannot_link,
-                 args.batchsize, args.epoches, out, device, args.ratio, args.min_len, args.mode, tmp_output)
+                 args.batchsize, args.epoches, out, device, args.ratio, args.min_len, args.mode)
 
 
     if args.cmd == 'bin':
@@ -929,7 +918,7 @@ def main():
             set_random_seed(args.random_seed)
         binning(logger, args.num_process, args.data, args.max_edges,
                 args.max_node, args.minfasta_kb * 1000, binned_length,
-                contig_dict, args.recluster, args.model_path, args.random_seed,out, device, args.environment, tmp_output)
+                contig_dict, args.recluster, args.model_path, args.random_seed,out, device, args.environment)
 
 
     if args.cmd == 'single_easy_bin':
@@ -946,8 +935,7 @@ def main():
             args.random_seed,
             out,
             device,
-            args.environment,
-            tmp_output)
+            args.environment)
 
     if args.cmd == 'multi_easy_bin':
         check_install()
@@ -959,8 +947,7 @@ def main():
             args.recluster,
             args.random_seed,
             out,
-            device,
-            tmp_output)
+            device)
 
 
 if __name__ == '__main__':

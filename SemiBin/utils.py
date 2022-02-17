@@ -244,7 +244,7 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False):
         counts = data.groupby('gene')['orf'].count()
         return extract_seeds(counts, data)
 
-def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, output = None, tmp_output = None):
+def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, output = None):
     '''Estimate number of bins from a FASTA file
 
     Parameters
@@ -253,56 +253,46 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
     num_process: int (number of CPUs to use)
     multi_mode: bool, optional (if True, treat input as resulting from concatenating multiple files)
     '''
-    if not tmp_output:
-        tmp = tempfile.TemporaryDirectory()
-        tdir = tmp.name
-    else:
-        tdir = tmp_output
-
-    if output is not None:
-        if os.path.exists(os.path.join(output, 'markers.hmmout')):
-            return get_marker(os.path.join(output, 'markers.hmmout'), fasta_path, binned_length, multi_mode)
+    with tempfile.TemporaryDirectory() as tdir:
+        if output is not None:
+            if os.path.exists(os.path.join(output, 'markers.hmmout')):
+                return get_marker(os.path.join(output, 'markers.hmmout'), fasta_path, binned_length, multi_mode)
+            else:
+                target_dir = output
         else:
-            target_dir = output
-    else:
-        target_dir = tdir
-    contig_output = os.path.join(tdir, 'contigs.faa')
-    with open(contig_output + '.out', 'w') as frag_out_log:
-        # We need to call FragGeneScan instead of the Perl wrapper because the
-        # Perl wrapper does not handle filepaths correctly if they contain spaces
-        # This binary does not handle return codes correctly, though, so we
-        # cannot use `check_call`:
-        subprocess.call(
-            [shutil.which('FragGeneScan'),
-             '-s', fasta_path,
-             '-o', contig_output,
-             '-w', str(0),
-             '-t', 'complete',
-             '-p', str(num_process),
-             ],
-            stdout=frag_out_log,
-        )
+            target_dir = tdir
+        contig_output = os.path.join(tdir, 'contigs.faa')
+        with open(contig_output + '.out', 'w') as frag_out_log:
+            # We need to call FragGeneScan instead of the Perl wrapper because the
+            # Perl wrapper does not handle filepaths correctly if they contain spaces
+            # This binary does not handle return codes correctly, though, so we
+            # cannot use `check_call`:
+            subprocess.call(
+                [shutil.which('FragGeneScan'),
+                 '-s', fasta_path,
+                 '-o', contig_output,
+                 '-w', str(0),
+                 '-t', 'complete',
+                 '-p', str(num_process),
+                 ],
+                stdout=frag_out_log,
+            )
 
-    hmm_output = os.path.join(target_dir, 'markers.hmmout')
-    with open(os.path.join(tdir, 'markers.hmmout.out'), 'w') as hmm_out_log:
-        subprocess.check_call(
-            ['hmmsearch',
-             '--domtblout',
-             hmm_output,
-             '--cut_tc',
-             '--cpu', str(num_process),
-             os.path.split(__file__)[0] + '/marker.hmm',
-             contig_output + '.faa',
-             ],
-            stdout=hmm_out_log,
-        )
+        hmm_output = os.path.join(target_dir, 'markers.hmmout')
+        with open(os.path.join(tdir, 'markers.hmmout.out'), 'w') as hmm_out_log:
+            subprocess.check_call(
+                ['hmmsearch',
+                 '--domtblout',
+                 hmm_output,
+                 '--cut_tc',
+                 '--cpu', str(num_process),
+                 os.path.split(__file__)[0] + '/marker.hmm',
+                 contig_output + '.faa',
+                 ],
+                stdout=hmm_out_log,
+            )
 
-    marker = get_marker(hmm_output, fasta_path, binned_length, multi_mode)
-
-    if not tmp_output:
-        tmp.cleanup()
-
-    return marker
+        return get_marker(hmm_output, fasta_path, binned_length, multi_mode)
 
 
 def write_bins(namelist, contig_labels, output, contig_dict,

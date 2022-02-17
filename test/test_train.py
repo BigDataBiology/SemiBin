@@ -28,7 +28,6 @@ def test_train():
             mode = 'single',
             ratio=0.05,
             min_length=None,
-            tmp_output=None,
             )
 
     assert os.path.exists('output_train/model.h5')
