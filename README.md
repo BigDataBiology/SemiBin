@@ -106,7 +106,7 @@ SemiBin single_easy_bin -i contig.fna -b *.bam -o output
 ```
 
 In this example, SemiBin will download GTDB to
-`$HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB`. You can change this default using the
+`$HOME/.cache/SemiBin/mmseqs2-GTDB`. You can change this default using the
 `-r` argument.
 
 You can use `--environment` with `human_gut`, `dog_gut`, `ocean`, `soil`,

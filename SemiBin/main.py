@@ -238,8 +238,8 @@ def parse_args(args):
     for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, download_GTDB]:
         p.add_argument('-r', '--reference-db-data-dir', '--reference-db',
                             required=False,
-                            help='GTDB reference storage path. (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB).'
-                            'If not set --reference-db and SemiBin cannot find GTDB in $HOME/.cache/SemiBin/mmseqs2-GTDB/GTDB, SemiBin will download GTDB (Note that >100GB of disk space are required).',
+                            help='GTDB reference storage path. (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB).'
+                            'If not set --reference-db and SemiBin cannot find GTDB in $HOME/.cache/SemiBin/mmseqs2-GTDB, SemiBin will download GTDB (Note that >100GB of disk space are required).',
                             dest='GTDB_reference',
                             metavar='',
                             default=None)
