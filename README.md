@@ -32,7 +32,7 @@ _NOTE_: SemiBin runs on Linux (some dependencies will fail on Mac machine (see [
 
 ### Bioconda ###
 
-_NOTE_: If you want to use SemiBin with GPU, you need to install Pytorch with GPU support. Or `conda install -c bioconda semibin` just install Pytorch with CPU support (see more information [https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/)). Please note that `MacOS Binaries dont support CUDA, install from source if CUDA is needed` (see [Issues 72](https://github.com/BigDataBiology/SemiBin/issues/72)). 
+_NOTE_: If you want to use SemiBin with GPU, you need to install PyTorch with GPU support. Or `conda install -c bioconda semibin` just install PyTorch with CPU support . Please note that `You can just install CPU version of PyTorch in MacOS with conda and you need to install from source if CUDA is needed` (see [Issues 72](https://github.com/BigDataBiology/SemiBin/issues/72)). See more information about how to install PyTorch: [https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/). 
 
 ```bash
 conda create -n SemiBin python==3.7
