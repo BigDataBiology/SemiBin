@@ -31,6 +31,12 @@ def validate_normalize_args(logger, args):
         if args.num_process > multiprocessing.cpu_count():
             args.num_process = multiprocessing.cpu_count()
 
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin']:
+        if args.predictor not in ['prodigal', 'fraggenescan']:
+            sys.stderr.write(
+                f"Error: SemiBin support prodigal or fraggenescan gene predictor.\n")
+            sys.exit(1)
+
     if args.cmd == 'generate_cannot_links':
         if args.GTDB_reference is not None:
             expect_file(args.GTDB_reference)
@@ -261,11 +267,12 @@ def prodigal(contig_file, contig_output):
 
 def run_prodigal(fasta_path, num_process, output):
     from .error import LoggingPool
-    num_contig = 0
+
     contig_dict = {}
     for h, seq in fasta_iter(fasta_path):
-        num_contig += 1
         contig_dict[h] = seq
+
+    num_contig = len(contig_dict)
 
     num_split = num_contig // num_process
     split_contig_dict = {}
@@ -284,22 +291,21 @@ def run_prodigal(fasta_path, num_process, output):
             for h in split_contig_dict[index]:
                 concat_out.write(f'>{h}\n{contig_dict[h]}\n')
 
-    pool = LoggingPool(num_process) if num_process != 0 else LoggingPool()
-
-    try:
-        for index in range(num_process):
-            pool.apply_async(
-                prodigal,
-                args=(
-                    os.path.join(output, 'contig_{}.fa'.format(index)),
-                    os.path.join(output, 'contig_{}.faa'.format(index)),
-                ))
-        pool.close()
-        pool.join()
-    except:
-        sys.stderr.write(
-            f"Error: Running prodigal fail\n")
-        sys.exit(1)
+    with LoggingPool(num_process) if num_process != 0 else LoggingPool() as pool:
+        try:
+            for index in range(num_process):
+                pool.apply_async(
+                    prodigal,
+                    args=(
+                        os.path.join(output, 'contig_{}.fa'.format(index)),
+                        os.path.join(output, 'contig_{}.faa'.format(index)),
+                    ))
+            pool.close()
+            pool.join()
+        except:
+            sys.stderr.write(
+                f"Error: Running prodigal fail\n")
+            sys.exit(1)
 
     contig_output = os.path.join(output, 'contigs.faa')
     with open(contig_output, 'w') as f:
@@ -307,7 +313,31 @@ def run_prodigal(fasta_path, num_process, output):
             f.write(open(os.path.join(output, 'contig_{}.faa'.format(index)), 'r').read())
     return contig_output
 
-def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, output = None):
+def run_fraggengscan(fasta_path, num_process, output):
+    try:
+        contig_output = os.path.join(output, 'contigs.faa')
+        with open(contig_output + '.out', 'w') as frag_out_log:
+            # We need to call FragGeneScan instead of the Perl wrapper because the
+            # Perl wrapper does not handle filepaths correctly if they contain spaces
+            # This binary does not handle return codes correctly, though, so we
+            # cannot use `check_call`:
+            subprocess.call(
+                [shutil.which('FragGeneScan'),
+                 '-s', fasta_path,
+                 '-o', contig_output,
+                 '-w', str(0),
+                 '-t', 'complete',
+                 '-p', str(num_process),
+                 ],
+                stdout=frag_out_log,
+            )
+    except:
+        sys.stderr.write(
+            f"Error: Running fraggenescan fail\n")
+        sys.exit(1)
+    return contig_output
+
+def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, output = None, predictor = 'prodigal'):
     '''Estimate number of bins from a FASTA file
 
     Parameters
@@ -325,7 +355,10 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
         else:
             target_dir = tdir
 
-        contig_output = run_prodigal(fasta_path, num_process, tdir)
+        if predictor == 'prodigal':
+            contig_output = run_prodigal(fasta_path, num_process, tdir)
+        else:
+            contig_output = run_fraggengscan(fasta_path, num_process, tdir)
 
         hmm_output = os.path.join(target_dir, 'markers.hmmout')
         try:

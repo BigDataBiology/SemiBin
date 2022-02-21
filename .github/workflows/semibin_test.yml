@@ -37,6 +37,7 @@ jobs:
         pip install requests
         pip install numexpr
         conda install -c bioconda bedtools hmmer fraggenescan==1.30
+        conda install -c bioconda prodigal
         python ./setup.py install
     - name: Test with pytest
       shell: bash -l {0}
