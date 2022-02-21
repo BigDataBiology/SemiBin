@@ -21,7 +21,6 @@ from .fasta import fasta_iter
 from .error import LoggingPool
 
 
-
 def parse_args(args):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      description='Semi-supervised siamese neural '
@@ -389,41 +388,56 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
                         num_must_link += 1
         if taxonomy_results_fname is None:
             GTDB_reference = find_or_download_gtdb(logger, GTDB_reference, force=False)
-            subprocess.check_call(
-                ['mmseqs',
-                 'createdb',
-                 filtered_fasta,
-                 os.path.join(tdir, 'contig_DB')],
-                stdout=None,
-            )
+            try:
+                subprocess.check_call(
+                    ['mmseqs',
+                     'createdb',
+                     filtered_fasta,
+                     os.path.join(tdir, 'contig_DB')],
+                    stdout=None,
+                )
+            except:
+                sys.stderr.write(
+                    f"Error: Running mmseqs createdb fail\n")
+                sys.exit(1)
             if os.path.exists(os.path.join(output, 'mmseqs_contig_annotation')):
                 shutil.rmtree(os.path.join(output, 'mmseqs_contig_annotation'))
             os.makedirs(os.path.join(output, 'mmseqs_contig_annotation'))
-            subprocess.run(
-                ['mmseqs',
-                 'taxonomy',
-                 os.path.join(tdir, 'contig_DB'),
-                 GTDB_reference,
-                 os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
-                 tdir,
-                 '--tax-lineage', '1',
-                 '--threads', str(num_process),
-                 ],
-                check=True,
-                stdout=None,
-            )
+            try:
+                subprocess.run(
+                    ['mmseqs',
+                     'taxonomy',
+                     os.path.join(tdir, 'contig_DB'),
+                     GTDB_reference,
+                     os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
+                     tdir,
+                     '--tax-lineage', '1',
+                     '--threads', str(num_process),
+                     ],
+                    check=True,
+                    stdout=None,
+                )
+            except:
+                sys.stderr.write(
+                    f"Error: Running mmseqs taxonomy fail\n")
+                sys.exit(1)
             taxonomy_results_fname = os.path.join(output,
                                         'mmseqs_contig_annotation',
                                         'taxonomyResult.tsv')
-            subprocess.check_call(
-                ['mmseqs',
-                 'createtsv',
-                 os.path.join(tdir, 'contig_DB'),
-                 os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
-                 taxonomy_results_fname,
-                 ],
-                stdout=None,
-            )
+            try:
+                subprocess.check_call(
+                    ['mmseqs',
+                     'createtsv',
+                     os.path.join(tdir, 'contig_DB'),
+                     os.path.join(output, 'mmseqs_contig_annotation/mmseqs_contig_annotation'),
+                     taxonomy_results_fname,
+                     ],
+                    stdout=None,
+                )
+            except:
+                sys.stderr.write(
+                    f"Error: Running mmseqs createtsv fail\n")
+                sys.exit(1)
 
     os.makedirs(os.path.join(output, 'cannot'), exist_ok=True)
     generate_cannot_link(taxonomy_results_fname,
@@ -463,6 +477,19 @@ def generate_sequence_features_single(logger, contig_fasta,
             callback=_checkback)
     pool.close()
     pool.join()
+
+    for bam_index, bam_file in enumerate(bam_list):
+        if not os.path.exists(os.path.join(output, '{}_data_cov.csv'.format(
+                os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
+            sys.stderr.write(
+                f"Error: Generating coverage file fail\n")
+            sys.exit(1)
+        if is_combined:
+            if not os.path.exists(os.path.join(output, '{}_data_split_cov.csv'.format(
+                    os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
+                sys.stderr.write(
+                    f"Error: Generating coverage file fail\n")
+                sys.exit(1)
 
     logger.info('Start generating kmer features from fasta file.')
     kmer_whole = generate_kmer_features_from_fasta(
@@ -558,6 +585,19 @@ def generate_sequence_features_multi(logger, contig_fasta,
                          callback=_checkback)
     pool.close()
     pool.join()
+
+    for bam_index, bam_file in enumerate(bam_list):
+        if not os.path.exists(os.path.join(os.path.join(output, 'samples'), '{}_data_cov.csv'.format(
+                os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
+            sys.stderr.write(
+                f"Error: Generating coverage file fail\n")
+            sys.exit(1)
+        if is_combined:
+            if not os.path.exists(os.path.join(os.path.join(output, 'samples'), '{}_data_split_cov.csv'.format(
+                    os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
+                sys.stderr.write(
+                    f"Error: Generating coverage file fail\n")
+                sys.exit(1)
 
     # Generate cov features for every sample
     if is_combined:
