@@ -12,7 +12,7 @@ for ifile, odir in [
     subprocess.check_call(
         ['SemiBin', 'bin',
          '--data', 'test/bin_data/data.csv',
-         '--minfasta-kbs', '200',
+         '--minfasta-kbs', '0',
          '--max-edges', '20',
          '--max-node', '1',
          '--model', 'test/bin_data/model.h5',
@@ -29,7 +29,7 @@ odir = 'test-outputs/no_recluster'
 subprocess.check_call(
     ['SemiBin', 'bin',
      '--data', 'test/bin_data/data.csv',
-     '--minfasta-kbs', '200',
+     '--minfasta-kbs', '0',
      '--max-edges', '20',
      '--max-node', '1',
      '--no-recluster',
@@ -52,7 +52,7 @@ for env,odir in [
     subprocess.check_call(
         ['SemiBin', 'bin',
          '--data', 'test/bin_data/data.csv',
-         '--minfasta-kbs', '200',
+         '--minfasta-kbs', '0',
          '--max-edges', '20',
          '--max-node', '1',
          '--environment', env,

@@ -47,12 +47,13 @@ You can download the source code from github and install.
 
 Install dependence packages using conda:
 [MMseqs2](https://github.com/soedinglab/MMseqs2),
-[Bedtools](http://bedtools.readthedocs.org/]), [Hmmer](http://hmmer.org/), and
-[Fraggenescan](https://sourceforge.net/projects/fraggenescan/).
+[Bedtools](http://bedtools.readthedocs.org/]), [Hmmer](http://hmmer.org/), 
+[Fraggenescan](https://sourceforge.net/projects/fraggenescan/) and [Prodigal](https://github.com/hyattpd/Prodigal)
 
 ```bash
 conda install -c conda-forge -c bioconda mmseqs2=13.45111
 conda install -c bioconda bedtools hmmer fraggenescan==1.30
+conda install -c bioconda prodigal
 ```
 
 Once the dependencies are installed, you can install by running:

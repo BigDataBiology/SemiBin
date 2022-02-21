@@ -28,6 +28,15 @@ def validate_normalize_args(logger, args):
             args.num_process = multiprocessing.cpu_count()
             logger.info(f'Setting number of CPUs to {args.num_process}')
 
+        if args.num_process > multiprocessing.cpu_count():
+            args.num_process = multiprocessing.cpu_count()
+
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin']:
+        if args.predictor not in ['prodigal', 'fraggenescan']:
+            sys.stderr.write(
+                f"Error: SemiBin support prodigal or fraggenescan gene predictor.\n")
+            sys.exit(1)
+
     if args.cmd == 'generate_cannot_links':
         if args.GTDB_reference is not None:
             expect_file(args.GTDB_reference)
@@ -199,7 +208,7 @@ normalize_marker_trans__dict = {
     'TIGR02386': 'TIGR02387',
 }
 
-def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False):
+def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, predictor = None):
     import pandas as pd
     data = pd.read_table(hmmout, sep=r'\s+',  comment='#', header=None,
                          usecols=(0,3,5,15,16), names=['orf', 'gene', 'qlen', 'qstart', 'qend'])
@@ -209,7 +218,10 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False):
     qlen = data[['gene','qlen']].drop_duplicates().set_index('gene')['qlen']
 
     def contig_name(ell):
-        contig,_,_,_ = ell.rsplit( '_', 3)
+        if predictor == 'prodigal':
+            contig,_ = ell.rsplit( '_', 1)
+        else:
+            contig,_,_,_ = ell.rsplit( '_', 3)
         return contig
 
     data = data.query('(qend - qstart) / qlen > 0.4').copy()
@@ -244,24 +256,69 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False):
         counts = data.groupby('gene')['orf'].count()
         return extract_seeds(counts, data)
 
-def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, output = None):
-    '''Estimate number of bins from a FASTA file
+def prodigal(contig_file, contig_output):
+        with open(contig_output + '.out', 'w') as prodigal_out_log:
+            subprocess.check_call(
+                ['prodigal',
+                 '-i', contig_file,
+                 '-p', 'meta',
+                 '-q',
+                 '-a', contig_output
+                 ],
+                stdout=prodigal_out_log,
+            )
 
-    Parameters
-    fasta_path: path
-    binned_length: int (minimal contig length)
-    num_process: int (number of CPUs to use)
-    multi_mode: bool, optional (if True, treat input as resulting from concatenating multiple files)
-    '''
-    with tempfile.TemporaryDirectory() as tdir:
-        if output is not None:
-            if os.path.exists(os.path.join(output, 'markers.hmmout')):
-                return get_marker(os.path.join(output, 'markers.hmmout'), fasta_path, binned_length, multi_mode)
-            else:
-                target_dir = output
-        else:
-            target_dir = tdir
-        contig_output = os.path.join(tdir, 'contigs.faa')
+def run_prodigal(fasta_path, num_process, output):
+    from .error import LoggingPool
+
+    contig_dict = {}
+    for h, seq in fasta_iter(fasta_path):
+        contig_dict[h] = seq
+
+    num_contig = len(contig_dict)
+
+    num_split = num_contig // num_process
+    split_contig_dict = {}
+    split_index = 0
+    for h in contig_dict:
+        if split_index not in split_contig_dict:
+            split_contig_dict[split_index] = []
+        split_contig_dict[split_index].append(h)
+        if split_index < num_process - 1:
+            if len(split_contig_dict[split_index]) == num_split:
+                split_index += 1
+
+    ### split_fasta
+    for index in range(num_process):
+        with open(os.path.join(output, 'contig_{}.fa'.format(index)), 'wt') as concat_out:
+            for h in split_contig_dict[index]:
+                concat_out.write(f'>{h}\n{contig_dict[h]}\n')
+
+    with LoggingPool(num_process) if num_process != 0 else LoggingPool() as pool:
+        try:
+            for index in range(num_process):
+                pool.apply_async(
+                    prodigal,
+                    args=(
+                        os.path.join(output, 'contig_{}.fa'.format(index)),
+                        os.path.join(output, 'contig_{}.faa'.format(index)),
+                    ))
+            pool.close()
+            pool.join()
+        except:
+            sys.stderr.write(
+                f"Error: Running prodigal fail\n")
+            sys.exit(1)
+
+    contig_output = os.path.join(output, 'contigs.faa')
+    with open(contig_output, 'w') as f:
+        for index in range(num_process):
+            f.write(open(os.path.join(output, 'contig_{}.faa'.format(index)), 'r').read())
+    return contig_output
+
+def run_fraggengscan(fasta_path, num_process, output):
+    try:
+        contig_output = os.path.join(output, 'contigs.faa')
         with open(contig_output + '.out', 'w') as frag_out_log:
             # We need to call FragGeneScan instead of the Perl wrapper because the
             # Perl wrapper does not handle filepaths correctly if they contain spaces
@@ -277,22 +334,57 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
                  ],
                 stdout=frag_out_log,
             )
+    except:
+        sys.stderr.write(
+            f"Error: Running fraggenescan fail\n")
+        sys.exit(1)
+    return contig_output
+
+def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, output = None, predictor = 'prodigal'):
+    '''Estimate number of bins from a FASTA file
+
+    Parameters
+    fasta_path: path
+    binned_length: int (minimal contig length)
+    num_process: int (number of CPUs to use)
+    multi_mode: bool, optional (if True, treat input as resulting from concatenating multiple files)
+    '''
+    with tempfile.TemporaryDirectory() as tdir:
+        if output is not None:
+            if os.path.exists(os.path.join(output, 'markers.hmmout')):
+                return get_marker(os.path.join(output, 'markers.hmmout'), fasta_path, binned_length, multi_mode, predictor=predictor)
+            else:
+                target_dir = output
+        else:
+            target_dir = tdir
+
+        if predictor == 'prodigal':
+            contig_output = run_prodigal(fasta_path, num_process, tdir)
+        else:
+            contig_output = run_fraggengscan(fasta_path, num_process, tdir)
 
         hmm_output = os.path.join(target_dir, 'markers.hmmout')
-        with open(os.path.join(tdir, 'markers.hmmout.out'), 'w') as hmm_out_log:
-            subprocess.check_call(
-                ['hmmsearch',
-                 '--domtblout',
-                 hmm_output,
-                 '--cut_tc',
-                 '--cpu', str(num_process),
-                 os.path.split(__file__)[0] + '/marker.hmm',
-                 contig_output + '.faa',
-                 ],
-                stdout=hmm_out_log,
-            )
+        try:
+            with open(os.path.join(tdir, 'markers.hmmout.out'), 'w') as hmm_out_log:
+                subprocess.check_call(
+                    ['hmmsearch',
+                     '--domtblout',
+                     hmm_output,
+                     '--cut_tc',
+                     '--cpu', str(num_process),
+                     os.path.split(__file__)[0] + '/marker.hmm',
+                     contig_output if predictor == 'prodigal' else contig_output + '.faa',
+                     ],
+                    stdout=hmm_out_log,
+                )
+        except:
+            sys.stderr.write(
+                f"Error: Running hmmsearch fail\n")
+            sys.exit(1)
 
-        return get_marker(hmm_output, fasta_path, binned_length, multi_mode)
+        marker = get_marker(hmm_output, fasta_path, binned_length, multi_mode, predictor=predictor)
+
+        return marker
 
 
 def write_bins(namelist, contig_labels, output, contig_dict,
