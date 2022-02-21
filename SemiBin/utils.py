@@ -208,7 +208,7 @@ normalize_marker_trans__dict = {
     'TIGR02386': 'TIGR02387',
 }
 
-def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False):
+def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, predictor = None):
     import pandas as pd
     data = pd.read_table(hmmout, sep=r'\s+',  comment='#', header=None,
                          usecols=(0,3,5,15,16), names=['orf', 'gene', 'qlen', 'qstart', 'qend'])
@@ -218,7 +218,10 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False):
     qlen = data[['gene','qlen']].drop_duplicates().set_index('gene')['qlen']
 
     def contig_name(ell):
-        contig,_ = ell.rsplit( '_', 1)
+        if predictor == 'prodigal':
+            contig,_ = ell.rsplit( '_', 1)
+        else:
+            contig,_,_,_ = ell.rsplit( '_', 3)
         return contig
 
     data = data.query('(qend - qstart) / qlen > 0.4').copy()
@@ -349,7 +352,7 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
     with tempfile.TemporaryDirectory() as tdir:
         if output is not None:
             if os.path.exists(os.path.join(output, 'markers.hmmout')):
-                return get_marker(os.path.join(output, 'markers.hmmout'), fasta_path, binned_length, multi_mode)
+                return get_marker(os.path.join(output, 'markers.hmmout'), fasta_path, binned_length, multi_mode, predictor=predictor)
             else:
                 target_dir = output
         else:
@@ -370,7 +373,7 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
                      '--cut_tc',
                      '--cpu', str(num_process),
                      os.path.split(__file__)[0] + '/marker.hmm',
-                     contig_output,
+                     contig_output if predictor == 'prodigal' else contig_output + '.faa',
                      ],
                     stdout=hmm_out_log,
                 )
@@ -379,7 +382,7 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
                 f"Error: Running hmmsearch fail\n")
             sys.exit(1)
 
-        marker = get_marker(hmm_output, fasta_path, binned_length, multi_mode)
+        marker = get_marker(hmm_output, fasta_path, binned_length, multi_mode, predictor=predictor)
 
         return marker
 
