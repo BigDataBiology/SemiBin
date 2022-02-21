@@ -27,7 +27,7 @@ def test_get_must_link_threshold(lens):
 HMMOUT_TEST_SINGLE = '''#                                                                            --- full sequence --- -------------- this domain -------------   hmm coord   ali coord   env coord
 # target name        accession   tlen query name           accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias  from    to  from    to  from    to  acc description of target
 #------------------- ---------- ----- -------------------- ---------- ----- --------- ------ ----- --- --- --------- --------- ------ ----- ----- ----- ----- ----- ----- ----- ---- ---------------------
-k119_224042_6410_6778_+ -            122 TIGR00855            TIGR00855    125     3e-39  129.7   6.7   1   1   4.4e-42   3.3e-39  129.6   6.7     2   125     2   122     1   122 0.92 -
+k119_224042_1 -            122 TIGR00855            TIGR00855    125     3e-39  129.7   6.7   1   1   4.4e-42   3.3e-39  129.6   6.7     2   125     2   122     1   122 0.92 -
 #
 # Program:         hmmsearch
 # Version:         3.3.2 (Nov 2020)
