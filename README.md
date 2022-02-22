@@ -1,7 +1,7 @@
 # SemiBin: Semi-supervised Metagenomic Binning Using Siamese Neural Networks
 
 Command tool for metagenomic binning with semi-supervised deep learning using
-information from reference genomes.
+information from reference genomes in Linux and MacOS.
 
 [![Test Status](https://github.com/BigDataBiology/SemiBin/actions/workflows/semibin_test.yml/badge.svg)](https://github.com/BigDataBiology/SemiBin/actions/workflows/semibin_test.yml)
 [![Documentation Status](https://readthedocs.org/projects/semibin/badge/?version=latest)](https://semibin.readthedocs.io/en/latest/?badge=latest)
@@ -33,7 +33,7 @@ conda activate SemiBin
 conda install -c conda-forge -c bioconda semibin
 ```
 
-The inputs to the SemiBin are contigs (assembled from the contigs) and bam files (reads mapping to the contigs). The output are the bins in the output_recluster_bins directory.
+The inputs to the SemiBin are contigs (assembled from the reads) and bam files (reads mapping to the contigs). The output are the bins in the output_recluster_bins directory (including the bin.\*.fa and recluster.\*.fa)).
 
 Running with single-sample binning (for example: human gut samples)
 
@@ -41,7 +41,7 @@ Running with single-sample binning (for example: human gut samples)
 SemiBin single_easy_bin -i contig.fna -b *.bam -o output --environment human_gut
 ```
 
-Running with multi-sample binning 
+Running with multi-sample binning (For more information, see below) 
 ```bash
 SemiBin multi_easy_bin -i contig_whole.fna -b *.bam -o output -s :
 ```
