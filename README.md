@@ -24,11 +24,31 @@ If you use this software in a publication please cite:
 > [https://doi.org/10.1101/2021.08.16.456517](https://doi.org/10.1101/2021.08.16.456517)
 
 
+## Basic usage of SemiBin
+
+Install
+```bash
+conda create -n SemiBin python==3.7
+conda activate SemiBin
+conda install -c conda-forge -c bioconda semibin
+```
+
+The inputs to the SemiBin are contigs (assembled from the contigs) and bam files (reads mapping to the contigs). The output are the bins in the output_recluster_bins directory.
+
+Running with single-sample binning (for example: human gut samples)
+
+```bash
+SemiBin single_easy_bin -i contig.fna -b *.bam -o output --environment human_gut
+```
+
+Running with multi-sample binning 
+```bash
+SemiBin multi_easy_bin -i contig_whole.fna -b *.bam -o output -s :
+```
+
 ## Installation
 
 SemiBin runs on Python 3.7-3.9.
-
-_NOTE_: SemiBin runs on Linux (some dependencies will fail on Mac machine (see [Issues 73](https://github.com/BigDataBiology/SemiBin/issues/73))).
 
 ### Bioconda ###
 
