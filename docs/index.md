@@ -57,7 +57,7 @@ Reconstruct bins with single or co-assembly binning using one line command.
 * `--ml-threshold` : Length threshold for generating must-link constraints.(By default, the threshold is calculated from the contig, and the default minimum value is 4,000 bp)
 * `--no-recluster` : Do not recluster bins.
 * `--taxonomy-annotation-table` : TAXONOMY_TSV, Pre-computed mmseqs2 format taxonomy TSV file to bypass mmseqs2 GTDB annotation [advanced]
-* `--predictor` : gene predictor used to estimate the number of bins(prodigal/fraggenescan)
+* `--orf-finder` : gene predictor used to estimate the number of bins(prodigal/fraggenescan)
 
 #### multi_easy_bin
 
@@ -74,7 +74,7 @@ The following options (including synonyms) are the same as for
 
 Run the contig annotations using mmseqs with GTDB and generate cannot-link file used in the semi-supervised deep learning model training.
 
-The following options are the same as for `single_easy_bin`: `-i/--input-fasta`, `-o/--output`, `--cannot-name`, `-r/--reference-db-data-dir`, `--ratio`, `--min-len`, `--ml-threshold`, `--taxonomy-annotation-table` and `--predictor`.
+The following options are the same as for `single_easy_bin`: `-i/--input-fasta`, `-o/--output`, `--cannot-name`, `-r/--reference-db-data-dir`, `--ratio`, `--min-len`, `--ml-threshold`, `--taxonomy-annotation-table` and `--orf-finder`.
 
 #### generate_sequence_features_single
 
@@ -99,7 +99,7 @@ Training the model.
 * `-c/--cannot-link` : Path to the input cannot link file generated from other additional biological information, one row for each cannot link constraint. The file format: contig_1,contig_2.
 * `--mode`:  [single/several] Train models from one sample or several samples(train model across several samples can get better pre-trained model for single-sample binning.) In several mode, must input data, data_split, cannot, fasta files for corresponding sample with same order. *Note:* You can just set `several` with this option when single-sample binning. Training from several samples with multi-sample binning is not support.
 
-The following options are the same as for `single_easy_bin`: `-i/--input-fasta`,  `-o/--output`, `--epoches`, `--batch-size`, `-p/--processes/-t/--threads`, `--random-seed`, `--ratio`, `--min-len` and `--predictor`.
+The following options are the same as for `single_easy_bin`: `-i/--input-fasta`,  `-o/--output`, `--epoches`, `--batch-size`, `-p/--processes/-t/--threads`, `--random-seed`, `--ratio`, `--min-len` and `--orf-finder`.
 
 #### bin
 
@@ -107,7 +107,7 @@ Cluster contigs into bins.
 
 * `--model`: Path to the trained model.
 
-The following options are the same as for `single_easy_bin`: `--data`,`-i/--input-fasta`, `-o/--output`, `--minfasta-kbs`, `--recluster`, `--max-node`, `--max-edges`, `-p/--processes/-t/--threads`, `--random-seed`, `--environment`, `--ratio`, `--min-len`, `--no-recluster` and `--predictor`.
+The following options are the same as for `single_easy_bin`: `--data`,`-i/--input-fasta`, `-o/--output`, `--minfasta-kbs`, `--recluster`, `--max-node`, `--max-edges`, `-p/--processes/-t/--threads`, `--random-seed`, `--environment`, `--ratio`, `--min-len`, `--no-recluster` and `--orf-finder`.
 
 #### download_GTDB
 

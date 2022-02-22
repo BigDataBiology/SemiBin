@@ -40,17 +40,17 @@ k119_224042_1 -            122 TIGR00855            TIGR00855    125     3e-39  
 '''
 
 def test_get_marker():
-    rs = get_marker('test/data/bin.230.fa.hmmout', predictor='fraggenescan')
+    rs = get_marker('test/data/bin.230.fa.hmmout', orf_finder='fraggenescan')
     assert rs == ['k119_487808', 'k119_606328']
-    rs = get_marker('test/data/bin.96.fa.hmmout', predictor='fraggenescan')
+    rs = get_marker('test/data/bin.96.fa.hmmout', orf_finder='fraggenescan')
     assert rs == ['k119_268294', 'k119_337646']
 
     # This caused a crash in a previous version of SemiBin
-    rs = get_marker(StringIO(HMMOUT_TEST_SINGLE), predictor='prodigal')
+    rs = get_marker(StringIO(HMMOUT_TEST_SINGLE), orf_finder='prodigal')
     assert rs == ['k119_224042']
 
 def test_get_marker_multiple():
-    rs = get_marker('test/data/concatenated.hmmout.gz', multi_mode=True, predictor='fraggenescan')
+    rs = get_marker('test/data/concatenated.hmmout.gz', multi_mode=True, orf_finder='fraggenescan')
     # This was computed by running the previous version
     assert rs == {
          'bin000005': ['k119_46822'],

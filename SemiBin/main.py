@@ -166,11 +166,11 @@ def parse_args(args):
                          help='Path to the trained semi-supervised deep learning model.')
 
     for p in [single_easy_bin, multi_easy_bin, training, binning]:
-        p.add_argument('--predictor',
+        p.add_argument('--orf-finder',
                        required=False,
                        type=str,
-                       help='gene predictor used to estimate the number of bins(prodigal/fraggenescan)',
-                       dest='predictor',
+                       help='ORF finder used to estimate the number of bins (prodigal/fraggenescan)',
+                       dest='orf_finder',
                        default='prodigal')
 
     for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, training, binning]:
@@ -659,7 +659,7 @@ def generate_sequence_features_multi(logger, contig_fasta,
 
 def training(logger, contig_fasta, num_process,
              data, data_split, cannot_link, batchsize,
-             epoches,  output, device, ratio, min_length, mode, predictor = 'prodigal'):
+             epoches,  output, device, ratio, min_length, mode, orf_finder = 'prodigal'):
     """
     Training the model
 
@@ -715,13 +715,13 @@ def training(logger, contig_fasta, num_process,
         device,
         num_process,
         mode = mode,
-        predictor=predictor)
+        orf_finder=orf_finder)
 
 
 def binning(logger, num_process, data,
             max_edges, max_node, minfasta,
             binned_length, contig_dict, recluster,model_path,
-            random_seed,output, device, environment, predictor = 'prodigal'):
+            random_seed,output, device, environment, orf_finder = 'prodigal'):
     """
     Clustering the contigs to get the final bins.
 
@@ -761,12 +761,12 @@ def binning(logger, num_process, data,
         minfasta,
         recluster,
         random_seed,
-        predictor=predictor)
+        orf_finder=orf_finder)
 
 
 def single_easy_binning(args, logger, binned_length,
                         must_link_threshold,
-                        contig_dict, recluster,random_seed, output, device, environment, predictor = 'prodigal'):
+                        contig_dict, recluster,random_seed, output, device, environment, orf_finder = 'prodigal'):
     """
     contain `generate_cannot_links`, `generate_sequence_features_single`, `train`, `bin` in one command for single-sample and co-assembly binning
     """
@@ -798,17 +798,17 @@ def single_easy_binning(args, logger, binned_length,
         training(logger, [args.contig_fasta],
                  args.num_process, [data_path], [data_split_path],
                  [os.path.join(output, 'cannot', 'cannot.txt')],
-                 args.batchsize, args.epoches, output, device, args.ratio, args.min_len,  mode='single', predictor=predictor)
+                 args.batchsize, args.epoches, output, device, args.ratio, args.min_len,  mode='single', orf_finder=orf_finder)
 
     binning(logger, args.num_process, data_path,
             args.max_edges, args.max_node, args.minfasta_kb * 1000,
             binned_length, contig_dict, recluster,
             os.path.join(output, 'model.h5') if environment is None else None,
-            random_seed, output,  device, environment if environment is not None else None, predictor=predictor)
+            random_seed, output,  device, environment if environment is not None else None, orf_finder=orf_finder)
 
 
 def multi_easy_binning(args, logger, recluster,
-                       random_seed, output, device, predictor = 'prodigal'):
+                       random_seed, output, device, orf_finder='prodigal'):
     """
     contain `generate_cannot_links`, `generate_sequence_features_multi`, `train`, `bin` in one command for multi-sample binning
     """
@@ -860,13 +860,13 @@ def multi_easy_binning(args, logger, recluster,
         training(logger, [sample_fasta], args.num_process,
                  [sample_data], [sample_data_split], [sample_cannot],
                  args.batchsize, args.epoches, os.path.join(output, 'samples', sample),
-                 device, args.ratio, args.min_len, mode='single', predictor=predictor)
+                 device, args.ratio, args.min_len, mode='single', orf_finder=orf_finder)
 
         binning(logger, args.num_process, sample_data,
                 args.max_edges, args.max_node, args.minfasta_kb * 1000,
                 binned_length, contig_dict, recluster,
                 os.path.join(output, 'samples', sample, 'model.h5'), random_seed ,
-                os.path.join(output, 'samples', sample),  device, None, predictor=predictor)
+                os.path.join(output, 'samples', sample),  device, None, orf_finder=orf_finder)
 
     os.makedirs(os.path.join(output, 'bins'), exist_ok=True)
     for sample in sample_list:
@@ -960,7 +960,7 @@ def main():
             set_random_seed(args.random_seed)
         training(logger, args.contig_fasta, args.num_process,
                  args.data, args.data_split, args.cannot_link,
-                 args.batchsize, args.epoches, out, device, args.ratio, args.min_len, args.mode, predictor=args.predictor)
+                 args.batchsize, args.epoches, out, device, args.ratio, args.min_len, args.mode, orf_finder=args.orf_finder)
 
 
     if args.cmd == 'bin':
@@ -968,7 +968,7 @@ def main():
             set_random_seed(args.random_seed)
         binning(logger, args.num_process, args.data, args.max_edges,
                 args.max_node, args.minfasta_kb * 1000, binned_length,
-                contig_dict, args.recluster, args.model_path, args.random_seed,out, device, args.environment, predictor=args.predictor)
+                contig_dict, args.recluster, args.model_path, args.random_seed,out, device, args.environment, orf_finder=args.orf_finder)
 
 
     if args.cmd == 'single_easy_bin':
@@ -986,7 +986,7 @@ def main():
             out,
             device,
             args.environment,
-            predictor=args.predictor)
+            orf_finder=args.orf_finder)
 
     if args.cmd == 'multi_easy_bin':
         check_install()
@@ -999,7 +999,7 @@ def main():
             args.random_seed,
             out,
             device,
-            predictor=args.predictor)
+            orf_finder=args.orf_finder)
 
 
 if __name__ == '__main__':

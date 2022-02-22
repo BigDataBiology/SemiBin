@@ -83,7 +83,7 @@ def cal_kl(m, v, use_ne='auto'):
 
 
 def cluster(model, data, device, max_edges, max_node, is_combined,
-            logger, n_sample, out, contig_dict, binned_length, num_process, minfasta, recluster, random_seed, predictor = 'prodigal'):
+            logger, n_sample, out, contig_dict, binned_length, num_process, minfasta, recluster, random_seed, orf_finder = 'prodigal'):
     """
     Cluster contigs into bins
     max_edges: max edges of one contig considered in binning
@@ -220,7 +220,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                 binned_length,
                 num_process,
                 multi_mode=True,
-                predictor=predictor)
+                orf_finder=orf_finder)
 
         for ix,bin_path in enumerate(bin_files):
             # if there are no hits, the output will be naturally empty
