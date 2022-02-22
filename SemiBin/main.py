@@ -354,7 +354,7 @@ def _checkback(msg):
 
 def check_install():
     from shutil import which
-    dependence_list = ['bedtools', 'hmmsearch', 'FragGeneScan', 'mmseqs']
+    dependence_list = ['bedtools', 'hmmsearch', 'FragGeneScan', 'mmseqs', 'prodigal']
     for dependence in dependence_list:
         if not which(dependence):
             sys.stderr.write(
