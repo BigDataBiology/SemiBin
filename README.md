@@ -27,8 +27,9 @@ If you use this software in a publication please cite:
 ## Basic usage of SemiBin
 
 Install
+
 ```bash
-conda create -n SemiBin python==3.7
+conda create -n SemiBin
 conda activate SemiBin
 conda install -c conda-forge -c bioconda semibin
 ```
@@ -41,42 +42,47 @@ Running with single-sample binning (for example: human gut samples)
 SemiBin single_easy_bin -i contig.fna -b *.bam -o output --environment human_gut
 ```
 
-Running with multi-sample binning (For more information, see below) 
+Running with multi-sample binning (for more information, see below)
 ```bash
 SemiBin multi_easy_bin -i contig_whole.fna -b *.bam -o output -s :
 ```
 
-## Installation
+## Advanced Installation
 
 SemiBin runs on Python 3.7-3.9.
 
-### Bioconda ###
+### Bioconda
 
-_NOTE_: If you want to use SemiBin with GPU, you need to install PyTorch with GPU support. Or `conda install -c bioconda semibin` just install PyTorch with CPU support . Please note that `You can just install CPU version of PyTorch in MacOS with conda and you need to install from source if CUDA is needed` (see [Issues 72](https://github.com/BigDataBiology/SemiBin/issues/72)). See more information about how to install PyTorch: [https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/). 
+The simplest mode is shown above.
+However, if you want to use SemiBin with GPU (which is faster if you have one available), you need to install PyTorch with GPU support:
 
 ```bash
-conda create -n SemiBin python==3.7
+conda create -n SemiBin
 conda activate SemiBin
 conda install -c conda-forge -c bioconda semibin
-conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch-lts
+conda install -c pytorch-lts pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch-lts
 ```
+
+_MacOS note_: **you can only install the CPU version of PyTorch in MacOS with `conda` and you need to install from source to take advantage of a GPU** (see [#72](https://github.com/BigDataBiology/SemiBin/issues/72)).
+For more information on how to install PyTorch, see [their documentation](https://pytorch.org/get-started/locally/).
 
 ### Source
 
-You can download the source code from github and install.
+You will need the following dependencies:
+- [MMseqs2](https://github.com/soedinglab/MMseqs2)
+- [Bedtools](http://bedtools.readthedocs.org/]), [Hmmer](http://hmmer.org/)
+- [Prodigal](https://github.com/hyattpd/Prodigal)
+- (optionally) [Fraggenescan](https://sourceforge.net/projects/fraggenescan/)
 
-Install dependence packages using conda:
-[MMseqs2](https://github.com/soedinglab/MMseqs2),
-[Bedtools](http://bedtools.readthedocs.org/]), [Hmmer](http://hmmer.org/), 
-[Fraggenescan](https://sourceforge.net/projects/fraggenescan/) and [Prodigal](https://github.com/hyattpd/Prodigal)
+The easiest way to install the dependencies is with `conda`:
 
 ```bash
 conda install -c conda-forge -c bioconda mmseqs2=13.45111
-conda install -c bioconda bedtools hmmer fraggenescan==1.30
-conda install -c bioconda prodigal
+conda install -c bioconda bedtools hmmer prodigal
+conda install -c bioconda fraggenescan==1.30
 ```
 
-Once the dependencies are installed, you can install by running:
+Once the dependencies are installed, you can install SemiBin by running:
 
 ```bash
 python setup.py install
@@ -85,69 +91,74 @@ python setup.py install
 ## Examples of binning
 
 _NOTE_: The `SemiBin` API is a work-in-progress. The examples refer to
-version `0.5`, but this may change in the near future (after the release of
+version `0.6`, but this may change in the near future (after the release of
 version 1.0, we expect to freeze the API for [at least 5
 years](https://big-data-biology.org/software/commitments/)). We are very happy
 to [hear any feedback on API
 design](https://groups.google.com/g/semibin-users), though.
 
-SemiBin runs on single-sample, co-assembly and multi-sample binning. 
-
-The basic idea of using SemiBin with single-sample and co-assembly is:
-
-(1) generating _data.csv_ and _data_split.csv_ (used in training) for every sample,
-
-(2) training the model for every sample, and
-
-(3) binning the contigs for every contig with the model trained from the same sample.
-
-When using multi-sample binning, the basic idea is very similar, the inputs are the contigs combined from several samples and bam files from several samples. And then we also generate _data.csv_ and _data_split.csv_ and do training and binning for every  sample. The only difference compared to single-sample binning is the _data.csv_ and _data_split.csv_ have the abundance information from several samples.
-
-Considering the issue that contig annotations and model training requires significant computational time and the algorithm design of SemiBin, we proposed SemiBin(pretrain) for _single-sample binning_ to: 
-
-(1) train a model from one sample or several samples (or used our built-in pretrained model) and
-
-(2) directly apply this model to other samples.
-
-For the details and examples of every command to run SemiBin with these binning modes,  please [read the docs](https://semibin.readthedocs.io/en/latest/usage/).
+SemiBin runs on single-sample, co-assembly and multi-sample binning.
+Here we show the simple modes as an example.
+For the details and examples of every SemiBin subcommand, please [read the docs](https://semibin.readthedocs.io/en/latest/usage/).
 
 ## Easy single/co-assembly binning mode
+
+Single sample and co-assembly are handled the same way by SemiBin.
 
 You will need the following inputs:
 
 1. A contig file (`contig.fna` in the example below)
-2. BAM files from mapping short reads to the contigs
+2. BAM file(s) from mapping short reads to the contigs (`mapped_reads.bam` in the example below)
 
-The `single_easy_bin` command can be used in single-sample and co-assembly
-binning modes (contig annotations using mmseqs with GTDB reference genome) to
-get results in a single step.
+The `single_easy_bin` command can be used to produce results in a single step.
 
-```bash
-SemiBin single_easy_bin -i contig.fna -b *.bam -o output
-```
-
-In this example, SemiBin will download GTDB to
-`$HOME/.cache/SemiBin/mmseqs2-GTDB`. You can change this default using the
-`-r` argument.
-
-You can use `--environment` with `human_gut`, `dog_gut`, `ocean`, `soil`,
-`cat_gut`, `human_oral`, `mouse_gut`, `pig_gut`, `built_environment`,
-`wastewater`, or `global` to use one of our built-in models.
+For example:
 
 ```bash
-SemiBin single_easy_bin -i contig_S1.fna -b S1.bam -o output --environment human_gut
+SemiBin \
+    single_easy_bin \
+    --input-fasta contig.fna \
+    --input-bam mapped_reads.bam \
+    --environment human_gut \
+    --output output
 ```
+
+Alternatively, you can train a new model for that sample, by not passing in the `--environment` flag:
+
+```bash
+SemiBin \
+    single_easy_bin \
+    --input-fasta contig.fna \
+    --input-bam mapped_reads.bam \
+    --output output
+```
+
+The following environments are supported:
+
+- `human_gut`
+- `dog_gut`
+- `ocean`
+- `soil`
+- `cat_gut`
+- `human_oral`
+- `mouse_gut`
+- `pig_gut`
+- `built_environment`
+- `wastewater`
+- `global`
+
+The `global` environment can be used if none of the others is appropriate.
+Note that training a new model can take a lot of time and disk space.
+Some patience will be required.
+If you have a lot of samples from the same environment, you can also train a new model from them and reuse it.
 
 ## Easy multi-samples binning mode
 
-The `multi_easy_bin` command can be used in multi-samples binning modes (contig
-annotations using mmseqs with GTDB reference genome).
-
+The `multi_easy_bin` command can be used in multi-samples binning mode:
 
 You will need the following inputs:
 
-1. a combined contig file
-
+1. A combined contig file
 2. BAM files from mapping
 
 For every contig, format of the name is `<sample_name>:<contig_name>`, where
@@ -174,10 +185,10 @@ AATATTTTAGAGAAAGACATAAACAATAAGAAAAGTATT
 CAAATACGAATGATTCTTTATTAGATTATCTTAATAAGAATATC
 ```
 
-You can get the results with one line of code. 
+You can get the results with one line of code.
 
 ```bash
-SemiBin multi_easy_bin -i contig_whole.fna -b *.bam -o output 
+SemiBin multi_easy_bin -i contig_whole.fna -b *.bam -o output
 ```
 
 ## Output
@@ -185,11 +196,8 @@ SemiBin multi_easy_bin -i contig_whole.fna -b *.bam -o output
 The output folder will contain:
 
 1. Datasets used for training and clustering.
-
 2. Saved semi-supervised deep learning model.
-
 3. Output bins.
-
 4. Some intermediate files.
 
 For every sample, reconstructed bins are in `output_bins` directory. Using
@@ -197,90 +205,3 @@ reclustering, reconstructed bins are in `output_recluster_bins` directory.
 
 For more details about the output, [read the
 docs](https://semibin.readthedocs.io/en/latest/output/).
-
-## Advanced workflows
-
-You can run individual steps by yourself, which can enable using compute
-clusters to make the binning process faster (especially in multi-samples
-binning mode). For example, `single_easy_bin` includes the following steps:
-`generate_cannot_links`,`generate_data_single` and `bin`; while `multi_easy_bin`
-includes the following steps: `generate_cannot_links`, `generate_data_multi` and `bin`.
-
-In advanced mode, you can also use our built-in pre-trained model in
-single-sample binning mode. Here we provide pre-trained models for human gut,
-dog gut, marine, soil, cat gut, human oral, mouse gut, pig gut,
-built_environment, wastewater and global (train from all environments listed)
-environment.
-
-A very easy way to run SemiBin with a built-in model
-(`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`global` for single-sample binning):
-
-```bash
-SemiBin single_easy_bin -i contig_S1.fna -b S1.bam -o output --environment human_gut
-```
-
-Another suggestion is that you can pre-train a model from part of your dataset,
-which can provide a balance as it is faster than training for each sample while
-achieving better results than a pre-trained model from another dataset.
-
-(1) Generate `data.csv/data_split.csv` for every sample
-
-Single-sample/co-assembly binning:
-
-```bash
-SemiBin generate_data_single -i contig_S1.fna -b S1.bam -o output
-```
-
-Multi-sample binning:
-
-```bash
-SemiBin generate_data_multi -i contig_combined.fna -b S1.bam S2.bam S3.bam S4.bam S5.bam -o output -s :
-```
-
-(2) Generate cannot-link for every sample
-
-```bash
-SemiBin generate_cannot_links -i contig_S1.fna -o output
-```
-
-(3) Train a pre-trained model across several samples (For single-sample binning, make sure the input files are corresponding.)
-
-```bash
-SemiBin train -i S1.fna S2.fna S3.fna --data S1/train.csv S2/train.csv S3/train.csv --data-split S1/train_split.csv S2/train_split.csv S3/train_split.csv -c S1/cannot.txt s2/cannot.txt S3/cannot.txt -o output --mode several 
-```
-Or just train a model from one sample. If you are using multi-sample binning, here the contig is the contig for every sample.
-
-Single-sample/co-assembly binning:
-
-```bash
-SemiBin train -i contig.fna --data train.csv --data-split train_split.csv -c cannot.txt -o output --mode single
-```
-
-Multi-sample binning(similar for other samples) :
-
-```bash
-SemiBin train -i contig_S1.fna --data S1/train.csv --data-split S1/train_split.csv -c S1/cannot.txt -o output --mode single
-```
-
-(4) Bin with the trained model.  If you are using multi-sample binning, here the contig is the contig for every sample and the bam files are still from several samples.
-
-Single-sample/co-assembly binning:
-
-```bash
-SemiBin bin -i contig.fna --model model.h5 --data data.csv -o output
-```
-
-Multi-sample binning(similar for other samples):
-
-```bash
-SemiBin bin -i contig_S1.fna --model model.h5 --data S1/data.csv -o output
-```
-
-Or our built-in model (human_gut, dog_gut or ocean) (just for single-sample binning)
-
-```bash
-SemiBin bin -i contig.fna --data data.csv -o output --environment human_gut
-```
-
-For more details on usage, including every command on how to run SemiBin with different binning modes, please [read the docs](https://semibin.readthedocs.io/en/latest/usage/).
-

@@ -9,11 +9,27 @@ Input: S1.fna and S1.bam
 ```bash
 SemiBin single_easy_bin -i S1.fna -b S1.bam -o output 
 ```
-Or with our built-in model(`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`global`)
+Or with one of our built-in models (`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`global`)
+
 ```bash
 SemiBin single_easy_bin -i S1.fna -b S1.bam -o output --environment human_gut
 ```
+
+
 ### Advanced workflows
+
+The basic idea of using SemiBin with single-sample and co-assembly is:
+
+1. generate _data.csv_ and _data_split.csv_ (used in training) for every sample,
+2. train the model for every sample, and
+3. bin the contigs with the model trained from the same sample.
+
+You can run the individual steps by yourself, which can enable using compute
+clusters to make the binning process faster.
+
+In particular, `single_easy_bin` includes the following steps:
+`generate_cannot_links`,`generate_data_single` and `bin`; while `multi_easy_bin`
+includes the following steps: `generate_cannot_links`, `generate_data_multi` and `bin`.
 
 (1)  Generate `data.csv/data_split.csv` 
 ```bash
@@ -37,7 +53,10 @@ SemiBin bin -i S1.fna --data S1_output/data.csv -o output --environment human_gu
 ```
 
 ### SemiBin(pretrain)
-You can train a model from several samples. 
+
+Another suggestion is that you can pre-train a model from part of your dataset,
+which can provide a balance as it is faster than training for each sample while
+achieving better results than a pre-trained model from another dataset (see the [manuscript](https://www.biorxiv.org/content/10.1101/2021.08.16.456517v1) for more information).
 
 If you have S1.fna, S1/data.csv,  S1/data_split.csv, S1/cannot/cannot.txt ; S2.fna, S2/data.csv,  S2/data_split.csv, S2/cannot/cannot.txt; S3.fna, S3/data.csv,  S3/data_split.csv, S3/cannot/cannot.txt. You can train the model from 3 samples.
 
@@ -68,6 +87,7 @@ SemiBin generate_cannot_links -i contig.fna -o contig_output
 SemiBin train -i contig.fna --data contig_output/train.csv --data-split contig_output/train_split.csv -c contig_output/cannot/cannot.txt -o contig_output --mode single
 ```
 (4) Bin
+
 ```bash
 SemiBin bin -i contig.fna --model contig_output/model.h5 --data contig_output/data.csv -o output
 ```
