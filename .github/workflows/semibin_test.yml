@@ -20,7 +20,7 @@ jobs:
     - uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: test
-        python-version: 3.8
+        python-version: ${{ matrix.python-version }}
         auto-activate-base: false
     - name: Install dependencies
       shell: bash -l {0}
@@ -47,6 +47,7 @@ jobs:
       shell: bash -l {0}
       run: |
         for t in integration-tests/*.py; do
+          echo "Running $t ..."
           python $t
         done
 
