@@ -32,9 +32,9 @@ def validate_normalize_args(logger, args):
             args.num_process = multiprocessing.cpu_count()
 
     if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin']:
-        if args.predictor not in ['prodigal', 'fraggenescan']:
+        if args.orf_finder not in ['prodigal', 'fraggenescan']:
             sys.stderr.write(
-                f"Error: SemiBin support prodigal or fraggenescan gene predictor.\n")
+                f"Error: SemiBin only supports prodigal or fraggenescan as the ORF finder (--orf_finder option).\n")
             sys.exit(1)
 
     if args.cmd == 'generate_cannot_links':
@@ -208,7 +208,7 @@ normalize_marker_trans__dict = {
     'TIGR02386': 'TIGR02387',
 }
 
-def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, predictor = None):
+def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, orf_finder = None):
     import pandas as pd
     data = pd.read_table(hmmout, sep=r'\s+',  comment='#', header=None,
                          usecols=(0,3,5,15,16), names=['orf', 'gene', 'qlen', 'qstart', 'qend'])
@@ -218,7 +218,7 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, p
     qlen = data[['gene','qlen']].drop_duplicates().set_index('gene')['qlen']
 
     def contig_name(ell):
-        if predictor == 'prodigal':
+        if orf_finder == 'prodigal':
             contig,_ = ell.rsplit( '_', 1)
         else:
             contig,_,_,_ = ell.rsplit( '_', 3)
@@ -340,7 +340,7 @@ def run_fraggengscan(fasta_path, num_process, output):
         sys.exit(1)
     return contig_output
 
-def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, output = None, predictor = 'prodigal'):
+def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, output = None, orf_finder = 'prodigal'):
     '''Estimate number of bins from a FASTA file
 
     Parameters
@@ -352,13 +352,13 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
     with tempfile.TemporaryDirectory() as tdir:
         if output is not None:
             if os.path.exists(os.path.join(output, 'markers.hmmout')):
-                return get_marker(os.path.join(output, 'markers.hmmout'), fasta_path, binned_length, multi_mode, predictor=predictor)
+                return get_marker(os.path.join(output, 'markers.hmmout'), fasta_path, binned_length, multi_mode, orf_finder=orf_finder)
             else:
                 target_dir = output
         else:
             target_dir = tdir
 
-        if predictor == 'prodigal':
+        if orf_finder == 'prodigal':
             contig_output = run_prodigal(fasta_path, num_process, tdir)
         else:
             contig_output = run_fraggengscan(fasta_path, num_process, tdir)
@@ -373,7 +373,7 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
                      '--cut_tc',
                      '--cpu', str(num_process),
                      os.path.split(__file__)[0] + '/marker.hmm',
-                     contig_output if predictor == 'prodigal' else contig_output + '.faa',
+                     contig_output if orf_finder == 'prodigal' else contig_output + '.faa',
                      ],
                     stdout=hmm_out_log,
                 )
@@ -382,7 +382,7 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
                 f"Error: Running hmmsearch fail\n")
             sys.exit(1)
 
-        marker = get_marker(hmm_output, fasta_path, binned_length, multi_mode, predictor=predictor)
+        marker = get_marker(hmm_output, fasta_path, binned_length, multi_mode, orf_finder=orf_finder)
 
         return marker
 
