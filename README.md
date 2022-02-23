@@ -199,12 +199,12 @@ SemiBin multi_easy_bin -i output/concatenated.fa -b *.bam -o output
 
 The output folder will contain:
 
-1. Datasets used for training and clustering.
-2. Saved semi-supervised deep learning model.
-3. Output bins.
-4. Some intermediate files.
+1. Datasets used for training and clustering
+2. Saved semi-supervised deep learning model
+3. Output bins
+4. Some intermediate files
 
-By default,  reconstructed bins are in `output_recluster_bins` directory.
+By default, reconstructed bins are in `output_recluster_bins` directory.
 
 For more details about the output, [read the
 docs](https://semibin.readthedocs.io/en/latest/output/).
