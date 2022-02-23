@@ -1,6 +1,6 @@
 # Generating the inputs to SemiBin
 
-Starting with a metagenome, you need to generate a contigs file (`contigs.fna`)
+Starting with a metagenome, you need to generate a contigs file (`contigs.fa`)
 and a sorted BAM file (`output.bam`).
 
 1. Assemble it into a contigs FASTA file. In this case, we are using
@@ -19,7 +19,7 @@ input = preprocess(input) using |r|:
         discard
 
 contigs = assemble(input)
-write(contigs, ofile='contig.fna')
+write(contigs, ofile='contig.fa')
 ```
 
 2. Map reads to the FASTA file
@@ -31,7 +31,7 @@ ngless "1.1"
 import "samtools" version "1.0"
 
 input = fastq('sample.fq.gz')
-mapped = map(input, fafile='expected.fna')
+mapped = map(input, fafile='expected.fa')
 
 write(samtools_sort(mapped),
     ofile='output.bam')
@@ -40,9 +40,9 @@ write(samtools_sort(mapped),
 ### Mapping using bowtie2
 
 ```bash
-bowtie2-build -f contig.fna contig.fna
+bowtie2-build -f contig.fa contig.fa
 
-bowtie2 -q --fr -x contig.fna -1 reads_1.fq.gz -2 reads_2.fq.gz -S contig.sam -p 64
+bowtie2 -q --fr -x contig.fa -1 reads_1.fq.gz -2 reads_2.fq.gz -S contig.sam -p 64
 
 samtools view -h -b -S contig.sam -o contig.bam -@ 64
 
@@ -60,7 +60,7 @@ specifications if you want to use CAT.
 
 ```bash
 CAT contigs \
-        -c contig.fasta \
+        -c contig.fa \
         -d CAT_prepare_20200304/2020-03-04_CAT_database \
         --path_to_prodigal path_to_prodigal \
         --path_to_diamond path_to_diamond \
@@ -83,6 +83,6 @@ CAT add_names \
 Generate cannot-link constrains
 
 ```bash
-python script/concatenate.py -i CAT.out -c contig.fasta -s sample-name -o output --CAT
+python script/concatenate.py -i CAT.out -c contig.fa -s sample-name -o output --CAT
 ```
 
