@@ -38,19 +38,19 @@ concatenated database.
 
 ## Commands
 
-#### single_easy_bin
+### single_easy_bin
 
 Reconstruct bins with single or co-assembly binning using one line command.
 
 The command `single_easy_bin` requires the contig file (assembly from reads), bam files (reads mapping to the contig) as inputs and outputs reconstructed bins in the output_recluster_bins directory.
 
-### Required arguments
+#### Required arguments
 
 * `-i/--input-fasta` : Path to the input contig fasta file (gzip and bzip2 compression are accepted).
 * `-b/--input-bam`: Path to the input BAM files. You can pass multiple BAM files, one per sample.
 * `-o/--output`: Output directory (will be created if non-existent).
 
-### Optional arguments
+#### Optional arguments
 
 * `--cannot-name:` Name for the cannot-link file (Default: cannot).
 * `-r/--reference-db-data-dir`: GTDB reference directory (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB). SemiBin will lazily download GTDB if it is not found there.
@@ -72,19 +72,19 @@ The command `single_easy_bin` requires the contig file (assembly from reads), ba
 
 
 
-#### multi_easy_bin
+### multi_easy_bin
 
 Reconstruct bins with multi-samples binning using one line command.
 
 The command `multi_easy_bin` requires the combined contig file from several samples, bam files (reads mapping to the combined contig) as inputs and outputs the  reconstructed bins in the samples/[sample]/output_recluster_bins directory.
 
-### Required arguments
+#### Required arguments
 
 * `-b/--input-bam`: Path to the input BAM files. You can pass multiple BAM files, one per sample.
 * `--input-fasta` and `--output`are same as for
 `single_easy_bin`.
 
-### Optional arguments
+#### Optional arguments
 
 * `-s/--separator`: Used when multiple samples binning to separate sample name and contig name(Default is `:`).
 * `--reference-db-data-dir`, `--processes`, `--minfasta-kbs`, `--recluster`,`--epoches`, `--batch-size`, `--max-node`, `--max-edges`, `--random-seed`, `--ratio`, `--min-len`, `--ml-threshold`, `--no-recluster` and ``--orf-finder` are same as for
@@ -92,58 +92,58 @@ The command `multi_easy_bin` requires the combined contig file from several samp
 
 
 
-#### generate_cannot_links
+### generate_cannot_links
 
 Run the contig annotations using mmseqs with GTDB and generate `cannot-link` file used in the semi-supervised deep learning model training.
 
 The subcommand `generate_cannot_links` requires the contig file as inputs and outputs the `cannot-link` constraints.
 
-### Required arguments
+#### Required arguments
 
 * `--input-fasta` and `--output`are same as for
 `single_easy_bin`.
 
-### Optional arguments
+#### Optional arguments
 
 * `-o/--output`, `--cannot-name`, `-r/--reference-db-data-dir`, `--ratio`, `--min-len`, `--ml-threshold` and `--taxonomy-annotation-table` are same as for `single_easy_bin`.
 
 
 
-#### generate_sequence_features_single
+### generate_sequence_features_single
 
 The subcommand `generate_sequence_features_single` requires the contig file and bam files as inputs and generates training data (data.csv; data_split.csv) for single and co-assembly binning.
 
-### Required arguments 
+#### Required arguments 
 
 * `-i/--input-fasta`,  `-b/--input-bam` and `-o/--output` are same as for `single_easy_bin`.
 
-### Optional arguments
+#### Optional arguments
 
 * `-p/--processes/-t/--threads`, `--ratio`, `--min-len` and `--ml-threshold` are same as for `single_easy_bin`.
 
 
 
-#### generate_sequence_features_multi
+### generate_sequence_features_multi
 
 The subcommand `generate_sequence_features_multi` requires the combined contig file and bam files as inputs and generates training data (data.csv;data_split.csv) for multi-sample binning.
 
-### Required arguments
+#### Required arguments
 
 * `-i/--input-fasta` and  `-o/--output` are the same as for `single_easy_bin`.
 * `-b/--input-bam`are the same as for `multi_easy_bin`.
 
-### Optional arguments
+#### Optional arguments
 
 * `-p/--processes/-t/--threads`, `--ratio`, `--min-len`and `--ml-threshold` are the same as for `single_easy_bin`.
 * `-s/--separator` are the same as for `multi_easy_bin`.
 
 
 
-#### train ####
+### train ####
 
 The `train` subcommand requires the contig file and outputs (data.csv, data_split.csv and cannot.txt,) from the  `generate_sequence_features_single`, `generate_sequence_features_multi` and `generate_cannot_links` subcommand as intpus and outputs the trained model.
 
-### Required arguments
+#### Required arguments
 
 * `--data`: Path to the input data.csv file.
 * `--data_split`: Path to the input data_split.csv file.
@@ -151,28 +151,28 @@ The `train` subcommand requires the contig file and outputs (data.csv, data_spli
 * `--mode`:  [single/several] Train models from one sample or several samples(train model across several samples can get better pre-trained model for single-sample binning.) In several mode, must input data, data_split, cannot, fasta files for corresponding sample with same order. *Note:* You can just set `several` with this option when single-sample binning. Training from several samples with multi-sample binning is not support.
 * `-i/--input-fasta`,  `-o/--output` are the same for `single_easy_bin`
 
-### Optional arguments
+#### Optional arguments
 
 * `--epoches`, `--batch-size`, `-p/--processes/-t/--threads`, `--random-seed`, `--ratio`, `--min-len` and `--orf-finder` are the same as for `single_easy_bin`
 
 
 
-#### bin
+### bin
 
 The `bin` subcommand requires the contig file and output (data.csv, model.h5) from the `generate_sequence_features_single`, `generate_sequence_features_multi` and `train` subcommand as inputs and output the final bins in the output_recluster_bins directory.
 
-### Required arguments
+#### Required arguments
 
 * `--model`: Path to the trained model.
 * `--data`,`-i/--input-fasta`, `-o/--output`are the same as for `single_easy_bin`.
 
-### Optional arguments
+#### Optional arguments
 
 * `--minfasta-kbs`, `--recluster`, `--max-node`, `--max-edges`, `-p/--processes/-t/--threads`, `--random-seed`, `--environment`, `--ratio`, `--min-len`, `--no-recluster` and `--orf-finder` are  the same as for `single_easy_bin`
 
 
 
-#### download_GTDB
+### download_GTDB
 
 Download reference genomes(GTDB).
 
@@ -181,21 +181,21 @@ Download reference genomes(GTDB).
 
 
 
-#### check_install
+### check_install
 
 Check required dependencies.
 
 
 
-#### concatenate_fasta
+### concatenate_fasta
 
 Concatenate fasta files for multi-sample binning
 
-### Required arguments
+#### Required arguments
 
 * `-m`: Discard sequences below this length (default:0)
 * `-i/--input-fasta`, `-o/--output`are the same as for `single_easy_bin`.
 
-### Optional arguments
+#### Optional arguments
 
 * `-s/--separator` are the same as the `multi_easy_bin`.
