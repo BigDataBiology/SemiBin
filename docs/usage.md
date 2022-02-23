@@ -33,7 +33,7 @@ includes the following steps: `generate_cannot_links`, `generate_data_multi` and
 
 (1)  Generate `data.csv/data_split.csv` 
 ```bash
-SemiBin generate_data_single -i S1.fa -b S1.bam -o S1_output
+SemiBin generate_sequence_features_single -i S1.fa -b S1.bam -o S1_output
 ```
 (2) Generate cannot-link 
 ```bash
@@ -76,7 +76,7 @@ SemiBin single_easy_bin -i contig.fa -b S1.bam S2.bam S3.bam -o output
 
 (1)  Generate `data.csv/data_split.csv` 
 ```bash
-SemiBin generate_data_single -i contig.fa -b S1.bam S2.bam S3.bam -o contig_output
+SemiBin generate_sequence_features_single -i contig.fa -b S1.bam S2.bam S3.bam -o contig_output
 ```
 (2) Generate cannot-link 
 ```bash
@@ -131,7 +131,7 @@ SemiBin multi_easy_bin -i combined.fa -b S1.bam S2.bam S3.bam S4.bam S5.bam -o m
 
 (1)  Generate `data.csv/data_split.csv` 
 ```bash
-SemiBin generate_data_multi -i combined.fa -b S1.bam S2.bam S3.bam S4.bam S5.bam -o output -s :
+SemiBin generate_sequence_features_multi -i combined.fa -b S1.bam S2.bam S3.bam S4.bam S5.bam -o output -s :
 ```
 (2) Generate cannot-link 
 ```bash
