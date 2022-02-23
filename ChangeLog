@@ -3,6 +3,7 @@ Version 0.7.0
     * Add option `--tmpdir` to set temporary directory
     * Substitute FragGeneScan with Prodigal (FragGeneScan can still be used
 	with `--orf-finder` parameter)
+	* Add 'concatenate_fasta' command to combine fasta files for multi-sample binning
 
 Version 0.6.0 Mon 7 Feb 2022 by BigDataBiology
 	* Provide pretrained models from soil, cat gut, human oral,

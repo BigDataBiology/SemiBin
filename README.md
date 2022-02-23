@@ -26,6 +26,8 @@ If you use this software in a publication please cite:
 
 ## Basic usage of SemiBin
 
+A tutorial of running SemiBin from scrath can be found [SemiBin tutorial] (https://github.com/psj1997/SemiBin_tutorial_from_scratch).
+
 Install
 
 ```bash
@@ -42,10 +44,12 @@ Running with single-sample binning (for example: human gut samples)
 SemiBin single_easy_bin -i contig.fna -b *.bam -o output --environment human_gut
 ```
 
-Running with multi-sample binning (for more information, see below)
+Running with multi-sample binning 
 ```bash
 SemiBin multi_easy_bin -i contig_whole.fna -b *.bam -o output -s :
 ```
+
+Please find more options and details below and [read the docs](https://semibin.readthedocs.io/en/latest/usage/). 
 
 ## Advanced Installation
 
@@ -77,9 +81,9 @@ You will need the following dependencies:
 The easiest way to install the dependencies is with `conda`:
 
 ```bash
-conda install -c conda-forge -c bioconda mmseqs2=13.45111
+conda install -c conda-forge -c bioconda mmseqs2=13.45111 (for GTDB support)
 conda install -c bioconda bedtools hmmer prodigal
-conda install -c bioconda fraggenescan==1.30
+conda install -c bioconda fraggenescan
 ```
 
 Once the dependencies are installed, you can install SemiBin by running:
@@ -188,7 +192,8 @@ CAAATACGAATGATTCTTTATTAGATTATCTTAATAAGAATATC
 You can get the results with one line of code.
 
 ```bash
-SemiBin multi_easy_bin -i contig_whole.fna -b *.bam -o output
+SemiBin concatenate_fasta --contig-files contig*.fa -o output
+SemiBin multi_easy_bin -i output/concatenated.fa -b *.bam -o output
 ```
 
 ## Output
@@ -200,8 +205,7 @@ The output folder will contain:
 3. Output bins.
 4. Some intermediate files.
 
-For every sample, reconstructed bins are in `output_bins` directory. Using
-reclustering, reconstructed bins are in `output_recluster_bins` directory.
+By default,  reconstructed bins are in `output_recluster_bins` directory.
 
 For more details about the output, [read the
 docs](https://semibin.readthedocs.io/en/latest/output/).
