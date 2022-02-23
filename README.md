@@ -23,10 +23,9 @@ If you use this software in a publication please cite:
 > bioRxiv 2021.08.16.456517; doi:
 > [https://doi.org/10.1101/2021.08.16.456517](https://doi.org/10.1101/2021.08.16.456517)
 
-
 ## Basic usage of SemiBin
 
-A tutorial of running SemiBin from scrath can be found [SemiBin tutorial] (https://github.com/psj1997/SemiBin_tutorial_from_scratch).
+A tutorial of running SemiBin from scrath can be found [SemiBin tutorial](https://github.com/psj1997/SemiBin_tutorial_from_scratch).
 
 Install
 
@@ -41,12 +40,12 @@ The inputs to the SemiBin are contigs (assembled from the reads) and bam files (
 Running with single-sample binning (for example: human gut samples)
 
 ```bash
-SemiBin single_easy_bin -i contig.fna -b *.bam -o output --environment human_gut
+SemiBin single_easy_bin -i contig.fa -b *.bam -o output --environment human_gut
 ```
 
 Running with multi-sample binning 
 ```bash
-SemiBin multi_easy_bin -i contig_whole.fna -b *.bam -o output -s :
+SemiBin multi_easy_bin -i contig_whole.fa -b *.bam -o output -s :
 ```
 
 Please find more options and details below and [read the docs](https://semibin.readthedocs.io/en/latest/usage/). 
@@ -111,7 +110,7 @@ Single sample and co-assembly are handled the same way by SemiBin.
 
 You will need the following inputs:
 
-1. A contig file (`contig.fna` in the example below)
+1. A contig file (`contig.fa` in the example below)
 2. BAM file(s) from mapping short reads to the contigs (`mapped_reads.bam` in the example below)
 
 The `single_easy_bin` command can be used to produce results in a single step.
@@ -121,7 +120,7 @@ For example:
 ```bash
 SemiBin \
     single_easy_bin \
-    --input-fasta contig.fna \
+    --input-fasta contig.fa \
     --input-bam mapped_reads.bam \
     --environment human_gut \
     --output output
@@ -132,7 +131,7 @@ Alternatively, you can train a new model for that sample, by not passing in the 
 ```bash
 SemiBin \
     single_easy_bin \
-    --input-fasta contig.fna \
+    --input-fasta contig.fa \
     --input-bam mapped_reads.bam \
     --output output
 ```
