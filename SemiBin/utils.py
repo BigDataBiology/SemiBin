@@ -23,7 +23,7 @@ def validate_normalize_args(logger, args):
             for f in fs:
                 expect_file(f)
 
-    if args.cmd != 'download_GTDB' and args.cmd != 'check_install':
+    if args.cmd != 'download_GTDB' and args.cmd != 'check_install' and args.cmd != 'concatenate_fasta':
         if args.num_process == 0:
             args.num_process = multiprocessing.cpu_count()
             logger.info(f'Setting number of CPUs to {args.num_process}')
@@ -101,9 +101,9 @@ def validate_normalize_args(logger, args):
                 f"Error: Please choose input a model path or use our built-in model for [human_gut/dog_gut/ocean].\n")
             sys.exit(1)
         if args.environment is not None:
-            if args.environment not in ['human_gut', 'dog_gut', 'ocean']:
+            if args.environment not in ['human_gut', 'dog_gut', 'ocean', 'soil', 'cat_gut', 'human_oral', 'mouse_gut', 'pig_gut', 'built_environment', 'wastewater', 'global']:
                 sys.stderr.write(
-                    f"Error: Please choose a built-in model in [human_gut/dog_gut/ocean].\n")
+                    f"Error: Please choose a built-in model in [human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/global].\n")
                 sys.exit(1)
         if args.model_path is not None:
             expect_file(args.model_path)
@@ -116,11 +116,28 @@ def validate_normalize_args(logger, args):
         expect_file(args.contig_fasta)
         expect_file_list(args.bams)
 
+        if args.environment is not None:
+            if args.environment not in ['human_gut', 'dog_gut', 'ocean', 'soil', 'cat_gut', 'human_oral', 'mouse_gut', 'pig_gut', 'built_environment', 'wastewater', 'global']:
+                sys.stderr.write(
+                    f"Error: Please choose a built-in model in [human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/global].\n")
+                sys.exit(1)
+
     if args.cmd == 'multi_easy_bin':
         if args.GTDB_reference is not None:
             expect_file(args.GTDB_reference)
         expect_file(args.contig_fasta)
         expect_file_list(args.bams)
+
+    if args.cmd == 'concatenate_fasta':
+        expect_file_list(args.contig_files)
+        contig_name = []
+        for contig in args.contig_files:
+            contig_name.append(os.path.basename(contig).split('.')[0])
+        if len(set(contig_name)) != len(contig_name):
+            sys.stderr.write(
+                f"Error: Make sure that every contig file have different names.\n")
+            sys.exit(1)
+
 
 
 def get_must_link_threshold(contig_lens):
@@ -486,4 +503,14 @@ def get_model_path(env):
         sys.stderr.write(
             f"Error: Expected environment '{env}' does not exist\n")
         sys.exit(1)
+
+def concatenate_fasta(fasta_files, min_length, output, separator):
+    cfasta = os.path.join(output, 'concatenated.fa')
+    with open(cfasta, 'wt') as concat_out:
+        for fasta in fasta_files:
+            sample_name = os.path.basename(fasta).split('.')[0]
+            for h, seq in fasta_iter(fasta):
+                if len(seq) >= min_length:
+                    header = f'{sample_name}{separator}{h}'
+                    concat_out.write(f'>{header}\n{seq}\n')
 

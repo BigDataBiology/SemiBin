@@ -66,6 +66,28 @@ def parse_args(args):
 
     check_install = subparsers.add_parser('check_install', help = 'Check required dependencies.')
 
+    concatenate_fasta = subparsers.add_parser('concatenate_fasta', help = 'concatenate fasta files for multi-sample binning')
+
+    concatenate_fasta.add_argument('--contig-files',
+                        nargs='*',
+                        required=True,
+                        help='Path to the contig fasta files (Every contig file must have different names).',
+                        dest='contig_files')
+
+    concatenate_fasta.add_argument('-o', '--output',
+                        required=True,
+                        help='Output directory (will be created if non-existent)',
+                        dest='output',
+                        default=None
+                        )
+
+    concatenate_fasta.add_argument('-m',
+                        required=False,
+                        type=int,
+                        help='Discard sequences below this length (default:0)',
+                        default=0,
+                        dest='min_length')
+
     training = subparsers.add_parser('train',
                                     help='Train the model.')
 
@@ -251,7 +273,7 @@ def parse_args(args):
                             metavar='',
                             default=None)
 
-    for p in [single_easy_bin, generate_cannot_links]:
+    for p in [single_easy_bin, generate_cannot_links, multi_easy_bin]:
         p.add_argument('--cannot-name',
                             required=False,
                             help='Name for the cannot-link file(default: cannot).',
@@ -314,7 +336,7 @@ def parse_args(args):
                           default=1,
                           help='Fraction of contigs that considered to be binned (should be between 0 and 1; default: 1).')
 
-    for p in [multi_easy_bin, generate_sequence_features_multi]:
+    for p in [multi_easy_bin, generate_sequence_features_multi, concatenate_fasta]:
         p.add_argument('-s', '--separator',
                            required=False,
                            type=str,
@@ -1001,6 +1023,8 @@ def main():
             device,
             orf_finder=args.orf_finder)
 
-
+    if args.cmd == 'concatenate_fasta':
+        from .utils import concatenate_fasta
+        concatenate_fasta(args.contig_files, args.min_length, out, args.separator)
 if __name__ == '__main__':
     main()
