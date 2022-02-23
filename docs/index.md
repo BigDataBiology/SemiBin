@@ -38,7 +38,7 @@ concatenated database.
 
 ## Commands
 
-#### `single_easy_bin`
+#### single_easy_bin
 
 Reconstruct bins with single or co-assembly binning using one line command.
 
@@ -70,6 +70,8 @@ The command `single_easy_bin` requires the contig file (assembly from reads), ba
 * `--taxonomy-annotation-table` : TAXONOMY_TSV, Pre-computed mmseqs2 format taxonomy TSV file to bypass mmseqs2 GTDB annotation [advanced]
 * `--orf-finder` : gene predictor used to estimate the number of bins(prodigal/fraggenescan)
 
+
+
 #### multi_easy_bin
 
 Reconstruct bins with multi-samples binning using one line command.
@@ -88,6 +90,8 @@ The command `multi_easy_bin` requires the combined contig file from several samp
 * `--reference-db-data-dir`, `--processes`, `--minfasta-kbs`, `--recluster`,`--epoches`, `--batch-size`, `--max-node`, `--max-edges`, `--random-seed`, `--ratio`, `--min-len`, `--ml-threshold`, `--no-recluster` and ``--orf-finder` are same as for
 `single_easy_bin`
 
+
+
 #### generate_cannot_links
 
 Run the contig annotations using mmseqs with GTDB and generate `cannot-link` file used in the semi-supervised deep learning model training.
@@ -103,6 +107,8 @@ The subcommand `generate_cannot_links` requires the contig file as inputs and ou
 
 * `-o/--output`, `--cannot-name`, `-r/--reference-db-data-dir`, `--ratio`, `--min-len`, `--ml-threshold` and `--taxonomy-annotation-table` are same as for `single_easy_bin`.
 
+
+
 #### generate_sequence_features_single
 
 The subcommand `generate_sequence_features_single` requires the contig file and bam files as inputs and generates training data (data.csv; data_split.csv) for single and co-assembly binning.
@@ -114,6 +120,7 @@ The subcommand `generate_sequence_features_single` requires the contig file and 
 ### Optional arguments
 
 * `-p/--processes/-t/--threads`, `--ratio`, `--min-len` and `--ml-threshold` are same as for `single_easy_bin`.
+
 
 
 #### generate_sequence_features_multi
@@ -129,6 +136,8 @@ The subcommand `generate_sequence_features_multi` requires the combined contig f
 
 * `-p/--processes/-t/--threads`, `--ratio`, `--min-len`and `--ml-threshold` are the same as for `single_easy_bin`.
 * `-s/--separator` are the same as for `multi_easy_bin`.
+
+
 
 #### train ####
 
@@ -146,6 +155,8 @@ The `train` subcommand requires the contig file and outputs (data.csv, data_spli
 
 * `--epoches`, `--batch-size`, `-p/--processes/-t/--threads`, `--random-seed`, `--ratio`, `--min-len` and `--orf-finder` are the same as for `single_easy_bin`
 
+
+
 #### bin
 
 The `bin` subcommand requires the contig file and output (data.csv, model.h5) from the `generate_sequence_features_single`, `generate_sequence_features_multi` and `train` subcommand as inputs and output the final bins in the output_recluster_bins directory.
@@ -159,6 +170,8 @@ The `bin` subcommand requires the contig file and output (data.csv, model.h5) fr
 
 * `--minfasta-kbs`, `--recluster`, `--max-node`, `--max-edges`, `-p/--processes/-t/--threads`, `--random-seed`, `--environment`, `--ratio`, `--min-len`, `--no-recluster` and `--orf-finder` are  the same as for `single_easy_bin`
 
+
+
 #### download_GTDB
 
 Download reference genomes(GTDB).
@@ -166,9 +179,13 @@ Download reference genomes(GTDB).
 * `-r/--reference-db-data-dir`: Where to store the GTDB data (default: `$HOME/.cache/SemiBin/mmseqs2-GTDB`)
 * `-f/--force`: Whether to download GTDB even if the data is found at the path (default is to not download).
 
+
+
 #### check_install
 
 Check required dependencies.
+
+
 
 #### concatenate_fasta
 
@@ -182,4 +199,3 @@ Concatenate fasta files for multi-sample binning
 ### Optional arguments
 
 * `-s/--separator` are the same as the `multi_easy_bin`.
-
