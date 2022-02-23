@@ -7,7 +7,7 @@ information from reference genomes in Linux and MacOS.
 [![Documentation Status](https://readthedocs.org/projects/semibin/badge/?version=latest)](https://semibin.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-_NOTE_: This tool is still in development. You are welcome to try it out and
+_CONTACT US_: This tool is still in development. You are welcome to try it out and
 feedback is appreciated, but expect some bugs/rapid changes until it
 stabilizes. Please use [Github
 issues](https://github.com/BigDataBiology/SemiBin/issues) for bug reports and
