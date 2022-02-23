@@ -9,7 +9,7 @@ information from reference genomes in Linux and MacOS.
 
 _CONTACT US_: This tool is still in development. You are welcome to try it out and
 feedback is appreciated, but expect some bugs/rapid changes until it
-stabilizes. Please use [Github
+stabilizes. Please use [GitHub
 issues](https://github.com/BigDataBiology/SemiBin/issues) for bug reports and
 the [SemiBin users mailing-list](https://groups.google.com/g/semibin-users) for
 more open-ended discussions or questions.
@@ -25,9 +25,9 @@ If you use this software in a publication please cite:
 
 ## Basic usage of SemiBin
 
-A tutorial of running SemiBin from scrath can be found [SemiBin tutorial](https://github.com/psj1997/SemiBin_tutorial_from_scratch).
+A tutorial of running SemiBin from scrath can be found here [SemiBin tutorial](https://github.com/psj1997/SemiBin_tutorial_from_scratch).
 
-Install
+Installation:
 
 ```bash
 conda create -n SemiBin
@@ -35,18 +35,22 @@ conda activate SemiBin
 conda install -c conda-forge -c bioconda semibin
 ```
 
-The inputs to the SemiBin are contigs (assembled from the reads) and bam files (reads mapping to the contigs). The output are the bins in the output_recluster_bins directory (including the bin.\*.fa and recluster.\*.fa)).
+**The inputs** to the SemiBin are contigs (assembled from the reads) and bam files (reads mapping to the contigs). 
 
-Running with single-sample binning (for example: human gut samples)
+Running with single-sample binning (for example: human gut samples):
 
 ```bash
 SemiBin single_easy_bin -i contig.fa -b *.bam -o output --environment human_gut
 ```
 
-Running with multi-sample binning 
+Running with multi-sample binning:
+
 ```bash
 SemiBin multi_easy_bin -i contig_whole.fa -b *.bam -o output -s :
 ```
+
+**The output** includes the bins in the output_recluster_bins directory (including the bin.\*.fa and recluster.\*.fa).
+
 
 Please find more options and details below and [read the docs](https://semibin.readthedocs.io/en/latest/usage/). 
 
