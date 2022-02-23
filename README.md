@@ -50,7 +50,7 @@ SemiBin multi_easy_bin -i contig_whole.fa -b *.bam -o output -s :
 
 Please find more options and details below and [read the docs](https://semibin.readthedocs.io/en/latest/usage/). 
 
-## Advanced Installation
+## Installation options
 
 SemiBin runs on Python 3.7-3.9.
 
