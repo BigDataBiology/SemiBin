@@ -68,11 +68,12 @@ def parse_args(args):
 
     concatenate_fasta = subparsers.add_parser('concatenate_fasta', help = 'concatenate fasta files for multi-sample binning')
 
-    concatenate_fasta.add_argument('--contig-files',
-                        nargs='*',
-                        required=True,
-                        help='Path to the contig fasta files (Every contig file must have different names).',
-                        dest='contig_files')
+    concatenate_fasta.add_argument('-i', '--input-fasta',
+                   required=True,
+                   nargs='*',
+                   help='Path to the input fasta file.',
+                   dest='contig_fasta',
+                   default=None, )
 
     concatenate_fasta.add_argument('-o', '--output',
                         required=True,
@@ -1025,6 +1026,6 @@ def main():
 
     if args.cmd == 'concatenate_fasta':
         from .utils import concatenate_fasta
-        concatenate_fasta(args.contig_files, args.min_length, out, args.separator)
+        concatenate_fasta(args.contig_fasta, args.min_length, out, args.separator)
 if __name__ == '__main__':
     main()

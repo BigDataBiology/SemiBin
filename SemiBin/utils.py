@@ -129,9 +129,9 @@ def validate_normalize_args(logger, args):
         expect_file_list(args.bams)
 
     if args.cmd == 'concatenate_fasta':
-        expect_file_list(args.contig_files)
+        expect_file_list(args.contig_fasta)
         contig_name = []
-        for contig in args.contig_files:
+        for contig in args.contig_fasta:
             contig_name.append(os.path.basename(contig).split('.')[0])
         if len(set(contig_name)) != len(contig_name):
             sys.stderr.write(
@@ -510,6 +510,10 @@ def concatenate_fasta(fasta_files, min_length, output, separator):
         for fasta in fasta_files:
             sample_name = os.path.basename(fasta).split('.')[0]
             for h, seq in fasta_iter(fasta):
+                if separator in h:
+                    sys.stderr.write(
+                        f"Error: the header of the contig contains the separator, please choose another separator.\n")
+                    sys.exit(1)
                 if len(seq) >= min_length:
                     header = f'{sample_name}{separator}{h}'
                     concat_out.write(f'>{header}\n{seq}\n')

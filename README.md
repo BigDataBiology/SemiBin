@@ -192,11 +192,16 @@ AATATTTTAGAGAAAGACATAAACAATAAGAAAAGTATT
 CAAATACGAATGATTCTTTATTAGATTATCTTAATAAGAATATC
 ```
 
+You can use this to get the combined contig:
+
+```bash
+SemiBin concatenate_fasta -i contig*.fa -o output
+```
+
 You can get the results with one line of code.
 
 ```bash
-SemiBin concatenate_fasta --contig-files contig*.fa -o output
-SemiBin multi_easy_bin -i output/concatenated.fa -b *.bam -o output
+SemiBin multi_easy_bin -i concatenated.fa -b *.bam -o output
 ```
 
 ## Output
