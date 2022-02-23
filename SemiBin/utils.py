@@ -293,17 +293,25 @@ def run_prodigal(fasta_path, num_process, output):
         contig_dict[h] = seq
 
     num_contig = len(contig_dict)
-
     num_split = num_contig // num_process
+
     split_contig_dict = {}
     split_index = 0
-    for h in contig_dict:
-        if split_index not in split_contig_dict:
-            split_contig_dict[split_index] = []
-        split_contig_dict[split_index].append(h)
-        if split_index < num_process - 1:
-            if len(split_contig_dict[split_index]) == num_split:
-                split_index += 1
+
+    for index in range(num_process):
+        split_contig_dict[index] = []
+
+    if num_split == 0:
+        for h in contig_dict:
+            split_contig_dict[split_index].append(h)
+            split_index += 1
+        num_process = split_index
+    else:
+        for h in contig_dict:
+            split_contig_dict[split_index].append(h)
+            if split_index < num_process - 1:
+                if len(split_contig_dict[split_index]) == num_split:
+                    split_index += 1
 
     ### split_fasta
     for index in range(num_process):
