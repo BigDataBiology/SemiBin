@@ -38,6 +38,8 @@ concatenated database.
 
 ## Commands
 
+ <br/>
+
 ### single_easy_bin
 
 Reconstruct bins with single or co-assembly binning using one line command.
@@ -90,7 +92,7 @@ The command `multi_easy_bin` requires the combined contig file from several samp
 * `--reference-db-data-dir`, `--processes`, `--minfasta-kbs`, `--recluster`,`--epoches`, `--batch-size`, `--max-node`, `--max-edges`, `--random-seed`, `--ratio`, `--min-len`, `--ml-threshold`, `--no-recluster` and ``--orf-finder` are same as for
 `single_easy_bin`
 
-
+ <br/><br/>
 
 ### generate_cannot_links
 
@@ -107,7 +109,7 @@ The subcommand `generate_cannot_links` requires the contig file as inputs and ou
 
 * `-o/--output`, `--cannot-name`, `-r/--reference-db-data-dir`, `--ratio`, `--min-len`, `--ml-threshold` and `--taxonomy-annotation-table` are same as for `single_easy_bin`.
 
-
+ <br/><br/>
 
 ### generate_sequence_features_single
 
@@ -121,7 +123,7 @@ The subcommand `generate_sequence_features_single` requires the contig file and 
 
 * `-p/--processes/-t/--threads`, `--ratio`, `--min-len` and `--ml-threshold` are same as for `single_easy_bin`.
 
-
+ <br/><br/>
 
 ### generate_sequence_features_multi
 
@@ -137,7 +139,7 @@ The subcommand `generate_sequence_features_multi` requires the combined contig f
 * `-p/--processes/-t/--threads`, `--ratio`, `--min-len`and `--ml-threshold` are the same as for `single_easy_bin`.
 * `-s/--separator` are the same as for `multi_easy_bin`.
 
-
+ <br/><br/>
 
 ### train ####
 
@@ -155,7 +157,7 @@ The `train` subcommand requires the contig file and outputs (data.csv, data_spli
 
 * `--epoches`, `--batch-size`, `-p/--processes/-t/--threads`, `--random-seed`, `--ratio`, `--min-len` and `--orf-finder` are the same as for `single_easy_bin`
 
-
+ <br/><br/>
 
 ### bin
 
@@ -170,7 +172,7 @@ The `bin` subcommand requires the contig file and output (data.csv, model.h5) fr
 
 * `--minfasta-kbs`, `--recluster`, `--max-node`, `--max-edges`, `-p/--processes/-t/--threads`, `--random-seed`, `--environment`, `--ratio`, `--min-len`, `--no-recluster` and `--orf-finder` are  the same as for `single_easy_bin`
 
-
+ <br/><br/>
 
 ### download_GTDB
 
@@ -179,13 +181,13 @@ Download reference genomes(GTDB).
 * `-r/--reference-db-data-dir`: Where to store the GTDB data (default: `$HOME/.cache/SemiBin/mmseqs2-GTDB`)
 * `-f/--force`: Whether to download GTDB even if the data is found at the path (default is to not download).
 
-
+ <br/><br/>
 
 ### check_install
 
 Check required dependencies.
 
-
+ <br/><br/>
 
 ### concatenate_fasta
 
