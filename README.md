@@ -35,7 +35,7 @@ conda activate SemiBin
 conda install -c conda-forge -c bioconda semibin
 ```
 
-**The inputs** to the SemiBin are contigs (assembled from the reads) and bam files (reads mapping to the contigs). 
+**The inputs** to the SemiBin are contigs (assembled from the reads) and bam files (reads mapping to the contigs). In [the docs](https://semibin.readthedocs.io/en/latest/generate/) you can see how to generate the inputs starting with a metagenome.
 
 Running with single-sample binning (for example: human gut samples):
 
