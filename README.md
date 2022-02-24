@@ -3,6 +3,7 @@
 Command tool for metagenomic binning with semi-supervised deep learning using
 information from reference genomes in Linux and MacOS.
 
+[[![BioConda Install](https://img.shields.io/conda/dn/bioconda/semibin.svg?style=flag&label=BioConda%20install)](https://anaconda.org/bioconda/semibin)
 [![Test Status](https://github.com/BigDataBiology/SemiBin/actions/workflows/semibin_test.yml/badge.svg)](https://github.com/BigDataBiology/SemiBin/actions/workflows/semibin_test.yml)
 [![Documentation Status](https://readthedocs.org/projects/semibin/badge/?version=latest)](https://semibin.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -76,15 +77,16 @@ For more information on how to install PyTorch, see [their documentation](https:
 ### Source
 
 You will need the following dependencies:
+
 - [MMseqs2](https://github.com/soedinglab/MMseqs2)
 - [Bedtools](http://bedtools.readthedocs.org/]), [Hmmer](http://hmmer.org/)
 - [Prodigal](https://github.com/hyattpd/Prodigal)
-- (optionally) [Fraggenescan](https://sourceforge.net/projects/fraggenescan/)
+- (optionally) [FragGeneScan](https://sourceforge.net/projects/fraggenescan/)
 
-The easiest way to install the dependencies is with `conda`:
+The easiest way to install the dependencies is with [conda](https://conda.io):
 
 ```bash
-conda install -c conda-forge -c bioconda mmseqs2=13.45111 (for GTDB support)
+conda install -c conda-forge -c bioconda mmseqs2=13.45111 # (for GTDB support)
 conda install -c bioconda bedtools hmmer prodigal
 conda install -c bioconda fraggenescan
 ```
