@@ -70,7 +70,7 @@ The command `single_easy_bin` requires the contig file (assembly from reads), ba
 * `--taxonomy-annotation-table` : TAXONOMY_TSV, Pre-computed mmseqs2 format taxonomy TSV file to bypass mmseqs2 GTDB annotation [advanced]
 * `--orf-finder` : gene predictor used to estimate the number of bins(prodigal/fraggenescan)
 
-
+ <br/><br/>
 
 ### multi_easy_bin
 
