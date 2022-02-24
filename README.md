@@ -3,7 +3,7 @@
 Command tool for metagenomic binning with semi-supervised deep learning using
 information from reference genomes in Linux and MacOS.
 
-[[![BioConda Install](https://img.shields.io/conda/dn/bioconda/semibin.svg?style=flag&label=BioConda%20install)](https://anaconda.org/bioconda/semibin)
+[![BioConda Install](https://img.shields.io/conda/dn/bioconda/semibin.svg?style=flag&label=BioConda%20install)](https://anaconda.org/bioconda/semibin)
 [![Test Status](https://github.com/BigDataBiology/SemiBin/actions/workflows/semibin_test.yml/badge.svg)](https://github.com/BigDataBiology/SemiBin/actions/workflows/semibin_test.yml)
 [![Documentation Status](https://readthedocs.org/projects/semibin/badge/?version=latest)](https://semibin.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
