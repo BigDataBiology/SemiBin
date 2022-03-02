@@ -1,7 +1,8 @@
 Version 0.7.0
-    * Reuse markers.hmmout to make the training from several samples faster
-    * Add option `--tmpdir` to set temporary directory
-    * Substitute FragGeneScan with Prodigal (FragGeneScan can still be used
+	* Improve `check_install` command
+	* Reuse markers.hmmout to make the training from several samples faster
+	* Add option `--tmpdir` to set temporary directory
+	* Substitute FragGeneScan with Prodigal (FragGeneScan can still be used
 	with `--orf-finder` parameter)
 	* Add 'concatenate_fasta' command to combine fasta files for multi-sample binning
 

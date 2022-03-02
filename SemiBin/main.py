@@ -64,7 +64,7 @@ def parse_args(args):
 
     download_GTDB = subparsers.add_parser('download_GTDB', help='Download GTDB reference genomes.')
 
-    check_install = subparsers.add_parser('check_install', help = 'Check required dependencies.')
+    check_install = subparsers.add_parser('check_install', help = 'Check whether required dependencies are present.')
 
     concatenate_fasta = subparsers.add_parser('concatenate_fasta', help = 'concatenate fasta files for multi-sample binning')
 
@@ -375,14 +375,48 @@ def parse_args(args):
 def _checkback(msg):
     msg[1].info('Processed:{}'.format(msg[0]))
 
-def check_install():
+def check_install(verbose, orf_finder=None):
+    '''Executes check_install subcommand, which checks for dependencies
+
+    Parameters
+    ----------
+    verbose : boolean. If true, then prints out all the paths
+    orf_finder : str, optional
+    '''
     from shutil import which
-    dependence_list = ['bedtools', 'hmmsearch', 'FragGeneScan', 'mmseqs', 'prodigal']
-    for dependence in dependence_list:
-        if not which(dependence):
-            sys.stderr.write(
-                f"Error: {dependence} does not be installed!\n")
-            sys.exit(1)
+    dependencies = ['bedtools', 'hmmsearch', 'mmseqs', 'FragGeneScan', 'prodigal']
+    has_fgs = False
+    missing_deps = False
+    if verbose:
+        print("Looking for dependencies...")
+    for dep in dependencies:
+        p = which(dep)
+        if not p:
+            if dep not in ['FragGeneScan', 'prodigal']:
+                sys.stderr.write(
+                    f"Error: {dep} does not seem to be installed!\n")
+                missing_deps = True
+            elif dep == 'prodigal':
+                if not has_fgs:
+                    sys.stderr.write(
+                            'Error: neither prodigal nor FragGeneScan appear to be available!\n'
+                            'At least one of them is necessary to run SemiBin\n')
+                    missing_deps = True
+                else:
+                    if verbose or orf_finder != 'fraggenescan':
+                        sys.stderr.write(
+                            'Warning: prodigal does not appear to be available. You must use the `--orf-finder fraggenescan` option.\n')
+                    missing_deps = True
+        else:
+            if dep == 'FragGeneScan':
+                has_fgs = True
+            if verbose:
+                print(f'\t{dep:16}: {p}')
+    if missing_deps:
+        sys.exit(1)
+    else:
+        if verbose:
+            print('Installation OK')
 
 def predict_taxonomy(logger, contig_fasta, cannot_name,
                      taxonomy_results_fname, GTDB_reference, num_process,
@@ -914,7 +948,7 @@ def main():
     validate_normalize_args(logger, args)
 
     if args.cmd == 'check_install':
-        check_install()
+        check_install(True)
 
     if args.cmd not in ['download_GTDB', 'check_install']:
         import torch
@@ -995,7 +1029,7 @@ def main():
 
 
     if args.cmd == 'single_easy_bin':
-        check_install()
+        check_install(False, args.orf_finder)
         if args.random_seed is not None:
             set_random_seed(args.random_seed)
         single_easy_binning(
@@ -1012,7 +1046,7 @@ def main():
             orf_finder=args.orf_finder)
 
     if args.cmd == 'multi_easy_bin':
-        check_install()
+        check_install(False, args.orf_finder)
         if args.random_seed is not None:
             set_random_seed(args.random_seed)
         multi_easy_binning(
