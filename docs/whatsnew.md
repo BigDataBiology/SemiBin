@@ -1,5 +1,21 @@
 # What's New
 
+## Version 0.7
+
+*Released March 2 2022*
+
+This release solves [issues running on Mac OS X](https://github.com/BigDataBiology/SemiBin/issues/77).
+
+### User-visible improvements
+
+- Improved `check_install` command: it now prints out paths and correctly handles optionality of FragGeneScan/prodigal
+- Add `concatenate_fasta` command to combine fasta files for multi-sample binning
+- Add option `--tmpdir` to set temporary directory
+- Substitute FragGeneScan with Prodigal (FragGeneScan can still be used with `--orf-finder` parameter). FragGeneScan caused issues, especially on Mac OSX
+
+### Internal improvements
+- Reuse `markers.hmmout` file to make the training from several samples faster
+
 ## Version 0.6
 
 *Released February 7 2022*

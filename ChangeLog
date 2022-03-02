@@ -1,5 +1,6 @@
-Version 0.7.0
-	* Improve `check_install` command
+Version 0.7.0 Wed 3 Mar 2022 by BigDataBiology
+	* Improve `check_install` command by printing out paths and correctly
+	handling optionality of FragGeneScan/prodigal
 	* Reuse markers.hmmout to make the training from several samples faster
 	* Add option `--tmpdir` to set temporary directory
 	* Substitute FragGeneScan with Prodigal (FragGeneScan can still be used
