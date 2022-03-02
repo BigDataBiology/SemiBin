@@ -27,7 +27,7 @@ write(contigs, ofile='contig.fa')
 ### Mapping using NGLess
 
 ```python
-ngless "1.1"
+ngless "1.2"
 import "samtools" version "1.0"
 
 input = fastq('sample.fq.gz')
@@ -53,17 +53,18 @@ samtools sort -m 1000000000 contig.mapped.bam -o contig.mapped.sorted.bam -@ 64
 samtools index contig.mapped.sorted.bam
 ```
 
-### Generate cannot-link constraints
+### Generate cannot-link constraints using CAT (advanced)
 
-You can also use [CAT](https://github.com/dutilh/CAT) for generating  contig taxonomic classifications and generating cannot-link file. See below for format
-specifications if you want to use CAT.
+_**Note**: Unless you understand exactly what is going on, you probably **do not** want to do this. Feel free to check in [with us](https://groups.google.com/g/semibin-users) if you have doubts._
+
+SemiBin uses mmseqs2 by default, but you can also use [CAT](https://github.com/dutilh/CAT) to produce contig taxonomic classifications and generate the cannot-link pairs.
 
 ```bash
 CAT contigs \
         -c contig.fa \
         -d CAT_prepare_20200304/2020-03-04_CAT_database \
-        --path_to_prodigal path_to_prodigal \
-        --path_to_diamond path_to_diamond \
+        --path_to_prodigal $path_to_prodigal \
+        --path_to_diamond $path_to_diamond \
         -t CAT_prepare_20200304/2020-03-04_taxonomy \
         -o CAT_output/CAT \
         --force \
@@ -80,9 +81,9 @@ CAT add_names \
     --only_official
 ```
 
-Generate cannot-link constrains
+Generate cannot-link constrains using the script `generate_cannot_link.py` in the `scripts/` directory
 
 ```bash
-python script/concatenate.py -i CAT.out -c contig.fa -s sample-name -o output --CAT
+python script/generate_cannot_link.py -i CAT.out -c contig.fa -s sample-name -o output --CAT
 ```
 

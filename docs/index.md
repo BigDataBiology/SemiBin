@@ -1,6 +1,27 @@
 # SemiBin
 
+If you use this software in a publication please cite:
+
+> SemiBin: Incorporating information from reference genomes with
+> semi-supervised deep learning leads to better metagenomic assembled genomes
+> (MAGs)
+> Shaojun Pan, Chengkai Zhu, Xing-Ming Zhao, Luis Pedro Coelho
+> bioRxiv 2021.08.16.456517; doi:
+> [https://doi.org/10.1101/2021.08.16.456517](https://doi.org/10.1101/2021.08.16.456517)
+
 SemiBin is a command line tool for metagenomic binning with semi-supervised siamese neural network using additional information from reference genomes and contigs themselves. It will output the reconstructed bins in single sample/co-assembly/multi-samples binning mode.
+
+## Install
+
+The simplest way to install is to use [conda](https://conda.io/).
+
+```bash
+conda create conda create -n SemiBin
+conda activate SemiBin
+conda install -c conda-forge -c bioconda semibin
+```
+
+See [Install](install) for how to install from source or how to enable GPU usage.
 
 ### Single sample binning
 
@@ -54,23 +75,23 @@ The command `single_easy_bin` requires the contig file (assembly from reads), ba
 
 #### Optional arguments
 
-* `--cannot-name:` Name for the cannot-link file (Default: cannot).
+* `--cannot-name:` Name for the cannot-link file (Default: `cannot`).
 * `-r/--reference-db-data-dir`: GTDB reference directory (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB). SemiBin will lazily download GTDB if it is not found there.
 * `-p/--processes/-t/--threads`: Number of CPUs used (0: use all).
 * `--minfasta-kbs`: minimum bin size in kilo-basepairs (Default: 200).
 * `--recluster` : [Deprecated] Does nothing (current default is to perform clustering).
-* `--epoches`: Number of epoches used in the training process(Default: 20).
-* `--batch-size`: Batch size used in the training process(Default: 2048).
-* `--max-node`: Percentage of contigs that considered to be binned(Default: 1).
-* `--max-edges`: The maximum number of edges that can be connected to one contig(Default: 200).
+* `--no-recluster` : Do not recluster bins.
+* `--epoches`: Number of epoches used in the training process (Default: 20).
+* `--batch-size`: Batch size used in the training process (Default: 2048).
+* `--max-node`: Percentage of contigs that considered to be binned (Default: 1).
+* `--max-edges`: The maximum number of edges that can be connected to one contig (Default: 200).
 * `--random-seed`: Random seed to reproduce results.
 * `--environment`: Environment for the built-in model (`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`global`).
-* `--ratio` : If the ratio of the number of base pairs of contigs between 1000-2500 bp smaller than this value, the minimal length will be set as 1000bp, otherwise2500bp. If you set -m parameter, you do not need to use this parameter. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands(Default: 0.05). 
-* `-m/--min-len` : Minimal length for contigs in binning. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands.(Default: SemiBin chooses 1000bp or 2500bp according the ratio of the number of base pairs of contigs between 1000-2500 bp).
-* `--ml-threshold` : Length threshold for generating must-link constraints.(By default, the threshold is calculated from the contig, and the default minimum value is 4,000 bp)
-* `--no-recluster` : Do not recluster bins.
-* `--taxonomy-annotation-table` : TAXONOMY_TSV, Pre-computed mmseqs2 format taxonomy TSV file to bypass mmseqs2 GTDB annotation [advanced]
-* `--orf-finder` : gene predictor used to estimate the number of bins(prodigal/fraggenescan)
+* `--ratio` : If the ratio of the number of base pairs of contigs between 1000-2500 bp smaller than this value, the minimal length will be set as 1000bp, otherwise2500bp. If you set -m parameter, you do not need to use this parameter. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands (Default: 0.05).
+* `-m/--min-len` : Minimal length for contigs in binning. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands. (Default: SemiBin chooses 1000bp or 2500bp according the ratio of the number of base pairs of contigs between 1000-2500 bp).
+* `--ml-threshold` : Length threshold for generating must-link constraints. By default, the threshold is calculated from the contig, and the default minimum value is 4,000 bp.
+* `--taxonomy-annotation-table`: TAXONOMY_TSV, Pre-computed mmseqs2 format taxonomy TSV file to bypass mmseqs2 GTDB annotation [advanced]
+* `--orf-finder` : gene predictor used to estimate the number of bins. Must be either `prodigal` (default since `v0.7`) or `fraggenescan` (which is faster, but cannot be installed in all platforms).
 
  <br/><br/>
 
@@ -78,7 +99,7 @@ The command `single_easy_bin` requires the contig file (assembly from reads), ba
 
 Reconstruct bins with multi-samples binning using one line command.
 
-The command `multi_easy_bin` requires the combined contig file from several samples, bam files (reads mapping to the combined contig) as inputs and outputs the  reconstructed bins in the samples/[sample]/output_recluster_bins directory.
+The command `multi_easy_bin` requires the combined contig file from several samples, bam files (reads mapping to the combined contig) as inputs and outputs the reconstructed bins in the samples/[sample]/output_recluster_bins directory.
 
 #### Required arguments
 
@@ -88,9 +109,8 @@ The command `multi_easy_bin` requires the combined contig file from several samp
 
 #### Optional arguments
 
-* `-s/--separator`: Used when multiple samples binning to separate sample name and contig name(Default is `:`).
-* `--reference-db-data-dir`, `--processes`, `--minfasta-kbs`, `--recluster`,`--epoches`, `--batch-size`, `--max-node`, `--max-edges`, `--random-seed`, `--ratio`, `--min-len`, `--ml-threshold`, `--no-recluster` and ``--orf-finder` are same as for
-`single_easy_bin`
+* `-s/--separator`: Used when multiple samples binning to separate sample name and contig name (Default is `:`).
+* `--reference-db-data-dir`, `--processes`, `--minfasta-kbs`, `--recluster`,`--epoches`, `--batch-size`, `--max-node`, `--max-edges`, `--random-seed`, `--ratio`, `--min-len`, `--ml-threshold`, `--no-recluster` and `--orf-finder` are same as for `single_easy_bin`
 
  <br/><br/>
 
@@ -102,8 +122,7 @@ The subcommand `generate_cannot_links` requires the contig file as inputs and ou
 
 #### Required arguments
 
-* `--input-fasta` and `--output`are same as for
-`single_easy_bin`.
+* `--input-fasta` and `--output`are same as for `single_easy_bin`.
 
 #### Optional arguments
 
@@ -113,11 +132,11 @@ The subcommand `generate_cannot_links` requires the contig file as inputs and ou
 
 ### generate_sequence_features_single
 
-The subcommand `generate_sequence_features_single` requires the contig file and bam files as inputs and generates training data (data.csv; data_split.csv) for single and co-assembly binning.
+The subcommand `generate_sequence_features_single` requires the contig file and bam files as inputs and generates training data (`data.csv`; `data_split.csv`) for single and co-assembly binning.
 
-#### Required arguments 
+#### Required arguments
 
-* `-i/--input-fasta`,  `-b/--input-bam` and `-o/--output` are same as for `single_easy_bin`.
+* `-i/--input-fasta`, `-b/--input-bam` and `-o/--output` are same as for `single_easy_bin`.
 
 #### Optional arguments
 
@@ -131,7 +150,7 @@ The subcommand `generate_sequence_features_multi` requires the combined contig f
 
 #### Required arguments
 
-* `-i/--input-fasta` and  `-o/--output` are the same as for `single_easy_bin`.
+* `-i/--input-fasta` and `-o/--output` are the same as for `single_easy_bin`.
 * `-b/--input-bam`are the same as for `multi_easy_bin`.
 
 #### Optional arguments
@@ -143,15 +162,15 @@ The subcommand `generate_sequence_features_multi` requires the combined contig f
 
 ### train ####
 
-The `train` subcommand requires the contig file and outputs (data.csv, data_split.csv and cannot.txt,) from the  `generate_sequence_features_single`, `generate_sequence_features_multi` and `generate_cannot_links` subcommand as intpus and outputs the trained model.
+The `train` subcommand requires the contig file and outputs (`data.csv`, `data_split.csv` and `cannot.txt`) from the `generate_sequence_features_single`, `generate_sequence_features_multi` and `generate_cannot_links` subcommand as intpus and outputs the trained model.
 
 #### Required arguments
 
 * `--data`: Path to the input data.csv file.
 * `--data_split`: Path to the input data_split.csv file.
 * `-c/--cannot-link` : Path to the input cannot link file generated from other additional biological information, one row for each cannot link constraint. The file format: contig_1,contig_2.
-* `--mode`:  [single/several] Train models from one sample or several samples(train model across several samples can get better pre-trained model for single-sample binning.) In several mode, must input data, data_split, cannot, fasta files for corresponding sample with same order. *Note:* You can just set `several` with this option when single-sample binning. Training from several samples with multi-sample binning is not support.
-* `-i/--input-fasta`,  `-o/--output` are the same for `single_easy_bin`
+* `--mode`: [single/several] Train models from one sample or several samples(train model across several samples can get better pre-trained model for single-sample binning.) In several mode, must input data, data_split, cannot, fasta files for corresponding sample with same order. *Note:* You can just set `several` with this option when single-sample binning. Training from several samples with multi-sample binning is not supported.
+* `-i/--input-fasta`, `-o/--output` are the same for `single_easy_bin`
 
 #### Optional arguments
 
@@ -170,7 +189,7 @@ The `bin` subcommand requires the contig file and output (data.csv, model.h5) fr
 
 #### Optional arguments
 
-* `--minfasta-kbs`, `--recluster`, `--max-node`, `--max-edges`, `-p/--processes/-t/--threads`, `--random-seed`, `--environment`, `--ratio`, `--min-len`, `--no-recluster` and `--orf-finder` are  the same as for `single_easy_bin`
+* `--minfasta-kbs`, `--recluster`, `--max-node`, `--max-edges`, `-p/--processes/-t/--threads`, `--random-seed`, `--environment`, `--ratio`, `--min-len`, `--no-recluster` and `--orf-finder` are the same as for `single_easy_bin`
 
  <br/><br/>
 
