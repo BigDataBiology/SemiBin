@@ -17,3 +17,10 @@ The second approach is more complex but can make sense as part of a larger
 pipeline where taxonomic annotation of contigs is performed for multiple
 reasons (not only for the benefit of SemiBin).
 
+## Does SemiBin work with long-read data?
+
+Technically, yes, you can apply it to long-read data and it will produce bins.
+However, SemiBin is not optimized for this setting and all the benchmarking in the manuscript is performed on short-read assemblies. You may consider using SemiBin as part of a multi-algorithm approach followed by dereplication, but on its own it will be likely outperformed by methods specifically addressing long-read data (e.g., [GraphMB](https://doi.org/10.1101/2022.02.25.481923)).
+
+How to adapt the approach of SemiBin to long-read data is part of ongoing research.
+
