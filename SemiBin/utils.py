@@ -521,7 +521,7 @@ def concatenate_fasta(fasta_files, min_length, output, separator):
             for h, seq in fasta_iter(fasta):
                 if separator in h:
                     sys.stderr.write(
-                        f"Error: the header of the contig contains the separator, please choose another separator.\n")
+                        f"Error: the header of the contig '{h}' contains the separator ('{separator}'), please choose another separator.\n")
                     sys.exit(1)
                 if len(seq) >= min_length:
                     header = f'{sample_name}{separator}{h}'
