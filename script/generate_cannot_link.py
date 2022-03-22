@@ -36,7 +36,7 @@ def generate_CAT(cat_result):
                 if math.isnan(genus2):
                     continue
 
-            if genus1 == 'not classified' or genus2 == 'not classified':
+            if genus1 == 'not classified' or genus2 == 'not classified' or genus1 == 'no support' or genus2 == 'no support':
                 continue
 
             genus_score1 = genus1.split(':')[-1]
@@ -55,7 +55,7 @@ def generate_CAT(cat_result):
                     if math.isnan(species1) or math.isnan(species2):
                         continue
 
-                if species1 == 'not classified' or species2 == 'not classified':
+                if species1 == 'not classified' or species2 == 'not classified' or species1 == 'no support' or species2 == 'no support':
                     continue
                 species_score1 = species1.split(':')[-1]
                 species_score2 = species2.split(':')[-1]
