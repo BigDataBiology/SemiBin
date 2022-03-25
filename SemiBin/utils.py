@@ -379,6 +379,7 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
             if os.path.exists(os.path.join(output, 'markers.hmmout')):
                 return get_marker(os.path.join(output, 'markers.hmmout'), fasta_path, binned_length, multi_mode, orf_finder=orf_finder)
             else:
+                os.makedirs(output, exist_ok=True)
                 target_dir = output
         else:
             target_dir = tdir
