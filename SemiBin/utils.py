@@ -341,7 +341,7 @@ def run_prodigal(fasta_path, num_process, output):
             f.write(open(os.path.join(output, 'contig_{}.faa'.format(index)), 'r').read())
     return contig_output
 
-def run_fraggengscan(fasta_path, num_process, output):
+def run_fraggenescan(fasta_path, num_process, output):
     try:
         contig_output = os.path.join(output, 'contigs.faa')
         with open(contig_output + '.out', 'w') as frag_out_log:
@@ -361,9 +361,9 @@ def run_fraggengscan(fasta_path, num_process, output):
             )
     except:
         sys.stderr.write(
-            f"Error: Running fraggenescan fail\n")
+            f"Error: Running fraggenescan failed\n")
         sys.exit(1)
-    return contig_output
+    return contig_output + '.faa'
 
 def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, output = None, orf_finder = 'prodigal'):
     '''Estimate number of bins from a FASTA file
@@ -384,10 +384,8 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
         else:
             target_dir = tdir
 
-        if orf_finder == 'prodigal':
-            contig_output = run_prodigal(fasta_path, num_process, tdir)
-        else:
-            contig_output = run_fraggengscan(fasta_path, num_process, tdir)
+        run_orffinder = run_prodigal if orf_finder == 'prodigal' else run_fraggenescan
+        contig_output = run_orffinder(fasta_path, num_process, tdir)
 
         hmm_output = os.path.join(target_dir, 'markers.hmmout')
         try:
@@ -399,7 +397,7 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
                      '--cut_tc',
                      '--cpu', str(num_process),
                      os.path.split(__file__)[0] + '/marker.hmm',
-                     contig_output if orf_finder == 'prodigal' else contig_output + '.faa',
+                     contig_output,
                      ],
                     stdout=hmm_out_log,
                 )
