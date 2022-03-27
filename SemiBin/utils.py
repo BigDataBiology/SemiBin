@@ -1,5 +1,6 @@
 import os
 import subprocess
+import contextlib
 import multiprocessing
 from atomicwrites import atomic_write
 import tempfile
@@ -288,36 +289,29 @@ def prodigal(contig_file, contig_output):
 def run_prodigal(fasta_path, num_process, output):
     from .error import LoggingPool
 
-    contig_dict = {}
+    contigs = {}
     for h, seq in fasta_iter(fasta_path):
-        contig_dict[h] = seq
+        contigs[h] = seq
 
-    num_contig = len(contig_dict)
-    num_split = num_contig // num_process
+    total_len = sum(len(s) for s in contigs.values())
+    split_len = total_len // num_process
 
-    split_contig_dict = {}
-    split_index = 0
+    cur = split_len + 1
+    next_ix = 0
+    out = None
+    with contextlib.ExitStack() as stack:
+        for h,seq in contigs.items():
+            if cur > split_len and next_ix < num_process:
+                if out is not None:
+                    out.close()
+                out = open(os.path.join(output, 'contig_{}.fa'.format(next_ix)), 'wt')
+                out = stack.enter_context(out)
 
-    for index in range(num_process):
-        split_contig_dict[index] = []
+                cur = 0
+                next_ix += 1
+            out.write(f'>{h}\n{seq}\n')
+            cur += len(seq)
 
-    if num_split == 0:
-        for h in contig_dict:
-            split_contig_dict[split_index].append(h)
-            split_index += 1
-        num_process = split_index
-    else:
-        for h in contig_dict:
-            split_contig_dict[split_index].append(h)
-            if split_index < num_process - 1:
-                if len(split_contig_dict[split_index]) == num_split:
-                    split_index += 1
-
-    ### split_fasta
-    for index in range(num_process):
-        with open(os.path.join(output, 'contig_{}.fa'.format(index)), 'wt') as concat_out:
-            for h in split_contig_dict[index]:
-                concat_out.write(f'>{h}\n{contig_dict[h]}\n')
 
     with LoggingPool(num_process) if num_process != 0 else LoggingPool() as pool:
         try:
