@@ -281,6 +281,7 @@ def prodigal(contig_file, contig_output):
                  '-i', contig_file,
                  '-p', 'meta',
                  '-q',
+                 '-m', # See https://github.com/BigDataBiology/SemiBin/issues/87
                  '-a', contig_output
                  ],
                 stdout=prodigal_out_log,

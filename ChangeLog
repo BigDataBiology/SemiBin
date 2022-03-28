@@ -1,5 +1,6 @@
 Unreleased
 	* More balanced file split when calling prodigal in parallel
+	* Fix bug when long stretches of Ns are present (#87)
 
 Version 0.7.0 Wed 3 Mar 2022 by BigDataBiology
 	* Improve `check_install` command by printing out paths and correctly
