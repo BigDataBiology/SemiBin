@@ -3,7 +3,7 @@ A script to generate cannot-link constrains from the output of CAT.
 """
 import argparse
 import pandas as pd
-from Bio import SeqIO
+from SemiBin.fasta import fasta_iter
 import math
 import numpy as np
 import random
@@ -124,11 +124,12 @@ def generate_file(annotation_file, contig_file, output, sample, tool=None):
     whole_contig_bp = 0
     contig_bp_2500 = 0
     contig_length_list = []
-    for seq_record in SeqIO.parse(contig_file, "fasta"):
-        if len(seq_record) >= 1000 and len(seq_record) <= 2500:
-            contig_bp_2500 += len(seq_record)
-        whole_contig_bp += len(seq_record)
-        contig_length_list.append(len(seq_record))
+
+    for h, seq in fasta_iter(contig_file):
+        if len(seq) >= 1000 and len(seq) <= 2500:
+            contig_bp_2500 += len(seq)
+        whole_contig_bp += len(seq)
+        contig_length_list.append(len(seq))
 
     must_link_threshold = get_threshold(contig_length_list)
     binned_short = contig_bp_2500 / whole_contig_bp < 0.05
@@ -136,10 +137,10 @@ def generate_file(annotation_file, contig_file, output, sample, tool=None):
     namelist = []
     num_threshold = 0
 
-    for seq_record in SeqIO.parse(contig_file, "fasta"):
-        if len(seq_record) > threshold:
-            namelist.append(seq_record.id)
-        if len(seq_record) >= must_link_threshold:
+    for h, seq in fasta_iter(contig_file):
+        if len(seq) > threshold:
+                namelist.append(h)
+        if len(seq) >= must_link_threshold:
             num_threshold += 1
     os.makedirs(output, exist_ok=True)
 
