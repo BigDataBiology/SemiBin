@@ -397,6 +397,8 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
                     stdout=hmm_out_log,
                 )
         except:
+            if os.path.exists(hmm_output):
+                os.remove(hmm_output)
             sys.stderr.write(
                 f"Error: Running hmmsearch fail\n")
             sys.exit(1)
