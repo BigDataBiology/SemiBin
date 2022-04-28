@@ -54,7 +54,7 @@ def download_GTDB_to(logger, GTDB_dir):
     else:
         os.remove(download_path)
         sys.stderr.write(
-            f"Error: MD5 check failed, removing '{download_path}'.\n")
+            f"Error: MD5 check failed. Downloading GTDB database failed (Please check the internet connections or storage space), removing '{download_path}'.\n")
         sys.exit(1)
 
 
