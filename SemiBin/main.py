@@ -797,6 +797,11 @@ def binning(logger, num_process, data,
     is_combined = False if col_name == 'var' else True
     n_sample = (data.shape[1] - 136) // 2 if not is_combined else (data.shape[1] - 136)
     model_path = model_path if environment is None else get_model_path(environment)
+    if environment is not None:
+        if data.shape[1] != 138:
+            sys.stderr.write(f"Error: provided pretrained model only used in single-sample binning!\n")
+            sys.exit(1)
+
 
     if device == torch.device('cpu'):
         model = torch.load(model_path, map_location=torch.device('cpu'))
