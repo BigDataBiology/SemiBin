@@ -1,8 +1,3 @@
 If you use this software in a publication please cite:
 
-> SemiBin: Incorporating information from reference genomes with
-> semi-supervised deep learning leads to better metagenomic assembled genomes
-> (MAGs)
-> Shaojun Pan, Chengkai Zhu, Xing-Ming Zhao, Luis Pedro Coelho
-> bioRxiv 2021.08.16.456517; doi:
-> [https://doi.org/10.1101/2021.08.16.456517](https://doi.org/10.1101/2021.08.16.456517)
+>  Pan, S., Zhu, C., Zhao, XM. *et al.* A deep siamese neural network improves metagenome-assembled genomes in microbiome datasets across different environments. *Nat Commun* **13,** 2326 (2022). https://doi.org/10.1038/s41467-022-29843-y 
