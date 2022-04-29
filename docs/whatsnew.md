@@ -1,5 +1,25 @@
 # What's New
 
+## Version 1.0.0
+
+*Released April 29 2022*
+
+This coincides with the publication of the
+[manuscript](https://www.nature.com/articles/s41467-022-29843-y).
+
+### User-visible improvements
+
+- More balanced file split when calling prodigal in parallel should take better advantage of multiple threads
+- Fix bug when long stretches of Ns are present ([#87](https://github.com/BigDataBiology/SemiBin/issues/87)]
+- Better error messages
+  ([#90](https://github.com/BigDataBiology/SemiBin/issues/90) &amp;
+   [#91](https://github.com/BigDataBiology/SemiBin/issues/91)])
+
+### Bugfixes
+
+- Fix bugs in training from multiple samples
+- Fix bug in incorporating CAT results
+
 ## Version 0.7
 
 *Released March 2 2022*

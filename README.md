@@ -8,9 +8,7 @@ information from reference genomes in Linux and MacOS.
 [![Documentation Status](https://readthedocs.org/projects/semibin/badge/?version=latest)](https://semibin.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-_CONTACT US_: This tool is still in development. You are welcome to try it out and
-feedback is appreciated, but expect some bugs/rapid changes until it
-stabilizes. Please use [GitHub
+_CONTACT US_: Please use [GitHub
 issues](https://github.com/BigDataBiology/SemiBin/issues) for bug reports and
 the [SemiBin users mailing-list](https://groups.google.com/g/semibin-users) for
 more open-ended discussions or questions.
@@ -31,7 +29,7 @@ conda activate SemiBin
 conda install -c conda-forge -c bioconda semibin
 ```
 
-**The inputs** to the SemiBin are contigs (assembled from the reads) and bam files (reads mapping to the contigs). In [the docs](https://semibin.readthedocs.io/en/latest/generate/) you can see how to generate the inputs starting with a metagenome.
+**The inputs** to the SemiBin are contigs (assembled from the reads) and BAM files (reads mapping to the contigs). In [the docs](https://semibin.readthedocs.io/en/latest/generate/) you can see how to generate the inputs starting with a metagenome.
 
 Running with single-sample binning (for example: human gut samples):
 
