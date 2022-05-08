@@ -313,10 +313,9 @@ def run_prodigal(fasta_path, num_process, output):
             out.write(f'>{h}\n{seq}\n')
             cur += len(seq)
 
-
     with LoggingPool(num_process) if num_process != 0 else LoggingPool() as pool:
         try:
-            for index in range(num_process):
+            for index in range(next_ix):
                 pool.apply_async(
                     prodigal,
                     args=(
