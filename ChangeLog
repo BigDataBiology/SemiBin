@@ -1,3 +1,6 @@
+Version 1.0.1 Mon 9 May 2022 by BigDataBiology
+	* Fix edge case when calling prodigal with more threads than contigs (#93)
+
 Version 1.0.0 Fri 29 Apr 2022 by BigDataBiology
 	* More balanced file split when calling prodigal in parallel
 	* Fix bug when long stretches of Ns are present (#87)

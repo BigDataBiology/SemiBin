@@ -1,5 +1,15 @@
 # What's New
 
+## Version 1.0.1
+
+*Released May 9 2022*
+
+
+### Bugfixes
+
+- Fix edge case when calling prodigal with more threads than contigs
+  ([#93](https://github.com/BigDataBiology/SemiBin/issues/93))
+
 ## Version 1.0.0
 
 *Released April 29 2022*
