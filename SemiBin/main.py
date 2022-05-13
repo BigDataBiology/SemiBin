@@ -363,6 +363,15 @@ def parse_args(args):
                        dest='ml_threshold',
                        default=None)
 
+    for p in [single_easy_bin, multi_easy_bin, training, binning]:
+        p.add_argument('--engine',
+                       required=False,
+                       type=str,
+                       help='device used to train the model (auto/gpu/cpu, auto means if SemiBin detects the gpu, SemiBin will use GPU)',
+                       dest='engine',
+                       default='auto')
+
+
     if not args:
         parser.print_help(sys.stderr)
         sys.exit()
@@ -955,12 +964,22 @@ def main():
         check_install(True)
 
     if args.cmd not in ['download_GTDB', 'check_install']:
-        import torch
         out = args.output
         os.makedirs(out, exist_ok=True)
 
-        device = torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu")
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin']:
+        import torch
+        if args.engine == 'cpu':
+            device = torch.device("cpu")
+            logger.info('Running with CPU.')
+
+        else:
+            if torch.cuda.is_available():
+                device = torch.device("cuda")
+                logger.info('Running with GPU.')
+            else:
+                device = torch.device("cpu")
+                logger.info('Do not detect GPU. Running with CPU.')
 
     if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'generate_cannot_links', 'train', 'bin']:
         tmp_output = args.tmp_output

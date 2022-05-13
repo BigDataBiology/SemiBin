@@ -37,6 +37,10 @@ def validate_normalize_args(logger, args):
             sys.stderr.write(
                 f"Error: SemiBin only supports prodigal or fraggenescan as the ORF finder (--orf_finder option).\n")
             sys.exit(1)
+        if args.engine not in ['auto', 'gpu', 'cpu']:
+            sys.stderr.write(
+                f"Error: You need to specify the engine in auto/gpu/cpu.\n")
+            sys.exit(1)
 
     if args.cmd == 'generate_cannot_links':
         if args.GTDB_reference is not None:
