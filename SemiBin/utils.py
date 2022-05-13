@@ -331,7 +331,7 @@ def run_prodigal(fasta_path, num_process, output):
 
     contig_output = os.path.join(output, 'contigs.faa')
     with open(contig_output, 'w') as f:
-        for index in range(num_process):
+        for index in range(next_ix):
             f.write(open(os.path.join(output, 'contig_{}.faa'.format(index)), 'r').read())
     return contig_output
 
