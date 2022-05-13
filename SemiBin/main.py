@@ -802,7 +802,6 @@ def binning(logger, num_process, data,
             sys.stderr.write(f"Error: provided pretrained model only used in single-sample binning!\n")
             sys.exit(1)
 
-
     if device == torch.device('cpu'):
         model = torch.load(model_path, map_location=torch.device('cpu'))
     else:
@@ -1037,6 +1036,11 @@ def main():
         check_install(False, args.orf_finder)
         if args.random_seed is not None:
             set_random_seed(args.random_seed)
+        if args.environment is not None:
+            if len(args.bams) != 1:
+                sys.stderr.write(
+                    f"Error: provided pretrained model only used in single-sample binning!\n")
+                sys.exit(1)
         single_easy_binning(
             args,
             logger,

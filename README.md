@@ -37,7 +37,7 @@ conda install -c conda-forge -c bioconda semibin
 Running with single-sample binning (for example: human gut samples):
 
 ```bash
-SemiBin single_easy_bin -i contig.fa -b *.bam -o output --environment human_gut
+SemiBin single_easy_bin -i contig.fa -b S1.bam -o output --environment human_gut
 ```
 
 Running with multi-sample binning:
