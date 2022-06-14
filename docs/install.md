@@ -9,7 +9,7 @@ SemiBin can run on Python 3.7-3.9.
 The simplest way to install is to use [conda](https://conda.io/).
 
 ```bash
-conda create conda create -n SemiBin
+conda create -n SemiBin
 conda activate SemiBin
 conda install -c conda-forge -c bioconda semibin
 ```
@@ -19,7 +19,7 @@ conda install -c conda-forge -c bioconda semibin
 If you want to use SemiBin with GPU, you need to install Pytorch with GPU support.
 
 ```bash
-conda create conda create -n SemiBin
+conda create -n SemiBin
 conda activate SemiBin
 conda install -c conda-forge -c bioconda semibin
 conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch-lts
