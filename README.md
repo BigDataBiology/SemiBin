@@ -53,7 +53,7 @@ Please find more options and details below and [read the docs](https://semibin.r
 
 ## Advanced Installation
 
-SemiBin runs on Python 3.7-3.9.
+SemiBin runs on Python 3.7-3.10.
 
 ### Bioconda
 
