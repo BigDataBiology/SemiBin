@@ -1,6 +1,9 @@
 Unreleased
 	* Remove torch version restriction (and test on Python 3.10)
 
+Version 1.0.2 Fri 8 Jul 2022 by BigDataBiology
+	* Fix issue #93 more thoroughly (see #101)
+
 Version 1.0.1 Mon 9 May 2022 by BigDataBiology
 	* Fix edge case when calling prodigal with more threads than contigs (#93)
 
