@@ -1,9 +1,17 @@
 # What's New
 
+## Version 1.0.2
+
+*Released July 8 2022*
+
+### Bugfixes
+
+- Fix ([#93](https://github.com/BigDataBiology/SemiBin/issues/93)) more
+  thoroughly ([#101](https://github.com/BigDataBiology/SemiBin/issues/101))
+
 ## Version 1.0.1
 
 *Released May 9 2022*
-
 
 ### Bugfixes
 
