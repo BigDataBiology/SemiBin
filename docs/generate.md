@@ -1,13 +1,14 @@
-# Generating the inputs to SemiBin
+# Generating the inputs to SemiBin (from a metagenome)
 
 Starting with a metagenome, you need to generate a contigs file (`contigs.fa`)
-and a sorted BAM file (`output.bam`).
+and a sorted BAM file (`output.bam`) from mapping the metagenomic reads to the
+assembled contigs.
 
-1. Assemble it into a contigs FASTA file. In this case, we are using
-   [NGLess](https://ngless.embl.de/) to combine FastQ preprocessing &amp;
-   assembly (using
-   [MEGAHIT](https://academic.oup.com/bioinformatics/article/31/10/1674/177884),
-   but any other system will work.
+**Step 1**: Assemble it into a contigs FASTA file. In this case, we are using
+[NGLess](https://ngless.embl.de/) to combine FastQ preprocessing &amp; assembly
+(using
+[MEGAHIT](https://academic.oup.com/bioinformatics/article/31/10/1674/177884),
+but any other system will work.
 
 ```python
 ngless "1.2"
@@ -22,7 +23,7 @@ contigs = assemble(input)
 write(contigs, ofile='contig.fa')
 ```
 
-2. Map reads to the FASTA file
+**Step 2**: Map reads to the FASTA file generated in _Step 1_.
 
 ### Mapping using NGLess
 
@@ -39,16 +40,17 @@ write(samtools_sort(mapped),
 
 ### Mapping using bowtie2
 
+You can also use `bowtie2` directly, for example (using 4 threads, you can
+adjust `-p 4` as needed when calling `bowtie2`):
+
 ```bash
 bowtie2-build -f contig.fa contig.fa
 
-bowtie2 -q --fr -x contig.fa -1 reads_1.fq.gz -2 reads_2.fq.gz -S contig.sam -p 64
+bowtie2 -q --fr -x contig.fa -1 reads_1.fq.gz -2 reads_2.fq.gz -S contig.sam -p 4
 
-samtools view -h -b -S contig.sam -o contig.bam -@ 64
-
-samtools view -b -F 4 contig.bam -o contig.mapped.bam -@ 64
-
-samtools sort -m 1000000000 contig.mapped.bam -o contig.mapped.sorted.bam -@ 64
+samtools view -h -b -S contig.sam -o contig.bam
+samtools view -b -F 4 contig.bam -o contig.mapped.bam
+samtools sort contig.mapped.bam -o contig.mapped.sorted.bam
 
 samtools index contig.mapped.sorted.bam
 ```
