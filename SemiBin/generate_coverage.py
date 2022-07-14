@@ -29,7 +29,7 @@ def calculate_coverage(depth_stream, bam_file, must_link_threshold, edge=75, is_
         for line in lines:
             line_split = line.strip().split('\t')
             length = int(line_split[2]) - int(line_split[1])
-            value = int(line_split[3])
+            value = int(float(line_split[3]))
             lengths.append(length)
             values.append(value)
         depth_value = np.zeros(sum(lengths), dtype=int)
@@ -89,7 +89,6 @@ def generate_cov(bam_file, bam_index, out, threshold,
     import numpy as np
     logger.info('Processing `{}`'.format(bam_file))
     bam_name = os.path.split(bam_file)[-1] + '_{}'.format(bam_index)
-    bam_depth = os.path.join(out, '{}_depth.txt'.format(bam_name))
 
     bed_p = subprocess.Popen(
         ['bedtools', 'genomecov',
