@@ -14,7 +14,7 @@ SemiBin is a command line tool for metagenomic binning with semi-supervised siam
 The simplest way to install is to use [conda](https://conda.io/).
 
 ```bash
-conda create conda create -n SemiBin
+conda create -n SemiBin
 conda activate SemiBin
 conda install -c conda-forge -c bioconda semibin
 ```

@@ -1,5 +1,12 @@
 site_name: "SemiBin"
 repo_url: "https://github.com/BigDataBiology/SemiBin"
+repo_name: "GitHub"
+
+theme:
+    name: readthedocs
+    highlightjs: true
+    html_show_sourcelink: false
+    prev_next_buttons_location: both
 
 nav:
         - 'SemiBin': index.md
