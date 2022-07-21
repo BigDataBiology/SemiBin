@@ -46,7 +46,7 @@ def validate_normalize_args(logger, args):
         if args.GTDB_reference is not None:
             expect_file(args.GTDB_reference)
         expect_file(args.contig_fasta)
-        expect_file(args.taxonomy_results_fname)
+        expect_file_list(args.taxonomy_results_fname)
 
     if args.cmd == 'generate_sequence_features_single':
         expect_file(args.contig_fasta)
