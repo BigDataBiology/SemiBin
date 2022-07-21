@@ -284,7 +284,9 @@ def parse_args(args):
                             )
         p.add_argument('--taxonomy-annotation-table',
                             required=False,
-                            help='Pre-computed mmseqs2 format taxonomy TSV file to bypass mmseqs2 GTDB annotation [advanced]',
+                            nargs='*',
+                            help='Pre-computed mmseqs2 format taxonomy TSV file to bypass mmseqs2 GTDB annotation [advanced]. '
+                                 'When running with multi-sample binning, please make sure that the order of the taxonomy TSV file and the contig file (used for the combined fasta) is same.',
                             dest='taxonomy_results_fname',
                             metavar='TAXONOMY_TSV')
 
@@ -850,7 +852,7 @@ def single_easy_binning(args, logger, binned_length,
             logger,
             args.contig_fasta,
             args.cannot_name,
-            args.taxonomy_results_fname,
+            None if args.taxonomy_results_fname is None else args.taxonomy_results_fname[0],
             args.GTDB_reference,
             args.num_process,
             binned_length,
@@ -888,7 +890,7 @@ def multi_easy_binning(args, logger, recluster,
         args.ml_threshold,
         output,)
 
-    for sample in sample_list:
+    for sample_index, sample in enumerate(sample_list):
         logger.info(
             'Running mmseqs and generate cannot-link file of {}.'.format(sample))
         sample_fasta = os.path.join(
@@ -909,8 +911,8 @@ def multi_easy_binning(args, logger, recluster,
             logger,
             sample_fasta,
             sample,
+            None if args.taxonomy_results_fname is None else args.taxonomy_results_fname[sample_index],
             args.GTDB_reference,
-            args.taxonomy_results_fname,
             args.num_process,
             binned_length,
             must_link_threshold,
@@ -988,7 +990,7 @@ def main():
             logger,
             args.contig_fasta,
             args.cannot_name,
-            taxonomy_results_fname=args.taxonomy_results_fname,
+            taxonomy_results_fname=None if args.taxonomy_results_fname is None else args.taxonomy_results_fname[0],
             GTDB_reference=args.GTDB_reference,
             num_process=args.num_process,
             binned_length=binned_length,

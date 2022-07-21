@@ -88,7 +88,7 @@ The command `single_easy_bin` requires the contig file (assembly from reads), ba
 * `--ratio` : If the ratio of the number of base pairs of contigs between 1000-2500 bp smaller than this value, the minimal length will be set as 1000bp, otherwise2500bp. If you set -m parameter, you do not need to use this parameter. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands (Default: 0.05).
 * `-m/--min-len` : Minimal length for contigs in binning. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands. (Default: SemiBin chooses 1000bp or 2500bp according the ratio of the number of base pairs of contigs between 1000-2500 bp).
 * `--ml-threshold` : Length threshold for generating must-link constraints. By default, the threshold is calculated from the contig, and the default minimum value is 4,000 bp.
-* `--taxonomy-annotation-table`: TAXONOMY_TSV, Pre-computed mmseqs2 format taxonomy TSV file to bypass mmseqs2 GTDB annotation [advanced]
+* `--taxonomy-annotation-table`: TAXONOMY_TSV, Pre-computed mmseqs2 format taxonomy TSV file to bypass mmseqs2 GTDB annotation [advanced]. When running with multi-sample binning, please make sure that the order of the taxonomy TSV file and the contig file (used for the combined fasta) is same.
 * `--orf-finder` : gene predictor used to estimate the number of bins. Must be either `prodigal` (default since `v0.7`) or `fraggenescan` (which is faster, but cannot be installed in all platforms).
 
  <br/><br/>
