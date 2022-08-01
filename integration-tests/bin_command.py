@@ -63,3 +63,26 @@ for env,odir in [
          '-p', '1'])
     assert len(os.listdir(odir+'/output_bins')) > 0
     assert len(os.listdir(odir+'/output_recluster_bins')) > 0
+
+# Test with input taxonomy file
+
+single_sample_input = 'test/single_sample_data'
+multi_sample_input =  'test/multi_samples_data'
+single_cannot_output = 'test-outputs/single_output_cannot_with_taxonomy'
+single_output = 'test-outputs/single_output_with_taxonomy'
+multi_output = 'test-outputs/multi_output_with_taxonomy'
+
+subprocess.check_call(f'SemiBin generate_cannot_links -i {single_sample_input}/input.fasta -o {single_cannot_output} --taxonomy-annotation-table {single_sample_input}/taxonomyResult.tsv', shell=True)
+assert os.path.exists(f'{single_cannot_output}/cannot/cannot.txt')
+
+
+subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_output} -b {single_sample_input}/input.sorted.bam --taxonomy-annotation-table {single_sample_input}/taxonomyResult.tsv --epoches 1', shell=True)
+assert os.path.exists(f'{single_output}/output_bins')
+assert os.path.exists(f'{single_output}/output_recluster_bins')
+
+
+subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_output} -b {multi_sample_input}/*.bam --taxonomy-annotation-table {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv -s : --epoches 1',  shell=True)
+assert os.path.exists(f'{multi_output}/bins')
+for i in range(10):
+    assert os.path.exists(f'{multi_output}/samples/S{i+1}/output_bins')
+    assert os.path.exists(f'{multi_output}/samples/S{i + 1}/output_recluster_bins')
