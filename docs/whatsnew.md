@@ -1,5 +1,15 @@
 # What's New
 
+## Version 1.0.3
+
+*Released August 3 2022*
+
+### Bugfixes
+
+- Fix coverage parsing when value is not an integer ([#103](https://github.com/BigDataBiology/SemiBin/issues/103))
+- Fix multi_easy_bin with taxonomy file given on the command line (see discussion at [#102](https://github.com/BigDataBiology/SemiBin/issues/102))
+
+
 ## Version 1.0.2
 
 *Released July 8 2022*

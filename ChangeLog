@@ -1,3 +1,7 @@
+Version 1.0.3 Wed Aug 3 2022 by BigDataBiology
+	* Fix coverage parsing when value is not an integer (#103)
+	* Fix multi_easy_bin with taxonomy file given on the command line
+
 Version 1.0.2 Fri 8 Jul 2022 by BigDataBiology
 	* Fix issue #93 more thoroughly (see #101)
 
