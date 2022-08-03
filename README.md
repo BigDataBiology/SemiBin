@@ -95,13 +95,6 @@ python setup.py install
 
 ## Examples of binning
 
-_NOTE_: The `SemiBin` API is a work-in-progress. The examples refer to
-version `0.6`, but this may change in the near future (after the release of
-version 1.0, we expect to freeze the API for [at least 5
-years](https://big-data-biology.org/software/commitments/)). We are very happy
-to [hear any feedback on API
-design](https://groups.google.com/g/semibin-users), though.
-
 SemiBin runs on single-sample, co-assembly and multi-sample binning.
 Here we show the simple modes as an example.
 For the details and examples of every SemiBin subcommand, please [read the docs](https://semibin.readthedocs.io/en/latest/usage/).
