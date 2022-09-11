@@ -1,6 +1,8 @@
 Unreleased
 	* Remove torch version restriction (and test on Python 3.10)
 	* Better output message when no bins are produced
+	* More flexible specification of prebuilt models (case insensitive,
+	normalize - and _)
 
 Version 1.0.3 Wed Aug 3 2022 by BigDataBiology
 	* Fix coverage parsing when value is not an integer (#103)

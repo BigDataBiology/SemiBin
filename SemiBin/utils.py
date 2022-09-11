@@ -106,10 +106,8 @@ def validate_normalize_args(logger, args):
                 f"Error: Please choose input a model path or use our built-in model for [human_gut/dog_gut/ocean].\n")
             sys.exit(1)
         if args.environment is not None:
-            if args.environment not in ['human_gut', 'dog_gut', 'ocean', 'soil', 'cat_gut', 'human_oral', 'mouse_gut', 'pig_gut', 'built_environment', 'wastewater', 'global']:
-                sys.stderr.write(
-                    f"Error: Please choose a built-in model in [human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/global].\n")
-                sys.exit(1)
+            # This triggers checking that the environment is valid
+            get_model_path(args.environment)
         if args.model_path is not None:
             expect_file(args.model_path)
         expect_file(args.contig_fasta)
@@ -122,10 +120,8 @@ def validate_normalize_args(logger, args):
         expect_file_list(args.bams)
 
         if args.environment is not None:
-            if args.environment not in ['human_gut', 'dog_gut', 'ocean', 'soil', 'cat_gut', 'human_oral', 'mouse_gut', 'pig_gut', 'built_environment', 'wastewater', 'global']:
-                sys.stderr.write(
-                    f"Error: Please choose a built-in model in [human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/global].\n")
-                sys.exit(1)
+            # This triggers checking that the environment is valid
+            get_model_path(args.environment)
 
     if args.cmd == 'multi_easy_bin':
         if args.GTDB_reference is not None:
@@ -492,7 +488,8 @@ def split_data(data, sample, separator, is_combined = True):
     return part_data
 
 def get_model_path(env):
-    if env in [
+    envn = env.lower().replace('-', '_')
+    known_environments = [
             'human_gut',
             'dog_gut',
             'ocean',
@@ -504,11 +501,12 @@ def get_model_path(env):
             'built_environment',
             'wastewater',
             'global',
-            ]:
-        return os.path.join(os.path.split(__file__)[0], f'{env}_model.h5')
+            ]
+    if envn in known_environments:
+        return os.path.join(os.path.split(__file__)[0], f'{envn}_model.h5')
     else:
         sys.stderr.write(
-            f"Error: Expected environment '{env}' does not exist\n")
+            f"Error: Expected environment '{env}' does not exist (known ones are {', '.join(known_environments)})\n")
         sys.exit(1)
 
 def concatenate_fasta(fasta_files, min_length, output, separator):
