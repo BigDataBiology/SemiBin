@@ -186,6 +186,11 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     os.makedirs(output_bin_path, exist_ok=True)
 
     bin_files = write_bins(namelist, contig_labels, output_bin_path, contig_dict,minfasta=minfasta)
+    if not bin_files:
+        logger.warning('No bins were created. Please check your input data.')
+        return
+
+    logger.info(f'Number of bins prior to reclustering: {len(bin_files)}')
     if recluster:
         if not is_combined:
             mean_index = [2 * temp for temp in range(n_sample)]
