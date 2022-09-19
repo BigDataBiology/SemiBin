@@ -36,7 +36,7 @@ jobs:
         pip install scikit-learn
         pip install requests
         pip install numexpr
-        conda install -c bioconda bedtools hmmer fraggenescan==1.30
+        conda install -c bioconda bedtools hmmer fraggenescan==1.30 samtools
         conda install -c bioconda prodigal
         conda install -c conda-forge -c bioconda mmseqs2=13.45111
         python ./setup.py install
