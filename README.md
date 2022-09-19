@@ -78,12 +78,13 @@ You will need the following dependencies:
 - [Bedtools](http://bedtools.readthedocs.org/]), [Hmmer](http://hmmer.org/)
 - [Prodigal](https://github.com/hyattpd/Prodigal)
 - (optionally) [FragGeneScan](https://sourceforge.net/projects/fraggenescan/)
+- [Samtools](https://github.com/samtools/samtools)
 
 The easiest way to install the dependencies is with [conda](https://conda.io):
 
 ```bash
 conda install -c conda-forge -c bioconda mmseqs2=13.45111 # (for GTDB support)
-conda install -c bioconda bedtools hmmer prodigal
+conda install -c bioconda bedtools hmmer prodigal samtools
 conda install -c bioconda fraggenescan
 ```
 

@@ -38,7 +38,7 @@ You will need the following dependencies:
 conda install -c conda-forge -c bioconda mmseqs2=13.45111
 ```
 ```bash
-conda install -c bioconda bedtools hmmer fraggenescan
+conda install -c bioconda bedtools hmmer fraggenescan samtools
 ```
 
 ```bash
