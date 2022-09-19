@@ -211,7 +211,7 @@ def parse_args(args):
                        default=None,
                        )
 
-    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, training, binning]:
+    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, training, binning, generate_sequence_features_single, generate_sequence_features_multi]:
         p.add_argument('--tmpdir',
                        required=False,
                        type=str,
@@ -274,7 +274,7 @@ def parse_args(args):
         p.add_argument('-b', '--input-bam',
                               required=False,
                               nargs='*',
-                              help='Path to the input BAM file. '
+                              help='Path to the input BAM(.bam)/CRAM(.cram) file. '
                                    'If using multiple samples, you can input multiple files.'
                                     'If just need k-mer features, bam file is not needed.',
                               dest='bams',
@@ -285,7 +285,7 @@ def parse_args(args):
         p.add_argument('-b', '--input-bam',
                               required=True,
                               nargs='*',
-                              help='Path to the input BAM file. '
+                              help='Path to the input BAM(.bam)/CRAM(.cram) file. '
                                    'If using multiple samples, you can input multiple files.',
                               dest='bams',
                               default=None,
@@ -1026,6 +1026,8 @@ def multi_easy_binning(args, logger, recluster,
 
 
 def main():
+    import tempfile
+
     args = sys.argv[1:]
     args = parse_args(args)
 
@@ -1036,7 +1038,6 @@ def main():
     logger.addHandler(sh)
 
     validate_normalize_args(logger, args)
-
     if args.cmd == 'check_install':
         check_install(True)
 
@@ -1058,120 +1059,143 @@ def main():
                 device = torch.device("cpu")
                 logger.info('Do not detect GPU. Running with CPU.')
 
-    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'generate_cannot_links', 'train', 'bin']:
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'generate_cannot_links', 'train', 'bin',
+                    'generate_sequence_features_single', 'generate_sequence_features_multi']:
         tmp_output = args.tmp_output
         if tmp_output is not None:
             os.environ['TMPDIR'] = tmp_output
             os.makedirs(tmp_output, exist_ok=True)
 
-    if args.cmd in ['generate_cannot_links', 'generate_sequence_features_single', 'bin','single_easy_bin']:
-        binned_short, must_link_threshold, contig_dict = process_fasta(args.contig_fasta, args.ratio)
-        if args.min_len is None:
-            binned_length = 1000 if binned_short else 2500
-        else:
-            binned_length = args.min_len
+    with tempfile.TemporaryDirectory() as tdir:
+        if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'generate_sequence_features_single', 'generate_sequence_features_multi']:
+            bams_new = []
+            if args.bams is not None:
+                for bam in args.bams:
+                    bam_split = bam.split('.')
+                    if bam_split[-1] == 'cram':
+                        output_bam = bam.split('/')[-1][:-4] + 'bam'
+                        output_bam = os.path.join(tdir, output_bam)
+                        with open(output_bam, 'wb') as cram_out:
+                            subprocess.check_call(
+                                ['samtools', 'view',
+                                 '-bS',
+                                 '-@', str(args.num_process),
+                                 '-T', args.contig_fasta,
+                                 bam],
+                                stdout=cram_out)
+                        bams_new.append(output_bam)
+                    else:
+                        bams_new.append(bam)
+                args.bams = bams_new
 
-    if args.cmd in ['generate_cannot_links', 'generate_sequence_features_single', 'generate_sequence_features_multi', 'single_easy_bin', 'multi_easy_bin']:
-        if args.ml_threshold is not None:
-            must_link_threshold = args.ml_threshold
+        if args.cmd in ['generate_cannot_links', 'generate_sequence_features_single', 'bin','single_easy_bin']:
+            binned_short, must_link_threshold, contig_dict = process_fasta(args.contig_fasta, args.ratio)
+            if args.min_len is None:
+                binned_length = 1000 if binned_short else 2500
+            else:
+                binned_length = args.min_len
 
-    if args.cmd == 'download_GTDB':
-        find_or_download_gtdb(logger, args.GTDB_reference, args.force)
+        if args.cmd in ['generate_cannot_links', 'generate_sequence_features_single', 'generate_sequence_features_multi', 'single_easy_bin', 'multi_easy_bin']:
+            if args.ml_threshold is not None:
+                must_link_threshold = args.ml_threshold
 
-    if args.cmd == 'generate_cannot_links':
-        predict_taxonomy(
-            logger,
-            args.contig_fasta,
-            args.cannot_name,
-            taxonomy_results_fname=None if args.taxonomy_results_fname is None else args.taxonomy_results_fname[0],
-            GTDB_reference=args.GTDB_reference,
-            num_process=args.num_process,
-            binned_length=binned_length,
-            must_link_threshold=must_link_threshold,
-            output=out)
+        if args.cmd == 'download_GTDB':
+            find_or_download_gtdb(logger, args.GTDB_reference, args.force)
 
-    if args.cmd == 'generate_sequence_features_single':
-        generate_sequence_features_single(
-            logger,
-            args.contig_fasta,
-            args.bams,
-            binned_length,
-            must_link_threshold,
-            args.num_process,
-            out,
-            args.kmer)
+        if args.cmd == 'generate_cannot_links':
+            predict_taxonomy(
+                logger,
+                args.contig_fasta,
+                args.cannot_name,
+                taxonomy_results_fname=None if args.taxonomy_results_fname is None else args.taxonomy_results_fname[0],
+                GTDB_reference=args.GTDB_reference,
+                num_process=args.num_process,
+                binned_length=binned_length,
+                must_link_threshold=must_link_threshold,
+                output=out)
 
-    if args.cmd == 'generate_sequence_features_multi':
-        generate_sequence_features_multi(
-            logger,
-            args.contig_fasta,
-            args.bams,
-            args.num_process,
-            args.separator,
-            args.ratio,
-            args.min_len,
-            args.ml_threshold,
-            out)
+        if args.cmd == 'generate_sequence_features_single':
+            generate_sequence_features_single(
+                logger,
+                args.contig_fasta,
+                args.bams,
+                binned_length,
+                must_link_threshold,
+                args.num_process,
+                out,
+                args.kmer)
 
-    if args.cmd == 'train':
-        if args.random_seed is not None:
-            set_random_seed(args.random_seed)
-        training(logger, args.contig_fasta, args.num_process,
-                 args.data, args.data_split, args.cannot_link,
-                 args.batchsize, args.epoches, out, device, args.ratio, args.min_len, args.mode, orf_finder=args.orf_finder)
+        if args.cmd == 'generate_sequence_features_multi':
+            generate_sequence_features_multi(
+                logger,
+                args.contig_fasta,
+                args.bams,
+                args.num_process,
+                args.separator,
+                args.ratio,
+                args.min_len,
+                args.ml_threshold,
+                out)
 
-
-    if args.cmd == 'bin':
-        if args.random_seed is not None:
-            set_random_seed(args.random_seed)
-        binning(logger, args.num_process, args.data, args.max_edges,
-                args.max_node, args.minfasta_kb * 1000, binned_length,
-                contig_dict, args.recluster, args.model_path, args.random_seed,out, device,
-                args.environment, orf_finder=args.orf_finder, depth_metabat2=args.depth_metabat2)
+        if args.cmd == 'train':
+            if args.random_seed is not None:
+                set_random_seed(args.random_seed)
+            training(logger, args.contig_fasta, args.num_process,
+                     args.data, args.data_split, args.cannot_link,
+                     args.batchsize, args.epoches, out, device, args.ratio, args.min_len, args.mode, orf_finder=args.orf_finder)
 
 
-    if args.cmd == 'single_easy_bin':
-        check_install(False, args.orf_finder)
-        if args.random_seed is not None:
-            set_random_seed(args.random_seed)
-        if args.environment is not None:
-            if args.depth_metabat2 is None:
-                if len(args.bams) != 1:
-                    sys.stderr.write(
-                        f"Error: provided pretrained model only used in single-sample binning!\n")
-                    sys.exit(1)
-        single_easy_binning(
-            args,
-            logger,
-            binned_length,
-            must_link_threshold,
-            contig_dict,
-            args.recluster,
-            args.random_seed,
-            out,
-            device,
-            args.environment,
-            orf_finder=args.orf_finder,
-            depth_metabat2=args.depth_metabat2)
+        if args.cmd == 'bin':
+            if args.random_seed is not None:
+                set_random_seed(args.random_seed)
+            binning(logger, args.num_process, args.data, args.max_edges,
+                    args.max_node, args.minfasta_kb * 1000, binned_length,
+                    contig_dict, args.recluster, args.model_path, args.random_seed,out, device,
+                    args.environment, orf_finder=args.orf_finder, depth_metabat2=args.depth_metabat2)
 
-    if args.cmd == 'multi_easy_bin':
-        check_install(False, args.orf_finder)
-        if args.random_seed is not None:
-            set_random_seed(args.random_seed)
-        multi_easy_binning(
-            args,
-            logger,
-            args.recluster,
-            args.random_seed,
-            out,
-            device,
-            orf_finder=args.orf_finder)
 
-    if args.cmd == 'concatenate_fasta':
-        from .utils import concatenate_fasta
-        concatenate_fasta(args.contig_fasta, args.min_length, out, args.separator)
+        if args.cmd == 'single_easy_bin':
+            check_install(False, args.orf_finder)
+            if args.random_seed is not None:
+                set_random_seed(args.random_seed)
+            if args.environment is not None:
+                if args.depth_metabat2 is None:
+                    if len(args.bams) != 1:
+                        sys.stderr.write(
+                            f"Error: provided pretrained model only used in single-sample binning!\n")
+                        sys.exit(1)
+            single_easy_binning(
+                args,
+                logger,
+                binned_length,
+                must_link_threshold,
+                contig_dict,
+                args.recluster,
+                args.random_seed,
+                out,
+                device,
+                args.environment,
+                orf_finder=args.orf_finder,
+                depth_metabat2=args.depth_metabat2)
 
-    print('If you find SemiBin useful, please cite:\n Pan, S., Zhu, C., Zhao, XM. et al. A deep siamese neural network improves metagenome-assembled genomes in microbiome datasets across different environments. Nat Commun 13, 2326 (2022). https://doi.org/10.1038/s41467-022-29843-y.')
+        if args.cmd == 'multi_easy_bin':
+            check_install(False, args.orf_finder)
+            if args.random_seed is not None:
+                set_random_seed(args.random_seed)
+            multi_easy_binning(
+                args,
+                logger,
+                args.recluster,
+                args.random_seed,
+                out,
+                device,
+                orf_finder=args.orf_finder)
+
+        if args.cmd == 'concatenate_fasta':
+            from .utils import concatenate_fasta
+            concatenate_fasta(args.contig_fasta, args.min_length, out, args.separator)
+
+        print('If you find SemiBin useful, please cite:\n Pan, S., Zhu, C., Zhao, XM. et al. A deep siamese neural network improves metagenome-assembled genomes in microbiome datasets across different environments. Nat Commun 13, 2326 (2022). https://doi.org/10.1038/s41467-022-29843-y.')
 
 if __name__ == '__main__':
     main()

@@ -101,3 +101,17 @@ assert os.path.exists(f'{multi_output_ref}/bins')
 for i in range(10):
     assert os.path.exists(f'{multi_output_ref}/samples/S{i+1}/output_bins')
     assert os.path.exists(f'{multi_output_ref}/samples/S{i + 1}/output_recluster_bins')
+
+
+# Test .cram format input
+single_cram_output = 'test-outputs/single_output_cram'
+subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_cram_output} -b {single_sample_input}/input.cram --environment human_gut', shell=True)
+assert os.path.exists(f'{single_cram_output}/output_bins')
+assert os.path.exists(f'{single_cram_output}/output_recluster_bins')
+
+multi_output_cram = 'test-outputs/multi_output_cram'
+subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_output_cram} -b {multi_sample_input}/*.cram -r {single_sample_input}/reference_genome -s : --epoches 1',  shell=True)
+assert os.path.exists(f'{multi_output_cram}/bins')
+for i in range(10):
+    assert os.path.exists(f'{multi_output_cram}/samples/S{i+1}/output_bins')
+    assert os.path.exists(f'{multi_output_cram}/samples/S{i + 1}/output_recluster_bins')
