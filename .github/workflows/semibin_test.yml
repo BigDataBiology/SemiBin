@@ -30,7 +30,6 @@ jobs:
         pip install .
         pip install pytest
         pip install hypothesis
-        pip install atomicwrites
         pip install python-igraph
         pip install torch
         pip install scikit-learn
