@@ -6,7 +6,7 @@ import argparse
 import logging
 import os
 import subprocess
-from atomicwrites import atomic_write
+from .atomicwrite import atomic_write
 import shutil
 import sys
 from itertools import groupby

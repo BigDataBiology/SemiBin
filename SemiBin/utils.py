@@ -2,7 +2,7 @@ import os
 import subprocess
 import contextlib
 import multiprocessing
-from atomicwrites import atomic_write
+from .atomicwrite import atomic_write
 import tempfile
 import sys
 import random
