@@ -1,4 +1,4 @@
-Version 1.1.0 Sep 22 2022 by BigDataBiology
+Version 1.1.0 Sep 21 2022 by BigDataBiology
     * Fix bug when atomicwrite on the network file system (#97)
     * support .cram format input (#104)
     * Support using depth file from Metabat2 (#103)
@@ -6,6 +6,10 @@ Version 1.1.0 Sep 22 2022 by BigDataBiology
 	* Better output message when no bins are produced
 	* More flexible specification of prebuilt models (case insensitive,
 	normalize - and _)
+	* Support CRAM input (#104)
+	* Better output message when no bins are produced
+	* Remove torch version restriction (and test on Python 3.10)
+	* Support filesystems that do allow you to call fsync on directories (#97)
 
 Version 1.0.3 Wed Aug 3 2022 by BigDataBiology
 	* Fix coverage parsing when value is not an integer (#103)

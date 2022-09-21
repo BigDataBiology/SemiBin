@@ -2,23 +2,25 @@
 
 ## Version 1.1.0
 
-*Released September 22 2022*
-
-### Bugfixes
-
-- Fix bug when atomicwrite on the network file system ([#97](https://github.com/BigDataBiology/SemiBin/issues/97))
+*Released September 21 2022*
 
 ### User-visible improvements
 
 - Support .cram format input ([#104](https://github.com/BigDataBiology/SemiBin/issues/104))
 - Support using depth file from Metabat2 ([#103](https://github.com/BigDataBiology/SemiBin/issues/103))
+- More flexible specification of prebuilt models (case insensitive, normalize `-` and `_`)
+- Better output message when no bins are produced
+- Better output message when no bins are produced
+- More flexible specification of prebuilt models (case insensitive, normalize `-` and `_`)
+
+### Bugfixes
+
+- Fix bug using `atomicwrite` on certain network filesystems ([#97](https://github.com/BigDataBiology/SemiBin/issues/97))
 
 ### Internal improvements
 
 - Remove torch version restriction (and test on Python 3.10)
-- Better output message when no bins are produced
-- More flexible specification of prebuilt models (case insensitive,
-	normalize - and _)
+
 
 ## Version 1.0.3
 
