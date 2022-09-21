@@ -1,6 +1,6 @@
 import os
 import subprocess
-from atomicwrites import atomic_write
+from .atomicwrite import atomic_write
 
 def calculate_coverage(depth_stream, bam_file, must_link_threshold, edge=75, is_combined=False,
                        contig_threshold=1000, sep=None, contig_threshold_dict=None):
