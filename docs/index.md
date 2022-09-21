@@ -37,7 +37,7 @@ samples were a single sample) and binned later.
 This mode can generate better contigs (especially from species that are at a
 low abundance in any individual sample) and use co-abundance information, but
 co-assembly can lead to intersample chimeric contigs and binning based on
-co-assembly dows not retain sample specific variation. It is appropriate when
+co-assembly does not retain sample specific variation. It is appropriate when
 the samples are very similar.
 
 ### Multi-sample binning
