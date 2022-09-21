@@ -1,4 +1,7 @@
-Unreleased
+Version 1.1.0 Sep 22 2022 by BigDataBiology
+    * Fix bug when atomicwrite on the network file system (#97)
+    * support .cram format input (#104)
+    * Support using depth file from Metabat2 (#103)
 	* Remove torch version restriction (and test on Python 3.10)
 	* Better output message when no bins are produced
 	* More flexible specification of prebuilt models (case insensitive,
