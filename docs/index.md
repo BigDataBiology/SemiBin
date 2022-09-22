@@ -7,7 +7,8 @@ If you use this software in a publication please cite:
 >  environments. *Nat Commun* **13,** 2326 (2022).
 >  https://doi.org/10.1038/s41467-022-29843-y
 
-SemiBin is a command line tool for metagenomic binning with semi-supervised siamese neural network using additional information from reference genomes and contigs themselves. It will output the reconstructed bins in single sample/co-assembly/multi-samples binning mode.
+SemiBin is a command line tool for metagenomic binning with semi-supervised siamese neural network using additional information from reference genomes and contigs themselves.
+It supports single sample, co-assembly, and multi-samples binning modes.
 
 ## Install
 
@@ -37,8 +38,8 @@ samples were a single sample) and binned later.
 This mode can generate better contigs (especially from species that are at a
 low abundance in any individual sample) and use co-abundance information, but
 co-assembly can lead to intersample chimeric contigs and binning based on
-co-assembly does not retain sample specific variation. It is appropriate when
-the samples are very similar.
+co-assembly does not retain sample specific variation.
+It is appropriate when the samples are very similar (_e.g._, a time-series from the same habitat).
 
 ### Multi-sample binning
 
@@ -71,8 +72,13 @@ The command `single_easy_bin` requires the contig file (assembly from reads), ba
 * `-b/--input-bam`: Path to the input BAM(.bam)  or CRAM(.cram) files . You can pass multiple BAM files, one per sample.
 * `-o/--output`: Output directory (will be created if non-existent).
 
-#### Optional arguments
+#### Recommended argument
 
+If your data comes from one of the habitats for which we have a prebuilt model, using the `--environment` argument will use it instead of training a new model.
+
+* `--environment`: Environment for the built-in model (`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`global`).
+
+#### Optional arguments
 * `--cannot-name:` Name for the cannot-link file (Default: `cannot`).
 * `-r/--reference-db-data-dir`: GTDB reference directory (Default: $HOME/.cache/SemiBin/mmseqs2-GTDB). SemiBin will lazily download GTDB if it is not found there.
 * `-p/--processes/-t/--threads`: Number of CPUs used (0: use all).
@@ -84,7 +90,6 @@ The command `single_easy_bin` requires the contig file (assembly from reads), ba
 * `--max-node`: Percentage of contigs that considered to be binned (Default: 1).
 * `--max-edges`: The maximum number of edges that can be connected to one contig (Default: 200).
 * `--random-seed`: Random seed to reproduce results.
-* `--environment`: Environment for the built-in model (`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`global`).
 * `--ratio` : If the ratio of the number of base pairs of contigs between 1000-2500 bp smaller than this value, the minimal length will be set as 1000bp, otherwise2500bp. If you set -m parameter, you do not need to use this parameter. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands (Default: 0.05).
 * `-m/--min-len` : Minimal length for contigs in binning. If you use SemiBin with multi steps and you use this parameter, please use this parameter consistently with all subcommands. (Default: SemiBin chooses 1000bp or 2500bp according the ratio of the number of base pairs of contigs between 1000-2500 bp).
 * `--ml-threshold` : Length threshold for generating must-link constraints. By default, the threshold is calculated from the contig, and the default minimum value is 4,000 bp.
@@ -104,8 +109,7 @@ The command `multi_easy_bin` requires the combined contig file from several samp
 #### Required arguments
 
 * `-b/--input-bam`: Path to the input BAM (.cram) or CRAM (.cram) files. You can pass multiple BAM files, one per sample.
-* `--input-fasta` and `--output`are same as for
-`single_easy_bin`.
+* `--input-fasta` and `--output`are same as for `single_easy_bin`.
 
 #### Optional arguments
 
@@ -195,7 +199,7 @@ The `bin` subcommand requires the contig file and output (data.csv, model.h5) fr
 
 ### download_GTDB
 
-Download reference genomes(GTDB).
+Download reference genomes (GTDB).
 
 * `-r/--reference-db-data-dir`: Where to store the GTDB data (default: `$HOME/.cache/SemiBin/mmseqs2-GTDB`)
 * `-f/--force`: Whether to download GTDB even if the data is found at the path (default is to not download).
@@ -204,13 +208,13 @@ Download reference genomes(GTDB).
 
 ### check_install
 
-Check required dependencies.
+Checks whether required dependencies are available (useful for trouble-shooting).
 
  <br/><br/>
 
 ### concatenate_fasta
 
-Concatenate fasta files for multi-sample binning
+Concatenate fasta files for multi-sample binning.
 
 #### Required arguments
 
