@@ -1,17 +1,16 @@
 # Generating the inputs to SemiBin (from a metagenome)
 
-Starting with a metagenome, you need to generate a contigs file (`contigs.fa`)
-and a sorted BAM file (`output.bam`) from mapping the metagenomic reads to the
-assembled contigs.
+Starting with a metagenome, you need to generate a contigs file (`contigs.fa`) and a sorted BAM file (`output.sorted.bam`) from mapping the metagenomic reads to the assembled contigs.
 
-**Step 1**: Assemble it into a contigs FASTA file. In this case, we are using
-[NGLess](https://ngless.embl.de/) to combine FastQ preprocessing &amp; assembly
-(using
-[MEGAHIT](https://academic.oup.com/bioinformatics/article/31/10/1674/177884),
-but any other system will work.
+**Step 1**: Assemble it into a contigs FASTA file. In this case, we are using [NGLess](https://ngless.embl.de/) to combine FastQ preprocessing &amp; assembly (using [MEGAHIT](https://academic.oup.com/bioinformatics/article/31/10/1674/177884), but any other system will work.
+
+**Step 2**: Map reads to the FASTA file generated in _Step 1_.
+
+Here is an `NGLess` file that performs all these operations in a single script:
 
 ```python
-ngless "1.2"
+ngless "1.5"
+import "samtools" version "1.0"
 
 input = paired('reads_1.fq.gz', 'reads_2.fq.gz')
 input = preprocess(input) using |r|:
@@ -21,21 +20,11 @@ input = preprocess(input) using |r|:
 
 contigs = assemble(input)
 write(contigs, ofile='contig.fa')
-```
 
-**Step 2**: Map reads to the FASTA file generated in _Step 1_.
-
-### Mapping using NGLess
-
-```python
-ngless "1.2"
-import "samtools" version "1.0"
-
-input = fastq('sample.fq.gz')
-mapped = map(input, fafile='expected.fa')
+mapped = map(input, fafile=contigs)
 
 write(samtools_sort(mapped),
-    ofile='output.bam')
+    ofile='output.sorted.bam')
 ```
 
 ### Mapping using bowtie2
