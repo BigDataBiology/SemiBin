@@ -30,11 +30,11 @@ Supported habitats are (names should be self-explanatory, except `global` which 
 4.  `soil`
 5.  `cat_gut`
 6.  `human_oral`
-6.  `mouse_gut`
-7.  `pig_gut`
-8.  `built_environment`
-9.  `wastewater`
-10. `global`
+7.  `mouse_gut`
+8.  `pig_gut`
+9.  `built_environment`
+10. `wastewater`
+11. `global`
 
 [Figure 5 in the manuscript](https://www.nature.com/articles/s41467-022-29843-y#Fig5) shows details of how well each habitat-specific model performs.
 
