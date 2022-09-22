@@ -34,14 +34,24 @@ You will need the following dependencies:
 - (optionally) [Fraggenescan](https://sourceforge.net/projects/fraggenescan/)
 
 
+You can obtain them from conda with the following commands
+
 ```bash
 conda install -c conda-forge -c bioconda mmseqs2=13.45111
-```
-```bash
 conda install -c bioconda bedtools hmmer fraggenescan samtools
 ```
+
+Then, installing should be a simple matter of running:
 
 ```bash
 python setup.py install
 ```
+
+## Alternative ways of running SemiBin
+
+If you use one of these pipelines, we ask that you cite both the pipeline author and the [SemiBin manuscript](https://www.nature.com/articles/s41467-022-29843-y) (as well as any other pipeline-embedded tools which contribute to your results).
+
+- [ATLAS](https://metagenome-atlas.github.io/) is a Snakemake-based pipeline for metagenomics, which includes SemiBin (as well as other binners and tools).
+
+
 
