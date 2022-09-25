@@ -94,6 +94,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     from sklearn.cluster import KMeans
     from scipy import sparse
     import torch
+    import pandas as pd
     import numpy as np
     train_data = data.values
     train_data_input = train_data[:, 0:136] if not is_combined else train_data
@@ -186,7 +187,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     os.makedirs(output_bin_path, exist_ok=True)
 
     bin_files = write_bins(namelist, contig_labels, output_bin_path, contig_dict,minfasta=minfasta)
-    if not bin_files:
+    if not len(bin_files):
         logger.warning('No bins were created. Please check your input data.')
         return
 
@@ -216,7 +217,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
         with tempfile.TemporaryDirectory() as tdir:
             cfasta = os.path.join(tdir, 'concatenated.fna')
             with open(cfasta, 'wt') as concat_out:
-                for ix,f in enumerate(bin_files):
+                for ix,f in enumerate(bin_files['filename'].values):
                     for h,seq in fasta_iter(f):
                         h = f'bin{ix:06}.{h}'
                         concat_out.write(f'>{h}\n{seq}\n')
@@ -227,7 +228,8 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                 multi_mode=True,
                 orf_finder=orf_finder)
 
-        for ix,bin_path in enumerate(bin_files):
+        outputs = []
+        for ix,bin_path in enumerate(bin_files['filename'].values):
             # if there are no hits, the output will be naturally empty
             seed = seeds.get(f'bin{ix:06}', [])
             num_bin = len(seed)
@@ -248,10 +250,14 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                     random_state=random_seed)
                 kmeans.fit(re_bin_features, sample_weight=length_weight)
                 labels = kmeans.labels_
-                write_bins(contig_list, labels, os.path.join(out, 'output_recluster_bins'), contig_dict,
+                part = write_bins(contig_list, labels, os.path.join(out, 'output_recluster_bins'), contig_dict,
                            recluster=True, origin_label=int(bin_path.split('.')[-2]),minfasta = minfasta)
+                outputs.append(part)
             else:
                 shutil.copy(bin_path, os.path.join(out, 'output_recluster_bins'))
-
+                outputs.append(bin_files[ix:ix+1])
+        outputs = pd.concat(outputs)
+        logger.info(f'Number of bins after reclustering: {len(outputs)}')
+        outputs.to_csv(os.path.join(out, 'recluster_bins_info.tsv'), index=False, sep='\t')
     logger.info('Binning finish.')
 

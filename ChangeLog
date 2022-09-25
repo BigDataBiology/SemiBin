@@ -1,3 +1,6 @@
+Unreleased
+	* Output table with basic information on bins
+
 Version 1.1.0 Sep 21 2022 by BigDataBiology
     * Fix bug when atomicwrite on the network file system (#97)
     * support .cram format input (#104)

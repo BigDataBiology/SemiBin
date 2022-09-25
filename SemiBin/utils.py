@@ -412,9 +412,11 @@ def write_bins(namelist, contig_labels, output, contig_dict,
     '''
     Write binned FASTA files
 
-    Returns: list of files written
+    Returns: DataFrame with information on the bins
     '''
     from collections import defaultdict
+    import pandas as pd
+
     res = defaultdict(list)
     for label, name in zip(contig_labels, namelist):
         if label != -1:
@@ -430,11 +432,11 @@ def write_bins(namelist, contig_labels, output, contig_dict,
             ofname = f'bin.{label}.fa' if not recluster \
                     else f'recluster_{origin_label}.bin.{label}.fa'
             ofname = os.path.join(output, ofname)
-            written.append(ofname)
+            written.append([ofname, whole_bin_bp, len(contigs)])
             with atomic_write(ofname, overwrite=True) as ofile:
                 for contig in contigs:
                     ofile.write(f'>{contig}\n{contig_dict[contig]}\n')
-    return written
+    return pd.DataFrame(written, columns=['filename', 'nbps', 'nr_contigs'])
 
 
 

@@ -8,6 +8,7 @@
 * `data.csv/data_split.csv`: data used in the training of deep learning model.
 * `*_data_cov.csv/*_data_split_cov.csv`: coverage data generated from depth file.
 * `cannot/cannot.txt`: cannot-link file used in the training.
+* `recluster_bins_info.tsv`: table with basic information on each bin (name, total number of basepairs, and number of contigs; more columns may be added in the future)
 
 ## Multi-samples binning
 
