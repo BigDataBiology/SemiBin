@@ -174,7 +174,7 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
                 output=os.path.join(out, 'sample{}'.format(data_index)),
                 orf_finder=orf_finder)
             if epoch == 0:
-                logger.info('Generate training data of {}:'.format(data_index))
+                logger.debug('Generate training data of {}:'.format(data_index))
 
             # #generate two inputs
             train_input_1 = []
@@ -235,10 +235,10 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
                 train_labels.append(1)
 
             if epoch == 0:
-                logger.info(
-                    'Number of must link pair:{}'.format(train_labels.count(1)))
-                logger.info(
-                    'Number of can not link pair:{}'.format(train_labels.count(0)))
+                logger.debug(
+                    'Number of must-link pairs: {}'.format(train_labels.count(1)))
+                logger.debug(
+                    'Number of cannot-link pairs: {}'.format(train_labels.count(0)))
 
             dataset = feature_Dataset(train_input_1, train_input_2,
                                       train_labels)

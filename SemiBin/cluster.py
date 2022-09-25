@@ -143,7 +143,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     embedding_matrix.data[embedding_matrix.data<= threshold] = 0
     embedding_matrix.eliminate_zeros()
     if not is_combined:
-        logger.info('Calculating depth matrix.')
+        logger.debug('Calculating depth matrix.')
         kl_matrix = None
         for k in range(n_sample):
             kl = cal_kl(depth[:,2*k], depth[:, 2*k + 1])
@@ -166,7 +166,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     edges = [(x,y) for x,y in zip(X, Y)]
     edge_weights = V[above_diag]
 
-    logger.info('Edges:{}'.format(len(edges)))
+    logger.debug(f'Number of edges in clustering graph: {len(edges)}')
 
     g = Graph()
     g.add_vertices(np.arange(num_contigs))
@@ -210,7 +210,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
         else:
             embedding_new = embedding
 
-        logger.info('Reclustering.')
+        logger.debug('Reclustering.')
 
         output_recluster_bin_path = os.path.join(out, 'output_recluster_bins')
         if os.path.exists(output_recluster_bin_path):
