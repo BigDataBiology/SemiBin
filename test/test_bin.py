@@ -31,5 +31,5 @@ def test_bin():
             environment=None,
             )
 
-    assert len(os.listdir('output_bin/output_bins')) > 0
+    assert len(os.listdir('output_bin/output_prerecluster_bins')) > 0
     assert len(os.listdir('output_bin/output_recluster_bins')) > 0

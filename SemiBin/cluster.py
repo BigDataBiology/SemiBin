@@ -181,7 +181,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
     for i, r in enumerate(result):
         contig_labels[r] = i
 
-    output_bin_path = os.path.join(out, 'output_bins')
+    output_bin_path = os.path.join(out, 'output_prerecluster_bins' if recluster else 'output_bins')
     if os.path.exists(output_bin_path):
         shutil.rmtree(output_bin_path)
     os.makedirs(output_bin_path, exist_ok=True)
@@ -191,8 +191,12 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
         logger.warning('No bins were created. Please check your input data.')
         return
 
-    logger.info(f'Number of bins prior to reclustering: {len(bin_files)}')
-    if recluster:
+    if not recluster:
+        logger.info(f'Number of bins: {len(bin_files)}')
+        bin_files.to_csv(os.path.join(out, 'bins_info.tsv'), index=False, sep='\t')
+
+    else:
+        logger.info(f'Number of bins prior to reclustering: {len(bin_files)}')
         if not is_combined:
             mean_index = [2 * temp for temp in range(n_sample)]
             depth_mean = depth[:, mean_index]
