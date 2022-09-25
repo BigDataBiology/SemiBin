@@ -1033,9 +1033,13 @@ def main():
 
     logger = logging.getLogger('SemiBin')
     logger.setLevel(logging.INFO)
-    sh = logging.StreamHandler()
-    sh.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
-    logger.addHandler(sh)
+    try:
+        import coloredlogs
+        coloredlogs.install(level=logging.INFO, logger=logger)
+    except ImportError:
+        sh = logging.StreamHandler()
+        sh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
+        logger.addHandler(sh)
 
     validate_normalize_args(logger, args)
     if args.cmd == 'check_install':
