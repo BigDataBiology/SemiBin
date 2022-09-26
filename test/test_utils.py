@@ -1,12 +1,12 @@
-from SemiBin.utils import get_must_link_threshold, get_marker, split_data
+from SemiBin.utils import get_must_link_threshold, get_marker, split_data, n50_l50
 from hypothesis import given, strategies as st
 from io import StringIO
+import numpy as np
 
 def slow_get_must_link_threshold(contig_len):
     """
     calculate the threshold length for must link breaking up
     """
-    import numpy as np
     basepair_sum = 0
     threshold = 0
     whole_len = np.sum(contig_len)
@@ -107,3 +107,16 @@ def test_split_data():
     assert len(split1) == 2
     split2 = split_data(data, 'S2_2341+340_METAG', ':')
     assert len(split2) == 3
+
+
+@given(sizes=st.lists(st.integers(min_value=2, max_value=(1<<32)), min_size=1))
+def test_n50_l50(sizes):
+    n50,l50 = n50_l50(sizes)
+    sizes = np.array(sizes)
+    sizes.sort()
+    sizes = sizes[::-1]
+    assert l50 <= len(sizes)
+    assert np.sum(sizes[:l50]) >= np.sum(sizes)//2
+    assert np.sum(sizes[:l50-1]) < np.sum(sizes)//2
+    assert n50 == sizes[l50-1]
+

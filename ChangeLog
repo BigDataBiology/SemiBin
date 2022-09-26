@@ -1,5 +1,5 @@
 Unreleased
-	* Output table with basic information on bins
+	* Output table with basic information on bins (including N50 & L50)
 	* When reclustering is used (default), output the unreclusted bins into a
 	directory called `output_prerecluster_bins`
 	* Used coloredlogs (if package is available)
