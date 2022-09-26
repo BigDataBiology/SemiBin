@@ -11,7 +11,7 @@ theme:
 nav:
         - 'SemiBin': index.md
         - 'Install': install.md
-        - 'Usage': usage.md
+        - 'Usage examples': usage.md
         - 'Generating inputs to SemiBin': generate.md
         - 'Output': output.md
         - "What's New": whatsnew.md

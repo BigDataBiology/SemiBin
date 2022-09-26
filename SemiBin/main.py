@@ -88,7 +88,7 @@ def parse_args(args):
                         default=None
                         )
 
-    concatenate_fasta.add_argument('-m',
+    concatenate_fasta.add_argument('-m', '--min-len',
                         required=False,
                         type=int,
                         help='Discard sequences below this length (default:0)',

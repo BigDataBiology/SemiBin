@@ -1,4 +1,4 @@
-# Usage
+# Usage examples
 
 ## Single-sample binning
 
