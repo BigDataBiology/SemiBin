@@ -37,16 +37,16 @@ conda install -c conda-forge -c bioconda semibin
 Running with single-sample binning (for example: human gut samples):
 
 ```bash
-SemiBin single_easy_bin -i contig.fa -b S1.bam -o output --environment human_gut
+SemiBin single_easy_bin -i contig.fa -b S1.sorted.bam -o output --environment human_gut
 ```
 
 Running with multi-sample binning:
 
 ```bash
-SemiBin multi_easy_bin -i contig_whole.fa -b *.bam -o output -s :
+SemiBin multi_easy_bin -i contig_whole.fa -b *.sorted.bam -o output
 ```
 
-**The output** includes the bins in the output_recluster_bins directory (including the bin.\*.fa and recluster.\*.fa).
+**The output** includes the bins in the `output_recluster_bins` directory (including the bin.\*.fa and recluster.\*.fa).
 
 
 Please find more options and details below and [read the docs](https://semibin.readthedocs.io/en/latest/usage/). 
@@ -107,7 +107,7 @@ Single sample and co-assembly are handled the same way by SemiBin.
 You will need the following inputs:
 
 1. A contig file (`contig.fa` in the example below)
-2. BAM file(s) from mapping short reads to the contigs (`mapped_reads.bam` in the example below)
+2. BAM file(s) from mapping short reads to the contigs, sorted (`mapped_reads.sorted.bam` in the example below)
 
 The `single_easy_bin` command can be used to produce results in a single step.
 
@@ -117,7 +117,7 @@ For example:
 SemiBin \
     single_easy_bin \
     --input-fasta contig.fa \
-    --input-bam mapped_reads.bam \
+    --input-bam mapped_reads.sorted.bam \
     --environment human_gut \
     --output output
 ```
@@ -128,7 +128,7 @@ Alternatively, you can train a new model for that sample, by not passing in the 
 SemiBin \
     single_easy_bin \
     --input-fasta contig.fa \
-    --input-bam mapped_reads.bam \
+    --input-bam mapped_reads.sorted.bam \
     --output output
 ```
 
@@ -190,20 +190,23 @@ You can use this to get the combined contig:
 SemiBin concatenate_fasta -i contig*.fa -o output
 ```
 
-You can get the results with one line of code.
+If either the sample or the contig names use the default separator (`:`), you will need to change it with the `--separator`,`-s` argument.
+
+After mapping samples (individually) to the combined FASTA file, you can get the results with one line of code:
 
 ```bash
-SemiBin multi_easy_bin -i concatenated.fa -b *.bam -o output
+SemiBin multi_easy_bin -i concatenated.fa -b *.sorted.bam -o output
 ```
 
 ## Output
 
 The output folder will contain:
 
-1. Datasets used for training and clustering
+1. Features computed from the data and used for training and clustering
 2. Saved semi-supervised deep learning model
 3. Output bins
-4. Some intermediate files
+4. Table with basic information about each bin
+5. Some intermediate files
 
 By default, reconstructed bins are in `output_recluster_bins` directory.
 
