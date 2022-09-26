@@ -1,5 +1,13 @@
 # What's New
 
+## Version 1.1.1
+
+*Released September 27 2022*
+
+### Bugfixes
+
+- Completely remove use of `atomicwrites` package ([#97](https://github.com/BigDataBiology/SemiBin/issues/97))
+
 ## Version 1.1.0
 
 *Released September 21 2022*
@@ -10,8 +18,6 @@
 - Support using depth file from Metabat2 ([#103](https://github.com/BigDataBiology/SemiBin/issues/103))
 - More flexible specification of prebuilt models (case insensitive, normalize `-` and `_`)
 - Better output message when no bins are produced
-- Better output message when no bins are produced
-- More flexible specification of prebuilt models (case insensitive, normalize `-` and `_`)
 
 ### Bugfixes
 
