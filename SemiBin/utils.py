@@ -407,14 +407,16 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
         return marker
 
 
-def write_bins(namelist, contig_labels, output, contig_dict,
+def write_bins(namelist, contig_labels, output, contig_seqs,
                recluster=False, origin_label=0, minfasta = 200000):
     '''
     Write binned FASTA files
 
-    Returns: list of files written
+    Returns: DataFrame with information on the bins
     '''
     from collections import defaultdict
+    import pandas as pd
+
     res = defaultdict(list)
     for label, name in zip(contig_labels, namelist):
         if label != -1:
@@ -424,17 +426,19 @@ def write_bins(namelist, contig_labels, output, contig_dict,
 
     written = []
     for label, contigs in res.items():
-        whole_bin_bp = sum(len(contig_dict[contig]) for contig in contigs)
+        sizes = [len(contig_seqs[contig]) for contig in contigs]
+        whole_bin_bp = sum(sizes)
 
         if whole_bin_bp >= minfasta:
             ofname = f'bin.{label}.fa' if not recluster \
                     else f'recluster_{origin_label}.bin.{label}.fa'
             ofname = os.path.join(output, ofname)
-            written.append(ofname)
+            n50, l50 = n50_l50(sizes)
+            written.append([ofname, whole_bin_bp, len(contigs), n50, l50])
             with atomic_write(ofname, overwrite=True) as ofile:
                 for contig in contigs:
-                    ofile.write(f'>{contig}\n{contig_dict[contig]}\n')
-    return written
+                    ofile.write(f'>{contig}\n{contig_seqs[contig]}\n')
+    return pd.DataFrame(written, columns=['filename', 'nbps', 'nr_contigs', 'N50', 'L50'])
 
 
 
@@ -522,4 +526,17 @@ def concatenate_fasta(fasta_files, min_length, output, separator):
                 if len(seq) >= min_length:
                     header = f'{sample_name}{separator}{h}'
                     concat_out.write(f'>{header}\n{seq}\n')
+
+def n50_l50(sizes):
+    '''Computes N50 & L50 for a set of contig sizes
+
+    Returns (n50, l50)
+    '''
+    import numpy as np
+    s = np.array(sizes)
+    s.sort()
+    s = s[::-1]
+    l50 = np.where(np.cumsum(s)>=s.sum()//2)[0][0]
+    n50 = s[l50]
+    return n50, l50+1
 

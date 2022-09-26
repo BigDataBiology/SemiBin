@@ -29,9 +29,15 @@ def parse_args(args):
     parser.version = ver
 
     parser.add_argument('-v',
+                        '-V',
                         '--version',
                         action='version',
                         help='Print the version number')
+    parser.add_argument('--verbose',
+                       required=False,
+                       help='Verbose output',
+                       dest='verbose',
+                       action='store_true', )
 
     subparsers = parser.add_subparsers(title='SemiBin subcommands',
                                        dest='cmd',
@@ -595,7 +601,7 @@ def generate_sequence_features_single(logger, contig_fasta,
                         f"Error: Generating coverage file fail\n")
                     sys.exit(1)
 
-        logger.info('Start generating kmer features from fasta file.')
+        logger.debug('Start generating kmer features from fasta file.')
         kmer_whole = generate_kmer_features_from_fasta(
             contig_fasta, binned_length, 4)
         kmer_split = generate_kmer_features_from_fasta(
@@ -1032,10 +1038,15 @@ def main():
     args = parse_args(args)
 
     logger = logging.getLogger('SemiBin')
-    logger.setLevel(logging.INFO)
-    sh = logging.StreamHandler()
-    sh.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
-    logger.addHandler(sh)
+    loglevel = (logging.DEBUG if args.verbose else logging.INFO)
+    logger.setLevel(loglevel)
+    try:
+        import coloredlogs
+        coloredlogs.install(level=loglevel, logger=logger)
+    except ImportError:
+        sh = logging.StreamHandler()
+        sh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
+        logger.addHandler(sh)
 
     validate_normalize_args(logger, args)
     if args.cmd == 'check_install':
@@ -1057,7 +1068,7 @@ def main():
                 logger.info('Running with GPU.')
             else:
                 device = torch.device("cpu")
-                logger.info('Do not detect GPU. Running with CPU.')
+                logger.info('Did not detect GPU, using CPU.')
 
     if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'generate_cannot_links', 'train', 'bin',
                     'generate_sequence_features_single', 'generate_sequence_features_multi']:

@@ -87,7 +87,7 @@ def generate_cov(bam_file, bam_index, out, threshold,
     sep: separator for multi-sample binning
     """
     import numpy as np
-    logger.info('Processing `{}`'.format(bam_file))
+    logger.debug('Processing `{}`'.format(bam_file))
     bam_name = os.path.split(bam_file)[-1] + '_{}'.format(bam_index)
 
     bed_p = subprocess.Popen(

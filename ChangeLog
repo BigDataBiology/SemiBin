@@ -1,3 +1,10 @@
+Unreleased
+	* Output table with basic information on bins (including N50 & L50)
+	* When reclustering is used (default), output the unreclusted bins into a
+	directory called `output_prerecluster_bins`
+	* Used coloredlogs (if package is available)
+	* Added --verbose flag and silented some of the output when it is not used
+
 Version 1.1.0 Sep 21 2022 by BigDataBiology
     * Fix bug when atomicwrite on the network file system (#97)
     * support .cram format input (#104)
