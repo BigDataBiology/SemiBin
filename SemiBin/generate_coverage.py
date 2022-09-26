@@ -100,6 +100,7 @@ def generate_cov(bam_file, bam_index, out, threshold,
     if is_combined:
         contig_cov, must_link_contig_cov = calculate_coverage(bed_p.stdout, bam_file, threshold, is_combined = is_combined, sep = sep, contig_threshold = contig_threshold if sep is None else 1000, contig_threshold_dict =  contig_threshold if sep is not None else None)
         if bed_p.wait() != 0:
+            logger.critical("Running `bedtools genomecov` failed. Please check your input files: SemiBin expects that they are sorted BAM files.")
             raise OSError("Failure in running bedtools")
 
         contig_cov = contig_cov.apply(lambda x: x + 1e-5)
