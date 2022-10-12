@@ -86,10 +86,11 @@ If you are running `mmseqs2` against the GTDB taxonomy as part of of your pipeli
 ```bash
 SemiBin train \
     -i S1.fa \
-    --data S1_output/train.csv \
-    --data-split S1_output/train_split.csv \
+    --data S1_output/data.csv \
+    --data-split S1_output/data_split.csv \
     -c S1_output/cannot/cannot.txt \
     -o S1_output
+    --mode single
 ```
 
 This step heavily benefits from having access to a GPU.
@@ -125,8 +126,8 @@ You can train the model from 3 samples.
 ```bash
 SemiBin train \
     -i S1.fa S2.fa S3.fa \
-    --data S1/train.csv S2/train.csv S3/train.csv \
-    --data-split S1/train_split.csv S2/train_split.csv S3/train_split.csv \
+    --data S1/data.csv S2/data.csv S3/data.csv \
+    --data-split S1/data_split.csv S2/data_split.csv S3/data_split.csv \
     -c S1/cannot.txt s2/cannot.txt S3/cannot.txt \
     --mode several \
     -o S1_output
@@ -172,10 +173,11 @@ SemiBin generate_cannot_links -i contig.fa -o contig_output
 ```bash
 SemiBin train \
     -i contig.fa \
-    --data contig_output/train.csv \
-    --data-split contig_output/train_split.csv \
+    --data contig_output/data.csv \
+    --data-split contig_output/data_split.csv \
     -c contig_output/cannot/cannot.txt \
     -o contig_output
+    --mode single
 ```
 
 SemiBin will attempt to detect a GPU and fallback to CPU if none is found, but you can use the `--engine` argument to specify which one to use.
@@ -291,10 +293,11 @@ Training is performed independently for each sample (thus, could be parallelized
 for sample in S1 S2 S3 S4 S5 ; do
     SemiBin train \
         -i ${sample}.fa \
-        --data multi_output/samples/${sample}/train.csv \
-        --data-split multi_output/samples/${sample}/train_split.csv \
+        --data multi_output/samples/${sample}/data.csv \
+        --data-split multi_output/samples/${sample}/data_split.csv \
         -c ${sample}_output/cannot/cannot.txt \
         -o ${sample}_output
+        --mode single
 done
 ```
 
