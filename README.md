@@ -144,6 +144,7 @@ The following environments are supported:
 - `pig_gut`
 - `built_environment`
 - `wastewater`
+- `chicken_caecum` (In the benchmark this pretrained model outperforms other models in the chicken caecum dataset. Thanks for [Florian Plaza Oñate](https://scholar.google.com/citations?hl=zh-CN&user=-gE5y_4AAAAJ&view_op=list_works&sortby=pubdate)'s work.)
 - `global`
 
 The `global` environment can be used if none of the others is appropriate.

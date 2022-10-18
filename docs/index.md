@@ -76,7 +76,7 @@ The command `single_easy_bin` requires the contig file (assembly from reads), ba
 
 If your data comes from one of the habitats for which we have a prebuilt model, using the `--environment` argument will use it instead of training a new model.
 
-* `--environment`: Environment for the built-in model (`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`global`).
+* `--environment`: Environment for the built-in model (`human_gut`/`dog_gut`/`ocean`/`soil`/`cat_gut`/`human_oral`/`mouse_gut`/`pig_gut`/`built_environment`/`wastewater`/`chicken_caecum`/`global`).
 
 If `--environment` is not given, a new model is learned (computationally intensive).
 

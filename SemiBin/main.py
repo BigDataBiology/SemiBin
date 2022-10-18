@@ -239,7 +239,7 @@ def parse_args(args):
     for p in [single_easy_bin, binning]:
         p.add_argument('--environment',
                        required=False,
-                       help='Environment for the built-in model (available choices: human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/global).',
+                       help='Environment for the built-in model (available choices: human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/chicken_caecum/global).',
                        dest='environment',
                        default=None,
                        )
@@ -881,7 +881,7 @@ def binning(logger, num_process, data,
     if device == torch.device('cpu'):
         model = torch.load(model_path, map_location=torch.device('cpu'))
     else:
-        model = torch.load(model_path)
+        model = torch.load(model_path).to(device)
     cluster(
         model,
         data,

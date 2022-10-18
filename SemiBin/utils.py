@@ -99,11 +99,11 @@ def validate_normalize_args(logger, args):
     if args.cmd == 'bin':
         if args.environment is None and args.model_path is None:
             sys.stderr.write(
-                f"Error: Please choose input a model path or use our built-in model for [human_gut/dog_gut/ocean].\n")
+                f"Error: Please choose input a model path or use our built-in model for [human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/chicken_caecum/global].\n")
             sys.exit(1)
         if args.environment is not None and args.model_path is not None:
             sys.stderr.write(
-                f"Error: Please choose input a model path or use our built-in model for [human_gut/dog_gut/ocean].\n")
+                f"Error: Please choose input a model path or use our built-in model for [human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/chicken_caecum/global].\n")
             sys.exit(1)
         if args.environment is not None:
             # This triggers checking that the environment is valid
@@ -504,6 +504,7 @@ def get_model_path(env):
             'pig_gut',
             'built_environment',
             'wastewater',
+            'chicken_caecum',
             'global',
             ]
     if envn in known_environments:
