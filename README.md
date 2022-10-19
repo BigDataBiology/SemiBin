@@ -22,7 +22,7 @@ If you use this software in a publication please cite:
 
 ## Basic usage of SemiBin
 
-A tutorial of running SemiBin from scrath can be found here [SemiBin tutorial](https://github.com/psj1997/SemiBin_tutorial_from_scratch).
+A tutorial of running SemiBin from scrath can be found here [SemiBin tutorial](https://github.com/BigDataBiology/SemiBin_tutorial_from_scratch).
 
 Installation:
 
@@ -144,7 +144,7 @@ The following environments are supported:
 - `pig_gut`
 - `built_environment`
 - `wastewater`
-- `chicken_caecum` (In the benchmark this pretrained model outperforms other models in the chicken caecum dataset. Thanks for [Florian Plaza Oñate](https://scholar.google.com/citations?hl=zh-CN&user=-gE5y_4AAAAJ&view_op=list_works&sortby=pubdate)'s work.)
+- `chicken_caecum` (Contributed by [Florian Plaza Oñate](https://scholar.google.com/citations?hl=zh-CN&user=-gE5y_4AAAAJ&view_op=list_works&sortby=pubdate))
 - `global`
 
 The `global` environment can be used if none of the others is appropriate.

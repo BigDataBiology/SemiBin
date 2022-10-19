@@ -1,10 +1,10 @@
-Unreleased
+Version 1.2.0 Oct 19 2022 by BigDataBiology
 	* Pretrained model from chicken caecum
 	* Output table with basic information on bins (including N50 & L50)
 	* When reclustering is used (default), output the unreclusted bins into a
 	directory called `output_prerecluster_bins`
-	* Used coloredlogs (if package is available)
 	* Added --verbose flag and silented some of the output when it is not used
+	* Use coloredlogs (if package is available)
 
 Version 1.1.1 Sep 27 2022 by BigDataBiology
 	* Completely remove use of atomicwrites package
