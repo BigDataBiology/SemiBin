@@ -33,6 +33,7 @@ def test_train():
 
     assert os.path.exists('output_train/model.h5')
 
+    os.makedirs('output_train_self',exist_ok=True)
     training(contig_fasta = ['test/train_data/input.fasta'],
             num_process = 1,
             data = ['test/train_data/data.csv'],
