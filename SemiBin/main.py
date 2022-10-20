@@ -930,7 +930,7 @@ def binning_preprocess(data, depth_metabat2, model_path, environment, device):
     if device == torch.device('cpu'):
         model = torch.load(model_path, map_location=torch.device('cpu'))
     else:
-        model = torch.load(model_path)
+        model = torch.load(model_path).to(device)
 
     return is_combined, n_sample, data, model
 
@@ -1310,7 +1310,8 @@ def main():
                 args.environment,
                 orf_finder=args.orf_finder,
                 depth_metabat2=args.depth_metabat2,
-                training_type=args.training_type)
+                training_type=args.training_type,
+                sequencing_type=args.sequencing_type)
 
         if args.cmd == 'multi_easy_bin':
             check_install(False, args.orf_finder)
@@ -1324,7 +1325,8 @@ def main():
                 out,
                 device,
                 orf_finder=args.orf_finder,
-                training_type=args.training_type)
+                training_type=args.training_type,
+                sequencing_type=args.sequencing_type)
 
         if args.cmd == 'concatenate_fasta':
             from .utils import concatenate_fasta

@@ -152,5 +152,4 @@ multi_self_output_long = 'test-outputs/multi_output_self_long'
 subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_self_output_long} -b {multi_sample_input}/*.bam -s : --epoches 1 --training-type self --sequencing-type long_read',  shell=True)
 assert os.path.exists(f'{multi_self_output_long}/bins')
 for i in range(10):
-    assert os.path.exists(f'{multi_self_output_long}/samples/S{i+1}/output_prerecluster_bins')
-    assert os.path.exists(f'{multi_self_output_long}/samples/S{i+1}/output_recluster_bins')
+    assert os.path.exists(f'{multi_self_output_long}/samples/S{i+1}/output_bins')
