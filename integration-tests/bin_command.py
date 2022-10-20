@@ -39,7 +39,7 @@ subprocess.check_call(
      '-m', '2500',
      '--ratio', '0.05',
      '-p', '1'])
-assert len(os.listdir(f'{odir}/output_prerecluster_bins')) > 0
+assert len(os.listdir(f'{odir}/output_bins')) > 0
 assert not os.path.exists(f'{odir}/output_recluster_bins')
 
 # Different pretrained models
