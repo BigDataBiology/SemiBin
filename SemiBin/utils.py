@@ -94,12 +94,18 @@ def validate_normalize_args(logger, args):
 
             expect_file_list(args.data)
             expect_file_list(args.data_split)
-
-
         else:
             sys.stderr.write(
                 f"Error: Please use training mode with [single/several].\n")
             sys.exit(1)
+
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin']:
+        if args.sequencing_type not in ['short_read', 'long_read']:
+            sys.stderr.write(
+                f"Error: Must choose a reads type in short_read/long_read.\n")
+            sys.exit(1)
+        else:
+            logger.info(f'Binning for {args.sequencing_type}')
 
     if args.cmd == 'bin':
         if args.environment is None and args.model_path is None:
@@ -241,7 +247,7 @@ normalize_marker_trans__dict = {
     'TIGR02386': 'TIGR02387',
 }
 
-def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, orf_finder = None):
+def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, orf_finder = None, contig_to_marker = False):
     import pandas as pd
     data = pd.read_table(hmmout, sep=r'\s+',  comment='#', header=None,
                          usecols=(0,3,5,15,16), names=['orf', 'gene', 'qlen', 'qstart', 'qend'])
@@ -264,30 +270,39 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, o
         data = data[data['contig'].map(lambda c: contig_len[c] >= min_contig_len)]
     data = data.drop_duplicates(['gene', 'contig'])
 
-    def extract_seeds(vs, sel):
-        vs = vs.sort_values()
-        median = vs[len(vs) //2]
-
-        # the original version broke ties by picking the shortest query, so we
-        # replicate that here:
-        candidates = vs.index[vs == median]
-        c = qlen.loc[candidates].idxmin()
-        r = list(sel.query('gene == @c')['contig'])
-        r.sort()
-        return r
-
-
-    if multi_mode:
-        data['bin'] = data['orf'].str.split('.',0, expand=True)[0]
-        counts = data.groupby(['bin', 'gene'])['orf'].count()
-        res = {}
-        for b,vs in counts.groupby(level=0):
-            cs = extract_seeds(vs.droplevel(0), data.query('bin == @b', local_dict={'b':b}))
-            res[b] = [c.split('.',1)[1] for c in cs]
-        return res
+    if contig_to_marker:
+        from collections import defaultdict
+        marker = data['gene'].values
+        contig = data['contig'].values
+        sequence2markers = defaultdict(list)
+        for m, c in zip(marker, contig):
+            sequence2markers[c].append(m)
+        return sequence2markers
     else:
-        counts = data.groupby('gene')['orf'].count()
-        return extract_seeds(counts, data)
+        def extract_seeds(vs, sel):
+            vs = vs.sort_values()
+            median = vs[len(vs) //2]
+
+            # the original version broke ties by picking the shortest query, so we
+            # replicate that here:
+            candidates = vs.index[vs == median]
+            c = qlen.loc[candidates].idxmin()
+            r = list(sel.query('gene == @c')['contig'])
+            r.sort()
+            return r
+
+
+        if multi_mode:
+            data['bin'] = data['orf'].str.split('.',0, expand=True)[0]
+            counts = data.groupby(['bin', 'gene'])['orf'].count()
+            res = {}
+            for b,vs in counts.groupby(level=0):
+                cs = extract_seeds(vs.droplevel(0), data.query('bin == @b', local_dict={'b':b}))
+                res[b] = [c.split('.',1)[1] for c in cs]
+            return res
+        else:
+            counts = data.groupby('gene')['orf'].count()
+            return extract_seeds(counts, data)
 
 def prodigal(contig_file, contig_output):
         with open(contig_output + '.out', 'w') as prodigal_out_log:

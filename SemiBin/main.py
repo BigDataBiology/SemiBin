@@ -10,7 +10,7 @@ from .atomicwrite import atomic_write
 import shutil
 import sys
 from itertools import groupby
-
+from .long_read_cluster import cluster_long_read
 from .utils import validate_normalize_args, get_must_link_threshold, generate_cannot_link, \
     set_random_seed, process_fasta, split_data, get_model_path
 from .gtdb import find_or_download_gtdb
@@ -110,6 +110,9 @@ def parse_args(args):
     binning = subparsers.add_parser('bin',
                                     help='Group the contigs into bins.')
 
+    binning_long = subparsers.add_parser('bin_long',
+                                    help='Group the contigs from long reads into bins.')
+
     download_GTDB.add_argument('-f', '--force',
                             required=False,
                             help='Redownload GTDB even if files are found',
@@ -117,7 +120,7 @@ def parse_args(args):
                             action='store_true',
                             default=None)
 
-    for p in [single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi, check_install, concatenate_fasta, training, binning, training_self]:
+    for p in [single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi, check_install, concatenate_fasta, training, binning, training_self, binning_long]:
         p.add_argument('--verbose',
                             required=False,
                             help='Verbose output',
@@ -193,11 +196,19 @@ def parse_args(args):
                    dest='contig_fasta',
                    default=None, )
 
-    binning.add_argument('--data',
-                         required=True,
-                         help='Path to the input data.csv file.',
-                         dest='data',
-                         default=None,)
+    for p in [binning, binning_long]:
+        p.add_argument('--data',
+                             required=True,
+                             help='Path to the input data.csv file.',
+                             dest='data',
+                             default=None,)
+
+        p.add_argument('--model',
+                             required=False,
+                             type=str,
+                             dest='model_path',
+                             default=None,
+                             help='Path to the trained semi-supervised deep learning model.')
 
     binning.add_argument('--max-edges',
                    required=False,
@@ -212,14 +223,9 @@ def parse_args(args):
                    default=1,
                    help='Fraction of contigs that considered to be binned (should be between 0 and 1; default: 1).')
 
-    binning.add_argument('--model',
-                         required=False,
-                         type=str,
-                         dest='model_path',
-                         default=None,
-                         help='Path to the trained semi-supervised deep learning model.')
 
-    for p in [single_easy_bin, multi_easy_bin, training, binning]:
+
+    for p in [single_easy_bin, multi_easy_bin, training, binning, binning_long]:
         p.add_argument('--orf-finder',
                        required=False,
                        type=str,
@@ -227,7 +233,7 @@ def parse_args(args):
                        dest='orf_finder',
                        default='prodigal')
 
-    for p in [single_easy_bin, binning]:
+    for p in [single_easy_bin, binning, binning_long]:
         p.add_argument('--depth-metabat2',
                        required=False,
                        type=str,
@@ -236,7 +242,7 @@ def parse_args(args):
                        default=None,
                        )
 
-    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, training, binning, generate_sequence_features_single, generate_sequence_features_multi, training_self]:
+    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, training, binning, generate_sequence_features_single, generate_sequence_features_multi, training_self, binning_long]:
         p.add_argument('--tmpdir',
                        required=False,
                        type=str,
@@ -245,7 +251,7 @@ def parse_args(args):
                        default=None,
                        )
 
-    for p in [training, generate_cannot_links, binning, single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi, training_self]:
+    for p in [training, generate_cannot_links, binning, single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi, training_self, binning_long]:
         p.add_argument('-p', '--processes', '-t', '--threads',
                    required=False,
                    type=int,
@@ -255,7 +261,7 @@ def parse_args(args):
                    metavar=''
                    )
 
-    for p in [single_easy_bin, binning]:
+    for p in [single_easy_bin, binning, binning_long]:
         p.add_argument('--environment',
                        required=False,
                        help='Environment for the built-in model (available choices: human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/chicken_caecum/global).',
@@ -263,7 +269,7 @@ def parse_args(args):
                        default=None,
                        )
 
-    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_sequence_features_single, generate_sequence_features_multi, binning]:
+    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_sequence_features_single, generate_sequence_features_multi, binning, binning_long]:
         p.add_argument('-i', '--input-fasta',
                                 required=True,
                                 help='Path to the input fasta file.',
@@ -275,7 +281,7 @@ def parse_args(args):
                             dest='output',
                             default=None,
                             )
-    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_sequence_features_single, generate_sequence_features_multi, binning, training]:
+    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_sequence_features_single, generate_sequence_features_multi, binning, training, binning_long]:
         p.add_argument('-m', '--min-len',
                        required=False,
                        type=int,
@@ -341,6 +347,14 @@ def parse_args(args):
                             dest='taxonomy_results_fname',
                             metavar='TAXONOMY_TSV')
 
+    binning_long.add_argument('--minfasta-kbs',
+                            required=False,
+                            type=int,
+                            help='minimum bin size in Kbps (Default: 200).',
+                            dest='minfasta_kb',
+                            default=200,
+                            metavar='')
+
     for p in [binning, single_easy_bin, multi_easy_bin]:
         p.add_argument('--minfasta-kbs',
                             required=False,
@@ -361,7 +375,6 @@ def parse_args(args):
                            dest='recluster',
                            action='store_true', )
     for p in [single_easy_bin, multi_easy_bin]:
-
         p.add_argument('--epoches',
                           required=False,
                           type=int,
@@ -399,7 +412,7 @@ def parse_args(args):
                            default=':',
                            metavar='')
 
-    for p in [training, binning, single_easy_bin, multi_easy_bin, training_self]:
+    for p in [training, binning, single_easy_bin, multi_easy_bin, training_self, binning_long]:
         p.add_argument('--random-seed',
                        required=False,
                        type=int,
@@ -416,7 +429,7 @@ def parse_args(args):
                        dest='ml_threshold',
                        default=None)
 
-    for p in [single_easy_bin, multi_easy_bin, training, binning, training_self]:
+    for p in [single_easy_bin, multi_easy_bin, training, binning, training_self, binning_long]:
         p.add_argument('--engine',
                        required=False,
                        type=str,
@@ -431,6 +444,13 @@ def parse_args(args):
                        help='training algorithm used to train the model (semi/self)',
                        dest='training_type',
                        default='semi')
+
+        p.add_argument('--sequencing-type',
+                       required=True,
+                       type=str,
+                       help='sequencing type in [short_read/long_read].',
+                       dest='sequencing_type',
+                       default=None,)
 
     if not args:
         parser.print_help(sys.stderr)
@@ -486,6 +506,7 @@ def check_install(verbose, orf_finder=None):
     else:
         if verbose:
             print('Installation OK')
+
 
 def predict_taxonomy(logger, contig_fasta, cannot_name,
                      taxonomy_results_fname, GTDB_reference, num_process,
@@ -568,7 +589,6 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
     os.makedirs(os.path.join(output, 'cannot'), exist_ok=True)
     generate_cannot_link(taxonomy_results_fname,
         namelist, num_must_link, os.path.join(output, 'cannot'), cannot_name)
-
 
 def generate_sequence_features_single(logger, contig_fasta,
                          bams, binned_length,
@@ -877,22 +897,9 @@ def training(logger, contig_fasta, num_process,
                            mode)
 
 
-def binning(logger, num_process, data,
-            max_edges, max_node, minfasta,
-            binned_length, contig_dict, recluster,model_path,
-            random_seed,output, device, environment, orf_finder = 'prodigal', depth_metabat2 = None):
-    """
-    Clustering the contigs to get the final bins.
-
-    contig_dict: {contig_id:seq,...}
-    recluster: if reclustering
-    model_path: path to the trained model
-    """
-    import torch
+def binning_preprocess(data, depth_metabat2, model_path, environment, device):
     import pandas as pd
-    logger.info('Start binning.')
-
-
+    import torch
     data = pd.read_csv(data, index_col=0)
     data.index = data.index.astype(str)
 
@@ -923,7 +930,45 @@ def binning(logger, num_process, data,
     if device == torch.device('cpu'):
         model = torch.load(model_path, map_location=torch.device('cpu'))
     else:
-        model = torch.load(model_path).to(device)
+        model = torch.load(model_path)
+
+    return is_combined, n_sample, data, model
+
+def binning_long(logger, num_process, data, minfasta,
+            binned_length, contig_dict, model_path,
+            random_seed,output, device, environment, orf_finder = 'prodigal', depth_metabat2 = None):
+    logger.info('Start binning.')
+    is_combined, n_sample, data, model = binning_preprocess(data, depth_metabat2, model_path, environment, device)
+    cluster_long_read(model,
+                      data,
+                      device,
+                      is_combined,
+                      logger,
+                      n_sample,
+                      output,
+                      contig_dict,
+                      binned_length,
+                      num_process,
+                      minfasta,
+                      random_seed,
+                      orf_finder,
+                      )
+
+def binning(logger, num_process, data,
+            max_edges, max_node, minfasta,
+            binned_length, contig_dict, recluster,model_path,
+            random_seed,output, device, environment, orf_finder = 'prodigal', depth_metabat2 = None, ):
+    """
+    Clustering the contigs to get the final bins.
+
+    contig_dict: {contig_id:seq,...}
+    recluster: if reclustering
+    model_path: path to the trained model
+    """
+    logger.info('Start binning.')
+
+    is_combined, n_sample, data, model = binning_preprocess(data, depth_metabat2, model_path, environment, device)
+
     cluster(
         model,
         data,
@@ -945,7 +990,7 @@ def binning(logger, num_process, data,
 
 def single_easy_binning(args, logger, binned_length,
                         must_link_threshold,
-                        contig_dict, recluster,random_seed, output, device, environment, orf_finder = 'prodigal', depth_metabat2 = None, training_type = 'semi'):
+                        contig_dict, recluster,random_seed, output, device, environment, orf_finder = 'prodigal', depth_metabat2 = None, training_type = 'semi', sequencing_type = 'short_read'):
     """
     contain `generate_cannot_links`, `generate_sequence_features_single`, `train`, `bin` in one command for single-sample and co-assembly binning
     """
@@ -999,16 +1044,20 @@ def single_easy_binning(args, logger, binned_length,
             training(logger, None,
                      args.num_process, [data_path], [data_split_path],
                      None, args.batchsize, args.epoches, output, device, None, None,  mode='single', orf_finder=None, training_mode='self')
-
-    binning(logger, args.num_process, data_path,
-            args.max_edges, args.max_node, args.minfasta_kb * 1000,
-            binned_length, contig_dict, recluster,
-            os.path.join(output, 'model.h5') if environment is None else None,
-            random_seed, output,  device, environment if environment is not None else None, orf_finder=orf_finder, depth_metabat2=depth_metabat2)
+    if sequencing_type == 'short_read':
+        binning(logger, args.num_process, data_path,
+                args.max_edges, args.max_node, args.minfasta_kb * 1000,
+                binned_length, contig_dict, recluster,
+                os.path.join(output, 'model.h5') if environment is None else None,
+                random_seed, output,  device, environment if environment is not None else None, orf_finder=orf_finder, depth_metabat2=depth_metabat2)
+    else:
+        binning_long(logger, args.num_process, data_path, args.minfasta_kb * 1000,
+            binned_length, contig_dict, os.path.join(output, 'model.h5') if environment is None else None,
+            random_seed,output, device, environment if environment is not None else None, orf_finder = orf_finder, depth_metabat2 = depth_metabat2)
 
 
 def multi_easy_binning(args, logger, recluster,
-                       random_seed, output, device, orf_finder='prodigal', training_type = 'semi'):
+                       random_seed, output, device, orf_finder='prodigal', training_type = 'semi', sequencing_type = 'short_read'):
     """
     contain `generate_cannot_links`, `generate_sequence_features_multi`, `train`, `bin` in one command for multi-sample binning
     """
@@ -1068,11 +1117,18 @@ def multi_easy_binning(args, logger, recluster,
                      args.batchsize, args.epoches, os.path.join(output, 'samples', sample),
                      device, None, None, mode='single', orf_finder=None, training_mode='self')
 
-        binning(logger, args.num_process, sample_data,
-                args.max_edges, args.max_node, args.minfasta_kb * 1000,
-                binned_length, contig_dict, recluster,
-                os.path.join(output, 'samples', sample, 'model.h5'), random_seed ,
-                os.path.join(output, 'samples', sample),  device, None, orf_finder=orf_finder)
+        if sequencing_type == 'short_read':
+            binning(logger, args.num_process, sample_data,
+                    args.max_edges, args.max_node, args.minfasta_kb * 1000,
+                    binned_length, contig_dict, recluster,
+                    os.path.join(output, 'samples', sample, 'model.h5'), random_seed ,
+                    os.path.join(output, 'samples', sample),  device, None, orf_finder=orf_finder)
+        else:
+            binning_long(logger, args.num_process, sample_data,
+                         args.minfasta_kb * 1000,
+                         binned_length, contig_dict, os.path.join(output, 'samples', sample, 'model.h5'),
+                         random_seed, os.path.join(output, 'samples', sample), device,
+                         None, orf_finder=orf_finder)
 
     os.makedirs(os.path.join(output, 'bins'), exist_ok=True)
     for sample in sample_list:
@@ -1109,7 +1165,7 @@ def main():
         out = args.output
         os.makedirs(out, exist_ok=True)
 
-    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin', 'train_self']:
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin', 'train_self', 'bin_long']:
         import torch
         if args.engine == 'cpu':
             device = torch.device("cpu")
@@ -1124,7 +1180,7 @@ def main():
                 logger.info('Did not detect GPU, using CPU.')
 
     if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'generate_cannot_links', 'train', 'bin',
-                    'generate_sequence_features_single', 'generate_sequence_features_multi', 'train_self']:
+                    'generate_sequence_features_single', 'generate_sequence_features_multi', 'train_self', 'bin_long']:
         tmp_output = args.tmp_output
         if tmp_output is not None:
             os.environ['TMPDIR'] = tmp_output
@@ -1152,7 +1208,7 @@ def main():
                         bams_new.append(bam)
                 args.bams = bams_new
 
-        if args.cmd in ['generate_cannot_links', 'generate_sequence_features_single', 'bin','single_easy_bin']:
+        if args.cmd in ['generate_cannot_links', 'generate_sequence_features_single', 'bin','single_easy_bin', 'bin_long']:
             binned_short, must_link_threshold, contig_dict = process_fasta(args.contig_fasta, args.ratio)
             if args.min_len is None:
                 binned_length = 1000 if binned_short else 2500
@@ -1224,6 +1280,12 @@ def main():
                     contig_dict, args.recluster, args.model_path, args.random_seed,out, device,
                     args.environment, orf_finder=args.orf_finder, depth_metabat2=args.depth_metabat2)
 
+        if args.cmd == 'bin_long':
+            if args.random_seed is not None:
+                set_random_seed(args.random_seed)
+            binning_long(logger, args.num_process, args.data, args.minfasta_kb * 1000, binned_length,
+                    contig_dict, args.model_path, args.random_seed,out, device,
+                    args.environment, orf_finder=args.orf_finder, depth_metabat2=args.depth_metabat2)
 
         if args.cmd == 'single_easy_bin':
             check_install(False, args.orf_finder)

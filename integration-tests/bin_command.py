@@ -20,9 +20,23 @@ for ifile, odir in [
          '-o', odir,
          '-m', '2500',
          '--ratio', '0.05',
-         '-p', '1',])
+         '-p', '1'])
     assert len(os.listdir(f'{odir}/output_prerecluster_bins')) > 0
     assert len(os.listdir(f'{odir}/output_recluster_bins')) > 0
+
+    odir = f'test-outputs/{odir}_long'
+    subprocess.check_call(
+        ['SemiBin', 'bin_long',
+         '--data', 'test/bin_data/data.csv',
+         '--minfasta-kbs', '0',
+         '--model', 'test/bin_data/model.h5',
+         '-i', f'test/bin_data/{ifile}',
+         '-o', odir,
+         '-m', '2500',
+         '--ratio', '0.05',
+         '-p', '1'])
+    assert len(os.listdir(f'{odir}/output_bins')) > 0
+
 
 ifile = 'input.fasta'
 odir = 'test-outputs/no_recluster'
@@ -128,3 +142,15 @@ assert os.path.exists(f'{multi_self_output}/bins')
 for i in range(10):
     assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_prerecluster_bins')
     assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_recluster_bins')
+
+# Test binning with long-read
+single_self_output_long = 'test-outputs/single_output_self_long'
+subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_self_output_long} -b {single_sample_input}/input.sorted.bam --epoches 1 --training-type self --sequencing-type long', shell=True)
+assert os.path.exists(f'{single_self_output_long}/output_bins')
+
+multi_self_output_long = 'test-outputs/multi_output_self_long'
+subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_self_output_long} -b {multi_sample_input}/*.bam -s : --epoches 1 --training-type self --sequencing-type long',  shell=True)
+assert os.path.exists(f'{multi_self_output_long}/bins')
+for i in range(10):
+    assert os.path.exists(f'{multi_self_output_long}/samples/S{i+1}/output_prerecluster_bins')
+    assert os.path.exists(f'{multi_self_output_long}/samples/S{i+1}/output_recluster_bins')

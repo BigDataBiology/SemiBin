@@ -1,4 +1,4 @@
-from SemiBin.main import binning
+from SemiBin.main import binning, binning_long
 from SemiBin.fasta import fasta_iter
 import os
 import pytest
@@ -33,3 +33,19 @@ def test_bin():
 
     assert len(os.listdir('output_bin/output_prerecluster_bins')) > 0
     assert len(os.listdir('output_bin/output_recluster_bins')) > 0
+
+    os.makedirs('output_bin_long', exist_ok=True)
+    binning_long(num_process=1,
+            data='test/bin_data/data.csv',
+            minfasta=0,
+            logger=logger,
+            output='output_bin_long',
+            binned_length=1000,
+            device='cpu',
+            contig_dict=contig_dict,
+            model_path='test/bin_data/model.h5',
+            random_seed=None,
+            environment=None,
+            )
+
+    assert len(os.listdir('output_bin_long/output_bins')) > 0
