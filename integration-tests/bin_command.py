@@ -100,7 +100,7 @@ subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_mul
 assert os.path.exists(f'{multi_output_ref}/bins')
 for i in range(10):
     assert os.path.exists(f'{multi_output_ref}/samples/S{i+1}/output_prerecluster_bins')
-    assert os.path.exists(f'{multi_output_ref}/samples/S{i + 1}/output_recluster_bins')
+    assert os.path.exists(f'{multi_output_ref}/samples/S{i+1}/output_recluster_bins')
 
 
 # Test .cram format input
@@ -127,4 +127,4 @@ subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_mul
 assert os.path.exists(f'{multi_self_output}/bins')
 for i in range(10):
     assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_prerecluster_bins')
-    assert os.path.exists(f'{multi_self_output}/samples/S{i + 1}/output_recluster_bins')
+    assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_recluster_bins')
