@@ -17,6 +17,17 @@ subprocess.check_call(
      '-p', '1'])
 assert os.path.exists('test-outputs/output_train_fa/model.h5')
 
+subprocess.check_call(
+    ['SemiBin', 'train_self',
+     '--data', 'test/train_data/data.csv',
+     '--data-split', 'test/train_data/data_split.csv',
+     '--epoches', '1',
+     '--batch-size', '2048',
+     '--mode', 'single',
+     '-o', 'test-outputs/output_train_fa_self',
+     '-p', '1'])
+assert os.path.exists('test-outputs/output_train_fa_self/model.h5')
+
 ### train from several samples
 subprocess.check_call(
         ['SemiBin', 'train',
@@ -44,4 +55,21 @@ subprocess.check_call(
          '--ratio', '0.05',
          '-p', '1'])
 assert os.path.exists('test-outputs/output_train_several/model.h5')
+
+subprocess.check_call(
+        ['SemiBin', 'train_self',
+         '--data',
+             'test/train_data/data.csv',
+             'test/train_data/data.csv',
+             'test/train_data/data.csv',
+         '--data-split',
+             'test/train_data/data_split.csv',
+             'test/train_data/data_split.csv',
+             'test/train_data/data_split.csv',
+         '-o', 'test-outputs/output_train_several_self',
+         '--epoches', '1',
+         '--batch-size', '2048',
+         '--mode', 'several',
+         '-p', '1'])
+assert os.path.exists('test-outputs/output_train_several_self/model.h5')
 

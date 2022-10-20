@@ -32,11 +32,12 @@ def validate_normalize_args(logger, args):
         if args.num_process > multiprocessing.cpu_count():
             args.num_process = multiprocessing.cpu_count()
 
-    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin']:
-        if args.orf_finder not in ['prodigal', 'fraggenescan']:
-            sys.stderr.write(
-                f"Error: SemiBin only supports prodigal or fraggenescan as the ORF finder (--orf_finder option).\n")
-            sys.exit(1)
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin', 'train_self']:
+        if args.cmd != 'train_self':
+            if args.orf_finder not in ['prodigal', 'fraggenescan']:
+                sys.stderr.write(
+                    f"Error: SemiBin only supports prodigal or fraggenescan as the ORF finder (--orf_finder option).\n")
+                sys.exit(1)
         if args.engine not in ['auto', 'gpu', 'cpu']:
             sys.stderr.write(
                 f"Error: You need to specify the engine in auto/gpu/cpu.\n")
@@ -56,13 +57,8 @@ def validate_normalize_args(logger, args):
         expect_file(args.contig_fasta)
         expect_file_list(args.bams)
 
-    if args.cmd == 'train':
+    if args.cmd in ['train', 'train_self']:
         if args.mode == 'single':
-            if len(args.contig_fasta) > 1:
-                sys.stderr.write(
-                    f"Error: Expected one fasta file with single mode.\n")
-                sys.exit(1)
-
             if len(args.data) > 1:
                 sys.stderr.write(
                     f"Error: Expected one data.csv file with single mode.\n")
@@ -72,24 +68,33 @@ def validate_normalize_args(logger, args):
                 sys.stderr.write(
                     f"Error: Expected one data_split.csv file with single mode.\n")
                 sys.exit(1)
+            if args.cmd == 'train':
+                if len(args.contig_fasta) > 1:
+                    sys.stderr.write(
+                        f"Error: Expected one fasta file with single mode.\n")
+                    sys.exit(1)
 
-            if len(args.cannot_link) > 1:
-                sys.stderr.write(
-                    f"Error: Expected one cannot.txt file with single mode.\n")
-                sys.exit(1)
+                if len(args.cannot_link) > 1:
+                    sys.stderr.write(
+                        f"Error: Expected one cannot.txt file with single mode.\n")
+                    sys.exit(1)
+                expect_file(args.cannot_link[0])
+                expect_file(args.contig_fasta[0])
 
-            expect_file(args.contig_fasta[0])
             expect_file(args.data[0])
             expect_file(args.data_split[0])
-            expect_file(args.cannot_link[0])
 
         elif args.mode == 'several':
-            assert len(args.contig_fasta) == len(args.data) == len(args.data_split) == len(args.cannot_link), 'Must input same number of fasta, data, data_split, cannot files!'
+            if args.cmd == 'train':
+                assert len(args.contig_fasta) == len(args.data) == len(args.data_split) == len(args.cannot_link), 'Must input same number of fasta, data, data_split, cannot files!'
+                expect_file_list(args.cannot_link)
+            else:
+                assert len(args.contig_fasta) == len(args.data) == len(args.data_split) , 'Must input same number of fasta, data, data_split!'
 
             expect_file_list(args.contig_fasta)
             expect_file_list(args.data)
             expect_file_list(args.data_split)
-            expect_file_list(args.cannot_link)
+
 
         else:
             sys.stderr.write(
@@ -123,11 +128,21 @@ def validate_normalize_args(logger, args):
             # This triggers checking that the environment is valid
             get_model_path(args.environment)
 
+        if args.training_type not in ['semi', 'self']:
+            sys.stderr.write(
+                f"Error: You need to specify the training algorithm in semi/self.\n")
+            sys.exit(1)
+
     if args.cmd == 'multi_easy_bin':
         if args.GTDB_reference is not None:
             expect_file(args.GTDB_reference)
         expect_file(args.contig_fasta)
         expect_file_list(args.bams)
+
+        if args.training_type not in ['semi', 'self']:
+            sys.stderr.write(
+                f"Error: You need to specify the training algorithm in semi/self.\n")
+            sys.exit(1)
 
     if args.cmd == 'concatenate_fasta':
         expect_file_list(args.contig_fasta)

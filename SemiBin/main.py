@@ -104,6 +104,9 @@ def parse_args(args):
     training = subparsers.add_parser('train',
                                     help='Train the model.')
 
+    training_self = subparsers.add_parser('train_self',
+                                          help = 'Train the model with self-supervised learning')
+
     binning = subparsers.add_parser('bin',
                                     help='Group the contigs into bins.')
 
@@ -114,20 +117,52 @@ def parse_args(args):
                             action='store_true',
                             default=None)
 
-    training.add_argument('--data',
-                         required=True,
-                         nargs='*',
-                         help='Path to the input data.csv file.',
-                         dest='data',
-                         default=None,
-                         )
-    training.add_argument('--data-split',
-                         required=True,
-                         nargs='*',
-                         help='Path to the input data_split.csv file.',
-                         dest='data_split',
-                         default=None,
-                         )
+    for p in [single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi, check_install, concatenate_fasta, training, binning, training_self]:
+        p.add_argument('--verbose',
+                            required=False,
+                            help='Verbose output',
+                            dest='verbose',
+                            action='store_true', )
+
+    for p in [training, training_self]:
+        p.add_argument('--data',
+                             required=True,
+                             nargs='*',
+                             help='Path to the input data.csv file.',
+                             dest='data',
+                             default=None,
+                             )
+        p.add_argument('--data-split',
+                             required=True,
+                             nargs='*',
+                             help='Path to the input data_split.csv file.',
+                             dest='data_split',
+                             default=None,
+                             )
+
+        p.add_argument('--batch-size',
+                              required=False,
+                              type=int,
+                              help='Batch size used in the training process (Default: 2048).',
+                              dest='batchsize',
+                              default=2048, )
+
+        p.add_argument('--mode',
+                              required=True,
+                              type=str,
+                              help='[single/several] Train models from one (single) or more samples (several). '
+                                   'In `several` mode, you must provide data, data_split, cannot, and fasta files for corresponding samples in the same order. '
+                                   'Note: You can only use `several` mode when performing single-sample binning. Training from several samples with multi-sample binning is not supported.',
+                              dest='mode',
+                              default='single')
+
+        p.add_argument('-o', '--output',
+                              required=True,
+                              help='Output directory (will be created if non-existent)',
+                              dest='output',
+                              default=None,
+                              )
+
     training.add_argument('-c', '--cannot-link',
                          required=True,
                           nargs='*',
@@ -144,21 +179,12 @@ def parse_args(args):
                    dest='epoches',
                    default=20)
 
-    training.add_argument('--batch-size',
+    training_self.add_argument('--epoches',
                    required=False,
                    type=int,
-                   help='Batch size used in the training process (Default: 2048).',
-                   dest='batchsize',
-                   default=2048, )
-
-    training.add_argument('--mode',
-                          required=True,
-                          type=str,
-                          help='[single/several] Train models from one (single) or more samples (several). '
-                          'In `several` mode, you must provide data, data_split, cannot, and fasta files for corresponding samples in the same order. '
-                          'Note: You can only use `several` mode when performing single-sample binning. Training from several samples with multi-sample binning is not supported.',
-                          dest='mode',
-                          default='single')
+                   help='Number of epoches used in the training process (Default: 15).',
+                   dest='epoches',
+                   default=15)
 
     training.add_argument('-i', '--input-fasta',
                    required=True,
@@ -166,13 +192,6 @@ def parse_args(args):
                    help='Path to the input fasta file.',
                    dest='contig_fasta',
                    default=None, )
-
-    training.add_argument('-o', '--output',
-                   required=True,
-                   help='Output directory (will be created if non-existent)',
-                   dest='output',
-                   default=None,
-                   )
 
     binning.add_argument('--data',
                          required=True,
@@ -217,16 +236,16 @@ def parse_args(args):
                        default=None,
                        )
 
-    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, training, binning, generate_sequence_features_single, generate_sequence_features_multi]:
+    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, training, binning, generate_sequence_features_single, generate_sequence_features_multi, training_self]:
         p.add_argument('--tmpdir',
                        required=False,
                        type=str,
                        help='option to set temporary directory',
                        dest='tmp_output',
                        default=None,
-    )
+                       )
 
-    for p in [training, generate_cannot_links, binning, single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi]:
+    for p in [training, generate_cannot_links, binning, single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi, training_self]:
         p.add_argument('-p', '--processes', '-t', '--threads',
                    required=False,
                    type=int,
@@ -348,7 +367,7 @@ def parse_args(args):
                           type=int,
                           help='Number of epoches used in the training process (Default: 20).',
                           dest='epoches',
-                          default=20)
+                          default=15)
 
         p.add_argument('--batch-size',
                           required=False,
@@ -380,7 +399,7 @@ def parse_args(args):
                            default=':',
                            metavar='')
 
-    for p in [training, binning, single_easy_bin, multi_easy_bin]:
+    for p in [training, binning, single_easy_bin, multi_easy_bin, training_self]:
         p.add_argument('--random-seed',
                        required=False,
                        type=int,
@@ -397,7 +416,7 @@ def parse_args(args):
                        dest='ml_threshold',
                        default=None)
 
-    for p in [single_easy_bin, multi_easy_bin, training, binning]:
+    for p in [single_easy_bin, multi_easy_bin, training, binning, training_self]:
         p.add_argument('--engine',
                        required=False,
                        type=str,
@@ -405,6 +424,13 @@ def parse_args(args):
                        dest='engine',
                        default='auto')
 
+    for p in [single_easy_bin, multi_easy_bin]:
+        p.add_argument('--training-type',
+                       required=True,
+                       type=str,
+                       help='training algorithm used to train the model (semi/self)',
+                       dest='training_type',
+                       default='semi')
 
     if not args:
         parser.print_help(sys.stderr)
@@ -776,23 +802,19 @@ def generate_sequence_features_multi(logger, contig_fasta,
 
 def training(logger, contig_fasta, num_process,
              data, data_split, cannot_link, batchsize,
-             epoches,  output, device, ratio, min_length, mode, orf_finder = 'prodigal'):
+             epoches,  output, device, ratio, min_length, mode, orf_finder = None, training_mode = 'semi'):
     """
     Training the model
 
     model: [single/several]
     """
     from .semi_supervised_model import train
+    from .self_supervised_model import train_self
     import pandas as pd
     binned_lengths = []
 
     if mode == 'single':
         logger.info('Start training from one sample.')
-        if min_length is None:
-            binned_short, _, _ = process_fasta(contig_fasta[0], ratio)
-            binned_lengths.append(1000) if binned_short else binned_lengths.append(2500)
-        else:
-            binned_lengths.append(min_length)
         data_ = pd.read_csv(data[0], index_col=0)
         col_name = data_.columns.tolist()[-1].split('_')[-1]
         is_combined = False if col_name == 'var' else True
@@ -800,39 +822,59 @@ def training(logger, contig_fasta, num_process,
     else:
         logger.info('Start training from multiple samples.')
         is_combined = False
-        for contig_index in contig_fasta:
+
+    if training_mode == 'semi':
+        contig_fasta_unzip = []
+        for fasta_index,temp_fasta in enumerate(contig_fasta):
+            if temp_fasta.endswith('.gz') or temp_fasta.endswith('.bz2') or temp_fasta.endswith('.xz'):
+                temp_fasta_unzip = os.path.join(output, 'unzip_contig_{}.fa'.format(fasta_index))
+                with open(temp_fasta_unzip, 'wt') as out:
+                    for h,seq in fasta_iter(temp_fasta):
+                            out.write(f'>{h}\n{seq}\n')
+                contig_fasta_unzip.append(temp_fasta_unzip)
+            else:
+                contig_fasta_unzip.append(temp_fasta)
+
+        if mode == 'single':
             if min_length is None:
-                binned_short, _, _ = process_fasta(contig_index, ratio)
+                binned_short, _, _ = process_fasta(contig_fasta[0], ratio)
                 binned_lengths.append(1000) if binned_short else binned_lengths.append(2500)
             else:
                 binned_lengths.append(min_length)
-
-    contig_fasta_unzip = []
-    for fasta_index,temp_fasta in enumerate(contig_fasta):
-        if temp_fasta.endswith('.gz') or temp_fasta.endswith('.bz2') or temp_fasta.endswith('.xz'):
-            temp_fasta_unzip = os.path.join(output, 'unzip_contig_{}.fa'.format(fasta_index))
-            with open(temp_fasta_unzip, 'wt') as out:
-                for h,seq in fasta_iter(temp_fasta):
-                        out.write(f'>{h}\n{seq}\n')
-            contig_fasta_unzip.append(temp_fasta_unzip)
         else:
-            contig_fasta_unzip.append(temp_fasta)
+            for contig_index in contig_fasta:
+                if min_length is None:
+                    binned_short, _, _ = process_fasta(contig_index, ratio)
+                    binned_lengths.append(1000) if binned_short else binned_lengths.append(2500)
+                else:
+                    binned_lengths.append(min_length)
 
-    model = train(
-        output,
-        contig_fasta_unzip,
-        binned_lengths,
-        logger,
-        data,
-        data_split,
-        cannot_link,
-        is_combined,
-        batchsize,
-        epoches,
-        device,
-        num_process,
-        mode = mode,
-        orf_finder=orf_finder)
+        model = train(
+            output,
+            contig_fasta_unzip,
+            binned_lengths,
+            logger,
+            data,
+            data_split,
+            cannot_link,
+            is_combined,
+            batchsize,
+            epoches,
+            device,
+            num_process,
+            mode = mode,
+            orf_finder=orf_finder)
+    else:
+        model = train_self(output,
+                           logger,
+                           data,
+                           data_split,
+                           is_combined,
+                           batchsize,
+                           epoches,
+                           device,
+                           num_process,
+                           mode)
 
 
 def binning(logger, num_process, data,
@@ -903,7 +945,7 @@ def binning(logger, num_process, data,
 
 def single_easy_binning(args, logger, binned_length,
                         must_link_threshold,
-                        contig_dict, recluster,random_seed, output, device, environment, orf_finder = 'prodigal', depth_metabat2 = None):
+                        contig_dict, recluster,random_seed, output, device, environment, orf_finder = 'prodigal', depth_metabat2 = None, training_type = 'semi'):
     """
     contain `generate_cannot_links`, `generate_sequence_features_single`, `train`, `bin` in one command for single-sample and co-assembly binning
     """
@@ -936,22 +978,27 @@ def single_easy_binning(args, logger, binned_length,
         data_split_path = os.path.join(output, 'data_split.csv')
 
     if environment is None:
-        logger.info('Running mmseqs and generate cannot-link file.')
-        predict_taxonomy(
-            logger,
-            args.contig_fasta,
-            args.cannot_name,
-            None if args.taxonomy_results_fname is None else args.taxonomy_results_fname[0],
-            args.GTDB_reference,
-            args.num_process,
-            binned_length,
-            must_link_threshold,
-            output)
-        logger.info('Training model and clustering.')
-        training(logger, [args.contig_fasta],
-                 args.num_process, [data_path], [data_split_path],
-                 [os.path.join(output, 'cannot', 'cannot.txt')],
-                 args.batchsize, args.epoches, output, device, args.ratio, args.min_len,  mode='single', orf_finder=orf_finder)
+        if training_type == 'semi':
+            logger.info('Running mmseqs and generate cannot-link file.')
+            predict_taxonomy(
+                logger,
+                args.contig_fasta,
+                args.cannot_name,
+                None if args.taxonomy_results_fname is None else args.taxonomy_results_fname[0],
+                args.GTDB_reference,
+                args.num_process,
+                binned_length,
+                must_link_threshold,
+                output)
+            logger.info('Training model and clustering.')
+            training(logger, [args.contig_fasta],
+                     args.num_process, [data_path], [data_split_path],
+                     [os.path.join(output, 'cannot', 'cannot.txt')],
+                     args.batchsize, args.epoches, output, device, args.ratio, args.min_len,  mode='single', orf_finder=orf_finder, training_mode='semi')
+        else:
+            training(logger, None,
+                     args.num_process, [data_path], [data_split_path],
+                     None, args.batchsize, args.epoches, output, device, None, None,  mode='single', orf_finder=None, training_mode='self')
 
     binning(logger, args.num_process, data_path,
             args.max_edges, args.max_node, args.minfasta_kb * 1000,
@@ -961,7 +1008,7 @@ def single_easy_binning(args, logger, binned_length,
 
 
 def multi_easy_binning(args, logger, recluster,
-                       random_seed, output, device, orf_finder='prodigal'):
+                       random_seed, output, device, orf_finder='prodigal', training_type = 'semi'):
     """
     contain `generate_cannot_links`, `generate_sequence_features_multi`, `train`, `bin` in one command for multi-sample binning
     """
@@ -996,24 +1043,30 @@ def multi_easy_binning(args, logger, recluster,
             binned_length = args.min_len
         if args.ml_threshold is not None:
             must_link_threshold = args.ml_threshold
-        predict_taxonomy(
-            logger,
-            sample_fasta,
-            sample,
-            None if args.taxonomy_results_fname is None else args.taxonomy_results_fname[sample_index],
-            args.GTDB_reference,
-            args.num_process,
-            binned_length,
-            must_link_threshold,
-            os.path.join(output, 'samples', sample))
-
-        sample_cannot = os.path.join(
-            output, 'samples', sample, 'cannot/{}.txt'.format(sample))
         logger.info('Training model and clustering for {}.'.format(sample))
-        training(logger, [sample_fasta], args.num_process,
-                 [sample_data], [sample_data_split], [sample_cannot],
-                 args.batchsize, args.epoches, os.path.join(output, 'samples', sample),
-                 device, args.ratio, args.min_len, mode='single', orf_finder=orf_finder)
+        if training_type == 'semi':
+            predict_taxonomy(
+                logger,
+                sample_fasta,
+                sample,
+                None if args.taxonomy_results_fname is None else args.taxonomy_results_fname[sample_index],
+                args.GTDB_reference,
+                args.num_process,
+                binned_length,
+                must_link_threshold,
+                os.path.join(output, 'samples', sample))
+
+            sample_cannot = os.path.join(
+                output, 'samples', sample, 'cannot/{}.txt'.format(sample))
+            training(logger, [sample_fasta], args.num_process,
+                     [sample_data], [sample_data_split], [sample_cannot],
+                     args.batchsize, args.epoches, os.path.join(output, 'samples', sample),
+                     device, args.ratio, args.min_len, mode='single', orf_finder=orf_finder, training_mode='semi')
+        else:
+            training(logger, None, args.num_process,
+                     [sample_data], [sample_data_split], None,
+                     args.batchsize, args.epoches, os.path.join(output, 'samples', sample),
+                     device, None, None, mode='single', orf_finder=None, training_mode='self')
 
         binning(logger, args.num_process, sample_data,
                 args.max_edges, args.max_node, args.minfasta_kb * 1000,
@@ -1056,7 +1109,7 @@ def main():
         out = args.output
         os.makedirs(out, exist_ok=True)
 
-    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin']:
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin', 'train_self']:
         import torch
         if args.engine == 'cpu':
             device = torch.device("cpu")
@@ -1071,7 +1124,7 @@ def main():
                 logger.info('Did not detect GPU, using CPU.')
 
     if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'generate_cannot_links', 'train', 'bin',
-                    'generate_sequence_features_single', 'generate_sequence_features_multi']:
+                    'generate_sequence_features_single', 'generate_sequence_features_multi', 'train_self']:
         tmp_output = args.tmp_output
         if tmp_output is not None:
             os.environ['TMPDIR'] = tmp_output
@@ -1153,7 +1206,14 @@ def main():
                 set_random_seed(args.random_seed)
             training(logger, args.contig_fasta, args.num_process,
                      args.data, args.data_split, args.cannot_link,
-                     args.batchsize, args.epoches, out, device, args.ratio, args.min_len, args.mode, orf_finder=args.orf_finder)
+                     args.batchsize, args.epoches, out, device, args.ratio, args.min_len, args.mode, orf_finder=args.orf_finder, training_mode='semi')
+
+        if args.cmd == 'train_self':
+            if args.random_seed is not None:
+                set_random_seed(args.random_seed)
+            training(logger, None, args.num_process,
+                     args.data, args.data_split, None,
+                     args.batchsize, args.epoches, out, device, None, None, args.mode, None, training_mode='self')
 
 
         if args.cmd == 'bin':
@@ -1187,7 +1247,8 @@ def main():
                 device,
                 args.environment,
                 orf_finder=args.orf_finder,
-                depth_metabat2=args.depth_metabat2)
+                depth_metabat2=args.depth_metabat2,
+                training_type=args.training_type)
 
         if args.cmd == 'multi_easy_bin':
             check_install(False, args.orf_finder)
@@ -1200,7 +1261,8 @@ def main():
                 args.random_seed,
                 out,
                 device,
-                orf_finder=args.orf_finder)
+                orf_finder=args.orf_finder,
+                training_type=args.training_type)
 
         if args.cmd == 'concatenate_fasta':
             from .utils import concatenate_fasta
