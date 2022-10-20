@@ -88,10 +88,10 @@ def validate_normalize_args(logger, args):
             if args.cmd == 'train':
                 assert len(args.contig_fasta) == len(args.data) == len(args.data_split) == len(args.cannot_link), 'Must input same number of fasta, data, data_split, cannot files!'
                 expect_file_list(args.cannot_link)
+                expect_file_list(args.contig_fasta)
             else:
-                assert len(args.contig_fasta) == len(args.data) == len(args.data_split) , 'Must input same number of fasta, data, data_split!'
+                assert len(args.data) == len(args.data_split) , 'Must input same number of data, data_split!'
 
-            expect_file_list(args.contig_fasta)
             expect_file_list(args.data)
             expect_file_list(args.data_split)
 
