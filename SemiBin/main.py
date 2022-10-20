@@ -1132,7 +1132,10 @@ def multi_easy_binning(args, logger, recluster,
 
     os.makedirs(os.path.join(output, 'bins'), exist_ok=True)
     for sample in sample_list:
-        bin_dir_name = 'output_recluster_bins' if recluster else 'output_bins'
+        if sequencing_type == 'short_read':
+            bin_dir_name = 'output_recluster_bins' if recluster else 'output_prerecluster_bins'
+        else:
+            bin_dir_name = 'output_bins'
         for bf in os.listdir(os.path.join(output, 'samples', sample, bin_dir_name)):
             original_path = os.path.join(output, 'samples', sample, bin_dir_name, bf)
             new_file = '{0}_{1}'.format(sample, bf)
