@@ -92,25 +92,25 @@ multi_output_ref = 'test-outputs/multi_output_with_ref'
 subprocess.check_call(f'SemiBin generate_cannot_links -i {single_sample_input}/input.fasta -o {single_cannot_output} --taxonomy-annotation-table {single_sample_input}/taxonomyResult.tsv', shell=True)
 assert os.path.exists(f'{single_cannot_output}/cannot/cannot.txt')
 
-subprocess.check_call(f'SemiBin generate_cannot_links -i {single_sample_input}/input.fasta -o {single_cannot_ref_output} -r{single_sample_input}/reference_genome', shell=True)
+subprocess.check_call(f'SemiBin generate_cannot_links -i {single_sample_input}/input.fasta -o {single_cannot_ref_output} -r{single_sample_input}/reference_genome ', shell=True)
 assert os.path.exists(f'{single_cannot_ref_output}/cannot/cannot.txt')
 
-subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_output} -b {single_sample_input}/input.sorted.bam --taxonomy-annotation-table {single_sample_input}/taxonomyResult.tsv --epoches 1 --training-type semi', shell=True)
+subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_output} -b {single_sample_input}/input.sorted.bam --taxonomy-annotation-table {single_sample_input}/taxonomyResult.tsv --epoches 1 --training-type semi --sequencing-type short_read', shell=True)
 assert os.path.exists(f'{single_output}/output_prerecluster_bins')
 assert os.path.exists(f'{single_output}/output_recluster_bins')
 
-subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_output_ref} -b {single_sample_input}/input.sorted.bam -r {single_sample_input}/reference_genome --epoches 1 --training-type semi', shell=True)
+subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_output_ref} -b {single_sample_input}/input.sorted.bam -r {single_sample_input}/reference_genome --epoches 1 --training-type semi --sequencing-type short_read', shell=True)
 assert os.path.exists(f'{single_output_ref}/output_prerecluster_bins')
 assert os.path.exists(f'{single_output_ref}/output_recluster_bins')
 
-subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_output} -b {multi_sample_input}/*.bam --taxonomy-annotation-table {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv -s : --epoches 1 --training-type semi',  shell=True)
+subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_output} -b {multi_sample_input}/*.bam --taxonomy-annotation-table {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv {single_sample_input}/taxonomyResult.tsv -s : --epoches 1 --training-type semi --sequencing-type short_read',  shell=True)
 assert os.path.exists(f'{multi_output}/bins')
 for i in range(10):
     assert os.path.exists(f'{multi_output}/samples/S{i+1}/output_prerecluster_bins')
     assert os.path.exists(f'{multi_output}/samples/S{i + 1}/output_recluster_bins')
 
 
-subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_output_ref} -b {multi_sample_input}/*.bam -r {single_sample_input}/reference_genome -s : --epoches 1 --training-type semi',  shell=True)
+subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_output_ref} -b {multi_sample_input}/*.bam -r {single_sample_input}/reference_genome -s : --epoches 1 --training-type semi --sequencing-type short_read',  shell=True)
 assert os.path.exists(f'{multi_output_ref}/bins')
 for i in range(10):
     assert os.path.exists(f'{multi_output_ref}/samples/S{i+1}/output_prerecluster_bins')
@@ -119,12 +119,12 @@ for i in range(10):
 
 # Test .cram format input
 single_cram_output = 'test-outputs/single_output_cram'
-subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_cram_output} -b {single_sample_input}/input.cram --environment human_gut --training-type semi', shell=True)
+subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_cram_output} -b {single_sample_input}/input.cram --environment human_gut --training-type semi --sequencing-type short_read', shell=True)
 assert os.path.exists(f'{single_cram_output}/output_prerecluster_bins')
 assert os.path.exists(f'{single_cram_output}/output_recluster_bins')
 
 multi_output_cram = 'test-outputs/multi_output_cram'
-subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_output_cram} -b {multi_sample_input}/*.cram -r {single_sample_input}/reference_genome -s : --epoches 1 --training-type semi',  shell=True)
+subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_output_cram} -b {multi_sample_input}/*.cram -r {single_sample_input}/reference_genome -s : --epoches 1 --training-type semi --sequencing-type short_read',  shell=True)
 assert os.path.exists(f'{multi_output_cram}/bins')
 for i in range(10):
     assert os.path.exists(f'{multi_output_cram}/samples/S{i+1}/output_prerecluster_bins')
@@ -132,12 +132,12 @@ for i in range(10):
 
 # Test training with self-supervised learning
 single_self_output = 'test-outputs/single_output_self'
-subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_self_output} -b {single_sample_input}/input.sorted.bam --epoches 1 --training-type self', shell=True)
+subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_self_output} -b {single_sample_input}/input.sorted.bam --epoches 1 --training-type self --sequencing-type short_read', shell=True)
 assert os.path.exists(f'{single_self_output}/output_prerecluster_bins')
 assert os.path.exists(f'{single_self_output}/output_recluster_bins')
 
 multi_self_output = 'test-outputs/multi_output_self'
-subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_self_output} -b {multi_sample_input}/*.bam -s : --epoches 1 --training-type self',  shell=True)
+subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_self_output} -b {multi_sample_input}/*.bam -s : --epoches 1 --training-type self --sequencing-type short_read',  shell=True)
 assert os.path.exists(f'{multi_self_output}/bins')
 for i in range(10):
     assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_prerecluster_bins')
@@ -145,11 +145,11 @@ for i in range(10):
 
 # Test binning with long-read
 single_self_output_long = 'test-outputs/single_output_self_long'
-subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_self_output_long} -b {single_sample_input}/input.sorted.bam --epoches 1 --training-type self --sequencing-type long', shell=True)
+subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_self_output_long} -b {single_sample_input}/input.sorted.bam --epoches 1 --training-type self --sequencing-type long_read', shell=True)
 assert os.path.exists(f'{single_self_output_long}/output_bins')
 
 multi_self_output_long = 'test-outputs/multi_output_self_long'
-subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_self_output_long} -b {multi_sample_input}/*.bam -s : --epoches 1 --training-type self --sequencing-type long',  shell=True)
+subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_self_output_long} -b {multi_sample_input}/*.bam -s : --epoches 1 --training-type self --sequencing-type long_read',  shell=True)
 assert os.path.exists(f'{multi_self_output_long}/bins')
 for i in range(10):
     assert os.path.exists(f'{multi_self_output_long}/samples/S{i+1}/output_prerecluster_bins')
