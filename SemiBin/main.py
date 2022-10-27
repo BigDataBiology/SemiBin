@@ -137,19 +137,6 @@ def parse_args(args):
                          dest='cannot_link',
                          default=None)
 
-    training.add_argument('--epoches',
-                   required=False,
-                   type=int,
-                   help='Number of epoches used in the training process (Default: 20).',
-                   dest='epoches',
-                   default=20)
-
-    training.add_argument('--batch-size',
-                   required=False,
-                   type=int,
-                   help='Batch size used in the training process (Default: 2048).',
-                   dest='batchsize',
-                   default=2048, )
 
     training.add_argument('--mode',
                           required=True,
@@ -341,22 +328,24 @@ def parse_args(args):
                            help='[Deprecated] Does nothing (current default is to perform clustering)',
                            dest='recluster',
                            action='store_true', )
-    for p in [single_easy_bin, multi_easy_bin]:
+    for p in [training, single_easy_bin, multi_easy_bin]:
 
-        p.add_argument('--epoches',
-                          required=False,
-                          type=int,
-                          help='Number of epoches used in the training process (Default: 20).',
-                          dest='epoches',
-                          default=20)
+        p.add_argument('--epochs', '--epoches', # epoches is kept for backwards compatibilty
+                       required=False,
+                       type=int,
+                       help='Number of epochs used in the training process (Default: 20).',
+                       dest='epoches',
+                       default=20)
 
         p.add_argument('--batch-size',
-                          required=False,
-                          type=int,
-                          help='Batch size used in the training process (Default: 2048).',
-                          dest='batchsize',
-                          default=2048,)
+                       required=False,
+                       type=int,
+                       help='Batch size used in the training process (Default: 2048).',
+                       dest='batchsize',
+                       default=2048)
 
+
+    for p in [single_easy_bin, multi_easy_bin]:
         p.add_argument('--max-edges',
                           required=False,
                           type=int,

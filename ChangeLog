@@ -1,5 +1,7 @@
 Unreleased
 	* Fix output table to contain correct paths
+	* Accept `--epochs` as argument in the command line (previously it was
+	spelled `--epoches`
 
 Version 1.2.0 Oct 19 2022 by BigDataBiology
 	* Pretrained model from chicken caecum
