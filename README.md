@@ -21,17 +21,6 @@ If you use this software in a publication please cite:
 >  https://doi.org/10.1038/s41467-022-29843-y
 
 
-
-## Note
-
-We released a self-supervised version of SemiBin that did not need the annotation results from MMseqs2 and even got better binning results. In our real environment benchmark with multi-sample binning, SemiBin with self-supervised learning can 8.3% - 21.5% more high-quality bins compared to the original version, only needing about 25% running time and 11% peak memory usage.
-
-You can run this version with:
-
-```bash
-SemiBin train_self --data data.csv --data-split data_split.csv -o output --mode single
-```
-
 ## Basic usage of SemiBin
 
 A tutorial of running SemiBin from scrath can be found here [SemiBin tutorial](https://github.com/BigDataBiology/SemiBin_tutorial_from_scratch).
@@ -111,6 +100,13 @@ python setup.py install
 SemiBin runs on single-sample, co-assembly and multi-sample binning.
 Here we show the simple modes as an example.
 For the details and examples of every SemiBin subcommand, please [read the docs](https://semibin.readthedocs.io/en/latest/usage/).
+
+## Self-supervised mode
+
+Since version 1.3, SemiBin supports completely self-supervised learning, which bypasses the need to annotate contigs with MMSeqs2.
+In benchmarks, self-supervised learning is both faster (4x faster; using only 11% of RAM at peak) and generates 8.3-21.5% more high-quality bins compared to the version tested in the [manuscript](https://www.nature.com/articles/s41467-022-29843-y)
+To use it, pass the option `--training-mode=self` to the `single_easy_bin` or `multi_easy_bin` subcommands.
+
 
 ## Easy single/co-assembly binning mode
 
