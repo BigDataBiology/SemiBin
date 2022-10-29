@@ -1,11 +1,44 @@
 # Usage examples
 
+## Binning modes
+
+SemiBin supports three different binning modes, with different tradeoffs.
+
+### Single sample binning
+
+Single sample binning means that each sample is assembled and binned independently.
+
+This mode allows for parallel binning of samples and avoids cross-sample chimeras, but it does not use co-abundance information across samples.
+
+Using a prebuilt model means that SemiBin can return results in a few minutes.
+
+### Co-assembly binning
+
+Co-assembly binning means samples are co-assembled first (as if the pool of samples were a single sample) and then bins are constructed from this pool of co-assembled contigs.
+
+This mode can potentially generate better contigs (especially from species that are at a low abundance in any individual sample) and uses co-abundance information which can lead to better bins.
+On the other hand, co-assembly can lead to inter-sample chimeric contigs and binning based on co-assembly does not retain sample-specific variation.
+
+It is most appropriate when the samples are very similar and can be expected to contain overlapping sets of organisms (_e.g._, a time-series from the same habitat).
+
+### Multi-sample binning
+
+With multi-sample binning, multiple samples are assembled and binned individually, but _information from multiple samples is used together_.
+This mode can use co-abundance information and retain sample-specific variation at the same time.
+As we document in the [SemiBin manuscript](https://www.nature.com/articles/s41467-022-29843-y), this mode often returns the highest-number of bins (particularly for complex environments, such as soil).
+
+However, it has increased computational costs.
+In particular, prebuilt models cannot be used.
+
+This mode is implemented by concatenating the contigs assembled from the individual samples together and then mapping reads from each sample to this concatenated database.
+Concatenating the inputs can be done with the `concatenate_fasta` subcommand.
+
+
 ## Single-sample binning
 
 Inputs required: `S1.fa` (contig file in FASTA format) and `S1.sorted.bam` (short reads mapped to the contigs, sorted).
 
-[[How to generate inputs to SemiBin.](../generate)]
-
+[[How to generate inputs to SemiBin](../generate)]
 
 ### Easy single binning mode
 

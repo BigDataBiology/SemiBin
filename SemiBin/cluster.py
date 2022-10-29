@@ -233,6 +233,8 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                 orf_finder=orf_finder)
 
         outputs = []
+        # The code below (iat call) relies on this
+        assert bin_files.columns[0] == 'filename'
         for ix,bin_path in enumerate(bin_files['filename'].values):
             # if there are no hits, the output will be naturally empty
             seed = seeds.get(f'bin{ix:06}', [])
@@ -258,8 +260,10 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                            recluster=True, origin_label=int(bin_path.split('.')[-2]),minfasta = minfasta)
                 outputs.append(part)
             else:
-                shutil.copy(bin_path, os.path.join(out, 'output_recluster_bins'))
+                ofname = shutil.copy(bin_path, os.path.join(out, 'output_recluster_bins'))
+                bin_files.iat[ix, 0] = ofname
                 outputs.append(bin_files[ix:ix+1])
+
         outputs = pd.concat(outputs)
         logger.info(f'Number of bins after reclustering: {len(outputs)}')
         outputs.to_csv(os.path.join(out, 'recluster_bins_info.tsv'), index=False, sep='\t')

@@ -52,6 +52,6 @@ python setup.py install
 If you use one of these pipelines, we ask that you cite both the pipeline author and the [SemiBin manuscript](https://www.nature.com/articles/s41467-022-29843-y) (as well as any other pipeline-embedded tools which contribute to your results).
 
 - [ATLAS](https://metagenome-atlas.github.io/) is a Snakemake-based pipeline for metagenomics, which includes SemiBin (as well as other binners and tools).
-
+- [Galaxy toolshed](https://toolshed.g2.bx.psu.edu/view/iuc/suite_semibin/) also includes a [SemiBin wrapper](https://toolshed.g2.bx.psu.edu/view/iuc/suite_semibin/)
 
 
