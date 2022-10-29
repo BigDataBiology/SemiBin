@@ -20,6 +20,18 @@ If you use this software in a publication please cite:
 >  environments. *Nat Commun* **13,** 2326 (2022).
 >  https://doi.org/10.1038/s41467-022-29843-y
 
+
+
+## Note
+
+We released a self-supervised version of SemiBin that did not need the annotation results from MMseqs2 and even got better binning results. In our real environment benchmark with multi-sample binning, SemiBin with self-supervised learning can 8.3% - 21.5% more high-quality bins compared to the original version, only needing about 25% running time and 11% peak memory usage.
+
+You can run this version with:
+
+```bash
+SemiBin train_self --data data.csv --data-split data_split.csv -o output --mode single
+```
+
 ## Basic usage of SemiBin
 
 A tutorial of running SemiBin from scrath can be found here [SemiBin tutorial](https://github.com/BigDataBiology/SemiBin_tutorial_from_scratch).
