@@ -28,6 +28,26 @@ def test_train():
             mode = 'single',
             ratio=0.05,
             min_length=None,
+            training_mode = 'semi'
             )
 
     assert os.path.exists('output_train/model.h5')
+
+    os.makedirs('output_train_self',exist_ok=True)
+    training(contig_fasta = ['test/train_data/input.fasta'],
+            num_process = 1,
+            data = ['test/train_data/data.csv'],
+            data_split = ['test/train_data/data_split.csv'],
+            cannot_link = ['test/train_data/cannot.txt'],
+            batchsize = 2048,
+            epoches = 1,
+            logger = logger,
+            output = 'output_train_self',
+            device = 'cpu',
+            mode = 'single',
+            ratio=0.05,
+            min_length=None,
+            training_mode = 'self'
+            )
+
+    assert os.path.exists('output_train_self/model.h5')
