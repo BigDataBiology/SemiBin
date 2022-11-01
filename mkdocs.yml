@@ -16,5 +16,6 @@ nav:
         - 'Output': output.md
         - "Subcommand reference": subcommands.md
         - "What's New": whatsnew.md
+        - "Training SemiBin models": training.md
         - "FAQ": faq.md
 

@@ -67,9 +67,10 @@ Supported habitats are (names should be self-explanatory, except `global` which 
 8.  `pig_gut`
 9.  `built_environment`
 10. `wastewater`
-11. `global`
+11. `chicken_caecum`
+12. `global`
 
-[Figure 5 in the manuscript](https://www.nature.com/articles/s41467-022-29843-y#Fig5) shows details of how well each habitat-specific model performs.
+[Figure 5 in the manuscript](https://www.nature.com/articles/s41467-022-29843-y#Fig5) shows details of how well each habitat-specific model performs (except for the `chicken_caecum` model which was contributed after publication by [Florian Plaza Oñate](https://scholar.google.com/citations?user=-gE5y_4AAAAJ) and is available since version 1.2).
 
 **2. Learn a new model.** Alternatively, you can learn a new model for your data.
 The main disadvantage is that this approach will take a lot more time and use a lot more memory.
@@ -84,7 +85,7 @@ SemiBin single_easy_bin \
 
 The [Supplemental Tables 5 & 6 in the SemiBin manuscript](https://www.nature.com/articles/s41467-022-29843-y#MOESM1) contain a lot more information with respect to the computational trade-offs.
 
-If you have a lot of samples that are similar to each other while not fitting into any of our builtin trained models, you can also build your own model from a subset of them (scroll down to the "SemiBin(pretrained)" Section).
+If you have a lot of samples that are similar to each other while not fitting into any of our builtin trained models, you can also build your own model from a subset of them (see [[training a SemiBin model](training)])
 
 ### Advanced single-sample binning workflows
 
