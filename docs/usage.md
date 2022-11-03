@@ -72,7 +72,7 @@ Supported habitats are (names should be self-explanatory, except `global` which 
 
 [Figure 5 in the manuscript](https://www.nature.com/articles/s41467-022-29843-y#Fig5) shows details of how well each habitat-specific model performs (except for the `chicken_caecum` model which was contributed after publication by [Florian Plaza Oñate](https://scholar.google.com/citations?user=-gE5y_4AAAAJ) and is available since version 1.2).
 
-**2. Learn a new model.** Alternatively, you can learn a new model for your data.
+**2a. Learn a new model (semi-supervised mode).** Alternatively, you can learn a new model for your data.
 The main disadvantage is that this approach will take a lot more time and use a lot more memory.
 While using a pre-trained model should take a few minutes and use 4-6GB of RAM, training a new model may take several hours and use 40GB of RAM.
 
@@ -86,6 +86,22 @@ SemiBin single_easy_bin \
 The [Supplemental Tables 5 & 6 in the SemiBin manuscript](https://www.nature.com/articles/s41467-022-29843-y#MOESM1) contain a lot more information with respect to the computational trade-offs.
 
 If you have a lot of samples that are similar to each other while not fitting into any of our builtin trained models, you can also build your own model from a subset of them (see [[training a SemiBin model](training)])
+
+
+**2b. Learn a new model (self-supervised mode).** starting in version 1.3, SemiBin also supports a self-supervised mode, which is faster and appears to produce better results.
+At the moment (November 2022), a manuscript describing this mode is being prepared, but you can already run it by using the following command:
+
+```bash
+SemiBin single_easy_bin \
+        --training-type self \
+        -i S1.fa \
+        -b S1.sorted.bam \
+        -o output
+```
+
+We expect to release SemiBin2 in early 2023 and self-supervised mode will become the default.
+In the meanwhile, we appreciate [feedback](mailto:luispedro@big-data-biology.org) or [bug reports](https://github.com/BigDataBiology/SemiBin/issues).
+
 
 ### Advanced single-sample binning workflows
 
