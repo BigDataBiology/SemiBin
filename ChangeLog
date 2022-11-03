@@ -1,4 +1,5 @@
-Unreleased
+Version 1.3.0 by BigDataBiology
+	* Add self-supervised learning
 	* Fix output table to contain correct paths
 	* Accept `--epochs` as argument in the command line (previously it was
 	spelled `--epoches`

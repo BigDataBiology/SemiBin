@@ -1,5 +1,18 @@
 # What's New
 
+## Version 1.3.0
+
+*Released November 4 2022*
+
+### User visible improvements
+
+- Added _self-supervised learning mode_ (see [[Training SemiBin models](training)] for more details)
+
+### Bugfixes
+
+- Fix output table to contain correct paths
+- Fix mispelling in argument name `--epochs` (the old variation, `--epoches` is still accepted for backwards compatibility, but should be considered deprecated)
+
 ## Version 1.2.0
 
 *Released October 19 2022*
