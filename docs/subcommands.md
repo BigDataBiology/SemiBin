@@ -59,7 +59,7 @@ If you find that changing these significantly improves the results of binning, w
 
 * `--minfasta-kbs`: minimum bin size in kilo-basepairs (Default: 200).
 * `--no-recluster` : Do not recluster bins. This saves a small amount of time, but pre-reclustering bins are always output.
-* `--epoches`: Number of epoches used in the training process (Default: 15).
+* `--epochs`: Number of epochs used in the training process (Default: 15).
 * `--batch-size`: Batch size used in the training process (Default: 2048).
 * `--max-node`: Percentage of contigs that considered to be binned (Default: 1).
 * `--max-edges`: The maximum number of edges that can be connected to one contig (Default: 200).
@@ -83,7 +83,7 @@ The command `multi_easy_bin` requires the combined contig file from several samp
 #### Optional arguments
 
 * `-s/--separator`: Used when multiple samples binning to separate sample name and contig name (Default is `:`).
-* `--reference-db-data-dir`, `--processes`, `--minfasta-kbs`, `--recluster`,`--epoches`, `--batch-size`, `--max-node`, `--max-edges`, `--random-seed`, `--ratio`, `--min-len`, `--ml-threshold`, `--no-recluster`, `--orf-finder`，`--engine` and `--tmpdir` are same as for `single_easy_bin`
+* `--reference-db-data-dir`, `--processes`, `--minfasta-kbs`, `--recluster`,`--epochs`, `--batch-size`, `--max-node`, `--max-edges`, `--random-seed`, `--ratio`, `--min-len`, `--ml-threshold`, `--no-recluster`, `--orf-finder`，`--engine` and `--tmpdir` are same as for `single_easy_bin`
 
 ### generate_cannot_links
 
@@ -167,7 +167,7 @@ Note that you can train a model from multiple samples for use in single sample b
 
 #### Optional arguments
 
-* `--epoches`
+* `--epochs`
 * `--batch-size`
 * `-p/--processes/-t/--threads`
 * `--random-seed`
@@ -191,7 +191,7 @@ The `train_self` subcommand requires the contig file and outputs from the `gener
 
 #### Optional arguments
 
-* `--epoches`
+* `--epochs`
 * `--batch-size`
 * `-p/--processes/-t/--threads`
 * `--random-seed`
