@@ -1,5 +1,6 @@
 import os
 import subprocess
+import pandas as pd
 
 # Test different input formats
 for ifile, odir in [
@@ -63,6 +64,10 @@ for env,odir in [
          '-p', '1'])
     assert len(os.listdir(odir+'/output_prerecluster_bins')) > 0
     assert len(os.listdir(odir+'/output_recluster_bins')) > 0
+    tab = pd.read_table(f'{odir}/recluster_bins_info.tsv', index_col=0)
+    for f in tab.index:
+        assert 'output_recluster_bins' in f
+        assert os.path.exists(f)
 
 # Test with input taxonomy file
 
@@ -111,6 +116,7 @@ assert os.path.exists(f'{single_cram_output}/output_recluster_bins')
 
 multi_output_cram = 'test-outputs/multi_output_cram'
 subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_output_cram} -b {multi_sample_input}/*.cram -r {single_sample_input}/reference_genome -s : --epoches 1 --semi-supervised',  shell=True)
+subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_output_cram} -b {multi_sample_input}/*.cram -r {single_sample_input}/reference_genome -s : --epochs 1 --training-type semi',  shell=True)
 assert os.path.exists(f'{multi_output_cram}/bins')
 for i in range(10):
     assert os.path.exists(f'{multi_output_cram}/samples/S{i+1}/output_prerecluster_bins')
