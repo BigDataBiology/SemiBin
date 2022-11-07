@@ -22,7 +22,7 @@
 - Pretrained model from chicken caecum (contributed by [Florian Plaza Oñate](https://scholar.google.com/citations?hl=zh-CN&user=-gE5y_4AAAAJ&view_op=list_works&sortby=pubdate))
 - Output table with basic information on bins (including N50 & L50)
 - When reclustering is used (default), output the unreclusted bins into a directory called `output_prerecluster_bins`
-- Added `--verbose` flag and silented some of the output when it is not used
+- Added `--verbose` flag and silenced some of the output when it is not used
 - Use coloredlogs (if package is available)
 
 ## Version 1.1.1
