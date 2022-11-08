@@ -58,7 +58,7 @@ def validate_normalize_args(logger, args):
         expect_file_list(args.bams)
 
     if args.cmd in ['train', 'train_self']:
-        if args.mode == 'single':
+        if not args.train_from_many:
             if len(args.data) > 1:
                 sys.stderr.write(
                     f"Error: Expected one data.csv file with single mode.\n")
@@ -84,7 +84,7 @@ def validate_normalize_args(logger, args):
             expect_file(args.data[0])
             expect_file(args.data_split[0])
 
-        elif args.mode == 'several':
+        else:
             if args.cmd == 'train':
                 assert len(args.contig_fasta) == len(args.data) == len(args.data_split) == len(args.cannot_link), 'Must input same number of fasta, data, data_split, cannot files!'
                 expect_file_list(args.cannot_link)
@@ -94,12 +94,6 @@ def validate_normalize_args(logger, args):
 
             expect_file_list(args.data)
             expect_file_list(args.data_split)
-
-
-        else:
-            sys.stderr.write(
-                f"Error: Please use training mode with [single/several].\n")
-            sys.exit(1)
 
     if args.cmd == 'bin':
         if args.environment is None and args.model_path is None:

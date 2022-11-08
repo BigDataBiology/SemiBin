@@ -148,13 +148,19 @@ def parse_args(args):
                               default=2048)
 
         p.add_argument('--mode',
-                              required=True,
+                              required=False,
                               type=str,
-                              help='[single/several] Train models from one (single) or more samples (several). '
+                              help='[Deprecated] Does nothing. [single/several] Train models from one (single) or more samples (several). '
                                    'In `several` mode, you must provide data, data_split, cannot, and fasta files for corresponding samples in the same order. '
                                    'Note: You can only use `several` mode when performing single-sample binning. Training from several samples with multi-sample binning is not supported.',
                               dest='mode',
                               default='single')
+
+        p.add_argument('--train-from-many',
+                           required=False,
+                           help='Train the model with several samples.',
+                           dest='train_from_many',
+                           action='store_true', )
 
         p.add_argument('-o', '--output',
                               required=True,
@@ -442,7 +448,7 @@ def parse_args(args):
         p.add_argument('--training-type',
                        required=False,
                        type=str,
-                       help='training algorithm used to train the model (semi/self)',
+                       help='[Deprecated] Does nothing. training algorithm used to train the model (semi/self)',
                        dest='training_type',
                        default='semi')
 
@@ -1215,6 +1221,12 @@ def main():
                 args.min_len,
                 args.ml_threshold,
                 out)
+
+        if args.cmd in ['train', 'train_self']:
+            if args.train_from_many:
+                args.mode = 'several'
+            else:
+                args.mode = 'single'
 
         if args.cmd == 'train':
             if args.random_seed is not None:

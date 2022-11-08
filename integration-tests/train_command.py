@@ -9,7 +9,6 @@ subprocess.check_call(
      '-c', 'test/train_data/cannot.txt',
      '--epoches', '1',
      '--batch-size', '2048',
-     '--mode', 'single',
      '-i', 'test/train_data/input.fasta',
      '-o', 'test-outputs/output_train_fa',
      '-m', '2500',
@@ -23,7 +22,6 @@ subprocess.check_call(
      '--data-split', 'test/train_data/data_split.csv',
      '--epoches', '1',
      '--batch-size', '2048',
-     '--mode', 'single',
      '-o', 'test-outputs/output_train_fa_self',
      '-p', '1'])
 assert os.path.exists('test-outputs/output_train_fa_self/model.h5')
@@ -50,7 +48,7 @@ subprocess.check_call(
          '-o', 'test-outputs/output_train_several',
          '--epoches', '1',
          '--batch-size', '2048',
-         '--mode', 'several',
+         '--train-from-many',
          '-m', '2500',
          '--ratio', '0.05',
          '-p', '1'])
@@ -69,7 +67,7 @@ subprocess.check_call(
          '-o', 'test-outputs/output_train_several_self',
          '--epoches', '1',
          '--batch-size', '2048',
-         '--mode', 'several',
+         '--train-from-many',
          '-p', '1'])
 assert os.path.exists('test-outputs/output_train_several_self/model.h5')
 
