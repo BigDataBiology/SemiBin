@@ -285,19 +285,6 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, o
         counts = data.groupby('gene')['orf'].count()
         return extract_seeds(counts, data)
 
-def prodigal(contig_file, contig_output):
-        with open(contig_output + '.out', 'w') as prodigal_out_log:
-            subprocess.check_call(
-                ['prodigal',
-                 '-i', contig_file,
-                 '-p', 'meta',
-                 '-q',
-                 '-m', # See https://github.com/BigDataBiology/SemiBin/issues/87
-                 '-a', contig_output
-                 ],
-                stdout=prodigal_out_log,
-            )
-
 def run_prodigal(fasta_path, num_process, output):
     from .error import LoggingPool
 
@@ -324,21 +311,23 @@ def run_prodigal(fasta_path, num_process, output):
             out.write(f'>{h}\n{seq}\n')
             cur += len(seq)
 
-    with LoggingPool(num_process) if num_process != 0 else LoggingPool() as pool:
-        try:
-            for index in range(next_ix):
-                pool.apply_async(
-                    prodigal,
-                    args=(
-                        os.path.join(output, 'contig_{}.fa'.format(index)),
-                        os.path.join(output, 'contig_{}.faa'.format(index)),
-                    ))
-            pool.close()
-            pool.join()
-        except:
-            sys.stderr.write(
-                f"Error: Running prodigal fail\n")
-            sys.exit(1)
+    # with LoggingPool(num_process) if num_process != 0 else LoggingPool() as pool:
+    try:
+        process = []
+        for index in range(next_ix):
+            with open(os.path.join(output, f'contig_{index}_log.txt') + '.out', 'w') as prodigal_out_log:
+                p = subprocess.Popen(
+                    ['prodigal', '-i', os.path.join(output, f'contig_{index}.fa'), '-p', 'meta', '-q', '-m', '-a',
+                     os.path.join(output, f'contig_{index}.faa')], stdout=prodigal_out_log)
+                process.append(p)
+
+        for p in process:
+            p.wait()
+
+    except:
+        sys.stderr.write(
+            f"Error: Running prodigal fail\n")
+        sys.exit(1)
 
     contig_output = os.path.join(output, 'contigs.faa')
     with open(contig_output, 'w') as f:
