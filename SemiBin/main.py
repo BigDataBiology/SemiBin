@@ -427,12 +427,25 @@ def parse_args(args):
                        default='auto')
 
     for p in [single_easy_bin, multi_easy_bin]:
+        p.add_argument('--semi-supervised',
+                           required=False,
+                           help='Train the model with semi-supervised learning.',
+                           dest='semi_supervised',
+                           action='store_true', )
+
+        p.add_argument('--self-supervised',
+                           required=False,
+                           help='Train the model with self-supervised learning.',
+                           dest='self_supervised',
+                           action='store_true', )
+
         p.add_argument('--training-type',
-                       required=True,
+                       required=False,
                        type=str,
                        help='training algorithm used to train the model (semi/self)',
                        dest='training_type',
                        default='semi')
+
 
     if not args:
         parser.print_help(sys.stderr)
@@ -1226,6 +1239,22 @@ def main():
                     contig_dict, args.recluster, args.model_path, args.random_seed,out, device,
                     args.environment, orf_finder=args.orf_finder, depth_metabat2=args.depth_metabat2)
 
+        if args.cmd in ['single_easy_bin', 'multi_easy_bin']:
+            if not args.self_supervised and not args.semi_supervised:
+                sys.stderr.write(
+                    f"Error: Please choose one training mode with --self-supervised or --semi-supervised.\n")
+                sys.exit(1)
+                return
+
+            elif args.self_supervised and args.semi_supervised:
+                logger.info(f'You choose semi-supervised and self-supervised learning, we will run with self-supervised learning.')
+                args.training_type = 'self'
+
+            elif args.self_supervised and not args.semi_supervised:
+                args.training_type = 'self'
+
+            else:
+                args.training_type = 'semi'
 
         if args.cmd == 'single_easy_bin':
             check_install(False, args.orf_finder)
