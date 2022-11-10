@@ -235,9 +235,13 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
         outputs = []
         # The code below (iat call) relies on this
         assert bin_files.columns[0] == 'filename'
+
         for ix,bin_path in enumerate(bin_files['filename'].values):
             # if there are no hits, the output will be naturally empty
-            seed = seeds.get(f'bin{ix:06}', [])
+            if seeds != []:
+                seed = seeds.get(f'bin{ix:06}', [])
+            else:
+                seed = []
             num_bin = len(seed)
 
             if num_bin > 1:

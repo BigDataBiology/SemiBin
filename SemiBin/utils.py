@@ -272,7 +272,6 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, o
         r.sort()
         return r
 
-
     if multi_mode:
         data['bin'] = data['orf'].str.split('.', n=0, expand=True)[0]
         counts = data.groupby(['bin', 'gene'])['orf'].count()
