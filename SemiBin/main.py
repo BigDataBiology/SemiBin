@@ -1104,6 +1104,23 @@ def multi_easy_binning(args, logger, recluster,
             new_path = os.path.join(output, 'bins', new_file)
             shutil.copyfile(original_path, new_path)
 
+def check_training_mode(args, logger):
+    if not args.self_supervised and not args.semi_supervised:
+        sys.stderr.write(
+            f"Error: Please choose one training mode with --self-supervised or --semi-supervised.\n")
+        sys.exit(1)
+        return
+
+    elif args.self_supervised and args.semi_supervised:
+        logger.info(
+            f'You choose semi-supervised and self-supervised learning, we will run with self-supervised learning.')
+        args.training_type = 'self'
+
+    elif args.self_supervised and not args.semi_supervised:
+        args.training_type = 'self'
+
+    else:
+        args.training_type = 'semi'
 
 def main():
     import tempfile
@@ -1251,26 +1268,15 @@ def main():
                     contig_dict, args.recluster, args.model_path, args.random_seed,out, device,
                     args.environment, orf_finder=args.orf_finder, depth_metabat2=args.depth_metabat2)
 
-        if args.cmd in ['single_easy_bin', 'multi_easy_bin']:
+        if args.cmd in ['single_easy_bin']:
             if args.environment is None:
-                if not args.self_supervised and not args.semi_supervised:
-                    sys.stderr.write(
-                        f"Error: Please choose one training mode with --self-supervised or --semi-supervised.\n")
-                    sys.exit(1)
-                    return
-
-                elif args.self_supervised and args.semi_supervised:
-                    logger.info(f'You choose semi-supervised and self-supervised learning, we will run with self-supervised learning.')
-                    args.training_type = 'self'
-
-                elif args.self_supervised and not args.semi_supervised:
-                    args.training_type = 'self'
-
-                else:
-                    args.training_type = 'semi'
+                check_training_mode(args, logger)
             else:
                 if args.self_supervised or args.semi_supervised:
                     logger.info('SemiBin will run with pretrained model.')
+
+        if args.cmd in ['multi_easy_bin']:
+            check_training_mode(args, logger)
 
         if args.cmd == 'single_easy_bin':
             check_install(False, args.orf_finder)
