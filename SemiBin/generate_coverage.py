@@ -102,6 +102,9 @@ def generate_cov(bam_file, bam_index, out, threshold,
         if bed_p.wait() != 0:
             logger.critical("Running `bedtools genomecov` failed. Please check your input files: SemiBin expects that they are sorted BAM files.")
             raise OSError("Failure in running bedtools")
+        elif len(contig_cov) == 0:
+            logger.critical("Running `bedtools genomecov` did not return an error, but the result is an empty file. Please check your input files: SemiBin expects that they are sorted BAM files.")
+            raise OSError("Running bedtools returned an empty file")
 
         contig_cov = contig_cov.apply(lambda x: x + 1e-5)
         must_link_contig_cov = must_link_contig_cov.apply(lambda x: x + 1e-5)
