@@ -970,7 +970,7 @@ def single_easy_binning(args, logger, binned_length,
     """
     contain `generate_cannot_links`, `generate_sequence_features_single`, `train`, `bin` in one command for single-sample and co-assembly binning
     """
-    logger.info('Generate training data.')
+    logger.info('Generating training data...')
     if depth_metabat2 is None and args.bams is None:
         sys.stderr.write(
             f"Error: You need to input bam files if you want to calculate coverage features.\n")
@@ -1033,8 +1033,8 @@ def multi_easy_binning(args, logger, recluster,
     """
     contain `generate_cannot_links`, `generate_sequence_features_multi`, `train`, `bin` in one command for multi-sample binning
     """
-    logger.info('Multi-sample binning.')
-    logger.info('Generate training data.')
+    logger.info('Performing multi-sample binning')
+    logger.info('Generating training data...')
 
     sample_list = generate_sequence_features_multi(
         logger,
@@ -1049,7 +1049,7 @@ def multi_easy_binning(args, logger, recluster,
 
     for sample_index, sample in enumerate(sample_list):
         logger.info(
-            'Running mmseqs and generate cannot-link file of {}.'.format(sample))
+            'Running mmseqs and generating cannot-link file for {}'.format(sample))
         sample_fasta = os.path.join(
             output, 'samples', '{}.fa'.format(sample))
         sample_data = os.path.join(output, 'samples', sample, 'data.csv')
@@ -1112,8 +1112,8 @@ def check_training_mode(args, logger):
         return
 
     elif args.self_supervised and args.semi_supervised:
-        logger.info(
-            f'You choose semi-supervised and self-supervised learning, we will run with self-supervised learning.')
+        logger.warning(
+            f'You chose both semi-supervised and self-supervised learning! SemiBin will use self-supervised learning.')
         args.training_type = 'self'
 
     elif args.self_supervised and not args.semi_supervised:

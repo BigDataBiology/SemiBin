@@ -271,5 +271,5 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
         outputs = pd.concat(outputs)
         logger.info(f'Number of bins after reclustering: {len(outputs)}')
         outputs.to_csv(os.path.join(out, 'recluster_bins_info.tsv'), index=False, sep='\t')
-    logger.info('Binning finish.')
+    logger.info('Binning finished')
 
