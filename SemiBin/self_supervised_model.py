@@ -14,6 +14,7 @@ def loss_function(embedding1, embedding2, label):
         label * square_pred + (1 - label) * margin_square)
     return supervised_loss
 
+
 def train_self(out, logger, datapaths, data_splits, is_combined=True,
           batchsize=2048, epoches=15, device=None, num_process = 8, mode = 'single'):
     """
@@ -25,6 +26,7 @@ def train_self(out, logger, datapaths, data_splits, is_combined=True,
     import numpy as np
 
     train_data = pd.read_csv(datapaths[0], index_col=0).values
+
     if not is_combined:
         train_data_input = train_data[:, 0:136]
     else:
