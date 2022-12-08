@@ -14,7 +14,7 @@ def loss_function(embedding1, embedding2, label):
         label * square_pred + (1 - label) * margin_square)
     return supervised_loss
 
-def train_self(out, logger, datas, data_splits, is_combined=True,
+def train_self(out, logger, datapaths, data_splits, is_combined=True,
           batchsize=2048, epoches=15, device=None, num_process = 8, mode = 'single'):
     """
     Train model from one sample(--mode single) or several samples(--mode several)
@@ -24,7 +24,7 @@ def train_self(out, logger, datas, data_splits, is_combined=True,
     from sklearn.preprocessing import normalize
     import numpy as np
 
-    train_data = pd.read_csv(datas[0], index_col=0).values
+    train_data = pd.read_csv(datapaths[0], index_col=0).values
     if not is_combined:
         train_data_input = train_data[:, 0:136]
     else:
@@ -43,11 +43,11 @@ def train_self(out, logger, datas, data_splits, is_combined=True,
     scheduler = lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)
 
     for epoch in tqdm(range(epoches)):
-        for data_index in range(len(datas)):
+        for data_index in range(len(datapaths)):
             if epoch == 0:
                 logger.info('Generate training data of {}:'.format(data_index))
 
-            data = pd.read_csv(datas[data_index], index_col=0)
+            data = pd.read_csv(datapaths[data_index], index_col=0)
             data.index = data.index.astype(str)
             data_split = pd.read_csv(data_splits[data_index], index_col=0)
 
