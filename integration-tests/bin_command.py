@@ -129,7 +129,7 @@ for i in range(10):
 
 # Test .cram format input
 single_cram_output = 'test-outputs/single_output_cram'
-subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_cram_output} -b {single_sample_input}/input.cram --environment human_gut --semi-supervised --epoches 1', shell=True)
+subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_cram_output} -b {single_sample_input}/input.cram --environment human_gut --semi-supervised', shell=True)
 assert os.path.exists(f'{single_cram_output}/output_prerecluster_bins')
 
 # Test binning with long-read
@@ -158,7 +158,7 @@ assert os.path.exists(f'{single_self_output}/output_prerecluster_bins')
 assert os.path.exists(f'{single_self_output}/output_recluster_bins')
 
 multi_self_output = 'test-outputs/multi_output_self'
-subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_self_output} -b {multi_sample_input}/*.bam -s : --epoches 1 --self-supervised',  shell=True)
+subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_self_output} -b {multi_sample_input}/*.bam -s : --epoches 1 --self-supervised -r{single_sample_input}/reference_genome',  shell=True)
 assert os.path.exists(f'{multi_self_output}/bins')
 for i in range(10):
     assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_prerecluster_bins')
