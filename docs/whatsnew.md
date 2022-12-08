@@ -1,5 +1,14 @@
 # What's New
 
+## Version 1.3.1
+
+*Release December 9, 2022*
+
+### Bugfixes
+
+- Made `--training-type` argument optional (defaults to `semi` to keep backwards compatibility)
+
+
 ## Version 1.3.0
 
 *Released November 4 2022*

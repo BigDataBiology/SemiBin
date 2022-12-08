@@ -428,9 +428,9 @@ def parse_args(args):
 
     for p in [single_easy_bin, multi_easy_bin]:
         p.add_argument('--training-type',
-                       required=True,
+                       required=False,
                        type=str,
-                       help='training algorithm used to train the model (semi/self)',
+                       help='training algorithm used to train the model (semi [default]/self)',
                        dest='training_type',
                        default='semi')
 

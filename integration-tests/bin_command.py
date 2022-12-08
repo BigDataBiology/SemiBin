@@ -85,7 +85,7 @@ subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.f
 assert os.path.exists(f'{single_output}/output_prerecluster_bins')
 assert os.path.exists(f'{single_output}/output_recluster_bins')
 
-subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_output_ref} -b {single_sample_input}/input.sorted.bam -r {single_sample_input}/reference_genome --epoches 1 --training-type semi', shell=True)
+subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_output_ref} -b {single_sample_input}/input.sorted.bam -r {single_sample_input}/reference_genome --epoches 1', shell=True)
 assert os.path.exists(f'{single_output_ref}/output_prerecluster_bins')
 assert os.path.exists(f'{single_output_ref}/output_recluster_bins')
 
