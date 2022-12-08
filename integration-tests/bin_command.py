@@ -129,7 +129,7 @@ for i in range(10):
 
 # Test .cram format input
 single_cram_output = 'test-outputs/single_output_cram'
-subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_cram_output} -b {single_sample_input}/input.cram --environment human_gut --semi-supervised', shell=True)
+subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_cram_output} -b {single_sample_input}/input.cram --environment human_gut --semi-supervised --epoches 1', shell=True)
 assert os.path.exists(f'{single_cram_output}/output_prerecluster_bins')
 
 # Test binning with long-read

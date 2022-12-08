@@ -463,7 +463,7 @@ def parse_args(args):
         p.add_argument('--training-type',
                        required=False,
                        type=str,
-                       help='[Deprecated] Does nothing. training algorithm used to train the model (semi/self)',
+                       help='Training algorithm used to train the model (semi [default]/self)',
                        dest='training_type',
                        default='semi')
 
@@ -1169,9 +1169,14 @@ def multi_easy_binning(args, logger, recluster,
 
 def check_training_mode(args, logger):
     if not args.self_supervised and not args.semi_supervised:
-        sys.stderr.write(
-            f"Error: SemiBin will run with --semi-supervised.\n")
-        args.training_type = 'semi'
+        if args.training_type == 'semi':
+            sys.stderr.write(
+                f"Error: SemiBin will run with --semi-supervised.\n")
+            args.training_type = 'semi'
+        else:
+            sys.stderr.write(
+                f"Error: SemiBin will run with --self-supervised.\n")
+            args.training_type = 'self'
 
     elif args.self_supervised and args.semi_supervised:
         logger.warning(
