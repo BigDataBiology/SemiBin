@@ -20,8 +20,6 @@ try:
 except ImportError:
     fspath = None
 
-__version__ = '1.4.0'
-
 
 PY2 = sys.version_info[0] == 2
 
@@ -48,7 +46,7 @@ if sys.platform != 'win32':
             # https://github.com/untitaker/python-atomicwrites/issues/6
             fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
 
-    def _sync_directory(directory, dst):
+    def _sync_directory(directory):
         # Ensure that filenames are written to disk
         fd = os.open(directory, os.O_RDONLY)
         try:
@@ -57,15 +55,13 @@ if sys.platform != 'win32':
             # Some network filesystems don't support this and fail with EINVAL.
             # Other error codes (e.g. EIO) shouldn't be silenced.
             if os_error.errno != errno.EINVAL:
-                os.close(fd)
-                return False
+                raise
         finally:
             os.close(fd)
-            return True
 
     def _replace_atomic(src, dst):
         os.rename(src, dst)
-        return _sync_directory(os.path.normpath(os.path.dirname(dst)), dst)
+        _sync_directory(os.path.normpath(os.path.dirname(dst)))
 
     def _move_atomic(src, dst):
         os.link(src, dst)
@@ -73,10 +69,9 @@ if sys.platform != 'win32':
 
         src_dir = os.path.normpath(os.path.dirname(src))
         dst_dir = os.path.normpath(os.path.dirname(dst))
-        value = _sync_directory(dst_dir, dst)
+        _sync_directory(dst_dir)
         if src_dir != dst_dir:
-            value = _sync_directory(src_dir, dst)
-        return value
+            _sync_directory(src_dir)
 else:
     from ctypes import windll, WinError
 
@@ -176,18 +171,15 @@ class AtomicWriter(object):
         f = None  # make sure f exists even if get_fileobject() fails
         try:
             success = False
-
             with get_fileobject(**self._open_kwargs) as f:
                 yield f
                 self.sync(f)
-            if self.commit(f) == True:
-                success = True
+            self.commit(f)
+            success = True
         finally:
             if not success:
                 try:
                     self.rollback(f)
-                    with open(self._path, mode=self._mode) as f:
-                        yield f
                 except Exception:
                     pass
 
@@ -215,9 +207,9 @@ class AtomicWriter(object):
     def commit(self, f):
         '''Move the temporary file to the target location.'''
         if self._overwrite:
-            return replace_atomic(f.name, self._path)
+            replace_atomic(f.name, self._path)
         else:
-            return move_atomic(f.name, self._path)
+            move_atomic(f.name, self._path)
 
     def rollback(self, f):
         '''Clean up all temporary resources.'''
@@ -240,4 +232,3 @@ def atomic_write(path, writer_cls=AtomicWriter, **cls_kwargs):
     :py:class:`AtomicWriter`.
     '''
     return writer_cls(path, **cls_kwargs).open()
-
