@@ -1171,11 +1171,11 @@ def check_training_mode(args, logger):
     if not args.self_supervised and not args.semi_supervised:
         if args.training_type == 'semi':
             logger.info(
-                f"SemiBin will run with --semi-supervised.\n")
+                f"SemiBin will run with --semi-supervised.")
             args.training_type = 'semi'
         else:
             logger.info(
-                f"Error: SemiBin will run with --self-supervised.\n")
+                f"SemiBin will run with --self-supervised.")
             args.training_type = 'self'
 
     elif args.self_supervised and args.semi_supervised:
