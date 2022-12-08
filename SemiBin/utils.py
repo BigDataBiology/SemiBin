@@ -58,7 +58,7 @@ def validate_normalize_args(logger, args):
         expect_file_list(args.bams)
 
     if args.cmd in ['train', 'train_self']:
-        if args.mode == 'single':
+        if not args.train_from_many:
             if len(args.data) > 1:
                 sys.stderr.write(
                     f"Error: Expected one data.csv file with single mode.\n")
@@ -84,7 +84,7 @@ def validate_normalize_args(logger, args):
             expect_file(args.data[0])
             expect_file(args.data_split[0])
 
-        elif args.mode == 'several':
+        else:
             if args.cmd == 'train':
                 assert len(args.contig_fasta) == len(args.data) == len(args.data_split) == len(args.cannot_link), 'Must input same number of fasta, data, data_split, cannot files!'
                 expect_file_list(args.cannot_link)
@@ -94,10 +94,6 @@ def validate_normalize_args(logger, args):
 
             expect_file_list(args.data)
             expect_file_list(args.data_split)
-        else:
-            sys.stderr.write(
-                f"Error: Please use training mode with [single/several].\n")
-            sys.exit(1)
 
     if args.cmd in ['single_easy_bin', 'multi_easy_bin']:
         if args.sequencing_type not in ['short_read', 'long_read']:
@@ -134,10 +130,11 @@ def validate_normalize_args(logger, args):
             # This triggers checking that the environment is valid
             get_model_path(args.environment)
 
-        if args.training_type not in ['semi', 'self']:
-            sys.stderr.write(
-                f"Error: You need to specify the training algorithm in semi/self.\n")
-            sys.exit(1)
+        if args.training_type is not None:
+            if args.training_type not in ['semi', 'self']:
+                sys.stderr.write(
+                    f"Error: You need to specify the training algorithm in semi/self.\n")
+                sys.exit(1)
 
     if args.cmd == 'multi_easy_bin':
         if args.GTDB_reference is not None:
@@ -145,10 +142,11 @@ def validate_normalize_args(logger, args):
         expect_file(args.contig_fasta)
         expect_file_list(args.bams)
 
-        if args.training_type not in ['semi', 'self']:
-            sys.stderr.write(
-                f"Error: You need to specify the training algorithm in semi/self.\n")
-            sys.exit(1)
+        if args.training_type is not None:
+            if args.training_type not in ['semi', 'self']:
+                sys.stderr.write(
+                    f"Error: You need to specify the training algorithm in semi/self.\n")
+                sys.exit(1)
 
     if args.cmd == 'concatenate_fasta':
         expect_file_list(args.contig_fasta)
@@ -303,20 +301,7 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, o
         else:
             counts = data.groupby('gene')['orf'].count()
             return extract_seeds(counts, data)
-
-def prodigal(contig_file, contig_output):
-        with open(contig_output + '.out', 'w') as prodigal_out_log:
-            subprocess.check_call(
-                ['prodigal',
-                 '-i', contig_file,
-                 '-p', 'meta',
-                 '-q',
-                 '-m', # See https://github.com/BigDataBiology/SemiBin/issues/87
-                 '-a', contig_output
-                 ],
-                stdout=prodigal_out_log,
-            )
-
+        
 def run_prodigal(fasta_path, num_process, output):
     from .error import LoggingPool
 
@@ -343,21 +328,23 @@ def run_prodigal(fasta_path, num_process, output):
             out.write(f'>{h}\n{seq}\n')
             cur += len(seq)
 
-    with LoggingPool(num_process) if num_process != 0 else LoggingPool() as pool:
-        try:
-            for index in range(next_ix):
-                pool.apply_async(
-                    prodigal,
-                    args=(
-                        os.path.join(output, 'contig_{}.fa'.format(index)),
-                        os.path.join(output, 'contig_{}.faa'.format(index)),
-                    ))
-            pool.close()
-            pool.join()
-        except:
-            sys.stderr.write(
-                f"Error: Running prodigal fail\n")
-            sys.exit(1)
+    # with LoggingPool(num_process) if num_process != 0 else LoggingPool() as pool:
+    try:
+        process = []
+        for index in range(next_ix):
+            with open(os.path.join(output, f'contig_{index}_log.txt') + '.out', 'w') as prodigal_out_log:
+                p = subprocess.Popen(
+                    ['prodigal', '-i', os.path.join(output, f'contig_{index}.fa'), '-p', 'meta', '-q', '-m', '-a',
+                     os.path.join(output, f'contig_{index}.faa')], stdout=prodigal_out_log)
+                process.append(p)
+
+        for p in process:
+            p.wait()
+
+    except:
+        sys.stderr.write(
+            f"Error: Running prodigal fail\n")
+        sys.exit(1)
 
     contig_output = os.path.join(output, 'contigs.faa')
     with open(contig_output, 'w') as f:

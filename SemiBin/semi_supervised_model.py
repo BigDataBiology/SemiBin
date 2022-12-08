@@ -200,8 +200,7 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
                         f"Error: training mode with several only used in single-sample binning!\n")
                     sys.exit(1)
 
-            namelist = data.index.tolist()
-            mapObj = dict(zip(namelist, range(len(namelist))))
+            contig2ix = {c:ix for ix,c in enumerate(data.index)}
             train_data = data.values
             train_data_must_link = data_split.values
 
@@ -212,10 +211,10 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
                 train_data_input = train_data
                 train_data_split_input = train_data_must_link
 
-            # can not link from contig annotation
+            # cannot link from contig annotation
             for link in cannot_link:
-                train_input_1.append(train_data_input[mapObj[str(link[0])]])
-                train_input_2.append(train_data_input[mapObj[str(link[1])]])
+                train_input_1.append(train_data_input[contig2ix[str(link[0])]])
+                train_input_2.append(train_data_input[contig2ix[str(link[1])]])
                 train_labels.append(0)
 
             # cannot link from bin seed
@@ -223,9 +222,9 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
                 for i in range(len(seed)):
                     for j in range(i + 1, len(seed)):
                         train_input_1.append(
-                            train_data_input[mapObj[str(seed[i])]])
+                            train_data_input[contig2ix[str(seed[i])]])
                         train_input_2.append(
-                            train_data_input[mapObj[str(seed[j])]])
+                            train_data_input[contig2ix[str(seed[j])]])
                         train_labels.append(0)
 
             # must link from breaking up

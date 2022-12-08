@@ -1,11 +1,44 @@
 # Usage examples
 
+## Binning modes
+
+SemiBin supports three different binning modes, with different tradeoffs.
+
+### Single sample binning
+
+Single sample binning means that each sample is assembled and binned independently.
+
+This mode allows for parallel binning of samples and avoids cross-sample chimeras, but it does not use co-abundance information across samples.
+
+Using a prebuilt model means that SemiBin can return results in a few minutes.
+
+### Co-assembly binning
+
+Co-assembly binning means samples are co-assembled first (as if the pool of samples were a single sample) and then bins are constructed from this pool of co-assembled contigs.
+
+This mode can potentially generate better contigs (especially from species that are at a low abundance in any individual sample) and uses co-abundance information which can lead to better bins.
+On the other hand, co-assembly can lead to inter-sample chimeric contigs and binning based on co-assembly does not retain sample-specific variation.
+
+It is most appropriate when the samples are very similar and can be expected to contain overlapping sets of organisms (_e.g._, a time-series from the same habitat).
+
+### Multi-sample binning
+
+With multi-sample binning, multiple samples are assembled and binned individually, but _information from multiple samples is used together_.
+This mode can use co-abundance information and retain sample-specific variation at the same time.
+As we document in the [SemiBin manuscript](https://www.nature.com/articles/s41467-022-29843-y), this mode often returns the highest-number of bins (particularly for complex environments, such as soil).
+
+However, it has increased computational costs.
+In particular, prebuilt models cannot be used.
+
+This mode is implemented by concatenating the contigs assembled from the individual samples together and then mapping reads from each sample to this concatenated database.
+Concatenating the inputs can be done with the `concatenate_fasta` subcommand.
+
+
 ## Single-sample binning
 
 Inputs required: `S1.fa` (contig file in FASTA format) and `S1.sorted.bam` (short reads mapped to the contigs, sorted).
 
-[[How to generate inputs to SemiBin.](../generate)]
-
+[[How to generate inputs to SemiBin](../generate)]
 
 ### Easy single binning mode
 
@@ -34,11 +67,12 @@ Supported habitats are (names should be self-explanatory, except `global` which 
 8.  `pig_gut`
 9.  `built_environment`
 10. `wastewater`
-11. `global`
+11. `chicken_caecum`
+12. `global`
 
-[Figure 5 in the manuscript](https://www.nature.com/articles/s41467-022-29843-y#Fig5) shows details of how well each habitat-specific model performs.
+[Figure 5 in the manuscript](https://www.nature.com/articles/s41467-022-29843-y#Fig5) shows details of how well each habitat-specific model performs (except for the `chicken_caecum` model which was contributed after publication by [Florian Plaza Oñate](https://scholar.google.com/citations?user=-gE5y_4AAAAJ) and is available since version 1.2).
 
-**2. Learn a new model.** Alternatively, you can learn a new model for your data.
+**2a. Learn a new model (semi-supervised mode).** Alternatively, you can learn a new model for your data.
 The main disadvantage is that this approach will take a lot more time and use a lot more memory.
 While using a pre-trained model should take a few minutes and use 4-6GB of RAM, training a new model may take several hours and use 40GB of RAM.
 
@@ -51,7 +85,23 @@ SemiBin single_easy_bin \
 
 The [Supplemental Tables 5 & 6 in the SemiBin manuscript](https://www.nature.com/articles/s41467-022-29843-y#MOESM1) contain a lot more information with respect to the computational trade-offs.
 
-If you have a lot of samples that are similar to each other while not fitting into any of our builtin trained models, you can also build your own model from a subset of them (scroll down to the "SemiBin(pretrained)" Section).
+If you have a lot of samples that are similar to each other while not fitting into any of our builtin trained models, you can also build your own model from a subset of them (see [[training a SemiBin model](training)])
+
+
+**2b. Learn a new model (self-supervised mode).** starting in version 1.3, SemiBin also supports a self-supervised mode, which is faster and appears to produce better results.
+At the moment (November 2022), a manuscript describing this mode is being prepared, but you can already run it by using the following command:
+
+```bash
+SemiBin single_easy_bin \
+        --training-type self \
+        -i S1.fa \
+        -b S1.sorted.bam \
+        -o output
+```
+
+We expect to release SemiBin2 in early 2023 and self-supervised mode will become the default.
+In the meanwhile, we appreciate [feedback](mailto:luispedro@big-data-biology.org) or [bug reports](https://github.com/BigDataBiology/SemiBin/issues).
+
 
 ### Advanced single-sample binning workflows
 

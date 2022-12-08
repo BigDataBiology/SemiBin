@@ -1,5 +1,27 @@
 # What's New
 
+## Version 1.3.1
+
+*Release December 9, 2022*
+
+### Bugfixes
+
+- Made `--training-type` argument optional (defaults to `semi` to keep backwards compatibility)
+
+
+## Version 1.3.0
+
+*Released November 4 2022*
+
+### User visible improvements
+
+- Added _self-supervised learning mode_ (see [[Training SemiBin models](training)] for more details)
+
+### Bugfixes
+
+- Fix output table to contain correct paths
+- Fix mispelling in argument name `--epochs` (the old variation, `--epoches` is still accepted for backwards compatibility, but should be considered deprecated)
+
 ## Version 1.2.0
 
 *Released October 19 2022*
@@ -9,7 +31,7 @@
 - Pretrained model from chicken caecum (contributed by [Florian Plaza Oñate](https://scholar.google.com/citations?hl=zh-CN&user=-gE5y_4AAAAJ&view_op=list_works&sortby=pubdate))
 - Output table with basic information on bins (including N50 & L50)
 - When reclustering is used (default), output the unreclusted bins into a directory called `output_prerecluster_bins`
-- Added `--verbose` flag and silented some of the output when it is not used
+- Added `--verbose` flag and silenced some of the output when it is not used
 - Use coloredlogs (if package is available)
 
 ## Version 1.1.1

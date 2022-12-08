@@ -20,6 +20,7 @@ If you use this software in a publication please cite:
 >  environments. *Nat Commun* **13,** 2326 (2022).
 >  https://doi.org/10.1038/s41467-022-29843-y
 
+
 ## Basic usage of SemiBin
 
 A tutorial of running SemiBin from scrath can be found here [SemiBin tutorial](https://github.com/BigDataBiology/SemiBin_tutorial_from_scratch).
@@ -99,6 +100,13 @@ python setup.py install
 SemiBin runs on single-sample, co-assembly and multi-sample binning.
 Here we show the simple modes as an example.
 For the details and examples of every SemiBin subcommand, please [read the docs](https://semibin.readthedocs.io/en/latest/usage/).
+
+## Self-supervised mode
+
+Since version 1.3, SemiBin supports completely self-supervised learning, which bypasses the need to annotate contigs with MMSeqs2.
+In benchmarks, self-supervised learning is both faster (4x faster; using only 11% of RAM at peak) and generates 8.3-21.5% more high-quality bins compared to the version tested in the [manuscript](https://www.nature.com/articles/s41467-022-29843-y)
+To use it, pass the option `--training-mode=self` to the `single_easy_bin` or `multi_easy_bin` subcommands.
+
 
 ## Easy single/co-assembly binning mode
 

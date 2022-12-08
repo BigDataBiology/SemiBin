@@ -151,13 +151,19 @@ def parse_args(args):
                               default=2048, )
 
         p.add_argument('--mode',
-                              required=True,
+                              required=False,
                               type=str,
-                              help='[single/several] Train models from one (single) or more samples (several). '
+                              help='[Deprecated] Does nothing. [single/several] Train models from one (single) or more samples (several). '
                                    'In `several` mode, you must provide data, data_split, cannot, and fasta files for corresponding samples in the same order. '
                                    'Note: You can only use `several` mode when performing single-sample binning. Training from several samples with multi-sample binning is not supported.',
                               dest='mode',
                               default='single')
+
+        p.add_argument('--train-from-many',
+                           required=False,
+                           help='Train the model with several samples.',
+                           dest='train_from_many',
+                           action='store_true', )
 
         p.add_argument('-o', '--output',
                               required=True,
@@ -175,19 +181,20 @@ def parse_args(args):
                          dest='cannot_link',
                          default=None)
 
-    training.add_argument('--epoches',
-                   required=False,
-                   type=int,
-                   help='Number of epoches used in the training process (Default: 20).',
-                   dest='epoches',
-                   default=20)
+    training.add_argument('--epochs', '--epoches', # epoches is kept for backwards compatibilty
+                       required=False,
+                       type=int,
+                       help='Number of epochs used in the training process (Default: 20).',
+                       dest='epoches',
+                       default=20)
 
-    training_self.add_argument('--epoches',
-                   required=False,
-                   type=int,
-                   help='Number of epoches used in the training process (Default: 15).',
-                   dest='epoches',
-                   default=15)
+
+    training_self.add_argument('--epochs', '--epoches', # epoches is kept for backwards compatibilty
+                       required=False,
+                       type=int,
+                       help='Number of epochs used in the training process (Default: 15).',
+                       dest='epoches',
+                       default=15)
 
     training.add_argument('-i', '--input-fasta',
                    required=True,
@@ -216,14 +223,13 @@ def parse_args(args):
                    help='The maximum number of edges that can be connected to one contig (Default: 200).',
                    dest='max_edges',
                    default=200)
+                   
     binning.add_argument('--max-node',
                    required=False,
                    type=float,
                    dest='max_node',
                    default=1,
                    help='Fraction of contigs that considered to be binned (should be between 0 and 1; default: 1).')
-
-
 
     for p in [single_easy_bin, multi_easy_bin, training, binning, binning_long]:
         p.add_argument('--orf-finder',
@@ -250,6 +256,7 @@ def parse_args(args):
                        dest='tmp_output',
                        default=None,
                        )
+
 
     for p in [training, generate_cannot_links, binning, single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi, training_self, binning_long]:
         p.add_argument('-p', '--processes', '-t', '--threads',
@@ -374,21 +381,24 @@ def parse_args(args):
                            help='[Deprecated] Does nothing (current default is to perform clustering)',
                            dest='recluster',
                            action='store_true', )
-    for p in [single_easy_bin, multi_easy_bin]:
-        p.add_argument('--epoches',
-                          required=False,
-                          type=int,
-                          help='Number of epoches used in the training process (Default: 20).',
-                          dest='epoches',
-                          default=15)
+                           
+    for p in [single_easy_bin, multi_easy_bin]:                
+        p.add_argument('--epochs', '--epoches', # epoches is kept for backwards compatibilty
+                       required=False,
+                       type=int,
+                       help='Number of epochs used in the training process (Default: 15).',
+                       dest='epoches',
+                       default=15)
 
         p.add_argument('--batch-size',
-                          required=False,
-                          type=int,
-                          help='Batch size used in the training process (Default: 2048).',
-                          dest='batchsize',
-                          default=2048,)
+                       required=False,
+                       type=int,
+                       help='Batch size used in the training process (Default: 2048).',
+                       dest='batchsize',
+                       default=2048)
 
+
+    for p in [single_easy_bin, multi_easy_bin]:
         p.add_argument('--max-edges',
                           required=False,
                           type=int,
@@ -438,19 +448,32 @@ def parse_args(args):
                        default='auto')
 
     for p in [single_easy_bin, multi_easy_bin]:
+        p.add_argument('--semi-supervised',
+                           required=False,
+                           help='Train the model with semi-supervised learning.',
+                           dest='semi_supervised',
+                           action='store_true', )
+
+        p.add_argument('--self-supervised',
+                           required=False,
+                           help='Train the model with self-supervised learning.',
+                           dest='self_supervised',
+                           action='store_true', )
+
         p.add_argument('--training-type',
-                       required=True,
+                       required=False,
                        type=str,
-                       help='training algorithm used to train the model (semi/self)',
+                       help='[Deprecated] Does nothing. training algorithm used to train the model (semi/self)',
                        dest='training_type',
                        default='semi')
 
-        p.add_argument('--sequencing-type',
-                       required=True,
-                       type=str,
-                       help='sequencing type in [short_read/long_read].',
-                       dest='sequencing_type',
-                       default=None,)
+         p.add_argument('--sequencing-type',
+               required=False,
+               type=str,
+               help='sequencing type in [short_read/long_read], Default: short_read.',
+               dest='sequencing_type',
+               default='short_read',)
+
 
     if not args:
         parser.print_help(sys.stderr)
@@ -869,6 +892,7 @@ def training(logger, contig_fasta, num_process,
                 else:
                     binned_lengths.append(min_length)
 
+
         model = train(
             output,
             contig_fasta_unzip,
@@ -994,7 +1018,7 @@ def single_easy_binning(args, logger, binned_length,
     """
     contain `generate_cannot_links`, `generate_sequence_features_single`, `train`, `bin` in one command for single-sample and co-assembly binning
     """
-    logger.info('Generate training data.')
+    logger.info('Generating training data...')
     if depth_metabat2 is None and args.bams is None:
         sys.stderr.write(
             f"Error: You need to input bam files if you want to calculate coverage features.\n")
@@ -1044,6 +1068,7 @@ def single_easy_binning(args, logger, binned_length,
             training(logger, None,
                      args.num_process, [data_path], [data_split_path],
                      None, args.batchsize, args.epoches, output, device, None, None,  mode='single', orf_finder=None, training_mode='self')
+
     if sequencing_type == 'short_read':
         binning(logger, args.num_process, data_path,
                 args.max_edges, args.max_node, args.minfasta_kb * 1000,
@@ -1061,8 +1086,8 @@ def multi_easy_binning(args, logger, recluster,
     """
     contain `generate_cannot_links`, `generate_sequence_features_multi`, `train`, `bin` in one command for multi-sample binning
     """
-    logger.info('Multi-sample binning.')
-    logger.info('Generate training data.')
+    logger.info('Performing multi-sample binning')
+    logger.info('Generating training data...')
 
     sample_list = generate_sequence_features_multi(
         logger,
@@ -1077,7 +1102,7 @@ def multi_easy_binning(args, logger, recluster,
 
     for sample_index, sample in enumerate(sample_list):
         logger.info(
-            'Running mmseqs and generate cannot-link file of {}.'.format(sample))
+            'Running mmseqs and generating cannot-link file for {}'.format(sample))
         sample_fasta = os.path.join(
             output, 'samples', '{}.fa'.format(sample))
         sample_data = os.path.join(output, 'samples', sample, 'data.csv')
@@ -1142,6 +1167,23 @@ def multi_easy_binning(args, logger, recluster,
             new_path = os.path.join(output, 'bins', new_file)
             shutil.copyfile(original_path, new_path)
 
+def check_training_mode(args, logger):
+    if not args.self_supervised and not args.semi_supervised:
+        sys.stderr.write(
+            f"Error: Please choose one training mode with --self-supervised or --semi-supervised.\n")
+        sys.exit(1)
+        return
+
+    elif args.self_supervised and args.semi_supervised:
+        logger.warning(
+            f'You chose both semi-supervised and self-supervised learning! SemiBin will use self-supervised learning.')
+        args.training_type = 'self'
+
+    elif args.self_supervised and not args.semi_supervised:
+        args.training_type = 'self'
+
+    else:
+        args.training_type = 'semi'
 
 def main():
     import tempfile
@@ -1260,6 +1302,12 @@ def main():
                 args.ml_threshold,
                 out)
 
+        if args.cmd in ['train', 'train_self']:
+            if args.train_from_many:
+                args.mode = 'several'
+            else:
+                args.mode = 'single'
+
         if args.cmd == 'train':
             if args.random_seed is not None:
                 set_random_seed(args.random_seed)
@@ -1289,6 +1337,16 @@ def main():
             binning_long(logger, args.num_process, args.data, args.minfasta_kb * 1000, binned_length,
                     contig_dict, args.model_path, args.random_seed,out, device,
                     args.environment, orf_finder=args.orf_finder, depth_metabat2=args.depth_metabat2)
+                    
+        if args.cmd in ['single_easy_bin']:
+            if args.environment is None:
+                check_training_mode(args, logger)
+            else:
+                if args.self_supervised or args.semi_supervised:
+                    logger.info('SemiBin will run with pretrained model.')
+
+        if args.cmd in ['multi_easy_bin']:
+            check_training_mode(args, logger)
 
         if args.cmd == 'single_easy_bin':
             check_install(False, args.orf_finder)
@@ -1300,6 +1358,7 @@ def main():
                         sys.stderr.write(
                             f"Error: provided pretrained model only used in single-sample binning!\n")
                         sys.exit(1)
+                        
             single_easy_binning(
                 args,
                 logger,
@@ -1315,6 +1374,7 @@ def main():
                 depth_metabat2=args.depth_metabat2,
                 training_type=args.training_type,
                 sequencing_type=args.sequencing_type)
+                training_type=args.training_type)
 
         if args.cmd == 'multi_easy_bin':
             check_install(False, args.orf_finder)
