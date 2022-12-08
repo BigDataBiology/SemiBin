@@ -130,11 +130,10 @@ def validate_normalize_args(logger, args):
             # This triggers checking that the environment is valid
             get_model_path(args.environment)
 
-        if args.training_type is not None:
-            if args.training_type not in ['semi', 'self']:
-                sys.stderr.write(
-                    f"Error: You need to specify the training algorithm in semi/self.\n")
-                sys.exit(1)
+        if args.training_type not in ['semi', 'self']:
+            sys.stderr.write(
+                f"Error: You need to specify the training algorithm in semi/self.\n")
+            sys.exit(1)
 
     if args.cmd == 'multi_easy_bin':
         if args.GTDB_reference is not None:
@@ -142,11 +141,10 @@ def validate_normalize_args(logger, args):
         expect_file(args.contig_fasta)
         expect_file_list(args.bams)
 
-        if args.training_type is not None:
-            if args.training_type not in ['semi', 'self']:
-                sys.stderr.write(
-                    f"Error: You need to specify the training algorithm in semi/self.\n")
-                sys.exit(1)
+        if args.training_type not in ['semi', 'self']:
+            sys.stderr.write(
+                f"Error: You need to specify the training algorithm in semi/self.\n")
+            sys.exit(1)
 
     if args.cmd == 'concatenate_fasta':
         expect_file_list(args.contig_fasta)
