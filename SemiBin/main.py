@@ -467,7 +467,7 @@ def parse_args(args):
                        dest='training_type',
                        default='semi')
 
-         p.add_argument('--sequencing-type',
+        p.add_argument('--sequencing-type',
                required=False,
                type=str,
                help='sequencing type in [short_read/long_read], Default: short_read.',
@@ -1374,7 +1374,6 @@ def main():
                 depth_metabat2=args.depth_metabat2,
                 training_type=args.training_type,
                 sequencing_type=args.sequencing_type)
-                training_type=args.training_type)
 
         if args.cmd == 'multi_easy_bin':
             check_install(False, args.orf_finder)
