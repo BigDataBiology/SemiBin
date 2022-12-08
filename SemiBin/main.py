@@ -1170,14 +1170,13 @@ def multi_easy_binning(args, logger, recluster,
 def check_training_mode(args, logger):
     if not args.self_supervised and not args.semi_supervised:
         sys.stderr.write(
-            f"Error: Please choose one training mode with --self-supervised or --semi-supervised.\n")
-        sys.exit(1)
-        return
+            f"Error: SemiBin will run with --semi-supervised.\n")
+        args.training_type = 'semi'
 
     elif args.self_supervised and args.semi_supervised:
         logger.warning(
-            f'You chose both semi-supervised and self-supervised learning! SemiBin will use self-supervised learning.')
-        args.training_type = 'self'
+            f'You chose both semi-supervised and self-supervised learning! SemiBin will use semi-supervised learning.')
+        args.training_type = 'semi'
 
     elif args.self_supervised and not args.semi_supervised:
         args.training_type = 'self'
