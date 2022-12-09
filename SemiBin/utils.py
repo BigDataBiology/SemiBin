@@ -453,7 +453,8 @@ def write_bins(namelist, contig_labels, output, contig_seqs,
             with atomic_write(ofname, overwrite=True) as ofile:
                 for contig in contigs:
                     ofile.write(f'>{contig}\n{contig_seqs[contig]}\n')
-    return pd.DataFrame(written, columns=['filename', 'nbps', 'nr_contigs', 'N50', 'L50'])
+    # return pd.DataFrame(written, columns=['filename', 'nbps', 'nr_contigs', 'N50', 'L50'])
+    return written
 
 
 

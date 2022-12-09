@@ -75,19 +75,21 @@ def cluster_long_read(model, data, device, is_combined,
     else:
         embedding_new = embedding
 
-    cfasta = os.path.join(out, 'concatenated.fna')
-    with open(cfasta, 'wt') as concat_out:
-        for h in contig_list:
-            concat_out.write(f'>{h}\n{contig_dict[h]}\n')
-    seeds = cal_num_bins(
-        cfasta,
-        binned_length,
-        64,
-        output=out,
-        orf_finder=orf_finder)
+    import tempfile
+    with tempfile.TemporaryDirectory() as tdir:
+        cfasta = os.path.join(tdir, 'concatenated.fna')
+        with open(cfasta, 'wt') as concat_out:
+            for h in contig_list:
+                concat_out.write(f'>{h}\n{contig_dict[h]}\n')
+            seeds = cal_num_bins(
+                cfasta,
+                binned_length,
+                num_process,
+                output=out,
+                orf_finder=orf_finder)
 
-    contig2marker = get_marker(f'{out}/markers.hmmout', orf_finder=orf_finder,
-                               min_contig_len=binned_length, fasta_path=cfasta, contig_to_marker=True)
+            contig2marker = get_marker(os.path.join(out, 'markers.hmmout'), orf_finder=orf_finder,
+                                       min_contig_len=binned_length, fasta_path=cfasta, contig_to_marker=True)
 
     output_bin_path = os.path.join(out, 'output_bins')
 
@@ -109,14 +111,16 @@ def cluster_long_read(model, data, device, is_combined,
     cluster_label = 0
     logger.debug('Integrating results.')
 
+    written = []
     while sum(len(contig_dict[contig]) for contig in contig_list) >= minfasta:
         if len(contig_list) == 1:
-            write_bins(contig_list,
+            part = write_bins(contig_list,
                        [cluster_label] * len(contig_list),
                        output_bin_path, contig_dict,
                        recluster=False,
                        minfasta=minfasta)
             cluster_label += 1
+            written.append(part)
             break
 
         for con in [0.1, 0.2, 0.3, 0.4, 0.5, 1]:
@@ -132,16 +136,21 @@ def cluster_long_read(model, data, device, is_combined,
         if max_bin == [] or max_bin == None:
             break
         else:
-            write_bins(max_bin, [cluster_label] * len(max_bin),
+            part = write_bins(max_bin, [cluster_label] * len(max_bin),
                        output_bin_path, contig_dict,
                        recluster=False,
                        minfasta=minfasta)
             cluster_label += 1
-
+            written.append(part)
             for temp in max_bin:
                 temp_index = contig_list.index(temp)
                 contig_list.pop(temp_index)
                 for eps_value in DBSCAN_results_dict:
                     DBSCAN_results_dict[eps_value].pop(temp_index)
 
+    import pandas as pd
+    written = pd.concat(written)
+    logger.info(f'Number of bins: {len(written)}')
+    written.to_csv(os.path.join(out, 'bins_info.tsv'), index=False,
+                   sep='\t')
     logger.info('Finished binning.')
