@@ -1,6 +1,12 @@
 import os
 import subprocess
 import pandas as pd
+def sglob(pat):
+    from glob import glob
+    r = glob(pat)
+    r.sort()
+    return r
+
 
 # Test different input formats
 for ifile, odir in [
@@ -9,7 +15,7 @@ for ifile, odir in [
         ('input.fasta.bz2', 'output_bin_bz2'),
         ('input.fasta.xz', 'output_bin_xz'),
         ]:
-    odir = f'test-outputs/{odir}'
+    odir = f'test-outputs/{odir}_no_recluster'
     subprocess.check_call(
         ['SemiBin', 'bin',
          '--data', 'test/bin_data/data.csv',
@@ -21,41 +27,42 @@ for ifile, odir in [
          '-o', odir,
          '-m', '2500',
          '--ratio', '0.05',
+         '--no-recluster',
          '-p', '1'])
-    assert len(os.listdir(f'{odir}/output_prerecluster_bins')) > 0
-    assert len(os.listdir(f'{odir}/output_recluster_bins')) > 0
 
-    odir = f'test-outputs/{odir}_long'
-    subprocess.check_call(
-        ['SemiBin', 'bin_long',
-         '--data', 'test/bin_data/data.csv',
-         '--minfasta-kbs', '0',
-         '--model', 'test/bin_data/model.h5',
-         '-i', f'test/bin_data/{ifile}',
-         '-o', odir,
-         '-m', '2500',
-         '--ratio', '0.05',
-         '-p', '1'])
     assert len(os.listdir(f'{odir}/output_bins')) > 0
-    
+
+odir = f'test-outputs/output_long'
+subprocess.check_call(
+    ['SemiBin', 'bin_long',
+     '--data', 'test/bin_data/data.csv',
+     '--minfasta-kbs', '0',
+     '--model', 'test/bin_data/model.h5',
+     '-i', 'test/bin_data/input.fasta',
+     '-o', odir,
+     '-m', '2500',
+     '--ratio', '0.05',
+     '-p', '1'])
+assert len(os.listdir(f'{odir}/output_bins')) > 0
+
 
 ifile = 'input.fasta'
-odir = 'test-outputs/no_recluster'
+odir = 'test-outputs/with_recluster'
 subprocess.check_call(
     ['SemiBin', 'bin',
      '--data', 'test/bin_data/data.csv',
      '--minfasta-kbs', '0',
      '--max-edges', '20',
      '--max-node', '1',
-     '--no-recluster',
      '--model', 'test/bin_data/model.h5',
      '-i', f'test/bin_data/{ifile}',
      '-o', odir,
      '-m', '2500',
      '--ratio', '0.05',
      '-p', '1'])
-assert len(os.listdir(f'{odir}/output_bins')) > 0
-assert not os.path.exists(f'{odir}/output_recluster_bins')
+
+assert len(os.listdir(f'{odir}/output_prerecluster_bins')) > 0
+assert len(os.listdir(f'{odir}/output_recluster_bins')) > 0
 
 # Different pretrained models
 for env,odir in [
@@ -105,10 +112,6 @@ subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.f
 assert os.path.exists(f'{single_output}/output_prerecluster_bins')
 assert os.path.exists(f'{single_output}/output_recluster_bins')
 
-subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_output_ref}_semi -b {single_sample_input}/input.sorted.bam -r {single_sample_input}/reference_genome --epochs 1 --semi-supervised', shell=True)
-assert os.path.exists(f'{single_output_ref}_semi/output_prerecluster_bins')
-assert os.path.exists(f'{single_output_ref}_semi/output_recluster_bins')
-
 subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_output_ref} -b {single_sample_input}/input.sorted.bam -r {single_sample_input}/reference_genome --epochs 1', shell=True)
 assert os.path.exists(f'{single_output_ref}/output_prerecluster_bins')
 assert os.path.exists(f'{single_output_ref}/output_recluster_bins')
@@ -119,13 +122,11 @@ for i in range(10):
     assert os.path.exists(f'{multi_output}/samples/S{i+1}/output_prerecluster_bins')
     assert os.path.exists(f'{multi_output}/samples/S{i + 1}/output_recluster_bins')
 
-
 subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_output_ref} -b {multi_sample_input}/*.bam -r {single_sample_input}/reference_genome -s : --epoches 1 --semi-supervised',  shell=True)
 assert os.path.exists(f'{multi_output_ref}/bins')
 for i in range(10):
     assert os.path.exists(f'{multi_output_ref}/samples/S{i+1}/output_prerecluster_bins')
     assert os.path.exists(f'{multi_output_ref}/samples/S{i+1}/output_recluster_bins')
-
 
 # Test .cram format input
 single_cram_output = 'test-outputs/single_output_cram'
@@ -144,13 +145,6 @@ for i in range(10):
     assert os.path.exists(f'{multi_self_output_long}/samples/S{i+1}/output_bins')
 assert os.path.exists(f'{single_cram_output}/output_recluster_bins')
 
-multi_output_cram = 'test-outputs/multi_output_cram'
-subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_output_cram} -b {multi_sample_input}/*.cram -r {single_sample_input}/reference_genome -s : --epoches 1 --semi-supervised',  shell=True)
-assert os.path.exists(f'{multi_output_cram}/bins')
-for i in range(10):
-    assert os.path.exists(f'{multi_output_cram}/samples/S{i+1}/output_prerecluster_bins')
-    assert os.path.exists(f'{multi_output_cram}/samples/S{i+1}/output_recluster_bins')
-
 # Test training with self-supervised learning
 single_self_output = 'test-outputs/single_output_self'
 subprocess.check_call(f'SemiBin single_easy_bin -i {single_sample_input}/input.fasta -o {single_self_output} -b {single_sample_input}/input.sorted.bam --epoches 1 --self-supervised', shell=True)
@@ -158,7 +152,15 @@ assert os.path.exists(f'{single_self_output}/output_prerecluster_bins')
 assert os.path.exists(f'{single_self_output}/output_recluster_bins')
 
 multi_self_output = 'test-outputs/multi_output_self'
-subprocess.check_call(f'SemiBin multi_easy_bin -i {multi_sample_input}/input_multi.fasta -o {multi_self_output} -b {multi_sample_input}/*.bam -s : --epoches 1 --self-supervised -r{single_sample_input}/reference_genome',  shell=True)
+subprocess.check_call(
+        ['SemiBin', 'multi_easy_bin',
+        '-i', f'{multi_sample_input}/input_multi.fasta',
+        '-o', multi_self_output,
+        '-b'] + sglob(f'{multi_sample_input}/*.bam') + [
+        '-s', ':',
+        '--epochs', '1',
+        '--self-supervised'])
+
 assert os.path.exists(f'{multi_self_output}/bins')
 for i in range(10):
     assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_prerecluster_bins')
