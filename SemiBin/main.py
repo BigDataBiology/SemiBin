@@ -22,6 +22,9 @@ from .error import LoggingPool
 
 
 def parse_args(args):
+    # BooleanOptionalAction is available in Python 3.9; before that, we fall back on the default
+    BooleanOptionalAction = getattr(argparse, 'BooleanOptionalAction', 'store_true')
+
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      description='Semi-supervised siamese neural '
                                                  'network for metagenomic binning')
@@ -153,7 +156,7 @@ def parse_args(args):
         p.add_argument('--mode',
                               required=False,
                               type=str,
-                              help='[Deprecated] Does nothing. [single/several] Train models from one (single) or more samples (several). '
+                              help='[DEPRECATED: use --train-from-many]. [single/several] Train models from one (single) or more samples (several). '
                                    'In `several` mode, you must provide data, data_split, cannot, and fasta files for corresponding samples in the same order. '
                                    'Note: You can only use `several` mode when performing single-sample binning. Training from several samples with multi-sample binning is not supported.',
                               dest='mode',
@@ -161,9 +164,11 @@ def parse_args(args):
 
         p.add_argument('--train-from-many',
                            required=False,
-                           help='Train the model with several samples.',
+                           help='Train the model with several samples.\n'
+                                   'You must provide data, data_split, cannot, and fasta files for corresponding samples in the same order. '
+                                   'Note: You can only use `--train-from-many` mode when performing single-sample binning. Training from many samples with multi-sample binning is not supported.',
                            dest='train_from_many',
-                           action='store_true', )
+                           action=BooleanOptionalAction)
 
         p.add_argument('-o', '--output',
                               required=True,
@@ -223,7 +228,7 @@ def parse_args(args):
                    help='The maximum number of edges that can be connected to one contig (Default: 200).',
                    dest='max_edges',
                    default=200)
-                   
+
     binning.add_argument('--max-node',
                    required=False,
                    type=float,
@@ -463,9 +468,9 @@ def parse_args(args):
         p.add_argument('--training-type',
                        required=False,
                        type=str,
-                       help='Training algorithm used to train the model (semi [default]/self)',
-                       dest='training_type',
-                       default='semi')
+                       help='Training algorithm used to train the model (semi [default]/self)\n'
+                            'DEPRECATED: use --self-supervised/--semi-supervised',
+                       dest='training_type')
 
         p.add_argument('--sequencing-type',
                required=False,
@@ -481,6 +486,7 @@ def parse_args(args):
     args = parser.parse_args(args)
     if hasattr(args, 'no_recluster'):
         args.recluster = not args.no_recluster
+
     return args
 
 
@@ -1167,28 +1173,6 @@ def multi_easy_binning(args, logger, recluster,
             new_path = os.path.join(output, 'bins', new_file)
             shutil.copyfile(original_path, new_path)
 
-def check_training_mode(args, logger):
-    if not args.self_supervised and not args.semi_supervised:
-        if args.training_type == 'semi':
-            logger.info(
-                f"SemiBin will run with --semi-supervised.")
-            args.training_type = 'semi'
-        else:
-            logger.info(
-                f"SemiBin will run with --self-supervised.")
-            args.training_type = 'self'
-
-    elif args.self_supervised and args.semi_supervised:
-        logger.warning(
-            f'You chose both semi-supervised and self-supervised learning! SemiBin will use semi-supervised learning.')
-        args.training_type = 'semi'
-
-    elif args.self_supervised and not args.semi_supervised:
-        args.training_type = 'self'
-
-    else:
-        args.training_type = 'semi'
-
 def main():
     import tempfile
 
@@ -1306,12 +1290,6 @@ def main():
                 args.ml_threshold,
                 out)
 
-        if args.cmd in ['train', 'train_self']:
-            if args.train_from_many:
-                args.mode = 'several'
-            else:
-                args.mode = 'single'
-
         if args.cmd == 'train':
             if args.random_seed is not None:
                 set_random_seed(args.random_seed)
@@ -1342,15 +1320,6 @@ def main():
                     contig_dict, args.model_path, args.random_seed,out, device,
                     args.environment, orf_finder=args.orf_finder, depth_metabat2=args.depth_metabat2)
                     
-        if args.cmd in ['single_easy_bin']:
-            if args.environment is None:
-                check_training_mode(args, logger)
-            else:
-                if args.self_supervised or args.semi_supervised:
-                    logger.info('SemiBin will run with pretrained model.')
-
-        if args.cmd in ['multi_easy_bin']:
-            check_training_mode(args, logger)
 
         if args.cmd == 'single_easy_bin':
             check_install(False, args.orf_finder)

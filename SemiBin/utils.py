@@ -10,8 +10,39 @@ import shutil
 
 from .fasta import fasta_iter
 
+def check_training_mode(logger, args):
+    if args.training_type == 'semi' and args.self_supervised:
+        logger.error('Both --training-type=semi and --self-supervised arguments used')
+        sys.exit(1)
+
+    if args.training_type == 'self' and args.semi_supervised:
+        logger.warning('Both --training-type=self and --semi-supervised arguments used')
+        sys.exit(1)
+
+    if not args.self_supervised and not args.semi_supervised:
+        if args.training_type == 'self':
+            logger.info(
+                f"SemiBin will run in self supervised mode")
+            args.training_type = 'self'
+        else:
+            logger.info(
+                f"SemiBin will run in semi supervised mode")
+            args.training_type = 'semi'
+
+    elif args.self_supervised and args.semi_supervised:
+        logger.warning(
+            f'You chose both semi-supervised and self-supervised learning! SemiBin will use semi-supervised learning (this may change in the future)')
+        args.training_type = 'semi'
+
+    elif args.self_supervised:
+        args.training_type = 'self'
+    else:
+        args.training_type = 'semi'
+
+
 def validate_normalize_args(logger, args):
     '''Validate and normalize command line arguments'''
+
     def expect_file(f):
         if f is not None:
             if not os.path.exists(f):
@@ -129,13 +160,11 @@ def validate_normalize_args(logger, args):
         if args.environment is not None:
             # This triggers checking that the environment is valid
             get_model_path(args.environment)
-
-        if args.training_type not in ['semi', 'self']:
-            sys.stderr.write(
-                f"Error: You need to specify the training algorithm in semi/self.\n")
-            sys.exit(1)
+        else:
+            check_training_mode(logger, args)
 
     if args.cmd == 'multi_easy_bin':
+        check_training_mode(logger, args)
         if args.GTDB_reference is not None:
             expect_file(args.GTDB_reference)
         expect_file(args.contig_fasta)
@@ -155,6 +184,16 @@ def validate_normalize_args(logger, args):
             sys.stderr.write(
                 f"Error: Make sure that every contig file have different names.\n")
             sys.exit(1)
+
+    if getattr(args, 'train_from_many', False):
+        args.mode = 'several'
+
+    if hasattr(args, 'sequencing_type'):
+        if args.sequencing_type in ['short-read', 'short_reads', 'short-reads']:
+            args.sequencing_type = 'short_read'
+
+        if args.sequencing_type in ['long-read', 'long_reads', 'long-reads']:
+            args.sequencing_type = 'long_read'
 
 
 
