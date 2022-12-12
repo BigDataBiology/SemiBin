@@ -75,6 +75,12 @@ def parse_args(args):
 
     check_install = subparsers.add_parser('check_install', help = 'Check whether required dependencies are present.')
 
+    check_install.add_argument('--allow-missing-mmseqs2',
+            required=False,
+            help='Do not fail is MMSeqs2 is not found. MMSeqs2 is required for semi-supervised learning, but not self-supervised learning.',
+            dest='allow_missing_mmseqs2',
+            action='store_true', )
+
     concatenate_fasta = subparsers.add_parser('concatenate_fasta', help = 'concatenate fasta files for multi-sample binning')
 
     concatenate_fasta.add_argument('-i', '--input-fasta',
@@ -493,13 +499,15 @@ def parse_args(args):
 def _checkback(msg):
     msg[1].info('Processed:{}'.format(msg[0]))
 
-def check_install(verbose, orf_finder=None):
+def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
     '''Executes check_install subcommand, which checks for dependencies
 
     Parameters
     ----------
     verbose : boolean. If true, then prints out all the paths
     orf_finder : str, optional
+    allow_missing_mmseqs2 : boolean, optional
+        If true, then checks for mmseqs2
     '''
     from shutil import which
     dependencies = ['bedtools', 'hmmsearch', 'mmseqs', 'FragGeneScan', 'prodigal']
@@ -510,10 +518,13 @@ def check_install(verbose, orf_finder=None):
     for dep in dependencies:
         p = which(dep)
         if not p:
-            if dep not in ['FragGeneScan', 'prodigal']:
-                sys.stderr.write(
-                    f"Error: {dep} does not seem to be installed!\n")
-                missing_deps = True
+            if dep == 'mmseqs':
+                if not allow_missing_mmseqs2:
+                    sys.stderr.write(
+                        f"Error: {dep} does not seem to be installed! This is necessary for semi-supervised learning\n")
+                    missing_deps = True
+                elif verbose:
+                    print(f'\t{dep} not found. Semi-supervised training will not be possible')
             elif dep == 'prodigal':
                 if not has_fgs:
                     sys.stderr.write(
@@ -525,12 +536,19 @@ def check_install(verbose, orf_finder=None):
                         sys.stderr.write(
                             'Warning: prodigal does not appear to be available. You must use the `--orf-finder fraggenescan` option.\n')
                     missing_deps = True
+            elif dep == 'FragGeneScan':
+                pass
+            else:
+                sys.stderr.write(
+                    f"Error: {dep} does not seem to be installed!\n")
+                missing_deps = True
         else:
             if dep == 'FragGeneScan':
                 has_fgs = True
             if verbose:
                 print(f'\t{dep:16}: {p}')
     if missing_deps:
+        print('Missing dependencies')
         sys.exit(1)
     else:
         if verbose:
@@ -1192,7 +1210,7 @@ def main():
 
     validate_normalize_args(logger, args)
     if args.cmd == 'check_install':
-        check_install(True)
+        check_install(True, allow_missing_mmseqs2=args.allow_missing_mmseqs2)
 
     if args.cmd not in ['download_GTDB', 'check_install']:
         out = args.output
@@ -1319,10 +1337,9 @@ def main():
             binning_long(logger, args.num_process, args.data, args.minfasta_kb * 1000, binned_length,
                     contig_dict, args.model_path, args.random_seed,out, device,
                     args.environment, orf_finder=args.orf_finder, depth_metabat2=args.depth_metabat2)
-                    
 
         if args.cmd == 'single_easy_bin':
-            check_install(False, args.orf_finder)
+            check_install(False, args.orf_finder, args.training_type == 'self' or args.environment is not None)
             if args.random_seed is not None:
                 set_random_seed(args.random_seed)
             if args.environment is not None:
@@ -1331,7 +1348,7 @@ def main():
                         sys.stderr.write(
                             f"Error: provided pretrained model only used in single-sample binning!\n")
                         sys.exit(1)
-                        
+
             single_easy_binning(
                 args,
                 logger,
@@ -1349,7 +1366,7 @@ def main():
                 sequencing_type=args.sequencing_type)
 
         if args.cmd == 'multi_easy_bin':
-            check_install(False, args.orf_finder)
+            check_install(False, args.orf_finder, args.training_type == 'self')
             if args.random_seed is not None:
                 set_random_seed(args.random_seed)
             multi_easy_binning(

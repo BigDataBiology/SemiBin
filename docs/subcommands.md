@@ -238,6 +238,10 @@ If you download GTDB to a different directory than the default, you should then 
 
 Checks whether required dependencies are available (useful for trouble-shooting).
 
+#### Optional argument
+
+* `--allow-missing-mmseqs2` [since SemiBin 1.4]: When used, failure to find `mmseqs` will not lead to an error.
+
 ### concatenate_fasta
 
 Concatenate fasta files for multi-sample binning.
