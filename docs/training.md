@@ -16,6 +16,10 @@ Multi-sample models are always learned for each individual binning task, but sin
 This works best if the samples are somewhat related (_e.g._, from the same habitat), but in that case, it can produce the best results while minizing computational costs.
 Thus, we now focus on how single-sample models can be trained.
 
+## Once training is done, single-sample models are interchangeable
+
+**Once a model is trained, it does not matter how it was obtained** and models can be used interchangeably.
+
 ## Different ways of training a single-sample model
 
 The simplest approach is to train a model on the sample where it is going to be applied.
@@ -38,7 +42,6 @@ With this approach, taxonomic annotation (which was the most time consuming step
 This approach also appears to not require several samples to learn a good model.
 We expect that in version 2, self-supervised learning will become the default mode (any [feedback](mailto:luispedro@big-data-biology.org) or [bug report](https://github.com/BigDataBiology/SemiBin/issues) is welcome).
 
-As of November 2022, a new manuscript describing the self-supervised mode (and other improvements) is under preparation.
+As of December 2022, a new manuscript describing the self-supervised mode (and other improvements) is under preparation (but we are happy to share a pre-preprint to whomever wants to look at a rough draft and see the data, just [email us](mailto:luispedro@big-data-biology.org)).
 
-**Once a model is trained, it does not matter how it was obtained** and models can be used interchangeably.
 
