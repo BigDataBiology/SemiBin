@@ -2,7 +2,7 @@
 
 ## Version 1.4
 
-*Release December , 2022
+*Release December , 2022*
 
 ### User visible improvements
 
