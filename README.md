@@ -101,6 +101,11 @@ SemiBin runs on single-sample, co-assembly and multi-sample binning.
 Here we show the simple modes as an example.
 For the details and examples of every SemiBin subcommand, please [read the docs](https://semibin.readthedocs.io/en/latest/usage/).
 
+## Binning assemblies from long reads
+
+Since version 1.4, SemiBin proposes new algorithm (ensemble based DBSCAN algorithm) for binning assemblies from long reads. 
+To use it, you can used the subcommands `bin_long` or pass the option  `--sequencing-type=long_read` to the `single_easy_bin` or `multi_easy_bin` subcommands.
+
 ## Self-supervised mode
 
 Since version 1.3, SemiBin supports completely self-supervised learning, which bypasses the need to annotate contigs with MMSeqs2.

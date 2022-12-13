@@ -55,6 +55,17 @@ SemiBin single_easy_bin \
         -o output
 ```
 
+Binning assemblies from long reads:
+
+```bash
+SemiBin single_easy_bin \
+        --environment human_gut \
+        -i S1.fa \
+        -b S1.sorted.bam \
+        -o output
+        --sequencing-type long_read
+```
+
 Supported habitats are (names should be self-explanatory, except `global` which is a generic model):
 
 1.  `human_gut`
@@ -86,7 +97,6 @@ SemiBin single_easy_bin \
 The [Supplemental Tables 5 & 6 in the SemiBin manuscript](https://www.nature.com/articles/s41467-022-29843-y#MOESM1) contain a lot more information with respect to the computational trade-offs.
 
 If you have a lot of samples that are similar to each other while not fitting into any of our builtin trained models, you can also build your own model from a subset of them (see [[training a SemiBin model](training)])
-
 
 **2b. Learn a new model (self-supervised mode).** starting in version 1.3, SemiBin also supports a self-supervised mode, which is faster and appears to produce better results.
 At the moment (November 2022), a manuscript describing this mode is being prepared, but you can already run it by using the following command:
@@ -156,10 +166,27 @@ SemiBin bin \
     --data S1_output/data.csv \
     -o S1_output
 ```
+or
+```bash
+SemiBin bin_long \
+    -i S1.fa \
+    --model S1_output/model.h5 \
+    --data S1_output/data.csv \
+    -o S1_output
+```
+
 or, to use one of our built-in models (see above for the list of available models), you replace the `--model` argument with the `--environment` argument:
 
 ```bash
 SemiBin bin \
+    -i S1.fa \
+    --environment human_gut \
+    --data S1_output/data.csv \
+    -o S1_output
+```
+or
+```bash
+SemiBin bin_long \
     -i S1.fa \
     --environment human_gut \
     --data S1_output/data.csv \
@@ -300,6 +327,16 @@ SemiBin multi_easy_bin \
         -o multi_output
 ```
 
+or for long reads:
+
+```bash
+SemiBin multi_easy_bin \
+        -i concatenated.fa \
+        -b S1.sorted.bam S2.sorted.bam S3.sorted.bam S4.sorted.bam S5.sorted.bam \
+        -o multi_output
+        --sequencing-type long_read
+```
+
 ### Advanced multi-sample binning workflows workflows
 
 As with the other modes, the `multi_easy_bin` subcommand encapsulates a series of steps that can also be run independently for more control.
@@ -359,6 +396,16 @@ Together with running `mmseqs2`, this is the more computational intensive step a
 ```bash
 for sample in S1 S2 S3 S4 S5 ; do
     SemiBin bin \
+        -i ${sample}.fa \
+        --model ${sample}_output/model.h5 \
+        --data multi_output/samples/${sample}/data.csv \
+        -o output
+done
+```
+or
+```bash
+for sample in S1 S2 S3 S4 S5 ; do
+    SemiBin bin_long \
         -i ${sample}.fa \
         --model ${sample}_output/model.h5 \
         --data multi_output/samples/${sample}/data.csv \

@@ -224,6 +224,21 @@ The `bin` subcommand requires the contig file and output (files `data.csv`, `mod
 
 * `--minfasta-kbs`, `--recluster`, `--max-node`, `--max-edges`, `-p/--processes/-t/--threads`, `--random-seed`, `--environment`, `--ratio`, `--min-len`, `--no-recluster`, `--orf-finder`, `--engine` and `--depth-metabat2` are the same as for `single_easy_bin`
 
+### bin_long
+
+The `bin_long` subcommand requires the contig file and output (files `data.csv`, `model.h5`) from the `generate_sequence_features_single`, `generate_sequence_features_multi` and `train` subcommand as inputs and output the final bins in the `output_bins` directory.
+
+#### Required arguments
+
+* `--model`: Path to the trained model.
+* `--data` (same as for `train`)
+* `i/--input-fasta` (same as for `single_easy_bin`)
+* `-o/--output` (same as for `single_easy_bin`)
+
+#### Optional arguments
+
+* `--minfasta-kbs`, `-p/--processes/-t/--threads`, `--random-seed`, `--environment`, `--ratio`, `--min-len`, `--orf-finder`, `--engine` and `--depth-metabat2` are the same as for `single_easy_bin`
+
 ### download_GTDB
 
 Download reference genomes (GTDB).

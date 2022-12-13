@@ -1,5 +1,13 @@
 # What's New
 
+## Version 1.4
+
+*Release December , 2022
+
+### User visible improvements
+
+- Added binning algorithm for assemblies from long-read datasets.
+
 ## Version 1.3.1
 
 *Release December 9, 2022*
