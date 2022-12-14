@@ -1265,6 +1265,16 @@ def main():
                 binned_length = 1000 if binned_short else 2500
             else:
                 binned_length = args.min_len
+            if not contig_dict:
+                logger.error(f'Input file {args.contig_fasta} is empty. Please check inputs.')
+                sys.exit(1)
+            n_pass = sum(len(c) >= binned_length for c in contig_dict.values())
+            if n_pass == 0:
+                logger.error(f'Input file {args.contig_fasta} contains {len(contigs_dict)} contigs, but all are shorter than {binned_length} basepairs.')
+                sys.exit(1)
+            elif n_pass < 4:
+                logger.error(f'There are {len(contig_dict)} contigs in input file {args.contig_fasta}, but only {n_pass} contain(s) at least {binned_length} basepairs.')
+                sys.exit(1)
 
         if args.cmd in ['generate_cannot_links', 'generate_sequence_features_single', 'generate_sequence_features_multi', 'single_easy_bin', 'multi_easy_bin']:
             if args.ml_threshold is not None:
