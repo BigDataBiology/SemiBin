@@ -1,12 +1,31 @@
 # What's New
 
-## Version 1.4
+## Version 1.4.0: long reads binning!
 
-*Release December , 2022*
+*Released December 15, 2022*
 
-### User visible improvements
+Big change is the added binning algorithm for assemblies from long-read datasets.
 
-- Added binning algorithm for assemblies from long-read datasets.
+The overall structure of the pipeline is still similar to what was [manuscript](https://www.nature.com/articles/s41467-022-29843-y), but when clustering, it does not use infomap, but another procedure (an iterative version of DBSCAN).
+
+Use the flag `--sequencing-type=long_read` to enable an alternative clustering that works better with long reads.
+
+### Other user-visible improvements
+
+- Better error checking at multiple steps in the pipeline so that processes that will crash are caught as early as possible
+- Add `--allow-missing-mmseqs2` flag to `check_install` subcommand (eventually, self-supervision will be the default and mmseqs2 will be an optional dependency)
+
+### Command line parameter deprecations
+
+The previous arguments should continue to work, but going forward, the newer arguments are probably a better API.
+
+- Selecting self-supervised learning is now done with the `--self-supervised` flag (instead of `--training-type=self`)
+- Training from multiple samples is now enabled with the `--train-from-many` flag (instead of `--mode=several`)
+
+### Bugfixes
+
+- The output table sometimes had the wrong path in `v1.3`. This has been fixed
+- Prodigal is now run in a more robust manner when using multiple threads ([#106](https://github.com/BigDataBiology/SemiBin/issues/106))
 
 ## Version 1.3.1
 
