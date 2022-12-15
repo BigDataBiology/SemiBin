@@ -189,10 +189,10 @@ def validate_normalize_args(logger, args):
         args.mode = 'several'
 
     if hasattr(args, 'sequencing_type'):
-        if args.sequencing_type in ['short-read', 'short_reads', 'short-reads']:
+        if args.sequencing_type.lower() in ['short', 'short-read', 'short_reads', 'short-reads']:
             args.sequencing_type = 'short_read'
 
-        if args.sequencing_type in ['long-read', 'long_reads', 'long-reads']:
+        if args.sequencing_type.lower() in ['long', 'long-read', 'long_reads', 'long-reads']:
             args.sequencing_type = 'long_read'
 
 
