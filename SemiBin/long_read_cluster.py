@@ -7,43 +7,44 @@ from sklearn.neighbors import kneighbors_graph
 from collections import defaultdict
 
 
-def get_max(results_dict, con, contig_to_marker, namelist, contig_dict, minfasta):
-    max_F1 = 0
-    max_weight = 1e9
-    max_bin = None
-    for eps_value, res_labels in results_dict.items():
-        res = defaultdict(list)
-        for label, name in zip(res_labels, namelist):
-            if label != -1:
-                res[label].append(name)
-        for temp in res:
-            bin_contig = res[temp]
-            if sum(len(contig_dict[contig]) for contig in
-                   bin_contig) < minfasta:
-                continue
-            marker_list = []
-            for contig in bin_contig:
-                marker_list.extend(contig_to_marker[contig])
-            if len(marker_list) == 0:
-                continue
-            recall = len(set(marker_list)) / 107
-            contamination = (len(marker_list) - len(set(marker_list))) / len(
-                marker_list)
-            if contamination <= con:
-                F1 = 2 * recall * (1 - contamination) / (
-                            recall + (1 - contamination))
-                if F1 > max_F1:
-                    max_F1 = F1
-                    max_weight = sum(
-                        len(contig_dict[contig]) for contig in bin_contig)
-                    max_bin = bin_contig
-                if F1 == max_F1:
-                    if sum(len(contig_dict[contig]) for contig in
-                           bin_contig) <= max_weight:
-                        max_weight = sum(
-                            len(contig_dict[contig]) for contig in bin_contig)
+def get_best_bin(results_dict, contig_to_marker, namelist, contig_dict, minfasta):
+
+    # There is room for improving the loop below to avoid repeated computation
+    # but it runs very fast in any case
+    for max_contamination in [0.1, 0.2, 0.3, 0.4, 0.5, 1]:
+        max_F1 = 0
+        weight_of_max = 1e9
+        max_bin = None
+
+        for res_labels in results_dict.values():
+            res = defaultdict(list)
+            for label, name in zip(res_labels, namelist):
+                if label != -1:
+                    res[label].append(name)
+            for bin_contig in res.values():
+                cur_weight = sum(len(contig_dict[contig]) for contig in bin_contig)
+                if cur_weight < minfasta:
+                    continue
+                marker_list = []
+                for contig in bin_contig:
+                    marker_list.extend(contig_to_marker[contig])
+                if len(marker_list) == 0:
+                    continue
+                recall = len(set(marker_list)) / 107
+                contamination = (len(marker_list) - len(set(marker_list))) / len(
+                    marker_list)
+                if contamination <= max_contamination:
+                    F1 = 2 * recall * (1 - contamination) / (
+                                recall + (1 - contamination))
+                    if F1 > max_F1:
+                        max_F1 = F1
+                        weight_of_max = cur_weight
                         max_bin = bin_contig
-    return max_F1, max_weight, max_bin
+                    elif F1 == max_F1 and cur_weight <= weight_of_max:
+                        weight_of_max = cur_weight
+                        max_bin = bin_contig
+        if max_F1 > 0: # if there is a bin with F1 > 0
+            return max_bin
 
 def cluster_long_read(model, data, device, is_combined,
             logger, n_sample, out, contig_dict, binned_length, num_process, minfasta, random_seed, orf_finder = 'prodigal'):
@@ -123,30 +124,25 @@ def cluster_long_read(model, data, device, is_combined,
             written.append(part)
             break
 
-        for con in [0.1, 0.2, 0.3, 0.4, 0.5, 1]:
-            max_F1, max_weight, max_bin = get_max(DBSCAN_results_dict, con, contig2marker, contig_list, contig_dict, minfasta)
-            if max_F1 != 0:
-                break
-            else:
-                if con != 1:
-                    continue
-                else:
-                    break
-
-        if max_bin == [] or max_bin == None:
+        max_bin = get_best_bin(DBSCAN_results_dict,
+                                contig2marker,
+                                contig_list,
+                                contig_dict,
+                                minfasta)
+        if not max_bin:
             break
-        else:
-            part = write_bins(max_bin, [cluster_label] * len(max_bin),
-                       output_bin_path, contig_dict,
-                       recluster=False,
-                       minfasta=minfasta)
-            cluster_label += 1
-            written.append(part)
-            for temp in max_bin:
-                temp_index = contig_list.index(temp)
-                contig_list.pop(temp_index)
-                for eps_value in DBSCAN_results_dict:
-                    DBSCAN_results_dict[eps_value].pop(temp_index)
+
+        part = write_bins(max_bin, [cluster_label] * len(max_bin),
+                   output_bin_path, contig_dict,
+                   recluster=False,
+                   minfasta=minfasta)
+        cluster_label += 1
+        written.append(part)
+        for temp in max_bin:
+            temp_index = contig_list.index(temp)
+            contig_list.pop(temp_index)
+            for eps_value in DBSCAN_results_dict:
+                DBSCAN_results_dict[eps_value].pop(temp_index)
 
     import pandas as pd
     written = pd.concat(written)
