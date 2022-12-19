@@ -13,6 +13,18 @@ def test_parse_args():
     assert args.training_type == 'semi'
     assert args.sequencing_type == 'short_read'
 
+def test_sequencing_type():
+    args = parse_args(
+            ['single_easy_bin',
+                '-i' ,'./test/single_sample_data/input.fasta',
+                '-b', './test/single_sample_data/input.sorted.bam',
+                '--sequencing-type', 'Long-Reads',
+                '-o', 'output']
+            )
+    validate_normalize_args(logging, args)
+    assert args.training_type == 'semi'
+    assert args.sequencing_type == 'long_read'
+
 def test_parse_args_backcompat():
     for t in ['semi', 'self']:
         args = parse_args(

@@ -127,12 +127,15 @@ def validate_normalize_args(logger, args):
             expect_file_list(args.data_split)
 
     if args.cmd in ['single_easy_bin', 'multi_easy_bin']:
-        if args.sequencing_type not in ['short_read', 'long_read']:
-            sys.stderr.write(
-                f"Error: Must choose a reads type in short_read/long_read.\n")
-            sys.exit(1)
+        if args.sequencing_type.lower() in ['short', 'short-read', 'short_reads', 'short-reads', 'short_read']:
+            args.sequencing_type = 'short_read'
+        elif args.sequencing_type.lower() in ['long', 'long-read', 'long_reads', 'long-reads', 'long_read']:
+            args.sequencing_type = 'long_read'
         else:
-            logger.info(f'Binning for {args.sequencing_type}')
+            sys.stderr.write(
+                f"Error: Did not understand sequencing_type argument '{args.sequencing_type}' (should be short_reads or long_reads).\n")
+            sys.exit(1)
+        logger.info(f'Binning for {args.sequencing_type}')
 
     if args.cmd == 'bin':
         if args.environment is None and args.model_path is None:
@@ -188,12 +191,6 @@ def validate_normalize_args(logger, args):
     if getattr(args, 'train_from_many', False):
         args.mode = 'several'
 
-    if hasattr(args, 'sequencing_type'):
-        if args.sequencing_type.lower() in ['short', 'short-read', 'short_reads', 'short-reads']:
-            args.sequencing_type = 'short_read'
-
-        if args.sequencing_type.lower() in ['long', 'long-read', 'long_reads', 'long-reads']:
-            args.sequencing_type = 'long_read'
 
 
 
