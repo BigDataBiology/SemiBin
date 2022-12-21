@@ -3,11 +3,12 @@ import subprocess
 import contextlib
 import sys
 import shutil
+import logging
+from .naive_orffinder import run_naiveorf
 
 
 def run_prodigal(fasta_path, num_process, output):
     from .fasta import fasta_iter
-    from .error import LoggingPool
 
     contigs = {}
     for h, seq in fasta_iter(fasta_path):
@@ -89,4 +90,8 @@ def run_orffinder(fasta_path, num_process, tdir, orf_finder):
     '''Run ORF finder (depending on the value or the orf_finder argument'''
     if orf_finder == 'prodigal':
         return run_prodigal(fasta_path, num_process, tdir)
+    elif orf_finder == 'fast-naive':
+        logger = logging.getLogger('SemiBin')
+        logger.info('Running naive ORF finder')
+        return run_naiveorf(fasta_path, num_process, tdir)
     return run_fraggenescan(fasta_path, num_process, tdir)

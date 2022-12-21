@@ -63,9 +63,9 @@ def validate_normalize_args(logger, args):
 
     if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin', 'train_self']:
         if args.cmd != 'train_self':
-            if args.orf_finder not in ['prodigal', 'fraggenescan']:
+            if args.orf_finder not in ['prodigal', 'fraggenescan', 'fast-naive']:
                 sys.stderr.write(
-                    f"Error: SemiBin only supports prodigal or fraggenescan as the ORF finder (--orf_finder option).\n")
+                    f"Error: SemiBin only supports 'prodigal'/'fraggenescan'/'fast-naive' as the ORF finder (--orf_finder option).\n")
                 sys.exit(1)
         if args.engine not in ['auto', 'gpu', 'cpu']:
             sys.stderr.write(
@@ -287,7 +287,7 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, o
     qlen = data[['gene','qlen']].drop_duplicates().set_index('gene')['qlen']
 
     def contig_name(ell):
-        if orf_finder == 'prodigal':
+        if orf_finder in ['prodigal', 'fast-naive']:
             contig,_ = ell.rsplit( '_', 1)
         else:
             contig,_,_,_ = ell.rsplit( '_', 3)

@@ -1,5 +1,9 @@
 # What's New
 
+## Unreleased github version
+
+Added a new option for ORF finding, called `fast-naive` which is an internal very fast implementation.
+
 ## Version 1.4.0: long reads binning!
 
 *Released December 15, 2022*

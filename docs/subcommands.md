@@ -46,7 +46,7 @@ Starting in version 1.3, self-supervised learning is also supported, which shoul
 #### Optional arguments to set internal parameters
 
 * `--random-seed`: Random seed to reproduce results.
-* `--orf-finder` : gene predictor used to estimate the number of bins. Must be either `prodigal` (default since `v0.7`) or `fraggenescan` (which is faster, but cannot be installed in all platforms).
+* `--orf-finder` : gene predictor used to estimate the number of bins. Must be one of `prodigal` (default since `v0.7`), `fast-naive` (available since `v1.5`, this is a very fast internal implementation), or `fraggenescan` (which is faster, but cannot be installed in all platforms).
 
 
 #### Optional arguments to bypass internal steps
