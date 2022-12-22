@@ -526,15 +526,18 @@ def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
                 elif verbose:
                     print(f'\t{dep} not found. Semi-supervised training will not be possible')
             elif dep == 'prodigal':
-                if not has_fgs:
-                    sys.stderr.write(
-                            'Error: neither prodigal nor FragGeneScan appear to be available!\n'
-                            'At least one of them is necessary to run SemiBin\n')
-                    missing_deps = True
-                else:
-                    if verbose or orf_finder != 'fraggenescan':
+                if orf_finder == 'fast-naive':
+                    pass
+                elif not has_fgs:
+                    if orf_finder != 'fast-naive':
                         sys.stderr.write(
-                            'Warning: prodigal does not appear to be available. You must use the `--orf-finder fraggenescan` option.\n')
+                                'Error: neither prodigal nor FragGeneScan appear to be available!\n'
+                                'You can use --orf-finder=fast-naive to use the builtin simple ORF finder')
+                        missing_deps = True
+                else:
+                    if verbose or orf_finder == 'prodigal':
+                        sys.stderr.write(
+                            'Warning: prodigal does not appear to be available (although FragGeneScan is). You must use the `--orf-finder=fast-naive` or `--orf-finder=fraggenescan` options.\n')
                     missing_deps = True
             elif dep == 'FragGeneScan':
                 pass
