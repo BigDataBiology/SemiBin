@@ -86,9 +86,13 @@ def run_fraggenescan(fasta_path, num_process, output):
         sys.exit(1)
     return contig_output + '.faa'
 
-def run_orffinder(fasta_path, num_process, tdir, orf_finder):
+def run_orffinder(fasta_path, num_process, tdir, orf_finder, prodigal_output_faa):
     '''Run ORF finder (depending on the value or the orf_finder argument'''
-    if orf_finder == 'prodigal':
+    if prodigal_output_faa is not None:
+        oname = os.path.join(tdir, 'orfs.faa')
+        shutil.copyfile(prodigal_output_faa, oname)
+        return oname
+    elif orf_finder == 'prodigal':
         return run_prodigal(fasta_path, num_process, tdir)
     elif orf_finder == 'fast-naive':
         logger = logging.getLogger('SemiBin')

@@ -1,6 +1,8 @@
 Unreleased
 	* Added naive ORF finder
 	* Make command line arguments more flexible for --sequencing-type argument
+	* Add `--prodigal-output-faa` argument (#113)
+	* Argument checking is more exhaustive instead of exiting at first error
 
 Version 1.4.0 Dec  2022 by BigDataBiology
 	* Provide binning algorithm for assemblies from long read

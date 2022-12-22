@@ -2,7 +2,12 @@
 
 ## Unreleased github version
 
-Added a new option for ORF finding, called `fast-naive` which is an internal very fast implementation.
+### User-visible improvements
+
+- Added a new option for ORF finding, called `fast-naive` which is an internal very fast implementation.
+- Added the possibility of bypassing ORF finding altogether by providing prodigal outputs directly (or any other gene prediction in the right format)
+- Command line argument checking is more exhaustive instead of exiting at first error
+
 
 ## Version 1.4.0: long reads binning!
 

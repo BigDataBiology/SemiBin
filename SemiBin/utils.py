@@ -40,13 +40,15 @@ def check_training_mode(logger, args):
 
 def validate_normalize_args(logger, args):
     '''Validate and normalize command line arguments'''
+    exit_with_error = False
 
     def expect_file(f):
+        nonlocal exit_with_error
         if f is not None:
             if not os.path.exists(f):
                 sys.stderr.write(
                     f"Error: Expected file '{f}' does not exist\n")
-                sys.exit(1)
+                exit_with_error = True
 
     def expect_file_list(fs):
         if fs is not None:
@@ -61,16 +63,21 @@ def validate_normalize_args(logger, args):
         if args.num_process > multiprocessing.cpu_count():
             args.num_process = multiprocessing.cpu_count()
 
-    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin', 'train_self']:
-        if args.cmd != 'train_self':
-            if args.orf_finder not in ['prodigal', 'fraggenescan', 'fast-naive']:
-                sys.stderr.write(
-                    f"Error: SemiBin only supports 'prodigal'/'fraggenescan'/'fast-naive' as the ORF finder (--orf_finder option).\n")
-                sys.exit(1)
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin']:
+        if args.orf_finder not in ['prodigal', 'fraggenescan', 'fast-naive']:
+            sys.stderr.write(
+                f"Error: SemiBin only supports 'prodigal'/'fraggenescan'/'fast-naive' as the ORF finder (--orf_finder option).\n")
+            exit_with_error = True
+        expect_file(args.prodigal_output_faa)
+        if args.prodigal_output_faa is not None:
+            args.orf_finder = 'prodigal'
+
+    if hasattr(args, 'engine'):
+        args.engine = args.engine.lower()
         if args.engine not in ['auto', 'gpu', 'cpu']:
             sys.stderr.write(
-                f"Error: You need to specify the engine in auto/gpu/cpu.\n")
-            sys.exit(1)
+                f"Error: Argument '--engine' needs to be one of auto[default]/gpu/cpu.\n")
+            exit_with_error = True
 
     if args.cmd == 'generate_cannot_links':
         if args.GTDB_reference is not None:
@@ -91,22 +98,22 @@ def validate_normalize_args(logger, args):
             if len(args.data) > 1:
                 sys.stderr.write(
                     f"Error: Expected one data.csv file with single mode.\n")
-                sys.exit(1)
+                exit_with_error = True
 
             if len(args.data_split) > 1:
                 sys.stderr.write(
                     f"Error: Expected one data_split.csv file with single mode.\n")
-                sys.exit(1)
+                exit_with_error = True
             if args.cmd == 'train':
                 if len(args.contig_fasta) > 1:
                     sys.stderr.write(
                         f"Error: Expected one fasta file with single mode.\n")
-                    sys.exit(1)
+                    exit_with_error = True
 
                 if len(args.cannot_link) > 1:
                     sys.stderr.write(
                         f"Error: Expected one cannot.txt file with single mode.\n")
-                    sys.exit(1)
+                    exit_with_error = True
                 expect_file(args.cannot_link[0])
                 expect_file(args.contig_fasta[0])
 
@@ -132,18 +139,18 @@ def validate_normalize_args(logger, args):
         else:
             sys.stderr.write(
                 f"Error: Did not understand sequencing_type argument '{args.sequencing_type}' (should be short_reads or long_reads).\n")
-            sys.exit(1)
+            exit_with_error = True
         logger.info(f'Binning for {args.sequencing_type}')
 
     if args.cmd == 'bin':
         if args.environment is None and args.model_path is None:
             sys.stderr.write(
                 f"Error: Please choose input a model path or use our built-in model for [human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/chicken_caecum/global].\n")
-            sys.exit(1)
+            exit_with_error = True
         if args.environment is not None and args.model_path is not None:
             sys.stderr.write(
                 f"Error: Please choose input a model path or use our built-in model for [human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/chicken_caecum/global].\n")
-            sys.exit(1)
+            exit_with_error = True
         if args.environment is not None:
             # This triggers checking that the environment is valid
             get_model_path(args.environment)
@@ -174,7 +181,7 @@ def validate_normalize_args(logger, args):
         if args.training_type not in ['semi', 'self']:
             sys.stderr.write(
                 f"Error: You need to specify the training algorithm in semi/self.\n")
-            sys.exit(1)
+            exit_with_error = True
 
     if args.cmd == 'concatenate_fasta':
         expect_file_list(args.contig_fasta)
@@ -184,12 +191,13 @@ def validate_normalize_args(logger, args):
         if len(set(contig_name)) != len(contig_name):
             sys.stderr.write(
                 f"Error: Make sure that every contig file have different names.\n")
-            sys.exit(1)
+            exit_with_error = True
 
     if getattr(args, 'train_from_many', False):
         args.mode = 'several'
 
-
+    if exit_with_error:
+        sys.exit(1)
 
 
 def get_must_link_threshold(contig_lens):
@@ -335,7 +343,7 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, o
             return extract_seeds(counts, data)
 
 
-def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, output = None, orf_finder = 'prodigal'):
+def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, output = None, orf_finder = 'prodigal', prodigal_output_faa=None):
     '''Estimate number of bins from a FASTA file
 
     Parameters
@@ -355,7 +363,7 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
         else:
             target_dir = tdir
 
-        contig_output = run_orffinder(fasta_path, num_process, tdir, orf_finder)
+        contig_output = run_orffinder(fasta_path, num_process, tdir, orf_finder, prodigal_output_faa=prodigal_output_faa)
 
         hmm_output = os.path.join(target_dir, 'markers.hmmout')
         try:

@@ -47,7 +47,8 @@ def get_best_bin(results_dict, contig_to_marker, namelist, contig_dict, minfasta
             return max_bin
 
 def cluster_long_read(model, data, device, is_combined,
-            logger, n_sample, out, contig_dict, binned_length, num_process, minfasta, random_seed, orf_finder = 'prodigal'):
+            logger, n_sample, out, contig_dict, binned_length, num_process,
+            minfasta, random_seed, orf_finder='prodigal', prodigal_output_faa=None):
     contig_list = data.index.tolist()
     if not is_combined:
         train_data_input = data.values[:, 0:136]
@@ -87,7 +88,8 @@ def cluster_long_read(model, data, device, is_combined,
                 binned_length,
                 num_process,
                 output=out,
-                orf_finder=orf_finder)
+                orf_finder=orf_finder,
+                prodigal_output_faa=prodigal_output_faa)
 
             contig2marker = get_marker(os.path.join(out, 'markers.hmmout'), orf_finder=orf_finder,
                                        min_contig_len=binned_length, fasta_path=cfasta, contig_to_marker=True)
