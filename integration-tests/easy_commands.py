@@ -96,6 +96,7 @@ subprocess.check_call(
      '-b', f'{single_sample_input}/input.sorted.bam',
      '--epochs', '1',
      '--self-supervised',
+     '--orf-finder', 'fast-naive',
      '--sequencing-type', 'long_read'])
 assert os.path.exists(f'{single_self_output_long}/output_bins')
 
