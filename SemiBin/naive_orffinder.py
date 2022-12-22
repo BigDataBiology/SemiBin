@@ -48,6 +48,9 @@ def findall(seq, pats):
     matches.sort()
     return matches
 
+def is_atcg(seq):
+    # Empirically this seems to be very fast, even if the code is a bit ridiculous
+    return seq.translate(str.maketrans('ATGC', '\n\n\n\n')).count('\n') == len(seq)
 
 def find_orfs_fwd(seq, accept_incomplete=False):
     '''Find ORFs in the forward strand
@@ -69,12 +72,13 @@ def find_orfs_fwd(seq, accept_incomplete=False):
         if seq[i:i+3] in STOP_CODONS:
             if active[ix] != -1:
                 if i - active[ix] > MIN_LEN:
-                    orfs.append(ORFPos(active[ix], i+3, False))
+                    if is_atcg(seq[active[ix]:i+3]):
+                        orfs.append(ORFPos(active[ix], i+3, False))
                 active[ix] = -1
     if accept_incomplete:
         for ix in range(3):
             if active[ix] != -1:
-                if len(seq) - active[ix] > MIN_LEN:
+                if len(seq) - active[ix] > MIN_LEN and is_atcg(seq[active[ix]:]):
                     orfs.append(ORFPos(active[ix], len(seq) - (len(seq)-ix)%3, False))
     return orfs
 
@@ -102,6 +106,7 @@ def orfs_to_fasta(seq, header, orfs):
                 for i,orf in enumerate(orfs))
 def get_orfs(h_seq):
     h,seq = h_seq
+    seq = seq.upper()
     orfs = find_orfs(seq, accept_incomplete=True)
     return orfs_to_fasta(seq, h, orfs)
 
@@ -111,6 +116,7 @@ def run_naiveorf(fasta_path, num_process, output):
     with open(oname, 'w') as out:
         if num_process == 1:
             for header,seq in fasta.fasta_iter(fasta_path):
+                seq = seq.upper()
                 orfs = find_orfs(seq, accept_incomplete=True)
                 for i,orf in enumerate(orfs):
                     out.write(f'>{header}_{i} {orf.start}-{orf.end} {"-1" if orf.rc else "+1"}\n')
