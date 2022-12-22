@@ -1,27 +1,21 @@
 from SemiBin.main import binning, binning_long
 from SemiBin.fasta import fasta_iter
 import os
-import pytest
 import logging
 import pandas as pd
 
-def test_bin():
-    logger = logging.getLogger('SemiBin')
-    logger.setLevel(logging.INFO)
-    sh = logging.StreamHandler()
-    sh.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
-    logger.addHandler(sh)
-
+def test_bin(tmpdir):
     contig_dict = {h:seq for h,seq in fasta_iter('test/bin_data/input.fasta')}
 
-    os.makedirs('output_bin',exist_ok=True)
+    odir = f'{tmpdir}/output_test_bin'
+    os.makedirs(odir,exist_ok=True)
     binning(num_process=1,
             data='test/bin_data/data.csv',
             max_edges=20,
             max_node=1,
             minfasta=0,
-            logger=logger,
-            output='output_bin',
+            logger=logging,
+            output=odir,
             binned_length=1000,
             device='cpu',
             contig_dict=contig_dict,
@@ -31,15 +25,16 @@ def test_bin():
             environment=None,
             )
 
-    assert len(os.listdir('output_bin/output_prerecluster_bins')) > 0
-    assert len(os.listdir('output_bin/output_recluster_bins')) > 0
+    assert len(os.listdir(f'{odir}/output_prerecluster_bins')) > 0
+    assert len(os.listdir(f'{odir}/output_recluster_bins')) > 0
 
-    os.makedirs('output_bin_long', exist_ok=True)
+    odir = f'{tmpdir}/output_test_bin_long'
+    os.makedirs(odir, exist_ok=True)
     binning_long(num_process=1,
             data='test/bin_data/data.csv',
             minfasta=0,
-            logger=logger,
-            output='output_bin_long',
+            logger=logging,
+            output=odir,
             binned_length=1000,
             device='cpu',
             contig_dict=contig_dict,
@@ -48,4 +43,5 @@ def test_bin():
             environment=None,
             )
 
-    assert len(os.listdir('output_bin_long/output_bins')) > 0
+    assert len(os.listdir(f'{odir}/output_bins')) > 0
+

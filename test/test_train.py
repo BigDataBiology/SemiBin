@@ -1,20 +1,14 @@
 from SemiBin.main import training
 from SemiBin.fasta import fasta_iter
 import os
-import pytest
 import logging
 import pandas as pd
 
-def test_train():
-    logger = logging.getLogger('SemiBin')
-    logger.setLevel(logging.INFO)
-    sh = logging.StreamHandler()
-    sh.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
-    logger.addHandler(sh)
-
+def test_train(tmpdir):
     contig_dict = {h:seq for h,seq in fasta_iter('test/train_data/input.fasta')}
 
-    os.makedirs('output_train',exist_ok=True)
+    odir = f'{tmpdir}/output_train'
+    os.makedirs(odir)
     training(contig_fasta = ['test/train_data/input.fasta'],
             num_process = 1,
             data = ['test/train_data/data.csv'],
@@ -22,8 +16,8 @@ def test_train():
             cannot_link = ['test/train_data/cannot.txt'],
             batchsize = 2048,
             epoches = 1,
-            logger = logger,
-            output = 'output_train',
+            logger = logging,
+            output = odir,
             device = 'cpu',
             mode = 'single',
             ratio=0.05,
@@ -31,9 +25,12 @@ def test_train():
             training_mode = 'semi'
             )
 
-    assert os.path.exists('output_train/model.h5')
+    assert os.path.exists(f'{odir}/model.h5')
 
-    os.makedirs('output_train_self',exist_ok=True)
+def test_train_self(tmpdir):
+    contig_dict = {h:seq for h,seq in fasta_iter('test/train_data/input.fasta')}
+    odir = f'{tmpdir}/output_train_self'
+    os.makedirs(odir)
     training(contig_fasta = ['test/train_data/input.fasta'],
             num_process = 1,
             data = ['test/train_data/data.csv'],
@@ -41,8 +38,8 @@ def test_train():
             cannot_link = ['test/train_data/cannot.txt'],
             batchsize = 2048,
             epoches = 1,
-            logger = logger,
-            output = 'output_train_self',
+            logger = logging,
+            output = odir,
             device = 'cpu',
             mode = 'single',
             ratio=0.05,
@@ -50,4 +47,4 @@ def test_train():
             training_mode = 'self'
             )
 
-    assert os.path.exists('output_train_self/model.h5')
+    assert os.path.exists(f'{odir}/model.h5')
