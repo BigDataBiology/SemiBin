@@ -1041,12 +1041,13 @@ def binning(logger, num_process, data,
         n_sample,
         output,
         contig_dict,
-        binned_length,
-        num_process,
-        minfasta,
-        recluster,
-        random_seed,
-        orf_finder=orf_finder)
+        binned_length=binned_length,
+        num_process=num_process,
+        minfasta=minfasta,
+        recluster=recluster,
+        random_seed=random_seed,
+        orf_finder=orf_finder,
+        prodigal_output_faa=prodigal_output_faa)
 
 
 def single_easy_binning(args, logger, binned_length,

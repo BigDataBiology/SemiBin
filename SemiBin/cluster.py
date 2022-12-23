@@ -83,7 +83,9 @@ def cal_kl(m, v, use_ne='auto'):
 
 
 def cluster(model, data, device, max_edges, max_node, is_combined,
-            logger, n_sample, out, contig_dict, binned_length, num_process, minfasta, recluster, random_seed, orf_finder = 'prodigal'):
+            logger, n_sample, out, contig_dict, *,
+            binned_length, num_process, minfasta, recluster, random_seed,
+            orf_finder='prodigal', prodigal_output_faa=None):
     """
     Cluster contigs into bins
     max_edges: max edges of one contig considered in binning
@@ -230,7 +232,8 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                 binned_length,
                 num_process,
                 multi_mode=True,
-                orf_finder=orf_finder)
+                orf_finder=orf_finder,
+                prodigal_output_faa=prodigal_output_faa)
 
         outputs = []
         # The code below (iat call) relies on this
