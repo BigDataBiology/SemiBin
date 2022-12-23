@@ -232,8 +232,8 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                 binned_length,
                 num_process,
                 multi_mode=True,
-                orf_finder=orf_finder,
-                prodigal_output_faa=prodigal_output_faa)
+                orf_finder=orf_finder)
+                # we cannot bypass the orf_finder here, because of the renaming of the contigs
 
         outputs = []
         # The code below (iat call) relies on this
