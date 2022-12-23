@@ -82,3 +82,23 @@ def test_parse_args_backcompat():
              '-p', '1'])
     validate_normalize_args(logging, args)
     assert args.mode == 'single'
+
+
+def test_quiet_before_or_after():
+    args = parse_args([
+            '--quiet',
+            'single_easy_bin',
+            '-i' ,'./test/single_sample_data/input.fasta',
+            '-b', './test/single_sample_data/input.sorted.bam',
+            '-o', 'output']
+            )
+    assert args.quiet
+    args_after = parse_args([
+            'single_easy_bin',
+            '--quiet',
+            '-i' ,'./test/single_sample_data/input.fasta',
+            '-b', './test/single_sample_data/input.sorted.bam',
+            '-o', 'output']
+            )
+    assert args_after.quiet
+    assert args == args_after

@@ -36,12 +36,19 @@ def parse_args(args):
                         '--version',
                         action='version',
                         help='Print the version number')
-    parser.add_argument('--verbose',
-                       required=False,
-                       help='Verbose output',
-                       dest='verbose',
-                       action='store_true', )
 
+    verbosity = parser.add_mutually_exclusive_group()
+    verbosity.add_argument('--verbose',
+                   required=False,
+                   help='Verbose output',
+                   dest='verbose',
+                   action='store_true', )
+
+    verbosity.add_argument('--quiet', '-q',
+                        required=False,
+                        help='Quiet output',
+                        dest='quiet',
+                        action='store_true', )
     subparsers = parser.add_subparsers(title='SemiBin subcommands',
                                        dest='cmd',
                                        metavar='')
@@ -129,12 +136,24 @@ def parse_args(args):
                             action='store_true',
                             default=None)
 
-    for p in [single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi, check_install, concatenate_fasta, training, binning, training_self, binning_long]:
-        p.add_argument('--verbose',
-                            required=False,
-                            help='Verbose output',
-                            dest='verbose',
-                            action='store_true', )
+    for p in [single_easy_bin, multi_easy_bin,
+                    generate_sequence_features_single, generate_sequence_features_multi,
+                    generate_cannot_links, check_install, concatenate_fasta,
+                    training, binning, training_self, binning_long]:
+        verbosity = p.add_mutually_exclusive_group()
+        # Using verbose1/quiet1 is a hack for the fact that it is hard to make
+        # argparse accept options both in the global scope and in the
+        # subcommand scope
+        verbosity.add_argument('--verbose',
+                        required=False,
+                        help='Verbose output',
+                        dest='verbose1',
+                        action='store_true', )
+        verbosity.add_argument('--quiet', '-q',
+                        required=False,
+                        help='Quiet output',
+                        dest='quiet1',
+                        action='store_true', )
 
     for p in [training, training_self]:
         p.add_argument('--data',
@@ -228,19 +247,6 @@ def parse_args(args):
                              default=None,
                              help='Path to the trained semi-supervised deep learning model.')
 
-    binning.add_argument('--max-edges',
-                   required=False,
-                   type=int,
-                   help='The maximum number of edges that can be connected to one contig (Default: 200).',
-                   dest='max_edges',
-                   default=200)
-
-    binning.add_argument('--max-node',
-                   required=False,
-                   type=float,
-                   dest='max_node',
-                   default=1,
-                   help='Fraction of contigs that considered to be binned (should be between 0 and 1; default: 1).')
 
     for p in [single_easy_bin, multi_easy_bin, training, binning, binning_long]:
         p.add_argument('--orf-finder',
@@ -414,15 +420,16 @@ def parse_args(args):
                        default=2048)
 
 
-    for p in [single_easy_bin, multi_easy_bin]:
-        p.add_argument('--max-edges',
+    for p in [single_easy_bin, multi_easy_bin, binning]:
+        g = p.add_argument_group('Binning options')
+        g.add_argument('--max-edges',
                           required=False,
                           type=int,
                           help='The maximum number of edges that can be connected to one contig (Default: 200).',
                           dest='max_edges',
                           default=200)
 
-        p.add_argument('--max-node',
+        g.add_argument('--max-node',
                           required=False,
                           type=float,
                           dest='max_node',
@@ -497,6 +504,13 @@ def parse_args(args):
     args = parser.parse_args(args)
     if hasattr(args, 'no_recluster'):
         args.recluster = not args.no_recluster
+
+    # Keep the verbose1/quiet1 hack contained in this function
+    for hacked in ['verbose', 'quiet']:
+        if hasattr(args, f'{hacked}1'):
+            if getattr(args, f'{hacked}1'):
+                setattr(args, hacked, getattr(args, f'{hacked}1'))
+            delattr(args, f'{hacked}1')
 
     return args
 
@@ -1244,7 +1258,12 @@ def main():
     args = parse_args(args)
 
     logger = logging.getLogger('SemiBin')
-    loglevel = (logging.DEBUG if args.verbose else logging.INFO)
+    if args.verbose:
+        loglevel = logging.DEBUG
+    elif args.quiet:
+        loglevel = logging.ERROR
+    else:
+        loglevel = logging.INFO
     logger.setLevel(loglevel)
     try:
         import coloredlogs
@@ -1253,6 +1272,9 @@ def main():
         sh = logging.StreamHandler()
         sh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
         logger.addHandler(sh)
+
+    if args.verbose and args.quiet:
+        logger.warning('Both verbose and quiet are set, output will be verbose')
 
     validate_normalize_args(logger, args)
     if args.cmd == 'check_install':
