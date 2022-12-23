@@ -102,3 +102,14 @@ def test_quiet_before_or_after():
             )
     assert args_after.quiet
     assert args == args_after
+
+
+def test_multi_easy_bin_args():
+    args = parse_args(
+            ['multi_easy_bin',
+                '-i' ,'./test/single_sample_data/input.fasta',
+                '-b', './test/single_sample_data/input.sorted.bam',
+                '-o', 'output']
+            )
+    assert args.cmd == 'multi_easy_bin'
+

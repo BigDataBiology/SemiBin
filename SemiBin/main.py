@@ -26,8 +26,9 @@ def parse_args(args):
     BooleanOptionalAction = getattr(argparse, 'BooleanOptionalAction', 'store_true')
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                     description='Semi-supervised siamese neural '
-                                                 'network for metagenomic binning')
+                                    description='Semi-supervised siamese neural '
+                                                 'network for metagenomic binning',
+                                    epilog='For more information, see https://semibin.readthedocs.io/en/latest/subcommands/')
 
     parser.version = ver
 
@@ -65,7 +66,7 @@ def parse_args(args):
                                                   'cannot-link file used in the semi-supervised deep learning model training. '
                                                   'This will download the GTDB database if not downloaded before.')
 
-    generate_sequence_features_single = subparsers.add_parser('generate_sequence_features_single', aliases=['generate_sequence_features_single'],
+    generate_sequence_features_single = subparsers.add_parser('generate_sequence_features_single',
                                             help='Generate sequence features (kmer and abundance) as training data'
                                                   ' for semi-supervised deep learning model training (single or co-assembly mode).'
                                                   ' This will produce the data.csv and data_split.csv files.'
@@ -136,26 +137,24 @@ def parse_args(args):
                             action='store_true',
                             default=None)
 
-    for p in [single_easy_bin, multi_easy_bin,
-                    generate_sequence_features_single, generate_sequence_features_multi,
-                    generate_cannot_links, check_install, concatenate_fasta,
-                    training, binning, training_self, binning_long]:
-        verbosity = p.add_mutually_exclusive_group()
-        # Using verbose1/quiet1 is a hack for the fact that it is hard to make
-        # argparse accept options both in the global scope and in the
-        # subcommand scope
-        verbosity.add_argument('--verbose',
-                        required=False,
-                        help='Verbose output',
-                        dest='verbose1',
-                        action='store_true', )
-        verbosity.add_argument('--quiet', '-q',
-                        required=False,
-                        help='Quiet output',
-                        dest='quiet1',
-                        action='store_true', )
+    training_mandatory = training.add_argument_group('Mandatory arguments')
+    training_mandatory.add_argument('-i', '--input-fasta',
+                   required=True,
+                   nargs='*',
+                   help='Path to the input fasta file.',
+                   dest='contig_fasta',
+                   default=None, )
+    training_mandatory.add_argument('-c', '--cannot-link',
+                         required=True,
+                          nargs='*',
+                         help='Path to the input cannot link file. '
+                         'The file format: `contig_1,contig_2` '
+                         '(one row for each cannot link constraint).',
+                         dest='cannot_link',
+                         default=None)
 
-    for p in [training, training_self]:
+    training_self_mandatory = training_self.add_argument_group('Mandatory arguments')
+    for p in [training_mandatory, training_self_mandatory]:
         p.add_argument('--data',
                              required=True,
                              nargs='*',
@@ -170,7 +169,14 @@ def parse_args(args):
                              dest='data_split',
                              default=None,
                              )
+        p.add_argument('-o', '--output',
+                              required=True,
+                              help='Output directory (will be created if non-existent)',
+                              dest='output',
+                              default=None,
+                              )
 
+    for p in [training, training_self]:
         p.add_argument('--batch-size',
                               required=False,
                               type=int,
@@ -195,21 +201,7 @@ def parse_args(args):
                            dest='train_from_many',
                            action=BooleanOptionalAction)
 
-        p.add_argument('-o', '--output',
-                              required=True,
-                              help='Output directory (will be created if non-existent)',
-                              dest='output',
-                              default=None,
-                              )
 
-    training.add_argument('-c', '--cannot-link',
-                         required=True,
-                          nargs='*',
-                         help='Path to the input cannot link file. '
-                         'The file format: `contig_1,contig_2` '
-                         '(one row for each cannot link constraint).',
-                         dest='cannot_link',
-                         default=None)
 
     training.add_argument('--epochs', '--epoches', # epoches is kept for backwards compatibilty
                        required=False,
@@ -226,20 +218,40 @@ def parse_args(args):
                        dest='epoches',
                        default=15)
 
-    training.add_argument('-i', '--input-fasta',
-                   required=True,
-                   nargs='*',
-                   help='Path to the input fasta file.',
-                   dest='contig_fasta',
-                   default=None, )
 
-    for p in [binning, binning_long]:
-        p.add_argument('--data',
+
+    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_sequence_features_single, generate_sequence_features_multi, binning, binning_long]:
+        m = p.add_argument_group('Mandatory arguments')
+
+        m.add_argument('-i', '--input-fasta',
+                                required=True,
+                                help='Path to the input fasta file.',
+                                dest='contig_fasta',
+                                default=None,)
+        m.add_argument('-o', '--output',
+                            required=True,
+                            help='Output directory (will be created if non-existent)',
+                            dest='output',
+                            default=None,
+                            )
+        if p is binning or p is binning_long:
+            m.add_argument('--data',
                              required=True,
                              help='Path to the input data.csv file.',
                              dest='data',
                              default=None,)
+        if p in [multi_easy_bin, generate_sequence_features_multi]:
+            m.add_argument('-b', '--input-bam',
+                              required=True,
+                              nargs='*',
+                              help='Path to the input BAM(.bam)/CRAM(.cram) file. '
+                                   'If using multiple samples, you can input multiple files.',
+                              dest='bams',
+                              default=None,
+                              )
 
+
+    for p in [binning, binning_long]:
         p.add_argument('--model',
                              required=False,
                              type=str,
@@ -298,18 +310,6 @@ def parse_args(args):
                        default=None,
                        )
 
-    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_sequence_features_single, generate_sequence_features_multi, binning, binning_long]:
-        p.add_argument('-i', '--input-fasta',
-                                required=True,
-                                help='Path to the input fasta file.',
-                                dest='contig_fasta',
-                                default=None,)
-        p.add_argument('-o', '--output',
-                            required=True,
-                            help='Output directory (will be created if non-existent)',
-                            dest='output',
-                            default=None,
-                            )
     for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_sequence_features_single, generate_sequence_features_multi, binning, training, binning_long]:
         p.add_argument('-m', '--min-len',
                        required=False,
@@ -341,16 +341,24 @@ def parse_args(args):
                               default=None,
                               )
 
-    for p in [multi_easy_bin, generate_sequence_features_multi]:
-        p.add_argument('-b', '--input-bam',
-                              required=True,
-                              nargs='*',
-                              help='Path to the input BAM(.bam)/CRAM(.cram) file. '
-                                   'If using multiple samples, you can input multiple files.',
-                              dest='bams',
-                              default=None,
-                              )
-
+    for p in [single_easy_bin, multi_easy_bin,
+                    generate_sequence_features_single, generate_sequence_features_multi,
+                    generate_cannot_links, check_install, concatenate_fasta,
+                    training, binning, training_self, binning_long]:
+        verbosity = p.add_mutually_exclusive_group()
+        # Using verbose1/quiet1 is a hack for the fact that it is hard to make
+        # argparse accept options both in the global scope and in the
+        # subcommand scope
+        verbosity.add_argument('--verbose',
+                        required=False,
+                        help='Verbose output',
+                        dest='verbose1',
+                        action='store_true', )
+        verbosity.add_argument('--quiet', '-q',
+                        required=False,
+                        help='Quiet output',
+                        dest='quiet1',
+                        action='store_true', )
     for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, download_GTDB]:
         p.add_argument('-r', '--reference-db-data-dir', '--reference-db',
                             required=False,
@@ -363,7 +371,7 @@ def parse_args(args):
     for p in [single_easy_bin, generate_cannot_links, multi_easy_bin]:
         p.add_argument('--cannot-name',
                             required=False,
-                            help='Name for the cannot-link file(default: cannot).',
+                            help='Name for the cannot-link file (default: cannot).',
                             dest='cannot_name',
                             default='cannot',
                             metavar=''
@@ -384,27 +392,7 @@ def parse_args(args):
                             default=200,
                             metavar='')
 
-    for p in [binning, single_easy_bin, multi_easy_bin]:
-        p.add_argument('--minfasta-kbs',
-                            required=False,
-                            type=int,
-                            help='minimum bin size in Kbps (Default: 200).',
-                            dest='minfasta_kb',
-                            default=200,
-                            metavar='')
-
-        p.add_argument('--no-recluster',
-                           required=False,
-                           help='Do not recluster bins.',
-                           dest='no_recluster',
-                           action='store_true', )
-        p.add_argument('--recluster',
-                           required=False,
-                           help='[Deprecated] Does nothing (current default is to perform clustering)',
-                           dest='recluster',
-                           action='store_true', )
-                           
-    for p in [single_easy_bin, multi_easy_bin]:                
+    for p in [single_easy_bin, multi_easy_bin]:
         p.add_argument('--epochs', '--epoches', # epoches is kept for backwards compatibilty
                        required=False,
                        type=int,
@@ -421,7 +409,15 @@ def parse_args(args):
 
 
     for p in [single_easy_bin, multi_easy_bin, binning]:
-        g = p.add_argument_group('Binning options')
+        p.add_argument('--minfasta-kbs',
+                            required=False,
+                            type=int,
+                            help='minimum bin size in Kbps (Default: 200).',
+                            dest='minfasta_kb',
+                            default=200,
+                            metavar='')
+
+        g = p.add_argument_group('Binning options (advanced use)')
         g.add_argument('--max-edges',
                           required=False,
                           type=int,
@@ -435,6 +431,19 @@ def parse_args(args):
                           dest='max_node',
                           default=1,
                           help='Fraction of contigs that considered to be binned (should be between 0 and 1; default: 1).')
+
+        g.add_argument('--no-recluster',
+                           required=False,
+                           help='Do not recluster bins.',
+                           dest='no_recluster',
+                           action='store_true', )
+
+        g.add_argument('--recluster',
+                           required=False,
+                           help='[Deprecated] Does nothing (current default is to perform clustering)',
+                           dest='recluster',
+                           action='store_true', )
+
 
     for p in [multi_easy_bin, generate_sequence_features_multi, concatenate_fasta]:
         p.add_argument('-s', '--separator',

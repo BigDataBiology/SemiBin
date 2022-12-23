@@ -4,6 +4,7 @@ Unreleased
 	* Add `--prodigal-output-faa` argument (#113)
 	* Argument checking is more exhaustive instead of exiting at first error
 	* Add `--quiet` argument
+	* Better `--help` (group required arguments separately)
 
 Version 1.4.0 Dec  2022 by BigDataBiology
 	* Provide binning algorithm for assemblies from long read
