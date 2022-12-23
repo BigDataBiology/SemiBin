@@ -85,7 +85,7 @@ def cal_kl(m, v, use_ne='auto'):
 def cluster(model, data, device, max_edges, max_node, is_combined,
             logger, n_sample, out, contig_dict, *,
             binned_length, num_process, minfasta, recluster, random_seed,
-            orf_finder='prodigal', prodigal_output_faa=None):
+            orf_finder='prodigal', prodigal_output_faa=None, output_compression=None):
     """
     Cluster contigs into bins
     max_edges: max edges of one contig considered in binning
@@ -188,7 +188,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
         shutil.rmtree(output_bin_path)
     os.makedirs(output_bin_path, exist_ok=True)
 
-    bin_files = write_bins(namelist, contig_labels, output_bin_path, contig_dict,minfasta=minfasta)
+    bin_files = write_bins(namelist, contig_labels, output_bin_path, contig_dict, minfasta=minfasta, output_compression=output_compression)
     if not len(bin_files):
         logger.warning('No bins were created. Please check your input data.')
         return
@@ -263,8 +263,10 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
                     random_state=random_seed)
                 kmeans.fit(re_bin_features, sample_weight=length_weight)
                 labels = kmeans.labels_
+                origin_label = int(bin_path.split('.')[-2] if output_compression == 'none' else bin_path.split('.')[-3])
                 part = write_bins(contig_list, labels, os.path.join(out, 'output_recluster_bins'), contig_dict,
-                           recluster=True, origin_label=int(bin_path.split('.')[-2]),minfasta = minfasta)
+                           recluster=True, origin_label=origin_label,
+                           minfasta=minfasta, output_compression=output_compression)
                 outputs.append(part)
             else:
                 ofname = shutil.copy(bin_path, os.path.join(out, 'output_recluster_bins'))

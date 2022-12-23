@@ -1,12 +1,36 @@
 import os
 import subprocess
 import multiprocessing
-from .atomicwrite import atomic_write
 import tempfile
 import sys
 import random
+import contextlib
 
 from .fasta import fasta_iter
+
+@contextlib.contextmanager
+def possibly_compressed_write(filename):
+    from .atomicwrite import atomic_write
+    if filename.endswith('.gz'):
+        import gzip
+        mode = 'wb'
+        transf = lambda f : gzip.open(f, mode='wt')
+    elif filename.endswith('.bz2'):
+        import bz2
+        mode = 'wb'
+        transf = lambda f : bz2.open(f, mode='wt')
+    elif filename.endswith('.xz'):
+        import lzma
+        mode = 'wb'
+        transf = lambda f : lzma.open(f, mode='wt')
+    else:
+        mode = 'wt'
+        transf = lambda f : f
+    with atomic_write(filename, mode=mode, overwrite=True) as f:
+        g = transf(f)
+        yield g
+        if g is not f:
+            g.close()
 
 def check_training_mode(logger, args):
     if args.training_type == 'semi' and args.self_supervised:
@@ -392,7 +416,7 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
 
 
 def write_bins(namelist, contig_labels, output, contig_seqs,
-               recluster=False, origin_label=0, minfasta = 200000):
+               recluster=False, origin_label=0, minfasta = 200000, output_compression='none'):
     '''
     Write binned FASTA files
 
@@ -417,9 +441,11 @@ def write_bins(namelist, contig_labels, output, contig_seqs,
             ofname = f'bin.{label}.fa' if not recluster \
                     else f'recluster_{origin_label}.bin.{label}.fa'
             ofname = os.path.join(output, ofname)
+            if output_compression != 'none':
+                ofname += '.' + output_compression
             n50, l50 = n50_l50(sizes)
             written.append([ofname, whole_bin_bp, len(contigs), n50, l50])
-            with atomic_write(ofname, overwrite=True) as ofile:
+            with possibly_compressed_write(ofname) as ofile:
                 for contig in contigs:
                     ofile.write(f'>{contig}\n{contig_seqs[contig]}\n')
     return pd.DataFrame(written, columns=['filename', 'nbps', 'nr_contigs', 'N50', 'L50'])

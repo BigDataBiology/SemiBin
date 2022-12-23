@@ -5,6 +5,7 @@ Unreleased
 	* Argument checking is more exhaustive instead of exiting at first error
 	* Add `--quiet` argument
 	* Better `--help` (group required arguments separately)
+	* Add `--compression` option
 
 Version 1.4.0 Dec  2022 by BigDataBiology
 	* Provide binning algorithm for assemblies from long read

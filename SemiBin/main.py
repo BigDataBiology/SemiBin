@@ -26,8 +26,7 @@ def parse_args(args):
     BooleanOptionalAction = getattr(argparse, 'BooleanOptionalAction', 'store_true')
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                    description='Semi-supervised siamese neural '
-                                                 'network for metagenomic binning',
+                                    description='Neural network-based binning of metagenomic contigs',
                                     epilog='For more information, see https://semibin.readthedocs.io/en/latest/subcommands/')
 
     parser.version = ver
@@ -68,14 +67,14 @@ def parse_args(args):
 
     generate_sequence_features_single = subparsers.add_parser('generate_sequence_features_single',
                                             help='Generate sequence features (kmer and abundance) as training data'
-                                                  ' for semi-supervised deep learning model training (single or co-assembly mode).'
+                                                  ' for (semi/self)-supervised deep learning model training (single or co-assembly mode).'
                                                   ' This will produce the data.csv and data_split.csv files.'
                                                   )
 
 
     generate_sequence_features_multi = subparsers.add_parser('generate_sequence_features_multi', aliases=['generate_sequence_features_multi'],
                                             help='Generate sequence features (kmer and abundance) as training data'
-                                                  ' for semi-supervised deep learning model training (multi-sample mode).'
+                                                  ' for (semi/self)-supervised deep learning model training (multi-sample mode).'
                                                   ' This will produce the data.csv and data_split.csv files.'
                                                   )
 
@@ -220,7 +219,9 @@ def parse_args(args):
 
 
 
-    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_sequence_features_single, generate_sequence_features_multi, binning, binning_long]:
+    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links,
+                generate_sequence_features_single, generate_sequence_features_multi,
+                binning, binning_long]:
         m = p.add_argument_group('Mandatory arguments')
 
         m.add_argument('-i', '--input-fasta',
@@ -249,6 +250,12 @@ def parse_args(args):
                               dest='bams',
                               default=None,
                               )
+        p.add_argument('--compression',
+                required=False,
+                type=str,
+                help='Compression type for the output files (accepted values: none [default]/gz/xz/bz2).',
+                dest='output_compression',
+                default='none')
 
 
     for p in [binning, binning_long]:
@@ -257,7 +264,7 @@ def parse_args(args):
                              type=str,
                              dest='model_path',
                              default=None,
-                             help='Path to the trained semi-supervised deep learning model.')
+                             help='Path to the trained deep learning model.')
 
 
     for p in [single_easy_bin, multi_easy_bin, training, binning, binning_long]:
@@ -1018,7 +1025,7 @@ def binning_preprocess(data, depth_metabat2, model_path, environment, device):
 def binning_long(logger, num_process, data, minfasta,
             binned_length, contig_dict, model_path,
             random_seed,output, device, environment, *,
-            orf_finder='prodigal', prodigal_output_faa=None, depth_metabat2=None):
+            orf_finder='prodigal', prodigal_output_faa=None, depth_metabat2=None, output_compression='none'):
     logger.info('Start binning.')
     is_combined, n_sample, data, model = binning_preprocess(data, depth_metabat2, model_path, environment, device)
     cluster_long_read(model,
@@ -1031,17 +1038,18 @@ def binning_long(logger, num_process, data, minfasta,
                       contig_dict,
                       binned_length,
                       num_process,
-                      minfasta,
-                      random_seed,
-                      orf_finder,
-                      prodigal_output_faa,
+                      minfasta=minfasta,
+                      random_seed=random_seed,
+                      orf_finder=orf_finder,
+                      prodigal_output_faa=prodigal_output_faa,
+                      output_compression=output_compression
                       )
 
 def binning(logger, num_process, data,
             max_edges, max_node, minfasta,
             binned_length, contig_dict, recluster,model_path,
             random_seed,output, device, environment, *,
-            orf_finder='prodigal', prodigal_output_faa=None, depth_metabat2=None):
+            orf_finder='prodigal', prodigal_output_faa=None, depth_metabat2=None, output_compression='none'):
     """
     Clustering the contigs to get the final bins.
 
@@ -1070,7 +1078,8 @@ def binning(logger, num_process, data,
         recluster=recluster,
         random_seed=random_seed,
         orf_finder=orf_finder,
-        prodigal_output_faa=prodigal_output_faa)
+        prodigal_output_faa=prodigal_output_faa,
+        output_compression=output_compression)
 
 
 def single_easy_binning(args, logger, binned_length,
@@ -1151,7 +1160,8 @@ def single_easy_binning(args, logger, binned_length,
         'environment': args.environment,
         'orf_finder': args.orf_finder,
         'prodigal_output_faa': args.prodigal_output_faa,
-        'depth_metabat2': args.depth_metabat2
+        'depth_metabat2': args.depth_metabat2,
+        'output_compression': args.output_compression,
     }
 
     if args.sequencing_type == 'short_read':

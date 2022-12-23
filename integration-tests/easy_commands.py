@@ -1,3 +1,4 @@
+import lzma
 import os
 import subprocess
 import pandas as pd
@@ -25,9 +26,15 @@ subprocess.check_call(
      '-b', f'{single_sample_input}/input.sorted.bam',
      '--taxonomy-annotation-table', f'{single_sample_input}/taxonomyResult.tsv',
      '--epochs', '1',
+     '--compression', 'xz',
+     '--minfasta-kbs', '1', # for testing
      '--semi-supervised'])
 assert os.path.exists(f'{single_output}/output_prerecluster_bins')
 assert os.path.exists(f'{single_output}/output_recluster_bins')
+for f in os.listdir(f'{single_output}/output_recluster_bins'):
+    assert f.endswith('.xz')
+    with lzma.open(f'{single_output}/output_recluster_bins/{f}') as fh:
+        assert fh.read(1) == b'>'
 
 shutil.rmtree(single_output_ref, ignore_errors=True)
 subprocess.check_call(

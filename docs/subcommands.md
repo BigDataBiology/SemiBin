@@ -39,6 +39,7 @@ Starting in version 1.3, self-supervised learning is also supported, which shoul
 #### Optional arguments to control computational resource usage
 
 * `-p/--processes/-t/--threads`: Number of CPUs used (`0`, the default, indicates that all CPUs should be used).
+* `--compression`: Whether to compress outputs to save space. Should be one of `none` (default) / `gz` / `xz` / `bz2`. In SemiBin2, the default will change to `gz`.
 * `--engine`: device used to train the model (`auto`/`gpu`/`cpu`); `auto` (default) means that SemiBin with attempt to detect and use GPU and fallback to CPU if no GPU is found.
 * `--tmpdir`: set temporary directory.
 * `-r/--reference-db-data-dir`: GTDB reference directory (Default: `$HOME/.cache/SemiBin/mmseqs2-GTDB`). SemiBin will lazily download GTDB if it is not found there. Note that a lot of disk space is used
@@ -216,10 +217,16 @@ The `bin` subcommand requires the contig file and output (files `data.csv`, `mod
 
 #### Required arguments
 
-* `--model`: Path to the trained model.
 * `--data` (same as for `train`)
 * `i/--input-fasta` (same as for `single_easy_bin`)
 * `-o/--output` (same as for `single_easy_bin`)
+
+Also, one of the following two arguments is required:
+
+* `--environment`: Which pre-trained model to use (see `single_easy_bin`)
+* `--model`: Path to the trained model
+
+See [[training](../training/)] for more information on how models can be generated.
 
 #### Optional arguments
 
@@ -231,10 +238,16 @@ The `bin_long` subcommand requires the contig file and output (files `data.csv`,
 
 #### Required arguments
 
-* `--model`: Path to the trained model.
 * `--data` (same as for `train`)
 * `i/--input-fasta` (same as for `single_easy_bin`)
 * `-o/--output` (same as for `single_easy_bin`)
+
+Also, one of the following two arguments is required:
+
+* `--environment`: Which pre-trained model to use (see `single_easy_bin`)
+* `--model`: Path to the trained model
+
+See [[training](../training/)] for more information on how models can be generated.
 
 #### Optional arguments
 

@@ -9,6 +9,7 @@
 - Command line argument checking is more exhaustive instead of exiting at first error
 - Added `--quiet` flag to reduce the amount of output printed
 - Better `--help` (group required arguments separately)
+- Add `--output-compression` option to compress outputs
 
 ## Version 1.4.0: long reads binning!
 
