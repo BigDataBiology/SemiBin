@@ -1,6 +1,6 @@
 from SemiBin.generate_kmer import generate_feature_mapping, generate_kmer_features_from_fasta
+from hypothesis import given, settings, strategies as st, HealthCheck as hc
 from os import path
-import pytest
 import pandas as pd
 from pandas.testing import assert_frame_equal
 import numpy as np
@@ -61,3 +61,28 @@ def test_kmer_with_ns(tmpdir):
     assert len(kmer) == 136
     assert kmer.max() > 0.95
 
+
+def rc(seq):
+    return seq.translate(str.maketrans('ATCG', 'TAGC'))[::-1]
+
+@given(st.text(alphabet='ACGT', min_size=1))
+# tmpdir is the same for every single run, which is fine, but we need to tell hypothesis that:
+@settings(suppress_health_check=[hc.function_scoped_fixture])
+def test_kmer_rc(tmpdir, seq):
+    fasta_file = path.join(tmpdir, 'contig.fna')
+    with open(fasta_file, 'wt') as out_fasta:
+        out_fasta.write('>example\n')
+        out_fasta.write(seq)
+        out_fasta.write('\n')
+
+    fasta_file_rc = path.join(tmpdir, 'contig_rc.fna')
+    with open(fasta_file_rc, 'wt') as out_fasta:
+        out_fasta.write('>example\n')
+        out_fasta.write(rc(seq))
+        out_fasta.write('\n')
+
+    kmer = generate_kmer_features_from_fasta(
+        fasta_file, 0, kmer_len=4, split=False, split_threshold=0)
+    kmer_rc = generate_kmer_features_from_fasta(
+        fasta_file, 0, kmer_len=4, split=False, split_threshold=0)
+    assert_frame_equal(kmer, kmer_rc)
