@@ -185,6 +185,7 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
 
     output_bin_path = os.path.join(out, 'output_prerecluster_bins' if recluster else 'output_bins')
     if os.path.exists(output_bin_path):
+        logger.warning(f'Previous output directory `{output_bin_path}` found. Over-writing it.')
         shutil.rmtree(output_bin_path)
     os.makedirs(output_bin_path, exist_ok=True)
 
@@ -212,10 +213,11 @@ def cluster(model, data, device, max_edges, max_node, is_combined,
         else:
             embedding_new = embedding
 
-        logger.debug('Reclustering.')
+        logger.debug('Reclustering...')
 
         output_recluster_bin_path = os.path.join(out, 'output_recluster_bins')
         if os.path.exists(output_recluster_bin_path):
+            logger.warning(f'Previous output directory `{output_recluster_bin_path}` found. Over-writing it.')
             shutil.rmtree(output_recluster_bin_path)
 
         os.makedirs(output_recluster_bin_path, exist_ok=True)
