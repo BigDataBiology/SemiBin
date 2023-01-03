@@ -1,7 +1,6 @@
-# SemiBin: Semi-supervised Metagenomic Binning Using Siamese Neural Networks
+# SemiBin: Metagenomic Binning Using Siamese Neural Networks for short and long reads
 
-Command tool for metagenomic binning with semi-supervised deep learning using
-information from reference genomes in Linux and MacOS.
+Command tool for metagenomic binning with deep learning, handles both short and long reads.
 
 [![BioConda Install](https://img.shields.io/conda/dn/bioconda/semibin.svg?style=flag&label=BioConda%20install)](https://anaconda.org/bioconda/semibin)
 [![Test Status](https://github.com/BigDataBiology/SemiBin/actions/workflows/semibin_test.yml/badge.svg)](https://github.com/BigDataBiology/SemiBin/actions/workflows/semibin_test.yml)
@@ -40,6 +39,8 @@ Running with single-sample binning (for example: human gut samples):
 ```bash
 SemiBin single_easy_bin -i contig.fa -b S1.sorted.bam -o output --environment human_gut
 ```
+
+(if you are using contigs from long-reads, add the `--sequencing-type=long_read` argument).
 
 Running with multi-sample binning:
 
