@@ -1,6 +1,3 @@
-from torch.serialization import SourceChangeWarning
-import warnings
-warnings.filterwarnings("ignore", category=SourceChangeWarning)
 from .semibin_version import __version__ as ver
 import argparse
 import logging
