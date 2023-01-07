@@ -1354,7 +1354,7 @@ def main():
                 sys.exit(1)
             n_pass = sum(len(c) >= binned_length for c in contig_dict.values())
             if n_pass == 0:
-                logger.error(f'Input file {args.contig_fasta} contains {len(contigs_dict)} contigs, but all are shorter than {binned_length} basepairs.')
+                logger.error(f'Input file {args.contig_fasta} contains {len(contig_dict)} contigs, but all are shorter than {binned_length} basepairs.')
                 sys.exit(1)
             elif n_pass < 4:
                 logger.error(f'There are {len(contig_dict)} contigs in input file {args.contig_fasta}, but only {n_pass} contain(s) at least {binned_length} basepairs.')
