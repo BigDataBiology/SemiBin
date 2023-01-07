@@ -7,7 +7,6 @@ from .atomicwrite import atomic_write
 import shutil
 import sys
 from itertools import groupby
-from .long_read_cluster import cluster_long_read
 from .utils import validate_normalize_args, get_must_link_threshold, generate_cannot_link, \
     set_random_seed, process_fasta, split_data, get_model_path
 from .gtdb import find_or_download_gtdb
@@ -1023,6 +1022,7 @@ def binning_long(logger, num_process, data, minfasta,
             binned_length, contig_dict, model_path,
             random_seed,output, device, environment, *,
             orf_finder='prodigal', prodigal_output_faa=None, depth_metabat2=None, output_compression='none'):
+    from .long_read_cluster import cluster_long_read
     logger.info('Start binning.')
     is_combined, n_sample, data, model = binning_preprocess(data, depth_metabat2, model_path, environment, device)
     cluster_long_read(model,
