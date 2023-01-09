@@ -310,6 +310,8 @@ normalize_marker_trans__dict = {
 }
 
 def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, orf_finder = None, contig_to_marker = False):
+    '''Parse HMM output file and return markers
+    '''
     import pandas as pd
     data = pd.read_table(hmmout, sep=r'\s+',  comment='#', header=None,
                          usecols=(0,3,5,15,16), names=['orf', 'gene', 'qlen', 'qstart', 'qend'])
@@ -410,9 +412,7 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
                 f"Error: Running hmmsearch fail\n")
             sys.exit(1)
 
-        marker = get_marker(hmm_output, fasta_path, binned_length, multi_mode, orf_finder=orf_finder)
-
-        return marker
+        return get_marker(hmm_output, fasta_path, binned_length, multi_mode, orf_finder=orf_finder)
 
 
 def write_bins(namelist, contig_labels, output, contig_seqs,
