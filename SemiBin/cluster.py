@@ -82,8 +82,8 @@ def cal_kl(m, v, use_ne='auto'):
 
 
 
-def cluster(model, data, device, max_edges, max_node, is_combined,
-            logger, n_sample, out, contig_dict, *,
+def cluster(logger, model, data, device, max_edges, max_node, is_combined,
+            n_sample, out, contig_dict, *,
             binned_length, num_process, minfasta, recluster, random_seed,
             orf_finder='prodigal', prodigal_output_faa=None, output_compression=None):
     """

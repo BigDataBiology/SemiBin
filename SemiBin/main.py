@@ -1059,13 +1059,13 @@ def binning(logger, num_process, data,
     is_combined, n_sample, data, model = binning_preprocess(data, depth_metabat2, model_path, environment, device)
 
     cluster(
+        logger,
         model,
         data,
         device,
         max_edges,
         max_node,
         is_combined,
-        logger,
         n_sample,
         output,
         contig_dict,
