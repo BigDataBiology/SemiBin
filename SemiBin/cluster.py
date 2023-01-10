@@ -82,10 +82,9 @@ def cal_kl(m, v, use_ne='auto'):
 
 
 
-def cluster(logger, model, data, device, max_edges, max_node, is_combined,
-            n_sample, out, contig_dict, *,
-            binned_length, num_process, minfasta, recluster, random_seed,
-            orf_finder='prodigal', prodigal_output_faa=None, output_compression=None):
+def run_embed_infomap(logger, model, data, * ,
+            device, max_edges, max_node, is_combined, n_sample, contig_dict,
+            num_process : int, random_seed):
     """
     Cluster contigs into bins
     max_edges: max edges of one contig considered in binning
@@ -93,17 +92,13 @@ def cluster(logger, model, data, device, max_edges, max_node, is_combined,
     """
     from igraph import Graph
     from sklearn.neighbors import kneighbors_graph
-    from sklearn.cluster import KMeans
     from scipy import sparse
     import torch
-    import pandas as pd
     import numpy as np
     train_data = data.values
     train_data_input = train_data[:, 0:136] if not is_combined else train_data
 
     depth = data.values[:, 136:len(data.values[0])].astype(np.float32)
-    namelist = data.index.tolist()
-    name2ix = {n:i for i, n in enumerate(namelist)}
     num_contigs = train_data_input.shape[0]
     with torch.no_grad():
         model.eval()
@@ -173,7 +168,7 @@ def cluster(logger, model, data, device, max_edges, max_node, is_combined,
     g = Graph()
     g.add_vertices(np.arange(num_contigs))
     g.add_edges(edges)
-    length_weight = np.array([len(contig_dict[name]) for name in namelist])
+    length_weight = np.array([len(contig_dict[name]) for name in data.index])
     result = run_infomap(g,
                 edge_weights=edge_weights,
                 vertex_weights=length_weight,
@@ -182,14 +177,38 @@ def cluster(logger, model, data, device, max_edges, max_node, is_combined,
 
     for i, r in enumerate(result):
         contig_labels[r] = i
+    return embedding, contig_labels
 
+
+def cluster(logger, model, data, device, max_edges, max_node, is_combined,
+            n_sample, out, contig_dict, *,
+            binned_length, num_process, minfasta, recluster, random_seed,
+            orf_finder='prodigal', prodigal_output_faa=None, output_compression=None):
+    """
+    Cluster contigs into bins
+    max_edges: max edges of one contig considered in binning
+    max_node: max percentage of contigs considered in binning
+    """
+    import pandas as pd
+    import numpy as np
+    from sklearn.cluster import KMeans
+    embedding, contig_labels = run_embed_infomap(logger, model, data,
+            device=device, max_edges=max_edges, max_node=max_node,
+            is_combined=is_combined, n_sample=n_sample,
+            contig_dict=contig_dict, num_process=num_process,
+            random_seed=random_seed)
     output_bin_path = os.path.join(out, 'output_prerecluster_bins' if recluster else 'output_bins')
     if os.path.exists(output_bin_path):
         logger.warning(f'Previous output directory `{output_bin_path}` found. Over-writing it.')
         shutil.rmtree(output_bin_path)
     os.makedirs(output_bin_path, exist_ok=True)
 
-    bin_files = write_bins(namelist, contig_labels, output_bin_path, contig_dict, minfasta=minfasta, output_compression=output_compression)
+    bin_files = write_bins(data.index.tolist(),
+                            contig_labels,
+                            output_bin_path,
+                            contig_dict,
+                            minfasta=minfasta,
+                            output_compression=output_compression)
     if not len(bin_files):
         logger.warning('No bins were created. Please check your input data.')
         return
@@ -201,6 +220,7 @@ def cluster(logger, model, data, device, max_edges, max_node, is_combined,
     else:
         logger.info(f'Number of bins prior to reclustering: {len(bin_files)}')
         if not is_combined:
+            depth = data.values[:, 136:len(data.values[0])].astype(np.float32)
             mean_index = [2 * temp for temp in range(n_sample)]
             depth_mean = depth[:, mean_index]
             abun_scale = np.ceil(depth_mean.mean(axis = 0) / 100) * 100
@@ -250,6 +270,7 @@ def cluster(logger, model, data, device, max_edges, max_node, is_combined,
             num_bin = len(seed)
 
             if num_bin > 1:
+                name2ix = {name:ix for ix,name in enumerate(data.index)}
                 contig_list = [h for h,_ in fasta_iter(bin_path)]
                 contig_index = [name2ix[c] for c in contig_list]
                 re_bin_features = embedding_new[contig_index]
