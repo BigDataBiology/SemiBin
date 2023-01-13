@@ -27,6 +27,13 @@ well as their benchmarking) are described in
 > preprint* 2023.01.09.523201; doi: https://doi.org/10.1101/2023.01.09.523201
 
 
+## SemiBin2
+
+The functionality of SemiBin2 is available already since version 1.4!
+
+- To use the self-supervised learning mode, use options `--self-supervised`
+- If you are using long-reads, use option `--sequencing-type=long_read`
+
 
 ## Basic usage of SemiBin
 
