@@ -1,17 +1,17 @@
-Unreleased
+Version 1.5.0 (SemiBin2 beta) Jan 17 2023 by BigDataBiology
 	* Add `SemiBin2` script
 	* Added naive ORF finder
-	* Make command line arguments more flexible for --sequencing-type argument
 	* Add `--prodigal-output-faa` argument (#113)
+	* Make command line arguments more flexible for --sequencing-type argument
 	* Argument checking is more exhaustive instead of exiting at first error
 	* Add `--quiet` argument
-	* Better `--help` (group required arguments separately)
 	* Add `--compression` option
-	* Make SemiBin.main.main callable with a list of arguments
 	* Add `--tag-output` option
-	* Add contig->bin mapping table (#123)
+	* Better `--help` (group required arguments separately)
+	* Make SemiBin.main.main2 callable with a list of arguments
+	* Add contig -> bin mapping table (#123)
 
-Version 1.4.0 Dec  2022 by BigDataBiology
+Version 1.4.0 Dec 15 2022 by BigDataBiology
 	* Provide binning algorithm for assemblies from long read
 	* Add `--allow-missing-mmseqs2` flag to `check_install` subcommand
 	* Run Prodigal in multiple jobs without multiprocessing (#106)

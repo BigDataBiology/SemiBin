@@ -1,6 +1,11 @@
 # What's New
 
-## Unreleased github version
+## Version 1.5.0 (SemiBin2 beta)
+
+*Released Jan 17, 2023*
+
+Big change is the addition of a `SemiBin2` script, which is still experimental, but should be a slightly nicer interface.
+See [[upgrading to SemiBin2](semibin2)]
 
 ### User-visible improvements
 
@@ -10,7 +15,7 @@
 - Added `--quiet` flag to reduce the amount of output printed
 - Better `--help` (group required arguments separately)
 - Add `--output-compression` option to compress outputs
-- Add `--tag-output` option which allows for control of the output filenames (and also makes the anvi'o compatible)
+- Add `--tag-output` option which allows for control of the output filenames (and also makes the anvi'o compatible — see discussion at [#123](https://github.com/BigDataBiology/SemiBin/issues/123).
 - Add contig->bin mapping table ([#123](https://github.com/BigDataBiology/SemiBin/issues/123))
 - `SemiBin.main.main1` and `SemiBin.main.main2` can now be called as a function with command line arguments (`main1` corresponds to _SemiBin1_ and `main2` corresponds to _SemiBin2_)
 
