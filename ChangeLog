@@ -1,4 +1,5 @@
 Unreleased
+	* Add `SemiBin2` script
 	* Added naive ORF finder
 	* Make command line arguments more flexible for --sequencing-type argument
 	* Add `--prodigal-output-faa` argument (#113)

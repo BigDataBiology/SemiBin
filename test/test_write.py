@@ -1,4 +1,20 @@
-from SemiBin.utils import possibly_compressed_write
+from SemiBin.utils import possibly_compressed_write, write_bins
+from SemiBin.fasta import fasta_iter
+from glob import glob
+
+def test_write_bins(tmpdir):
+    contig_dict = {h:seq for h,seq in fasta_iter('test/bin_data/input.fasta')}
+    for comp in ['none', 'gz', 'xz']:
+        write_bins(namelist=list(contig_dict.keys()),
+            contig_labels=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                            1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                            2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            contig_seqs=contig_dict,
+            output=tmpdir+f'/output_bins_{comp}',
+            output_compression=comp)
+        ext = ('fa' if comp == 'none' else comp)
+        assert len(glob(f'{tmpdir}/output_bins_{comp}/*.{ext}')) == 3
 
 
 def test_possibly_compressed_write(tmp_path):

@@ -12,6 +12,7 @@ nav:
         - 'SemiBin': index.md
         - 'Install': install.md
         - 'Usage examples': usage.md
+        - 'SemiBin2': semibin2.md
         - 'Generating inputs to SemiBin': generate.md
         - 'Output': output.md
         - "Subcommand reference": subcommands.md

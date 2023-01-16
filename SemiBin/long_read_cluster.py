@@ -138,7 +138,8 @@ def cluster_long_read(model, data, device, is_combined,
         part = write_bins(max_bin, [cluster_label] * len(max_bin),
                    output_bin_path, contig_dict,
                    recluster=False,
-                   minfasta=minfasta)
+                   minfasta=minfasta,
+                   output_compression=args.output_compression)
         cluster_label += 1
         written.append(part)
         for temp in max_bin:

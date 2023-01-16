@@ -16,7 +16,7 @@ from .fasta import fasta_iter
 from .error import LoggingPool
 
 
-def parse_args(args):
+def parse_args(args, is_semibin2):
     # BooleanOptionalAction is available in Python 3.9; before that, we fall back on the default
     BooleanOptionalAction = getattr(argparse, 'BooleanOptionalAction', 'store_true')
 
@@ -112,7 +112,7 @@ def parse_args(args):
                                                    dest='kmer',
                                                    action='store_true',)
 
-    training = subparsers.add_parser('train',
+    training = subparsers.add_parser(('train_semi' if is_semibin2 else 'train'),
                                     help='Train the model.')
 
     training_self = subparsers.add_parser('train_self',
@@ -178,7 +178,8 @@ def parse_args(args):
                               dest='batchsize',
                               default=2048, )
 
-        p.add_argument('--mode',
+        if not is_semibin2:
+            p.add_argument('--mode',
                               required=False,
                               type=str,
                               help='[DEPRECATED: use --train-from-many]. [single/several] Train models from one (single) or more samples (several). '
@@ -248,9 +249,11 @@ def parse_args(args):
         p.add_argument('--compression',
                 required=False,
                 type=str,
-                help='Compression type for the output files (accepted values: none [default]/gz/xz/bz2).',
+                help=('Compression type for the output files (accepted values: ' +
+                    ('none [default]/gz/xz/bz2).' if not is_semibin2 else
+                    ' gz [default]/xz/bz2/none).')),
                 dest='output_compression',
-                default='none')
+                default=('gz' if is_semibin2 else 'none'))
 
 
     for p in [binning, binning_long]:
@@ -268,7 +271,7 @@ def parse_args(args):
                        type=str,
                        help='ORF finder used to estimate the number of bins (prodigal/fraggenescan)',
                        dest='orf_finder',
-                       default='prodigal')
+                       default=('fast-naive' if is_semibin2 else 'prodigal'))
         p.add_argument('--prodigal-output-faa',
                        required=False,
                        type=str,
@@ -440,7 +443,8 @@ def parse_args(args):
                            dest='no_recluster',
                            action='store_true', )
 
-        g.add_argument('--recluster',
+        if not is_semibin2:
+            g.add_argument('--recluster',
                            required=False,
                            help='[Deprecated] Does nothing (current default is to perform clustering)',
                            dest='recluster',
@@ -494,7 +498,8 @@ def parse_args(args):
                            dest='self_supervised',
                            action='store_true', )
 
-        p.add_argument('--training-type',
+        if not is_semibin2:
+            p.add_argument('--training-type',
                        required=False,
                        type=str,
                        help='Training algorithm used to train the model (semi [default]/self)\n'
@@ -513,6 +518,7 @@ def parse_args(args):
         parser.print_help(sys.stderr)
         sys.exit()
     args = parser.parse_args(args)
+    args.is_semibin2 = is_semibin2
     if hasattr(args, 'no_recluster'):
         args.recluster = not args.no_recluster
 
@@ -1237,12 +1243,12 @@ def multi_easy_binning(args, logger, output, device):
             new_path = os.path.join(output, 'bins', new_file)
             shutil.copyfile(original_path, new_path)
 
-def main(args=None):
+def main2(args=None, is_semibin2=True):
     import tempfile
 
     if args is None:
         args = sys.argv[1:]
-    args = parse_args(args)
+    args = parse_args(args, is_semibin2)
 
     logger = logging.getLogger('SemiBin')
     if args.verbose:
@@ -1270,7 +1276,7 @@ def main(args=None):
     if args.cmd not in ['download_GTDB', 'check_install']:
         os.makedirs(args.output, exist_ok=True)
 
-    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin', 'train_self', 'bin_long']:
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'train_semi', 'bin', 'train_self', 'bin_long']:
         import torch
         if args.engine == 'cpu':
             device = torch.device("cpu")
@@ -1284,7 +1290,7 @@ def main(args=None):
                 device = torch.device("cpu")
                 logger.info('Did not detect GPU, using CPU.')
 
-    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'generate_cannot_links', 'train', 'bin',
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'generate_cannot_links', 'train_semi', 'train', 'bin',
                     'generate_sequence_features_single', 'generate_sequence_features_multi', 'train_self', 'bin_long']:
         tmp_output = args.tmp_output
         if tmp_output is not None:
@@ -1372,7 +1378,7 @@ def main(args=None):
                 args.ml_threshold,
                 args.output)
 
-        if args.cmd == 'train':
+        if args.cmd in ['train', 'train_semi']:
             if args.random_seed is not None:
                 set_random_seed(args.random_seed)
             training(logger, args.contig_fasta, args.num_process,
@@ -1441,5 +1447,9 @@ def main(args=None):
 
         print('If you find SemiBin useful, please cite:\n Pan, S.; Zhu, C.; Zhao, XM.; Coelho, LP. A deep siamese neural network improves metagenome-assembled genomes in microbiome datasets across different environments. Nat Commun 13, 2326 (2022). https://doi.org/10.1038/s41467-022-29843-y.')
 
+
+def main1(args=None):
+    main2(args, is_semibin2=False)
+
 if __name__ == '__main__':
-    main()
+    main2()

@@ -106,6 +106,21 @@ subprocess.check_call(
      '--orf-finder', 'fast-naive',
      '--sequencing-type', 'long_read'])
 assert os.path.exists(f'{single_self_output_long}/output_bins')
+assert len(sglob(f'{single_self_output_long}/output_bins/*.gz')) == 0
+
+# Test binning with long-read
+single_self_output_long = 'test-outputs/single_output_self_long2'
+shutil.rmtree(single_self_output_long, ignore_errors=True)
+subprocess.check_call(
+    ['SemiBin2', 'single_easy_bin',
+     '-i', f'{single_sample_input}/input.fasta',
+     '-o', single_self_output_long,
+     '-b', f'{single_sample_input}/input.sorted.bam',
+     '--epochs', '1',
+     '--self-supervised',
+     '--orf-finder', 'fast-naive',
+     '--sequencing-type', 'long_read'])
+assert len(sglob(f'{single_self_output_long}/output_bins/*.gz')) > 0
 
 multi_self_output_long = 'test-outputs/multi_output_self_long'
 shutil.rmtree(multi_self_output_long, ignore_errors=True)

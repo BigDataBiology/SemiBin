@@ -7,7 +7,8 @@ def test_parse_args():
             ['single_easy_bin',
                 '-i' ,'./test/single_sample_data/input.fasta',
                 '-b', './test/single_sample_data/input.sorted.bam',
-                '-o', 'output']
+                '-o', 'output'],
+            is_semibin2=False
             )
     validate_normalize_args(logging, args)
     assert args.training_type == 'semi'
@@ -19,7 +20,8 @@ def test_sequencing_type():
                 '-i' ,'./test/single_sample_data/input.fasta',
                 '-b', './test/single_sample_data/input.sorted.bam',
                 '--sequencing-type', 'Long-Reads',
-                '-o', 'output']
+                '-o', 'output'],
+            is_semibin2=False
             )
     validate_normalize_args(logging, args)
     assert args.training_type == 'semi'
@@ -32,7 +34,8 @@ def test_parse_args_backcompat():
                     '-i' ,'./test/single_sample_data/input.fasta',
                     '-b', './test/single_sample_data/input.sorted.bam',
                     '-o', 'output',
-                    '--training-type', t]
+                    '--training-type', t],
+                is_semibin2=False
                 )
         validate_normalize_args(logging, args)
         assert args.training_type == t
@@ -43,7 +46,8 @@ def test_parse_args_backcompat():
                     '-i' ,'./test/single_sample_data/input.fasta',
                     '-b', './test/single_sample_data/input.sorted.bam',
                     '-o', 'output',
-                    f'--{t}-supervised']
+                    f'--{t}-supervised'],
+                is_semibin2=False
                 )
         validate_normalize_args(logging, args2)
         assert args2.training_type == t
@@ -57,7 +61,9 @@ def test_parse_args_backcompat():
                  '-c', 'test/train_data/cannot.txt',
                  '-i', 'test/train_data/input.fasta',
                  '-o', 'test-outputs/output_train_fa',
-                 '-p', '1'])
+                 '-p', '1'],
+            is_semibin2=False,
+            )
         validate_normalize_args(logging, args)
         assert args.mode == 'several'
 
@@ -68,7 +74,8 @@ def test_parse_args_backcompat():
              '-c', 'test/train_data/cannot.txt',
              '-i', 'test/train_data/input.fasta',
              '-o', 'test-outputs/output_train_fa',
-             '-p', '1'])
+             '-p', '1'],
+        is_semibin2=False)
     validate_normalize_args(logging, args)
     assert args.mode == 'single'
 
@@ -79,7 +86,8 @@ def test_parse_args_backcompat():
              '-c', 'test/train_data/cannot.txt',
              '-i', 'test/train_data/input.fasta',
              '-o', 'test-outputs/output_train_fa',
-             '-p', '1'])
+             '-p', '1'],
+        is_semibin2=False)
     validate_normalize_args(logging, args)
     assert args.mode == 'single'
 
@@ -90,16 +98,16 @@ def test_quiet_before_or_after():
             'single_easy_bin',
             '-i' ,'./test/single_sample_data/input.fasta',
             '-b', './test/single_sample_data/input.sorted.bam',
-            '-o', 'output']
-            )
+            '-o', 'output'],
+            is_semibin2=False)
     assert args.quiet
     args_after = parse_args([
             'single_easy_bin',
             '--quiet',
             '-i' ,'./test/single_sample_data/input.fasta',
             '-b', './test/single_sample_data/input.sorted.bam',
-            '-o', 'output']
-            )
+            '-o', 'output'],
+            is_semibin2=False)
     assert args_after.quiet
     assert args == args_after
 
@@ -109,7 +117,53 @@ def test_multi_easy_bin_args():
             ['multi_easy_bin',
                 '-i' ,'./test/single_sample_data/input.fasta',
                 '-b', './test/single_sample_data/input.sorted.bam',
-                '-o', 'output']
-            )
+                '-o', 'output'],
+            is_semibin2=False)
     assert args.cmd == 'multi_easy_bin'
+
+def test_semibin2_args():
+    for is_semibin2, def_mode in [(True, 'self'), (False, 'semi')]:
+        args = parse_args(
+                ['single_easy_bin',
+                    '-i' ,'./test/single_sample_data/input.fasta',
+                    '-b', './test/single_sample_data/input.sorted.bam',
+                    '-o', 'output'],
+                is_semibin2=is_semibin2)
+        validate_normalize_args(logging, args)
+        assert args.cmd == 'single_easy_bin'
+        assert args.training_type == def_mode
+
+        args = parse_args(
+                ['single_easy_bin',
+                    '--self-supervised',
+                    '-i' ,'./test/single_sample_data/input.fasta',
+                    '-b', './test/single_sample_data/input.sorted.bam',
+                    '-o', 'output'],
+                is_semibin2=is_semibin2)
+        validate_normalize_args(logging, args)
+        assert args.cmd == 'single_easy_bin'
+        assert args.training_type == 'self'
+
+        args = parse_args(
+                ['multi_easy_bin',
+                    '-i' ,'./test/single_sample_data/input.fasta',
+                    '-b', './test/single_sample_data/input.sorted.bam',
+                    '-o', 'output'],
+                is_semibin2=is_semibin2)
+        validate_normalize_args(logging, args)
+        assert args.cmd == 'multi_easy_bin'
+        assert args.training_type == def_mode
+
+
+        args = parse_args(
+                ['multi_easy_bin',
+                    '--semi-supervised',
+                    '-i' ,'./test/single_sample_data/input.fasta',
+                    '-b', './test/single_sample_data/input.sorted.bam',
+                    '-o', 'output'],
+                is_semibin2=is_semibin2)
+        validate_normalize_args(logging, args)
+        assert args.cmd == 'multi_easy_bin'
+        assert args.training_type == 'semi'
+
 
