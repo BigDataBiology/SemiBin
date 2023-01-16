@@ -288,6 +288,7 @@ def cluster(logger, model, data, device, is_combined,
                             output_bin_path,
                             contig_dict,
                             minfasta=minfasta,
+                            output_tag=args.output_tag,
                             output_compression=args.output_compression)
         if not len(bin_files):
             logger.warning('No bins were created. Please check your input data.')
@@ -333,6 +334,7 @@ def cluster(logger, model, data, device, is_combined,
                             output_recluster_bin_path,
                             contig_dict,
                             minfasta=minfasta,
+                            output_tag=args.output_tag,
                             output_compression=args.output_compression)
         logger.info(f'Number of bins after reclustering: {len(outputs)}')
         outputs.to_csv(os.path.join(out, 'recluster_bins_info.tsv'), index=False, sep='\t')

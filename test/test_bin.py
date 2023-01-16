@@ -20,6 +20,7 @@ def test_bin(tmpdir):
         output_compression='none',
         prodigal_output_faa=None,
         write_pre_reclustering_bins=True,
+        output_tag=None,
         )
 
     odir = f'{tmpdir}/output_test_bin'

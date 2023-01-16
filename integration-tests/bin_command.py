@@ -2,6 +2,7 @@ import os
 import subprocess
 import pandas as pd
 import shutil
+from glob import glob
 
 # Test different input formats
 for ifile, odir in [
@@ -39,8 +40,9 @@ subprocess.check_call(
      '-o', odir,
      '-m', '2500',
      '--ratio', '0.05',
+     '--tag-output', 'TestTag',
      '-p', '1'])
-assert len(os.listdir(f'{odir}/output_bins')) > 0
+assert len(glob(f'{odir}/output_bins/TestTag_*')) > 0
 
 
 ifile = 'input.fasta'

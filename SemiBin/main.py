@@ -268,6 +268,13 @@ def parse_args(args, is_semibin2):
                 dest='output_compression',
                 default=('gz' if is_semibin2 else 'none'))
 
+        p.add_argument('--tag-output',
+                required=False,
+                type=str,
+                dest='output_tag',
+                default=('SemiBin' if is_semibin2 else None),
+                help='Tag to add to output file names')
+
 
     for p in [binning, binning_long]:
         p.add_argument('--model',

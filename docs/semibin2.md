@@ -12,6 +12,7 @@ to maintain backwards compatibility if you call the `SemiBin` script).
 The biggest different is that the default training mode is self-supervised mode.
 
 - Output bins are now **always** in a directory called `output_bins` (in
+- Output filenames are now anvi'o compatible (effectively, the default value of `--tag-output` is `SemiBin`) (see discussion in [#123](https://github.com/BigDataBiology/SemiBin/issues/123))
   _SemiBin1_, it actually depended on which parameters were used)
 - `--compression` defaults to `gz` (instead of `none`)
 - ORF finder defaults to the `fast-naive` internal ORF finder

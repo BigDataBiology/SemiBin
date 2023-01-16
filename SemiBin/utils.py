@@ -428,7 +428,7 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
 
 
 def write_bins(namelist, contig_labels, output, contig_seqs,
-               recluster=False, origin_label=0, minfasta = 200000, output_compression='none'):
+               minfasta = 200000, output_tag=None, output_compression='none'):
     '''
     Write binned FASTA files
 
@@ -450,8 +450,10 @@ def write_bins(namelist, contig_labels, output, contig_seqs,
         whole_bin_bp = sum(sizes)
 
         if whole_bin_bp >= minfasta:
-            ofname = f'bin.{label}.fa' if not recluster \
-                    else f'recluster_{origin_label}.bin.{label}.fa'
+            if output_tag is None:
+                ofname = f'bin.{label}.fa'
+            else:
+                ofname = f'{output_tag}_{label}.fa'
             ofname = os.path.join(output, ofname)
             if output_compression != 'none':
                 ofname += '.' + output_compression

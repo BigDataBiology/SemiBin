@@ -120,7 +120,7 @@ subprocess.check_call(
      '--self-supervised',
      '--orf-finder', 'fast-naive',
      '--sequencing-type', 'long_read'])
-assert len(sglob(f'{single_self_output_long}/output_bins/*.gz')) > 0
+assert len(sglob(f'{single_self_output_long}/output_bins/SemiBin_*.gz')) > 0
 
 multi_self_output_long = 'test-outputs/multi_output_self_long'
 shutil.rmtree(multi_self_output_long, ignore_errors=True)

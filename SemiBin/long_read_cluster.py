@@ -118,11 +118,11 @@ def cluster_long_read(model, data, device, is_combined,
     while sum(len(contig_dict[contig]) for contig in contig_list) >= minfasta:
         if len(contig_list) == 1:
             part = write_bins(contig_list,
-                       [cluster_label] * len(contig_list),
-                       output_bin_path, contig_dict,
-                       recluster=False,
-                       minfasta=minfasta,
-                       output_compression=args.output_compression)
+                        [cluster_label] * len(contig_list),
+                        output_bin_path, contig_dict,
+                        minfasta=minfasta,
+                        output_tag=args.output_tag,
+                        output_compression=args.output_compression)
             cluster_label += 1
             written.append(part)
             break
@@ -136,10 +136,10 @@ def cluster_long_read(model, data, device, is_combined,
             break
 
         part = write_bins(max_bin, [cluster_label] * len(max_bin),
-                   output_bin_path, contig_dict,
-                   recluster=False,
-                   minfasta=minfasta,
-                   output_compression=args.output_compression)
+                    output_bin_path, contig_dict,
+                    minfasta=minfasta,
+                    output_tag=args.output_tag,
+                    output_compression=args.output_compression)
         cluster_label += 1
         written.append(part)
         for temp in max_bin:
