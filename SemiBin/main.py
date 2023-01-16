@@ -1263,10 +1263,10 @@ def multi_easy_binning(args, logger, output, device):
 
     os.makedirs(os.path.join(output, 'bins'), exist_ok=True)
     for sample in sample_list:
-        if args.sequencing_type == 'short_read':
-            bin_dir_name = 'output_recluster_bins' if args.recluster else 'output_prerecluster_bins'
-        else:
+        if args.sequencing_type != 'short_read' or args.is_semibin2:
             bin_dir_name = 'output_bins'
+        else:
+            bin_dir_name = 'output_recluster_bins' if args.recluster else 'output_prerecluster_bins'
         for bf in os.listdir(os.path.join(output, 'samples', sample, bin_dir_name)):
             original_path = os.path.join(output, 'samples', sample, bin_dir_name, bf)
             new_file = '{0}_{1}'.format(sample, bf)
