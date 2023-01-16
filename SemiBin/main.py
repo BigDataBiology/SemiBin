@@ -1267,10 +1267,11 @@ def multi_easy_binning(args, logger, output, device):
             new_path = os.path.join(output, 'bins', new_file)
             shutil.copyfile(original_path, new_path)
 
-def main():
+def main(args=None):
     import tempfile
 
-    args = sys.argv[1:]
+    if args is None:
+        args = sys.argv[1:]
     args = parse_args(args)
 
     logger = logging.getLogger('SemiBin')

@@ -10,6 +10,15 @@
 - Added `--quiet` flag to reduce the amount of output printed
 - Better `--help` (group required arguments separately)
 - Add `--output-compression` option to compress outputs
+- `SemiBin.main.main` can now be called as a function with command line arguments
+
+```python
+import SemiBin.main
+
+...
+
+SemiBin.main.main(['single_easy_bin', '--input-fasta', ...])
+```
 
 ## Version 1.4.0: long reads binning!
 
