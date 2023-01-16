@@ -180,6 +180,83 @@ def run_embed_infomap(logger, model, data, * ,
     return embedding, contig_labels
 
 
+def recluster_bins(logger, data, *, n_sample, embedding, is_combined, contig_labels, minfasta, contig_dict, binned_length, orf_finder, num_process, random_seed):
+    from sklearn.cluster import KMeans
+    import numpy as np
+    from collections import defaultdict
+    if not is_combined:
+        depth = data.values[:, 136:len(data.values[0])].astype(np.float32)
+        mean_index = [2 * temp for temp in range(n_sample)]
+        depth_mean = depth[:, mean_index]
+        abun_scale = np.ceil(depth_mean.mean(axis = 0) / 100) * 100
+        depth_mean = depth_mean / abun_scale
+        scaling = np.mean(np.abs(embedding)) / np.mean(depth_mean)
+        base = 10
+        weight = 2 * base * math.ceil(scaling / base)
+        embedding_new = np.concatenate(
+            (embedding, depth_mean * weight), axis=1)
+    else:
+        embedding_new = embedding
+
+
+    total_size = defaultdict(int)
+    for i, c in enumerate(contig_labels):
+        total_size[c] += len(contig_dict[data.index[i]])
+    with tempfile.TemporaryDirectory() as tdir:
+        cfasta = os.path.join(tdir, 'concatenated.fna')
+        with open(cfasta, 'wt') as concat_out:
+            for ix,h in enumerate(data.index):
+                bin_ix = contig_labels[ix]
+                if total_size[bin_ix] < minfasta:
+                    continue
+                concat_out.write(f'>bin{bin_ix:06}.{h}\n')
+                concat_out.write(contig_dict[data.index[ix]] + '\n')
+
+        seeds = cal_num_bins(
+            cfasta,
+            binned_length,
+            num_process,
+            multi_mode=True,
+            orf_finder=orf_finder)
+            # we cannot bypass the orf_finder here, because of the renaming of the contigs
+        if seeds == []:
+            logger.warning('No bins found in the concatenated fasta file.')
+            return contig_labels
+
+    name2ix = {name:ix for ix,name in enumerate(data.index)}
+    contig_labels_reclustered = np.empty_like(contig_labels)
+    contig_labels_reclustered.fill(-1)
+    next_label = 0
+    for bin_ix in range(contig_labels.max() + 1):
+        seed = seeds.get(f'bin{bin_ix:06}', [])
+        num_bin = len(seed)
+
+        if num_bin > 1 and total_size[bin_ix] >= minfasta:
+            contig_indices = [i for i,ell in enumerate(contig_labels) if ell == bin_ix]
+            re_bin_features = embedding_new[contig_indices]
+
+            seed_index = [name2ix[s] for s in seed]
+            length_weight = np.array(
+                [len(contig_dict[name])
+                    for name,ell in zip(data.index, contig_labels)
+                        if ell == bin_ix])
+            seeds_embedding = embedding_new[seed_index]
+            kmeans = KMeans(
+                n_clusters=num_bin,
+                init=seeds_embedding,
+                n_init=1,
+                random_state=random_seed)
+            kmeans.fit(re_bin_features, sample_weight=length_weight)
+            for i, label in enumerate(kmeans.labels_):
+                contig_labels_reclustered[contig_indices[i]] = next_label + label
+            next_label += num_bin
+        else:
+            contig_labels_reclustered[contig_labels == bin_ix] = next_label
+            next_label += 1
+    assert contig_labels_reclustered.min() >= 0
+    return contig_labels_reclustered
+
+
 def cluster(logger, model, data, device, max_edges, max_node, is_combined,
             n_sample, out, contig_dict, *,
             binned_length, num_process, minfasta, recluster, random_seed,
@@ -191,7 +268,6 @@ def cluster(logger, model, data, device, max_edges, max_node, is_combined,
     """
     import pandas as pd
     import numpy as np
-    from sklearn.cluster import KMeans
     embedding, contig_labels = run_embed_infomap(logger, model, data,
             device=device, max_edges=max_edges, max_node=max_node,
             is_combined=is_combined, n_sample=n_sample,
@@ -202,6 +278,7 @@ def cluster(logger, model, data, device, max_edges, max_node, is_combined,
         logger.warning(f'Previous output directory `{output_bin_path}` found. Over-writing it.')
         shutil.rmtree(output_bin_path)
     os.makedirs(output_bin_path, exist_ok=True)
+
 
     bin_files = write_bins(data.index.tolist(),
                             contig_labels,
@@ -219,85 +296,33 @@ def cluster(logger, model, data, device, max_edges, max_node, is_combined,
 
     else:
         logger.info(f'Number of bins prior to reclustering: {len(bin_files)}')
-        if not is_combined:
-            depth = data.values[:, 136:len(data.values[0])].astype(np.float32)
-            mean_index = [2 * temp for temp in range(n_sample)]
-            depth_mean = depth[:, mean_index]
-            abun_scale = np.ceil(depth_mean.mean(axis = 0) / 100) * 100
-            depth_mean = depth_mean / abun_scale
-            scaling = np.mean(np.abs(embedding)) / np.mean(depth_mean)
-            base = 10
-            weight = 2 * base * math.ceil(scaling / base)
-            embedding_new = np.concatenate(
-                (embedding, depth_mean * weight), axis=1)
-        else:
-            embedding_new = embedding
-
         logger.debug('Reclustering...')
 
+        contig_labels_reclustered = recluster_bins(logger,
+                                                data,
+                                                n_sample=n_sample,
+                                                embedding=embedding,
+                                                contig_labels=contig_labels,
+                                                contig_dict=contig_dict,
+                                                minfasta=minfasta,
+                                                binned_length=binned_length,
+                                                num_process=num_process,
+                                                orf_finder=orf_finder,
+                                                random_seed=random_seed,
+                                                is_combined=is_combined)
         output_recluster_bin_path = os.path.join(out, 'output_recluster_bins')
         if os.path.exists(output_recluster_bin_path):
             logger.warning(f'Previous output directory `{output_recluster_bin_path}` found. Over-writing it.')
             shutil.rmtree(output_recluster_bin_path)
-
         os.makedirs(output_recluster_bin_path, exist_ok=True)
-
-        with tempfile.TemporaryDirectory() as tdir:
-            cfasta = os.path.join(tdir, 'concatenated.fna')
-            with open(cfasta, 'wt') as concat_out:
-                for ix,f in enumerate(bin_files['filename'].values):
-                    for h,seq in fasta_iter(f):
-                        h = f'bin{ix:06}.{h}'
-                        concat_out.write(f'>{h}\n{seq}\n')
-            seeds = cal_num_bins(
-                cfasta,
-                binned_length,
-                num_process,
-                multi_mode=True,
-                orf_finder=orf_finder)
-                # we cannot bypass the orf_finder here, because of the renaming of the contigs
-
-        outputs = []
-        # The code below (iat call) relies on this
-        assert bin_files.columns[0] == 'filename'
-
-        for ix,bin_path in enumerate(bin_files['filename'].values):
-            # if there are no hits, the output will be naturally empty
-            if seeds != []:
-                seed = seeds.get(f'bin{ix:06}', [])
-            else:
-                seed = []
-            num_bin = len(seed)
-
-            if num_bin > 1:
-                name2ix = {name:ix for ix,name in enumerate(data.index)}
-                contig_list = [h for h,_ in fasta_iter(bin_path)]
-                contig_index = [name2ix[c] for c in contig_list]
-                re_bin_features = embedding_new[contig_index]
-
-                seed_index = [name2ix[s] for s in seed]
-                length_weight = np.array(
-                    [len(contig_dict[name]) for name in contig_list])
-                seeds_embedding = embedding_new[seed_index]
-                kmeans = KMeans(
-                    n_clusters=num_bin,
-                    init=seeds_embedding,
-                    n_init=1,
-                    random_state=random_seed)
-                kmeans.fit(re_bin_features, sample_weight=length_weight)
-                labels = kmeans.labels_
-                origin_label = int(bin_path.split('.')[-2] if output_compression == 'none' else bin_path.split('.')[-3])
-                part = write_bins(contig_list, labels, os.path.join(out, 'output_recluster_bins'), contig_dict,
-                           recluster=True, origin_label=origin_label,
-                           minfasta=minfasta, output_compression=output_compression)
-                outputs.append(part)
-            else:
-                ofname = shutil.copy(bin_path, os.path.join(out, 'output_recluster_bins'))
-                bin_files.iat[ix, 0] = ofname
-                outputs.append(bin_files[ix:ix+1])
-
-        outputs = pd.concat(outputs)
+        outputs = write_bins(data.index.tolist(),
+                            contig_labels_reclustered,
+                            output_recluster_bin_path,
+                            contig_dict,
+                            minfasta=minfasta,
+                            output_compression=output_compression)
         logger.info(f'Number of bins after reclustering: {len(outputs)}')
         outputs.to_csv(os.path.join(out, 'recluster_bins_info.tsv'), index=False, sep='\t')
     logger.info('Binning finished')
+
 
