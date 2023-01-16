@@ -79,13 +79,17 @@ def validate_normalize_args(logger, args):
             for f in fs:
                 expect_file(f)
 
-    if args.cmd != 'download_GTDB' and args.cmd != 'check_install' and args.cmd != 'concatenate_fasta':
+    if hasattr(args, 'num_process'):
         if args.num_process == 0:
             args.num_process = multiprocessing.cpu_count()
             logger.info(f'Setting number of CPUs to {args.num_process}')
 
         if args.num_process > multiprocessing.cpu_count():
             args.num_process = multiprocessing.cpu_count()
+        os.environ['NUMEXPR_NUM_THREADS'] = str(args.num_process)
+        os.environ['NUMEXPR_MAX_THREADS'] = str(args.num_process)
+        os.environ['OMP_NUM_THREADS'] = str(args.num_process)
+
 
     if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin']:
         if args.orf_finder not in ['prodigal', 'fraggenescan', 'fast-naive']:
