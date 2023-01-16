@@ -111,20 +111,12 @@ def cluster_long_read(model, data, device, is_combined,
         labels = dbscan.labels_
         DBSCAN_results_dict[eps_value] = labels.tolist()
 
-    cluster_label = 0
     logger.debug('Integrating results.')
 
-    written = []
+    extracted = []
     while sum(len(contig_dict[contig]) for contig in contig_list) >= minfasta:
         if len(contig_list) == 1:
-            part = write_bins(contig_list,
-                        [cluster_label] * len(contig_list),
-                        output_bin_path, contig_dict,
-                        minfasta=minfasta,
-                        output_tag=args.output_tag,
-                        output_compression=args.output_compression)
-            cluster_label += 1
-            written.append(part)
+            extracted.append(contig_list)
             break
 
         max_bin = get_best_bin(DBSCAN_results_dict,
@@ -135,21 +127,24 @@ def cluster_long_read(model, data, device, is_combined,
         if not max_bin:
             break
 
-        part = write_bins(max_bin, [cluster_label] * len(max_bin),
-                    output_bin_path, contig_dict,
-                    minfasta=minfasta,
-                    output_tag=args.output_tag,
-                    output_compression=args.output_compression)
-        cluster_label += 1
-        written.append(part)
+        extracted.append(max_bin)
         for temp in max_bin:
             temp_index = contig_list.index(temp)
             contig_list.pop(temp_index)
             for eps_value in DBSCAN_results_dict:
                 DBSCAN_results_dict[eps_value].pop(temp_index)
 
-    import pandas as pd
-    written = pd.concat(written)
+    contig2ix = {}
+    for i, cs in enumerate(extracted):
+        for c in cs:
+            contig2ix[c] = i
+    namelist = data.index.tolist()
+    contig_labels = [contig2ix.get(c, -1) for c in namelist]
+    written = write_bins(namelist, contig_labels,
+                    output_bin_path, contig_dict,
+                    minfasta=minfasta,
+                    output_tag=args.output_tag,
+                    output_compression=args.output_compression)
     logger.info(f'Number of bins: {len(written)}')
     written.to_csv(os.path.join(out, 'bins_info.tsv'), index=False,
                    sep='\t')
