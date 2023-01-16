@@ -257,10 +257,9 @@ def recluster_bins(logger, data, *, n_sample, embedding, is_combined, contig_lab
     return contig_labels_reclustered
 
 
-def cluster(logger, model, data, device, max_edges, max_node, is_combined,
-            n_sample, out, contig_dict, *,
-            binned_length, num_process, minfasta, recluster, random_seed,
-            orf_finder='prodigal', prodigal_output_faa=None, output_compression=None):
+def cluster(logger, model, data, device, is_combined,
+            n_sample, out, contig_dict, *, args,
+            binned_length, minfasta):
     """
     Cluster contigs into bins
     max_edges: max edges of one contig considered in binning
@@ -269,11 +268,11 @@ def cluster(logger, model, data, device, max_edges, max_node, is_combined,
     import pandas as pd
     import numpy as np
     embedding, contig_labels = run_embed_infomap(logger, model, data,
-            device=device, max_edges=max_edges, max_node=max_node,
+            device=device, max_edges=args.max_edges, max_node=args.max_node,
             is_combined=is_combined, n_sample=n_sample,
-            contig_dict=contig_dict, num_process=num_process,
-            random_seed=random_seed)
-    output_bin_path = os.path.join(out, 'output_prerecluster_bins' if recluster else 'output_bins')
+            contig_dict=contig_dict, num_process=args.num_process,
+            random_seed=args.random_seed)
+    output_bin_path = os.path.join(out, 'output_prerecluster_bins' if args.recluster else 'output_bins')
     if os.path.exists(output_bin_path):
         logger.warning(f'Previous output directory `{output_bin_path}` found. Over-writing it.')
         shutil.rmtree(output_bin_path)
@@ -285,12 +284,12 @@ def cluster(logger, model, data, device, max_edges, max_node, is_combined,
                             output_bin_path,
                             contig_dict,
                             minfasta=minfasta,
-                            output_compression=output_compression)
+                            output_compression=args.output_compression)
     if not len(bin_files):
         logger.warning('No bins were created. Please check your input data.')
         return
 
-    if not recluster:
+    if not args.recluster:
         logger.info(f'Number of bins: {len(bin_files)}')
         bin_files.to_csv(os.path.join(out, 'bins_info.tsv'), index=False, sep='\t')
 
@@ -306,9 +305,9 @@ def cluster(logger, model, data, device, max_edges, max_node, is_combined,
                                                 contig_dict=contig_dict,
                                                 minfasta=minfasta,
                                                 binned_length=binned_length,
-                                                num_process=num_process,
-                                                orf_finder=orf_finder,
-                                                random_seed=random_seed,
+                                                num_process=args.num_process,
+                                                orf_finder=args.orf_finder,
+                                                random_seed=args.random_seed,
                                                 is_combined=is_combined)
         output_recluster_bin_path = os.path.join(out, 'output_recluster_bins')
         if os.path.exists(output_recluster_bin_path):
@@ -320,7 +319,7 @@ def cluster(logger, model, data, device, max_edges, max_node, is_combined,
                             output_recluster_bin_path,
                             contig_dict,
                             minfasta=minfasta,
-                            output_compression=output_compression)
+                            output_compression=args.output_compression)
         logger.info(f'Number of bins after reclustering: {len(outputs)}')
         outputs.to_csv(os.path.join(out, 'recluster_bins_info.tsv'), index=False, sep='\t')
     logger.info('Binning finished')

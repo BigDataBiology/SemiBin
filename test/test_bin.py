@@ -5,26 +5,34 @@ import os
 import logging
 import pandas as pd
 import numpy as np
+import argparse
 
 def test_bin(tmpdir):
     contig_dict = {h:seq for h,seq in fasta_iter('test/bin_data/input.fasta')}
+    args = argparse.Namespace(
+        num_process=1,
+        max_edges=20,
+        max_node=1,
+        recluster=True,
+        random_seed=None,
+        orf_finder='prodigal',
+        depth_metabat2=None,
+        output_compression='none',
+        prodigal_output_faa=None,
+        )
 
     odir = f'{tmpdir}/output_test_bin'
     os.makedirs(odir,exist_ok=True)
-    binning(num_process=1,
-            data='test/bin_data/data.csv',
-            max_edges=20,
-            max_node=1,
-            minfasta=0,
+    binning(data='test/bin_data/data.csv',
             logger=logging,
+            minfasta=0,
+            device='cpu',
+            args=args,
+            environment=None,
             output=odir,
             binned_length=1000,
-            device='cpu',
             contig_dict=contig_dict,
             model_path='test/bin_data/model.h5',
-            recluster=True,
-            random_seed=None,
-            environment=None,
             )
 
     assert len(os.listdir(f'{odir}/output_prerecluster_bins')) > 0
@@ -32,17 +40,16 @@ def test_bin(tmpdir):
 
     odir = f'{tmpdir}/output_test_bin_long'
     os.makedirs(odir, exist_ok=True)
-    binning_long(num_process=1,
-            data='test/bin_data/data.csv',
+    binning_long(data='test/bin_data/data.csv',
+            environment=None,
             minfasta=0,
             logger=logging,
             output=odir,
+            args=args,
             binned_length=1000,
-            device='cpu',
             contig_dict=contig_dict,
+            device='cpu',
             model_path='test/bin_data/model.h5',
-            random_seed=None,
-            environment=None,
             )
 
     assert len(os.listdir(f'{odir}/output_bins')) > 0

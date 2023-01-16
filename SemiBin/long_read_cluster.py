@@ -47,9 +47,8 @@ def get_best_bin(results_dict, contig_to_marker, namelist, contig_dict, minfasta
             return max_bin
 
 def cluster_long_read(model, data, device, is_combined,
-            logger, n_sample, out, contig_dict, binned_length, num_process, *,
-            minfasta, random_seed, orf_finder='prodigal', prodigal_output_faa=None,
-            output_compression=None):
+            logger, n_sample, out, contig_dict, binned_length, *, args,
+            minfasta):
     contig_list = data.index.tolist()
     if not is_combined:
         train_data_input = data.values[:, 0:136]
@@ -87,12 +86,12 @@ def cluster_long_read(model, data, device, is_combined,
             seeds = cal_num_bins(
                 cfasta,
                 binned_length,
-                num_process,
+                args.num_process,
                 output=out,
-                orf_finder=orf_finder,
-                prodigal_output_faa=prodigal_output_faa)
+                orf_finder=args.orf_finder,
+                prodigal_output_faa=args.prodigal_output_faa)
 
-            contig2marker = get_marker(os.path.join(out, 'markers.hmmout'), orf_finder=orf_finder,
+            contig2marker = get_marker(os.path.join(out, 'markers.hmmout'), orf_finder=args.orf_finder,
                                        min_contig_len=binned_length, fasta_path=cfasta, contig_to_marker=True)
 
     output_bin_path = os.path.join(out, 'output_bins')
@@ -103,11 +102,11 @@ def cluster_long_read(model, data, device, is_combined,
         n_neighbors=min(200, embedding_new.shape[0] - 1),
         mode='distance',
         p=2,
-        n_jobs=num_process)
+        n_jobs=args.num_process)
 
     DBSCAN_results_dict = {}
     for eps_value in [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55]:
-        dbscan = DBSCAN(eps=eps_value, min_samples=5, n_jobs=num_process, metric='precomputed')
+        dbscan = DBSCAN(eps=eps_value, min_samples=5, n_jobs=args.num_process, metric='precomputed')
         dbscan.fit(dist_matrix, sample_weight=length_weight)
         labels = dbscan.labels_
         DBSCAN_results_dict[eps_value] = labels.tolist()
@@ -123,7 +122,7 @@ def cluster_long_read(model, data, device, is_combined,
                        output_bin_path, contig_dict,
                        recluster=False,
                        minfasta=minfasta,
-                       output_compression=output_compression)
+                       output_compression=args.output_compression)
             cluster_label += 1
             written.append(part)
             break
