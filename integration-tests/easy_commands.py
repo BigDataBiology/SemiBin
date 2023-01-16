@@ -85,13 +85,13 @@ for i in range(len(multi_sample_input_bams)):
 single_cram_output = 'test-outputs/single_output_cram'
 shutil.rmtree(single_cram_output, ignore_errors=True)
 subprocess.check_call(
-    ['SemiBin', 'single_easy_bin',
+    ['SemiBin2', 'single_easy_bin',
      '-i', f'{single_sample_input}/input.fasta',
      '-b', f'{single_sample_input}/input.cram',
      '-o', single_cram_output,
      '--environment', 'human_gut'
      ])
-assert os.path.exists(f'{single_cram_output}/output_prerecluster_bins')
+assert os.path.exists(f'{single_cram_output}/output_bins')
 
 # Test binning with long-read
 single_self_output_long = 'test-outputs/single_output_self_long'
@@ -151,6 +151,17 @@ subprocess.check_call(
      '--self-supervised'])
 assert os.path.exists(f'{single_self_output}/output_prerecluster_bins')
 assert os.path.exists(f'{single_self_output}/output_recluster_bins')
+
+# Test training with self-supervised learning
+single_self_output = 'test-outputs/single_output_self2'
+shutil.rmtree(single_self_output, ignore_errors=True)
+subprocess.check_call(
+    ['SemiBin2', 'single_easy_bin',
+     '-i', f'{single_sample_input}/input.fasta',
+     '-o', single_self_output,
+     '-b', f'{single_sample_input}/input.sorted.bam',
+     '--epochs', '1'])
+assert len(sglob(f'{single_self_output}/output_bins/SemiBin_*.gz')) > 0
 
 multi_self_output = 'test-outputs/multi_output_self'
 shutil.rmtree(multi_self_output, ignore_errors=True)

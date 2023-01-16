@@ -1442,7 +1442,7 @@ def main2(args=None, is_semibin2=True):
                     output=args.output, device=device, args=args)
 
         if args.cmd == 'single_easy_bin':
-            check_install(False, args.orf_finder, args.training_type == 'self' or args.environment is not None)
+            check_install(False, args.orf_finder, allow_missing_mmseqs2=(args.environment is not None or args.training_type == 'self'))
             if args.random_seed is not None:
                 set_random_seed(args.random_seed)
             if args.environment is not None:
