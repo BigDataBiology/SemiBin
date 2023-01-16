@@ -1,4 +1,5 @@
 import os
+from os import path
 import math
 import shutil
 import tempfile
@@ -272,29 +273,39 @@ def cluster(logger, model, data, device, is_combined,
             is_combined=is_combined, n_sample=n_sample,
             contig_dict=contig_dict, num_process=args.num_process,
             random_seed=args.random_seed)
-    output_bin_path = os.path.join(out, 'output_prerecluster_bins' if args.recluster else 'output_bins')
-    if os.path.exists(output_bin_path):
-        logger.warning(f'Previous output directory `{output_bin_path}` found. Over-writing it.')
-        shutil.rmtree(output_bin_path)
-    os.makedirs(output_bin_path, exist_ok=True)
+
+    if args.write_pre_reclustering_bins or not args.recluster:
+        output_bin_path = os.path.join(out,
+                    'output_prerecluster_bins' if args.recluster else 'output_bins')
+        if os.path.exists(output_bin_path):
+            logger.warning(f'Previous output directory `{output_bin_path}` found. Over-writing it.')
+            shutil.rmtree(output_bin_path)
+        os.makedirs(output_bin_path, exist_ok=True)
 
 
-    bin_files = write_bins(data.index.tolist(),
+        bin_files = write_bins(data.index.tolist(),
                             contig_labels,
                             output_bin_path,
                             contig_dict,
                             minfasta=minfasta,
                             output_compression=args.output_compression)
-    if not len(bin_files):
-        logger.warning('No bins were created. Please check your input data.')
-        return
-
-    if not args.recluster:
-        logger.info(f'Number of bins: {len(bin_files)}')
-        bin_files.to_csv(os.path.join(out, 'bins_info.tsv'), index=False, sep='\t')
-
+        if not len(bin_files):
+            logger.warning('No bins were created. Please check your input data.')
+            return
+        if not args.recluster:
+            logger.info(f'Number of bins: {len(bin_files)}')
+            bin_files.to_csv(os.path.join(out, 'bins_info.tsv'), index=False, sep='\t')
+        n_pre_bins = len(bin_files)
     else:
-        logger.info(f'Number of bins prior to reclustering: {len(bin_files)}')
+        from collections import defaultdict
+        total_size = defaultdict(int)
+        for i, c in enumerate(contig_labels):
+            total_size[c] += len(contig_dict[data.index[i]])
+        n_pre_bins = sum((total_size[bin_ix] >= minfasta for bin_ix in range(contig_labels.max() + 1)))
+
+
+    if args.recluster:
+        logger.info(f'Number of bins prior to reclustering: {n_pre_bins}')
         logger.debug('Reclustering...')
 
         contig_labels_reclustered = recluster_bins(logger,
@@ -309,7 +320,10 @@ def cluster(logger, model, data, device, is_combined,
                                                 orf_finder=args.orf_finder,
                                                 random_seed=args.random_seed,
                                                 is_combined=is_combined)
-        output_recluster_bin_path = os.path.join(out, 'output_recluster_bins')
+        output_recluster_bin_path = path.join(out,
+                        ('output_recluster_bins'
+                            if args.write_pre_reclustering_bins
+                            else 'output_bins'))
         if os.path.exists(output_recluster_bin_path):
             logger.warning(f'Previous output directory `{output_recluster_bin_path}` found. Over-writing it.')
             shutil.rmtree(output_recluster_bin_path)

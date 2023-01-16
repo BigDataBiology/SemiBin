@@ -166,4 +166,36 @@ def test_semibin2_args():
         assert args.cmd == 'multi_easy_bin'
         assert args.training_type == 'semi'
 
+def test_write_prerecluster():
+    for is_semibin2 in [True, False]:
+        args = parse_args(
+                ['multi_easy_bin',
+                    '--semi-supervised',
+                    '-i' ,'./test/single_sample_data/input.fasta',
+                    '-b', './test/single_sample_data/input.sorted.bam',
+                    '-o', 'output'],
+                is_semibin2=is_semibin2)
+        validate_normalize_args(logging, args)
+        assert bool(args.write_pre_reclustering_bins) != is_semibin2
 
+        args = parse_args(
+                ['multi_easy_bin',
+                    '--semi-supervised',
+                    '--write-pre-reclustering-bins',
+                    '-i' ,'./test/single_sample_data/input.fasta',
+                    '-b', './test/single_sample_data/input.sorted.bam',
+                    '-o', 'output'],
+                is_semibin2=is_semibin2)
+        validate_normalize_args(logging, args)
+        assert args.write_pre_reclustering_bins
+
+        args = parse_args(
+                ['multi_easy_bin',
+                    '--semi-supervised',
+                    '--no-write-pre-reclustering-bins',
+                    '-i' ,'./test/single_sample_data/input.fasta',
+                    '-b', './test/single_sample_data/input.sorted.bam',
+                    '-o', 'output'],
+                is_semibin2=is_semibin2)
+        validate_normalize_args(logging, args)
+        assert not args.write_pre_reclustering_bins

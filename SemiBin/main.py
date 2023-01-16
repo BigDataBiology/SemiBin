@@ -246,6 +246,19 @@ def parse_args(args, is_semibin2):
                               dest='bams',
                               default=None,
                               )
+        p.add_argument('--write-pre-reclustering-bins',
+                required=False,
+                help='Write pre-reclustering bins to disk.',
+                dest='write_pre_reclustering_bins',
+                action=BooleanOptionalAction)
+        if not hasattr(argparse, 'BooleanOptionalAction'):
+            p.add_argument('--no-write-pre-reclustering-bins',
+                    required=False,
+                    help='Do not write pre-reclustering bins to disk.',
+                    dest='no_write_pre_reclustering_bins',
+                    action='store_true')
+
+
         p.add_argument('--compression',
                 required=False,
                 type=str,
@@ -521,6 +534,16 @@ def parse_args(args, is_semibin2):
     args.is_semibin2 = is_semibin2
     if hasattr(args, 'no_recluster'):
         args.recluster = not args.no_recluster
+
+    if hasattr(args, 'write_pre_reclustering_bins'):
+        # backwards compat for Python 3.8 and earlier
+        if not hasattr(argparse, 'BooleanOptionalAction'):
+            if args.no_write_pre_reclustering_bins:
+                args.write_pre_reclustering_bins = False
+            elif not args.no_write_pre_reclustering_bins and not is_semibin2:
+                args.write_pre_reclustering_bins = True
+        if args.write_pre_reclustering_bins is None:
+            args.write_pre_reclustering_bins = not is_semibin2
 
     # Keep the verbose1/quiet1 hack contained in this function
     for hacked in ['verbose', 'quiet']:
