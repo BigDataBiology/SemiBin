@@ -11,6 +11,7 @@
 - Better `--help` (group required arguments separately)
 - Add `--output-compression` option to compress outputs
 - Add `--tag-output` option which allows for control of the output filenames (and also makes the anvi'o compatible)
+- Add contig->bin mapping table ([#123](https://github.com/BigDataBiology/SemiBin/issues/123))
 - `SemiBin.main.main1` and `SemiBin.main.main2` can now be called as a function with command line arguments (`main1` corresponds to _SemiBin1_ and `main2` corresponds to _SemiBin2_)
 
 ```python

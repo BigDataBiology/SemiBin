@@ -296,6 +296,8 @@ def cluster(logger, model, data, device, is_combined,
         if not args.recluster:
             logger.info(f'Number of bins: {len(bin_files)}')
             bin_files.to_csv(os.path.join(out, 'bins_info.tsv'), index=False, sep='\t')
+            pd.DataFrame({'contig': data.index, 'bin': contig_labels}).to_csv(
+                os.path.join(out, 'contig_bins.tsv'), index=False, sep='\t')
         n_pre_bins = len(bin_files)
     else:
         from collections import defaultdict
@@ -338,6 +340,8 @@ def cluster(logger, model, data, device, is_combined,
                             output_compression=args.output_compression)
         logger.info(f'Number of bins after reclustering: {len(outputs)}')
         outputs.to_csv(os.path.join(out, 'recluster_bins_info.tsv'), index=False, sep='\t')
+        pd.DataFrame({'contig': data.index, 'bin': contig_labels_reclustered}).to_csv(
+            os.path.join(out, 'contig_bins.tsv'), index=False, sep='\t')
     logger.info('Binning finished')
 
 

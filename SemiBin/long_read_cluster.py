@@ -49,6 +49,7 @@ def get_best_bin(results_dict, contig_to_marker, namelist, contig_dict, minfasta
 def cluster_long_read(model, data, device, is_combined,
             logger, n_sample, out, contig_dict, binned_length, *, args,
             minfasta):
+    import pandas as pd
     contig_list = data.index.tolist()
     if not is_combined:
         train_data_input = data.values[:, 0:136]
@@ -148,4 +149,6 @@ def cluster_long_read(model, data, device, is_combined,
     logger.info(f'Number of bins: {len(written)}')
     written.to_csv(os.path.join(out, 'bins_info.tsv'), index=False,
                    sep='\t')
+    pd.DataFrame({'contig': namelist, 'bin': contig_labels}).to_csv(
+            os.path.join(out, 'contig_bins.tsv'), index=False, sep='\t')
     logger.info('Finished binning.')

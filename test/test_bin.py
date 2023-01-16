@@ -1,6 +1,7 @@
 from SemiBin.main import binning, binning_preprocess, binning_long
 from SemiBin.cluster import run_embed_infomap, recluster_bins
 from SemiBin.fasta import fasta_iter
+from glob import glob
 import os
 import logging
 import pandas as pd
@@ -40,6 +41,14 @@ def test_bin(tmpdir):
     assert len(os.listdir(f'{odir}/output_prerecluster_bins')) > 0
     assert len(os.listdir(f'{odir}/output_recluster_bins')) > 0
 
+    contig_bin = pd.read_table(f'{odir}/contig_bins.tsv', index_col=0)
+    contig_bin2 = {}
+    for f in glob(f'{odir}/output_recluster_bins/*.fa'):
+        ix = int(f.split('/')[-1].split('.')[1], 10)
+        for h,_ in fasta_iter(f):
+            contig_bin2[h] = ix
+    assert contig_bin2 == contig_bin['bin'].to_dict()
+
     odir = f'{tmpdir}/output_test_bin_long'
     os.makedirs(odir, exist_ok=True)
     binning_long(data='test/bin_data/data.csv',
@@ -55,6 +64,13 @@ def test_bin(tmpdir):
             )
 
     assert len(os.listdir(f'{odir}/output_bins')) > 0
+    contig_bin = pd.read_table(f'{odir}/contig_bins.tsv', index_col=0)
+    contig_bin2 = {}
+    for f in glob(f'{odir}/output_bins/*.fa'):
+        ix = int(f.split('/')[-1].split('.')[1], 10)
+        for h,_ in fasta_iter(f):
+            contig_bin2[h] = ix
+    assert contig_bin2 == contig_bin['bin'].to_dict()
 
 
 

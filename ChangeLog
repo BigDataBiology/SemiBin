@@ -9,6 +9,7 @@ Unreleased
 	* Add `--compression` option
 	* Make SemiBin.main.main callable with a list of arguments
 	* Add `--tag-output` option
+	* Add contig->bin mapping table (#123)
 
 Version 1.4.0 Dec  2022 by BigDataBiology
 	* Provide binning algorithm for assemblies from long read
