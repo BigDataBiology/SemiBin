@@ -25,12 +25,13 @@ While the original version of SemiBin could be applied to long-read data, it was
 Starting with version 1.4, SemiBin supports an alternative clustering procedure which gives much better results when applied to long-reads assemblies (including hybrid assemblies).
 Use the flag `--sequencing-data=long_reads` when binning.
 
-As of December 2022, a new manuscript describing the self-supervised mode (and other improvements) is under preparation (but we are happy to share a pre-preprint to whomever wants to look at a rough draft and see the data, just [email us](mailto:luispedro@big-data-biology.org)).
+See the [SemiBin2 preprint](https://doi.org/10.1101/2023.01.09.523201) for a description and benchmarking of the long-read algorithm.
 
 ## Does SemiBin work for eukaryotic genomes?
 
 Technically, yes, you can apply it to eukaryotic data and it will produce bins.
 However, SemiBin is not optimized for this setting and all the benchmarking in the manuscript is performed on prokaryotic data.
+The long-read sequencing algorithm is particularly discouraged as it relies on prokaryotic single-copy genes.
 You may consider using SemiBin as part of a multi-algorithm approach followed by dereplication, but we do not have the data to recommend its use on its own.
 
 We are very keen to test SemiBin for these data and ask that, if you have eukaryotic metagenomics data, you feel free to get in touch ([shaojun@big-data-biology.org](mailto:shaojun@big-data-biology.org) or [luispedro@big-data-biology.org](mailto:luispedro@big-data-biology.org)).
