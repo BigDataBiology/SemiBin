@@ -7,6 +7,7 @@ long_description = open('README.md', encoding='utf-8').read()
 
 setup(name='SemiBin',
       version=__version__,
+      python_requires='>=3.7',
       description='Metagenomic binning with semi-supervised siamese neural network',
       long_description = long_description,
       long_description_content_type = 'text/markdown',

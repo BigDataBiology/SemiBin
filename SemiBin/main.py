@@ -1299,6 +1299,11 @@ def main2(args=None, is_semibin2=True):
     if args.verbose and args.quiet:
         logger.warning('Both verbose and quiet are set, output will be verbose')
 
+    if sys.version_info.major < 3 or sys.version_info.minor < 7:
+        logger.warning(f'You are using Python {sys.version_info.major}.{sys.version_info.minor} ({sys.version}), but SemiBin requires Python 3.7 or higher. Please upgrade your Python version.')
+        logger.warning(f'If you are using conda, you can run `conda install python=3.7` to upgrade your Python version.')
+        logger.warning(f'SemiBin will keep going, but it may not work properly.')
+
     validate_normalize_args(logger, args)
     if args.cmd == 'check_install':
         check_install(True, allow_missing_mmseqs2=args.allow_missing_mmseqs2)
