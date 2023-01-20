@@ -2,18 +2,12 @@
 
 If you use this software in a publication please cite:
 
->  Pan, S., Zhu, C., Zhao, XM. *et al.* A deep siamese neural network improves
->  metagenome-assembled genomes in microbiome datasets across different
->  environments. *Nat Commun* **13,** 2326 (2022).
->  https://doi.org/10.1038/s41467-022-29843-y
+>  Pan, S., Zhu, C., Zhao, XM. *et al.* [A deep siamese neural network improves metagenome-assembled genomes in microbiome datasets across different environments](https://doi.org/10.1038/s41467-022-29843-y). *Nat Commun* **13,** 2326 (2022). [https://doi.org/10.1038/s41467-022-29843-y](https://doi.org/10.1038/s41467-022-29843-y)
 
 The self-supervised approach and the algorithms used for long-read datasets (as
 well as their benchmarking) are described in
 
-> Pan, S.; Zhao, XM; Coelho, LP. **SemiBin2: self-supervised contrastive
-> learning leads to better MAGs for short- and long-read sequencing**. *bioRxiv
-> preprint* 2023.01.09.523201; doi: https://doi.org/10.1101/2023.01.09.523201
-
+> Pan, S.; Zhao, XM; Coelho, LP. [SemiBin2: self-supervised contrastive learning leads to better MAGs for short- and long-read sequencing](https://doi.org/10.1101/2023.01.09.523201). *bioRxiv preprint* 2023.01.09.523201; [https://doi.org/10.1101/2023.01.09.523201](https://doi.org/10.1101/2023.01.09.523201)
 
 
 SemiBin is a command line tool for metagenomic binning with semi-supervised siamese neural network using additional information from reference genomes and contigs themselves.
