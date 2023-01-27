@@ -96,8 +96,7 @@ def run_embed_infomap(logger, model, data, * ,
     from scipy import sparse
     import torch
     import numpy as np
-    train_data = data.values
-    train_data_input = train_data[:, 0:136] if not is_combined else train_data
+    train_data_input = data.values[:, 0:136] if not is_combined else data.values
 
     depth = data.values[:, 136:len(data.values[0])].astype(np.float32)
     num_contigs = train_data_input.shape[0]
@@ -107,13 +106,13 @@ def run_embed_infomap(logger, model, data, * ,
         embedding = model.embedding(x.float()).detach().cpu().numpy()
         embedding_matrix = kneighbors_graph(
             embedding,
-            n_neighbors=min(max_edges, train_data.shape[0] - 1),
+            n_neighbors=min(max_edges, data.shape[0] - 1),
             mode='distance',
             p=2,
             n_jobs=num_process)
         kmer_matrix = kneighbors_graph(
             train_data_input,
-            n_neighbors=min(max_edges, train_data.shape[0] - 1),
+            n_neighbors=min(max_edges, data.shape[0] - 1),
             mode='distance',
             p=2,
             n_jobs=num_process)

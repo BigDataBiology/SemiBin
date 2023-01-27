@@ -1024,7 +1024,7 @@ def binning_preprocess(data, depth_metabat2, model_path, environment, device):
 
     if depth_metabat2 is None:
         col_name = data.columns.tolist()[-1].split('_')[-1]
-        is_combined = False if col_name == 'var' else True
+        is_combined = col_name != 'var'
         n_sample = (data.shape[1] - 136) // 2 if not is_combined else (data.shape[1] - 136)
     else:
         is_combined = False
@@ -1037,7 +1037,7 @@ def binning_preprocess(data, depth_metabat2, model_path, environment, device):
                  left_index=True, right_index=True, sort=False, copy=True)
         if data.shape[1] != 138:
             sys.stderr.write(
-                f"Error: Depth file from Metabat2 only used in single-sample binning!\n")
+                f"Error: Depth file from Metabat2 can only be used in single-sample binning!\n")
             sys.exit(1)
 
     model_path = model_path if environment is None else get_model_path(environment)
