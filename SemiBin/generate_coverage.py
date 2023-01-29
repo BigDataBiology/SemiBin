@@ -131,7 +131,7 @@ def generate_cov(bam_file, bam_index, out, threshold,
         with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
             contig_cov.to_csv(ofile)
 
-    return (bam_file, logger)
+    return bam_file
 
 def combine_cov(cov_dir, bam_list, is_combined):
     """

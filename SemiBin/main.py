@@ -2,6 +2,7 @@ from .semibin_version import __version__ as ver
 import argparse
 import logging
 import os
+from multiprocessing.pool import Pool
 import subprocess
 from .atomicwrite import atomic_write
 import shutil
@@ -13,7 +14,6 @@ from .gtdb import find_or_download_gtdb
 from .generate_coverage import generate_cov, combine_cov
 from .generate_kmer import generate_kmer_features_from_fasta
 from .fasta import fasta_iter
-from .error import LoggingPool
 
 
 def parse_args(args, is_semibin2):
@@ -562,8 +562,6 @@ def parse_args(args, is_semibin2):
     return args
 
 
-def _checkback(msg):
-    msg[1].info('Processed:{}'.format(msg[0]))
 
 def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
     '''Executes check_install subcommand, which checks for dependencies
@@ -729,28 +727,29 @@ def generate_sequence_features_single(logger, contig_fasta,
         n_sample = len(bams)
         is_combined = n_sample >= 5
         bam_list = bams
-        pool = LoggingPool(num_process) if num_process != 0 else LoggingPool()
 
         logger.info('Calculating coverage for every sample.')
 
-        for bam_index in range(n_sample):
-            pool.apply_async(
-                generate_cov,
-                args=(
-                    bam_list[bam_index],
-                    bam_index,
-                    output,
-                    must_link_threshold,
-                    is_combined,
-                    binned_length,
-                    logger,
-                    None
-                ),
-                callback=_checkback)
-        pool.close()
-        pool.join()
+        with Pool(num_process if num_process != 0 else None) as pool:
+            results = [
+                pool.apply_async(
+                    generate_cov,
+                    args=(
+                        bam_file,
+                        bam_index,
+                        output,
+                        must_link_threshold,
+                        is_combined,
+                        binned_length,
+                        logger,
+                        None
+                    ))
+                for bam_index, bam_file in enumerate(bams)]
+            for r in results:
+                s = r.get()
+                logger.info(f'Processed: {s}')
 
-        for bam_index, bam_file in enumerate(bam_list):
+        for bam_index, bam_file in enumerate(bams):
             if not os.path.exists(os.path.join(output, '{}_data_cov.csv'.format(
                     os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
                 sys.stderr.write(
@@ -811,10 +810,6 @@ def generate_sequence_features_multi(logger, contig_fasta,
     n_sample = len(bams)
     is_combined = n_sample >= 5
     bam_list = bams
-    if num_process != 0:
-        pool = LoggingPool(num_process)
-    else:
-        pool = LoggingPool()
 
     # Gererate contig file for every sample
     sample_list = []
@@ -849,10 +844,12 @@ def generate_sequence_features_multi(logger, contig_fasta,
             binned_short ,_ ,_ = process_fasta(os.path.join(output, 'samples/{}.fa'.format(sample)), ratio)
             binning_threshold[sample] = 1000 if binned_short else 2500
 
-    for bam_index in range(n_sample):
-        pool.apply_async(generate_cov,
+    with Pool(num_process if num_process != 0 else None) as pool:
+        results = [
+            pool.apply_async(
+                        generate_cov,
                          args=(
-                             bam_list[bam_index],
+                             bam_file,
                              bam_index,
                              os.path.join(output, 'samples'),
                              must_link_threshold,
@@ -860,10 +857,11 @@ def generate_sequence_features_multi(logger, contig_fasta,
                              binning_threshold,
                              logger,
                              separator,
-                         ),
-                         callback=_checkback)
-    pool.close()
-    pool.join()
+                         ))
+            for bam_index, bam_file in enumerate(bams)]
+        for r in results:
+            s = r.get()
+            logger.info(f'Processed: {s}')
 
     for bam_index, bam_file in enumerate(bam_list):
         if not os.path.exists(os.path.join(os.path.join(output, 'samples'), '{}_data_cov.csv'.format(
