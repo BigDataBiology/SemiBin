@@ -1294,6 +1294,12 @@ def main2(args=None, is_semibin2=True):
         sh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
         logger.addHandler(sh)
 
+    if args.cmd not in ['download_GTDB', 'check_install']:
+        os.makedirs(args.output, exist_ok=True)
+        fh = logging.FileHandler(os.path.join(args.output, "SemiBinRun.log"))
+        fh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
+        logger.addHandler(fh)
+
     if args.verbose and args.quiet:
         logger.warning('Both verbose and quiet are set, output will be verbose')
 
@@ -1306,8 +1312,6 @@ def main2(args=None, is_semibin2=True):
     if args.cmd == 'check_install':
         check_install(True, allow_missing_mmseqs2=args.allow_missing_mmseqs2)
 
-    if args.cmd not in ['download_GTDB', 'check_install']:
-        os.makedirs(args.output, exist_ok=True)
 
     if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'train_semi', 'bin', 'train_self', 'bin_long']:
         import torch

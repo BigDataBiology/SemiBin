@@ -1,5 +1,11 @@
 # What's New
 
+## Unreleased version
+
+### User-visible changes
+
+- Running SemiBin now writes a log file in the output directory
+
 ## Version 1.5.0 (SemiBin2 beta)
 
 *Released Jan 17, 2023*
