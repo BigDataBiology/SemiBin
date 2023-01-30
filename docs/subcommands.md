@@ -36,10 +36,14 @@ Starting in version 1.3, self-supervised learning is also supported, which shoul
 
 * [SemiBin 1.4 and above] `--sequencing-type=short_reads`/`--sequencing-type=long_reads`
 
+#### Optional arguments to control output
+
+* `--compression`: Whether to compress outputs to save space. Should be one of `none` (default if using `SemiBin`) / `gz` (default if using `SemiBin2`) / `xz` / `bz2`.
+* `--tag-output`: If passed an argument (_e.g._, `--tag-output=mysample`), then output bin files will include the tag. This can help distinguish results from multiple runs.
+
 #### Optional arguments to control computational resource usage
 
 * `-p/--processes/-t/--threads`: Number of CPUs used (`0`, the default, indicates that all CPUs should be used).
-* `--compression`: Whether to compress outputs to save space. Should be one of `none` (default) / `gz` / `xz` / `bz2`. In SemiBin2, the default will change to `gz`.
 * `--write-pre-reclustering-bins`/`--no-write-pre-reclustering-bins`: Whether to write pre-reclustering bins (defaults to true in SemiBin1; and false in SemiBin2).
 * `--engine`: device used to train the model (`auto`/`gpu`/`cpu`); `auto` (default) means that SemiBin with attempt to detect and use GPU and fallback to CPU if no GPU is found.
 * `--tmpdir`: set temporary directory.
