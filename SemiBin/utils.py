@@ -538,9 +538,14 @@ def get_model_path(env):
             f"Error: Expected environment '{env}' does not exist (known ones are {', '.join(known_environments)})\n")
         sys.exit(1)
 
-def concatenate_fasta(fasta_files, min_length, output, separator):
-    cfasta = os.path.join(output, 'concatenated.fa')
-    with open(cfasta, 'wt') as concat_out:
+def concatenate_fasta(fasta_files, min_length, output, separator, output_compression='none'):
+    """
+    Concatenate multiple FASTA files into one
+    """
+    ofname = os.path.join(output, 'concatenated.fa')
+    if output_compression != 'none':
+        ofname += '.' + output_compression
+    with possibly_compressed_write(ofname) as concat_out:
         for fasta in fasta_files:
             sample_name = os.path.basename(fasta).split('.')[0]
             for h, seq in fasta_iter(fasta):
@@ -551,6 +556,7 @@ def concatenate_fasta(fasta_files, min_length, output, separator):
                 if len(seq) >= min_length:
                     header = f'{sample_name}{separator}{h}'
                     concat_out.write(f'>{header}\n{seq}\n')
+    return ofname
 
 def n50_l50(sizes):
     '''Computes N50 & L50 for a set of contig sizes

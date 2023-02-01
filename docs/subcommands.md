@@ -291,5 +291,6 @@ The separator character cannot occur in any of your samples, so if any sample co
 
 * `-s`/`--separator` is the same as the `multi_easy_bin` (see comment above).
 * `-m`: Discard sequences below this length (default:0).
+* `--compression` (since version `1.6`): whether to compress the output (defaults to `gz` if using `SemiBin2`)
 
 

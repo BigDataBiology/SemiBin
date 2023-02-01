@@ -1480,7 +1480,8 @@ def main2(args=None, is_semibin2=True):
 
         if args.cmd == 'concatenate_fasta':
             from .utils import concatenate_fasta
-            concatenate_fasta(args.contig_fasta, args.min_length, args.output, args.separator)
+            ofname = concatenate_fasta(args.contig_fasta, args.min_length, args.output, args.separator, args.output_compression)
+            logger.info(f'Concatenated contigs written to {ofname}')
 
         print('If you find SemiBin useful, please cite:\n Pan, S.; Zhu, C.; Zhao, XM.; Coelho, LP. A deep siamese neural network improves metagenome-assembled genomes in microbiome datasets across different environments. Nat Commun 13, 2326 (2022). https://doi.org/10.1038/s41467-022-29843-y.')
 
