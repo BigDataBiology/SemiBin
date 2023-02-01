@@ -1201,7 +1201,7 @@ def multi_easy_binning(args, logger, output, device):
 
     for sample_index, sample in enumerate(sample_list):
         logger.info(
-            'Running mmseqs and generating cannot-link file for {}'.format(sample))
+            f'Running generating cannot-link file for {sample}')
         sample_fasta = os.path.join(
             output, 'samples', '{}.fa'.format(sample))
         sample_data = os.path.join(output, 'samples', sample, 'data.csv')
@@ -1218,6 +1218,7 @@ def multi_easy_binning(args, logger, output, device):
             must_link_threshold = args.ml_threshold
         logger.info('Training model and clustering for {}.'.format(sample))
         if args.training_type == 'semi':
+            logger.debug(f'Running taxonomic prediction (semi-supervised mode) for {sample}')
             predict_taxonomy(
                 logger,
                 sample_fasta,
