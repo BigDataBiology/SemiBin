@@ -32,6 +32,7 @@ See the [SemiBin2 preprint](https://doi.org/10.1101/2023.01.09.523201) for a des
 Technically, yes, you can apply it to eukaryotic data and it will produce bins.
 However, SemiBin is not optimized for this setting and all the benchmarking in the manuscript is performed on prokaryotic data.
 The long-read sequencing algorithm is particularly discouraged as it relies on prokaryotic single-copy genes.
+Similarly, for short-reads, reclustering should be turned off (using `--no-recluster`) as it relies on the same set of genes.
 You may consider using SemiBin as part of a multi-algorithm approach followed by dereplication, but we do not have the data to recommend its use on its own.
 
 We are very keen to test SemiBin for these data and ask that, if you have eukaryotic metagenomics data, you feel free to get in touch ([shaojun@big-data-biology.org](mailto:shaojun@big-data-biology.org) or [luispedro@big-data-biology.org](mailto:luispedro@big-data-biology.org)).
