@@ -165,9 +165,9 @@ These are the same as for `multi_easy_bin`.
 * `-p/--processes/-t/--threads`, `--ratio`, `--min-len`, `--ml-threshold` and `--tmpdir` are the same as for `single_easy_bin`.
 * `-s/--separator` are the same as for `multi_easy_bin`.
 
-### train
+### train (train_semi in SemiBin2)
 
-The `train` subcommand requires the contig file and outputs from the `generate_sequence_features_single`, `generate_sequence_features_multi` and `generate_cannot_links` subcommand as inputs (`data.csv`, `data_split.csv` and `cannot.txt`) and outputs the trained model.
+The `train` (`train_semi` in `SemiBin2`) subcommand requires the contig file and outputs from the `generate_sequence_features_single`, `generate_sequence_features_multi` and `generate_cannot_links` subcommand as inputs (`data.csv`, `data_split.csv` and `cannot.txt`) and outputs the trained model.
 
 Note that you can train a model from multiple samples for use in single sample binning!
 
