@@ -1262,7 +1262,7 @@ def multi_easy_binning(args, logger, output, device):
 
     os.makedirs(os.path.join(output, 'bins'), exist_ok=True)
     for sample in sample_list:
-        if args.sequencing_type != 'short_read' or not args.recluster:
+        if args.sequencing_type != 'short_read' or (not args.is_semibin2 and not args.recluster) or (args.is_semibin2 and args.recluster):
             bin_dir_name = 'output_bins'
         else:
             bin_dir_name = 'output_recluster_bins' if args.recluster else 'output_prerecluster_bins'
