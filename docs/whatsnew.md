@@ -6,6 +6,14 @@
 
 - Running SemiBin now writes a log file in the output directory
 
+## Version 1.5.1 (SemiBin2 beta)
+
+*Released Mar 7, 2023*
+
+### Bugfixes
+
+- Fix use of `--no-recluster` with multi_easy_bin ([#128](https://github.com/BigDataBiology/SemiBin/issues/128)).
+
 ## Version 1.5.0 (SemiBin2 beta)
 
 *Released Jan 17, 2023*
