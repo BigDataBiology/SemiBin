@@ -5,6 +5,7 @@
 ### User-visible changes
 
 - Running SemiBin now writes a log file in the output directory
+- The `concatenate_fasta` subcommand now supports compression
 
 ## Version 1.5.1 (SemiBin2 beta)
 

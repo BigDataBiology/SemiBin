@@ -1,6 +1,6 @@
 Unreleased
 	* SemiBin: Write a log file
-	* concatenate_fasta: support compresion
+	* concatenate_fasta: support compression
 
 Version 1.5.1 (SemiBin2 beta) Mar 7 2023 by BigDataBiology
 	* Bugfix: using --no-recluster with multi_easy_bin (#128)
