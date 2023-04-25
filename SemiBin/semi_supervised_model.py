@@ -187,7 +187,7 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
 
             if not os.path.getsize(cannot_links[data_index]):
                 sys.stderr.write(
-                    f"Error: Cannot-link file is empty!\n")
+                    f"Error: Cannot-link file ({cannot_links[data_index]}) is empty!\n")
                 sys.exit(1)
 
             cannot_link = pd.read_csv(cannot_links[data_index], sep=',',
