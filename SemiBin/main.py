@@ -112,7 +112,7 @@ def parse_args(args, is_semibin2):
                                                    dest='kmer',
                                                    action='store_true',)
 
-    training = subparsers.add_parser(('train_semi' if is_semibin2 else 'train'),
+    train_semi = subparsers.add_parser(('train_semi' if is_semibin2 else 'train'),
                                     help='Train the model.')
 
     training_self = subparsers.add_parser('train_self',
@@ -131,7 +131,7 @@ def parse_args(args, is_semibin2):
                             action='store_true',
                             default=None)
 
-    training_mandatory = training.add_argument_group('Mandatory arguments')
+    training_mandatory = train_semi.add_argument_group('Mandatory arguments')
     training_mandatory.add_argument('-i', '--input-fasta',
                    required=True,
                    nargs='*',
@@ -170,7 +170,7 @@ def parse_args(args, is_semibin2):
                               default=None,
                               )
 
-    for p in [training, training_self]:
+    for p in [train_semi, training_self]:
         p.add_argument('--batch-size',
                               required=False,
                               type=int,
@@ -198,7 +198,7 @@ def parse_args(args, is_semibin2):
 
 
 
-    training.add_argument('--epochs', '--epoches', # epoches is kept for backwards compatibilty
+    train_semi.add_argument('--epochs', '--epoches', # epoches is kept for backwards compatibilty
                        required=False,
                        type=int,
                        help='Number of epochs used in the training process (Default: 20).',
@@ -285,7 +285,7 @@ def parse_args(args, is_semibin2):
                              help='Path to the trained deep learning model.')
 
 
-    for p in [single_easy_bin, multi_easy_bin, training, binning, binning_long]:
+    for p in [single_easy_bin, multi_easy_bin, train_semi, binning, binning_long]:
         p.add_argument('--orf-finder',
                        required=False,
                        type=str,
@@ -307,7 +307,7 @@ def parse_args(args, is_semibin2):
                        default=None,
                        )
 
-    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, training, binning, generate_sequence_features_single, generate_sequence_features_multi, training_self, binning_long]:
+    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, train_semi, binning, generate_sequence_features_single, generate_sequence_features_multi, training_self, binning_long]:
         p.add_argument('--tmpdir',
                        required=False,
                        type=str,
@@ -317,7 +317,7 @@ def parse_args(args, is_semibin2):
                        )
 
 
-    for p in [training, generate_cannot_links, binning, single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi, training_self, binning_long]:
+    for p in [train_semi, generate_cannot_links, binning, single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi, training_self, binning_long]:
         p.add_argument('-p', '--processes', '-t', '--threads',
                    required=False,
                    type=int,
@@ -335,7 +335,7 @@ def parse_args(args, is_semibin2):
                        default=None,
                        )
 
-    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_sequence_features_single, generate_sequence_features_multi, binning, training, binning_long]:
+    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_sequence_features_single, generate_sequence_features_multi, binning, train_semi, binning_long]:
         p.add_argument('-m', '--min-len',
                        required=False,
                        type=int,
@@ -369,7 +369,7 @@ def parse_args(args, is_semibin2):
     for p in [single_easy_bin, multi_easy_bin,
                     generate_sequence_features_single, generate_sequence_features_multi,
                     generate_cannot_links, check_install, concatenate_fasta,
-                    training, binning, training_self, binning_long]:
+                    train_semi, binning, training_self, binning_long]:
         verbosity = p.add_mutually_exclusive_group()
         # Using verbose1/quiet1 is a hack for the fact that it is hard to make
         # argparse accept options both in the global scope and in the
@@ -480,7 +480,7 @@ def parse_args(args, is_semibin2):
                            default=':',
                            metavar='')
 
-    for p in [training, binning, single_easy_bin, multi_easy_bin, training_self, binning_long]:
+    for p in [train_semi, binning, single_easy_bin, multi_easy_bin, training_self, binning_long]:
         p.add_argument('--random-seed',
                        required=False,
                        type=int,
@@ -497,7 +497,7 @@ def parse_args(args, is_semibin2):
                        dest='ml_threshold',
                        default=None)
 
-    for p in [single_easy_bin, multi_easy_bin, training, binning, training_self, binning_long]:
+    for p in [single_easy_bin, multi_easy_bin, train_semi, binning, training_self, binning_long]:
         p.add_argument('--engine',
                        required=False,
                        type=str,
