@@ -18,7 +18,9 @@ def fasta_iter(fname, full_header=False):
     '''
     header = None
     chunks = []
-    if fname.endswith('.gz'):
+    if hasattr(fname, 'readline'):
+        op = lambda f,_ : f
+    elif fname.endswith('.gz'):
         import gzip
         op = gzip.open
     elif fname.endswith('.bz2'):
