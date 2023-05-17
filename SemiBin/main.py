@@ -706,7 +706,7 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
 
 def generate_sequence_features_single(logger, contig_fasta,
                          bams, binned_length,
-                         must_link_threshold, num_process, output, output_kmer = False):
+                         must_link_threshold, num_process, output, only_kmer=False):
     """
     Generate data.csv and data_split.csv for training and clustering of single-sample and co-assembly binning mode.
     data.csv has the features(kmer and abundance) for original contigs.
@@ -715,15 +715,15 @@ def generate_sequence_features_single(logger, contig_fasta,
     """
     import pandas as pd
 
-    if bams is None and output_kmer is False:
+    if bams is None and not only_kmer:
         sys.stderr.write(
-            f"Error: You need to input bam files if you want to calculate coverage features.\n")
+            f"Error: You need to specify input BAM files if you want to calculate coverage features.\n")
         sys.exit(1)
 
-    if bams is not None and output_kmer is True:
+    if bams is not None and only_kmer:
         logger.info('We will only calculate k-mer features.')
 
-    if not output_kmer:
+    if not only_kmer:
         n_sample = len(bams)
         is_combined = n_sample >= 5
         bam_list = bams
@@ -1126,7 +1126,7 @@ def single_easy_binning(args, logger, binned_length,
         must_link_threshold,
         args.num_process,
         output,
-        output_kmer= True if args.depth_metabat2 else False)
+        only_kmer=args.depth_metabat2)
 
     data_path = os.path.join(output, 'data.csv')
     if not args.depth_metabat2:
