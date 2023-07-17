@@ -1,16 +1,14 @@
 # SemiBin: Metagenomic Binning Using Siamese Neural Networks for short and long reads
 
-Command tool for metagenomic binning with deep learning, handles both short and long reads.
-
 [![BioConda Install](https://img.shields.io/conda/dn/bioconda/semibin.svg?style=flag&label=BioConda%20install)](https://anaconda.org/bioconda/semibin)
 [![Test Status](https://github.com/BigDataBiology/SemiBin/actions/workflows/semibin_test.yml/badge.svg)](https://github.com/BigDataBiology/SemiBin/actions/workflows/semibin_test.yml)
 [![Documentation Status](https://readthedocs.org/projects/semibin/badge/?version=latest)](https://semibin.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-_CONTACT US_: Please use [GitHub
-issues](https://github.com/BigDataBiology/SemiBin/issues) for bug reports and
-the [SemiBin users mailing-list](https://groups.google.com/g/semibin-users) for
-more open-ended discussions or questions.
+
+<img src="docs/semibin_logo.svg" width="92" /> SemiBin is a command tool for metagenomic binning with deep learning, handles both short and long reads.
+
+_CONTACT US_: Please use [GitHub issues](https://github.com/BigDataBiology/SemiBin/issues) for bug reports and the [SemiBin users mailing-list](https://groups.google.com/g/semibin-users) for more open-ended discussions or questions.
 
 If you use this software in a publication please cite:
 
