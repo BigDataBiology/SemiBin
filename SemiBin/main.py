@@ -19,6 +19,7 @@ def parse_args(args, is_semibin2):
     # BooleanOptionalAction is available in Python 3.9; before that, we fall back on the default
     BooleanOptionalAction = getattr(argparse, 'BooleanOptionalAction', 'store_true')
 
+    deprecated_if2_text = '[deprecated] ' if is_semibin2 else ''
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                     description='Neural network-based binning of metagenomic contigs',
                                     epilog='For more information, see https://semibin.readthedocs.io/en/latest/subcommands/')
@@ -53,11 +54,6 @@ def parse_args(args, is_semibin2):
     multi_easy_bin = subparsers.add_parser('multi_easy_bin',
                                             help='Bin contigs (multi-sample mode) using one command.')
 
-    generate_cannot_links = subparsers.add_parser('generate_cannot_links', aliases=['predict_taxonomy',],
-                                             help='Run the contig annotation using mmseqs '
-                                                  'with GTDB reference genome and generate '
-                                                  'cannot-link file used in the semi-supervised deep learning model training. '
-                                                  'This will download the GTDB database if not downloaded before.')
 
     generate_sequence_features_single = subparsers.add_parser('generate_sequence_features_single',
                                             help='Generate sequence features (kmer and abundance) as training data'
@@ -72,7 +68,6 @@ def parse_args(args, is_semibin2):
                                                   ' This will produce the data.csv and data_split.csv files.'
                                                   )
 
-    download_GTDB = subparsers.add_parser('download_GTDB', help='Download GTDB reference genomes.')
 
     check_install = subparsers.add_parser('check_install', help = 'Check whether required dependencies are present.')
 
@@ -111,8 +106,6 @@ def parse_args(args, is_semibin2):
                                                    dest='kmer',
                                                    action='store_true',)
 
-    train_semi = subparsers.add_parser(('train_semi' if is_semibin2 else 'train'),
-                                    help='Train the model.')
 
     training_self = subparsers.add_parser('train_self',
                                           help = 'Train the model with self-supervised learning')
@@ -122,6 +115,19 @@ def parse_args(args, is_semibin2):
 
     binning_long = subparsers.add_parser('bin_long',
                                     help='Group the contigs from long reads into bins.')
+
+
+    # Add the deprecated arguments last so they show up at the bottom of the help text
+    train_semi = subparsers.add_parser(('train_semi' if is_semibin2 else 'train'),
+                                    help=deprecated_if2_text + 'Train the model.')
+
+    generate_cannot_links = subparsers.add_parser('generate_cannot_links', aliases=['predict_taxonomy',],
+                                             help=deprecated_if2_text + 'Run the contig annotation using mmseqs '
+                                                  'with GTDB reference genome and generate '
+                                                  'cannot-link file used in the semi-supervised deep learning model training. '
+                                                  'This will download the GTDB database if not downloaded before.')
+    download_GTDB = subparsers.add_parser('download_GTDB',
+                help=deprecated_if2_text + 'Download GTDB reference genomes.')
 
     download_GTDB.add_argument('-f', '--force',
                             required=False,
