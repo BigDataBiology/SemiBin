@@ -328,7 +328,7 @@ def parse_args(args, is_semibin2):
                    )
 
     for p in [single_easy_bin, binning, binning_long]:
-        p.add_argument('--environment',
+        p.add_argument('--environment', '--habitat', '--biome',
                        required=False,
                        help='Environment for the built-in model (available choices: human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/chicken_caecum/global).',
                        dest='environment',
@@ -1484,7 +1484,12 @@ def main2(args=None, is_semibin2=True):
             ofname = concatenate_fasta(args.contig_fasta, args.min_length, args.output, args.separator, args.output_compression)
             logger.info(f'Concatenated contigs written to {ofname}')
 
-        print('If you find SemiBin useful, please cite:\n Pan, S.; Zhu, C.; Zhao, XM.; Coelho, LP. A deep siamese neural network improves metagenome-assembled genomes in microbiome datasets across different environments. Nat Commun 13, 2326 (2022). https://doi.org/10.1038/s41467-022-29843-y.')
+        print('''If you find SemiBin useful, please cite:
+        Pan, S.; Zhu, C.; Zhao, XM.; Coelho, LP. A deep siamese neural network improves metagenome-assembled genomes in microbiome datasets across different environments. Nat Commun 13, 2326 (2022). https://doi.org/10.1038/s41467-022-29843-y
+
+        Pan, S.; Zhao, XM; Coelho, LP. SemiBin2: self-supervised contrastive learning leads to better MAGs for short- and long-read sequencing. Bioinformatics Volume 39, Issue Supplement_1, June 2023, Pages i21–i29. https://doi.org/10.1093/bioinformatics/btad209
+
+''')
 
 
 def main1(args=None):

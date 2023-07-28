@@ -19,13 +19,6 @@ well as their benchmarking) are described in
 
 > Pan, S.; Zhao, XM; Coelho, LP. [SemiBin2: self-supervised contrastive learning leads to better MAGs for short- and long-read sequencing](https://doi.org/10.1093/bioinformatics/btad209). *Bioinformatics* Volume 39, Issue Supplement_1, June 2023, Pages i21–i29; [https://doi.org/10.1093/bioinformatics/btad209](https://doi.org/10.1093/bioinformatics/btad209)
 
-## SemiBin2
-
-The functionality of SemiBin2 is available already since version 1.4!
-
-- To use the self-supervised learning mode, use options `--self-supervised`
-- If you are using long-reads, use option `--sequencing-type=long_read`
-
 
 ## Basic usage of SemiBin
 
@@ -39,12 +32,14 @@ conda activate SemiBin
 conda install -c conda-forge -c bioconda semibin
 ```
 
+This will install both the `SemiBin2` command as well (for backwards compatibility), the old `SemiBin` command. For new projects, it is recommended that you exclusively use `SemiBin2`: both commands [do the same thing, but `SemiBin2` has a slightly nicer interface](https://semibin.readthedocs.io/en/latest/semibin2/).
+
 **The inputs** to the SemiBin are contigs (assembled from the reads) and BAM files (reads mapping to the contigs). In [the docs](https://semibin.readthedocs.io/en/latest/generate/) you can see how to generate the inputs starting with a metagenome.
 
 Running with single-sample binning (for example: human gut samples):
 
 ```bash
-SemiBin single_easy_bin -i contig.fa -b S1.sorted.bam -o output --environment human_gut
+SemiBin2 single_easy_bin -i contig.fa -b S1.sorted.bam -o output --environment human_gut
 ```
 
 (if you are using contigs from long-reads, add the `--sequencing-type=long_read` argument).
@@ -52,10 +47,10 @@ SemiBin single_easy_bin -i contig.fa -b S1.sorted.bam -o output --environment hu
 Running with multi-sample binning:
 
 ```bash
-SemiBin multi_easy_bin -i contig_whole.fa -b *.sorted.bam -o output
+SemiBin2 multi_easy_bin -i contig_whole.fa -b *.sorted.bam -o output
 ```
 
-**The output** includes the bins in the `output_recluster_bins` directory (including the bin.\*.fa and recluster.\*.fa).
+**The output** includes the bins in the `output_bins` directory (including the bin.\*.fa and recluster.\*.fa).
 
 
 Please find more options and details below and [read the docs](https://semibin.readthedocs.io/en/latest/usage/). 
@@ -83,18 +78,14 @@ For more information on how to install PyTorch, see [their documentation](https:
 
 You will need the following dependencies:
 
-- [MMseqs2](https://github.com/soedinglab/MMseqs2)
 - [Bedtools](http://bedtools.readthedocs.org/]), [Hmmer](http://hmmer.org/)
-- [Prodigal](https://github.com/hyattpd/Prodigal)
-- (optionally) [FragGeneScan](https://sourceforge.net/projects/fraggenescan/)
 - [Samtools](https://github.com/samtools/samtools)
+- HMMER
 
 The easiest way to install the dependencies is with [conda](https://conda.io):
 
 ```bash
-conda install -c conda-forge -c bioconda mmseqs2=13.45111 # (for GTDB support)
-conda install -c bioconda bedtools hmmer prodigal samtools
-conda install -c bioconda fraggenescan
+conda install -c bioconda bedtools hmmer samtools
 ```
 
 Once the dependencies are installed, you can install SemiBin by running:
@@ -102,6 +93,12 @@ Once the dependencies are installed, you can install SemiBin by running:
 ```bash
 python setup.py install
 ```
+
+Optional extra dependencies for running SemiBin1:
+
+- [MMseqs2](https://github.com/soedinglab/MMseqs2)
+- [Prodigal](https://github.com/hyattpd/Prodigal)
+- [FragGeneScan](https://sourceforge.net/projects/fraggenescan/)
 
 ## Examples of binning
 
