@@ -1,4 +1,3 @@
-from .semibin_version import __version__ as ver
 import argparse
 import logging
 import os
@@ -10,13 +9,13 @@ import sys
 from itertools import groupby
 from .utils import validate_normalize_args, get_must_link_threshold, generate_cannot_link, \
     set_random_seed, process_fasta, split_data, get_model_path
-from .gtdb import find_or_download_gtdb
 from .generate_coverage import generate_cov, combine_cov
 from .generate_kmer import generate_kmer_features_from_fasta
 from .fasta import fasta_iter
 
 
 def parse_args(args, is_semibin2):
+    from .semibin_version import __version__
     # BooleanOptionalAction is available in Python 3.9; before that, we fall back on the default
     BooleanOptionalAction = getattr(argparse, 'BooleanOptionalAction', 'store_true')
 
@@ -24,7 +23,7 @@ def parse_args(args, is_semibin2):
                                     description='Neural network-based binning of metagenomic contigs',
                                     epilog='For more information, see https://semibin.readthedocs.io/en/latest/subcommands/')
 
-    parser.version = ver
+    parser.version = __version__
 
     parser.add_argument('-v',
                         '-V',
@@ -648,6 +647,7 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
                     if len(seq) >= must_link_threshold:
                         num_must_link += 1
         if taxonomy_results_fname is None:
+            from .gtdb import find_or_download_gtdb
             GTDB_reference = find_or_download_gtdb(logger, GTDB_reference, force=False)
             try:
                 subprocess.check_call(
@@ -1379,6 +1379,7 @@ def main2(args=None, is_semibin2=True):
                 must_link_threshold = args.ml_threshold
 
         if args.cmd == 'download_GTDB':
+            from .gtdb import find_or_download_gtdb
             find_or_download_gtdb(logger, args.GTDB_reference, args.force)
 
         if args.cmd == 'generate_cannot_links':
