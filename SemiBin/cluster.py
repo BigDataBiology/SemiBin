@@ -96,7 +96,17 @@ def run_embed_infomap(logger, model, data, * ,
     from scipy import sparse
     import torch
     import numpy as np
+    
     train_data_input = data.values[:, 0:136] if not is_combined else data.values
+
+    if is_combined:
+        if train_data_input.shape[1] - 136 > 20:
+            train_data_kmer = train_data_input[:, 0:136]
+            train_data_depth = train_data_input[:, 136:len(data.values[0])]
+            from sklearn.preprocessing import normalize
+            import numpy as np
+            train_data_depth = normalize(train_data_depth, axis=1, norm='l1')
+            train_data_input = np.concatenate((train_data_kmer, train_data_depth), axis=1)
 
     depth = data.values[:, 136:len(data.values[0])].astype(np.float32)
     num_contigs = train_data_input.shape[0]
