@@ -116,7 +116,8 @@ def train_self(out, logger, datapaths, data_splits, is_combined=True,
                 dataset=dataset,
                 batch_size=batchsize,
                 shuffle=True,
-                num_workers=0)
+                num_workers=0,
+                drop_last=True)
 
             for train_input1, train_input2, train_label in train_loader:
                 model.train()

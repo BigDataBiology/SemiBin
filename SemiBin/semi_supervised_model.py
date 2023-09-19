@@ -247,7 +247,8 @@ def train(out, contig_fastas, binned_lengths, logger, datas, data_splits, cannot
                 dataset=dataset,
                 batch_size=batchsize,
                 shuffle=True,
-                num_workers=0)
+                num_workers=0,
+                drop_last=True)
 
             unlabeled_x = train_data_input
             unlabeled_train_input1 = []
