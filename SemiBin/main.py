@@ -110,7 +110,7 @@ def parse_args(args, is_semibin2):
     training_self = subparsers.add_parser('train_self',
                                           help = 'Train the model with self-supervised learning')
 
-    binning = subparsers.add_parser('bin',
+    binning = subparsers.add_parser('bin', aliases=['bin_short'],
                                     help='Group the contigs into bins.')
 
     binning_long = subparsers.add_parser('bin_long',
