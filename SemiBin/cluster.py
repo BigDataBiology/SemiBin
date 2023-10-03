@@ -96,7 +96,7 @@ def run_embed_infomap(logger, model, data, * ,
     from scipy import sparse
     import torch
     import numpy as np
-    
+
     train_data_input = data.values[:, 0:136] if not is_combined else data.values
 
     if is_combined:
@@ -104,7 +104,6 @@ def run_embed_infomap(logger, model, data, * ,
             train_data_kmer = train_data_input[:, 0:136]
             train_data_depth = train_data_input[:, 136:len(data.values[0])]
             from sklearn.preprocessing import normalize
-            import numpy as np
             train_data_depth = normalize(train_data_depth, axis=1, norm='l1')
             train_data_input = np.concatenate((train_data_kmer, train_data_depth), axis=1)
 
@@ -179,6 +178,7 @@ def run_embed_infomap(logger, model, data, * ,
     g.add_vertices(np.arange(num_contigs))
     g.add_edges(edges)
     length_weight = np.array([len(contig_dict[name]) for name in data.index])
+    logger.debug(f'Running infomap with {num_process} processes...')
     result = run_infomap(g,
                 edge_weights=edge_weights,
                 vertex_weights=length_weight,
