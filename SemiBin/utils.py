@@ -497,6 +497,8 @@ def process_fasta(fasta_path, ratio):
 
     binned_short = contig_bp_2500 / whole_contig_bp < ratio
     must_link_threshold = get_must_link_threshold(contig_length_list)
+    if not contig_dict:
+        logger.warning(f'No contigs in {fasta_path}')
     return binned_short, must_link_threshold, contig_dict
 
 
