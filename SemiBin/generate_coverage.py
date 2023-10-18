@@ -71,7 +71,7 @@ def calculate_coverage(depth_stream, bam_file, must_link_threshold, edge=75, is_
         return pd.DataFrame({
             '{0}_mean'.format(bam_file): mean_coverage,
             '{0}_var'.format(bam_file): var,
-            }, index=contigs)
+            }, index=contigs), None
 
 
 def generate_cov(bam_file, bam_index, out, threshold,
@@ -97,16 +97,27 @@ def generate_cov(bam_file, bam_index, out, threshold,
         universal_newlines=True,
         stdout=subprocess.PIPE)
 
-    if is_combined:
-        contig_cov, must_link_contig_cov = calculate_coverage(bed_p.stdout, bam_file, threshold, is_combined = is_combined, sep = sep, contig_threshold = contig_threshold if sep is None else 1000, contig_threshold_dict =  contig_threshold if sep is not None else None)
-        if bed_p.wait() != 0:
-            logger.critical(f"Running `bedtools genomecov` failed ({bam_file}). Please check your input files: SemiBin expects that they are sorted BAM files.")
-            raise OSError(f"Failure running `bedtools genomecov` ({bam_file})")
-        elif len(contig_cov) == 0:
-            logger.critical("Running `bedtools genomecov` did not return an error, but the result is an empty file. Please check your input files: SemiBin expects that they are sorted BAM files.")
-            raise OSError("Running bedtools returned an empty file")
+    contig_cov, must_link_contig_cov = calculate_coverage(
+                                    bed_p.stdout,
+                                    bam_file,
+                                    threshold,
+                                    is_combined=is_combined,
+                                    sep=sep,
+                                    contig_threshold=(contig_threshold if sep is None else 1000),
+                                    contig_threshold_dict=(contig_threshold if sep is not None else None))
 
-        contig_cov = contig_cov.apply(lambda x: x + 1e-5)
+    if bed_p.wait() != 0:
+        raise OSError(f"Failure in running bedtools ({bam_file})")
+    elif len(contig_cov) == 0:
+        logger.critical(f"Running `bedtools genomecov` did not return an error, but the result is an empty file (processing {bam_file}). "
+                        "Please check your input files: SemiBin expects that they are sorted BAM files.")
+        raise OSError(f"Running bedtools returned an empty file ({bam_file})")
+
+    contig_cov += 1e-5
+    with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
+        contig_cov.to_csv(ofile)
+
+    if is_combined:
         must_link_contig_cov = must_link_contig_cov.apply(lambda x: x + 1e-5)
         if sep is None:
             abun_scale = (contig_cov.mean() / 100).apply(np.ceil) * 100
@@ -114,22 +125,8 @@ def generate_cov(bam_file, bam_index, out, threshold,
             contig_cov = contig_cov.div(abun_scale)
             must_link_contig_cov = must_link_contig_cov.div(abun_split_scale)
 
-        with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
-            contig_cov.to_csv(ofile)
-
         with atomic_write(os.path.join(out, '{}_data_split_cov.csv'.format(bam_name)), overwrite=True) as ofile:
             must_link_contig_cov.to_csv(ofile)
-    else:
-        contig_cov = calculate_coverage(bed_p.stdout, bam_file, threshold, is_combined=is_combined, sep = sep,
-                                        contig_threshold = contig_threshold if sep is None else 1000,
-                                        contig_threshold_dict =  contig_threshold if sep is not None else None)
-        if bed_p.wait() != 0:
-            raise OSError("Failure in running bedtools")
-
-        contig_cov = contig_cov.apply(lambda x: x + 1e-5)
-
-        with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
-            contig_cov.to_csv(ofile)
 
     return bam_file
 

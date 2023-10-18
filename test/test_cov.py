@@ -40,12 +40,13 @@ def test_cov():
     assert_frame_equal(cov_split, pd.DataFrame([2.609756, 2.554217, 2.682243, 2.574074], index=[
                        'k141_63080_1', 'k141_63080_2', 'k141_0_1', 'k141_0_2'], columns=['cov']))
 
-    cov = calculate_coverage(
+    cov, split = calculate_coverage(
         test_data,
         'test_data',
         must_link_threshold=0,
         is_combined=False,
         contig_threshold=0)
+    assert split is None
     cov.columns = ['mean', 'var']
     assert_frame_equal(cov, pd.DataFrame([[2.581818, 0.606942], [
                        2.627907, 0.252244]], index=['k141_63080', 'k141_0'], columns=['mean', 'var']))
