@@ -357,7 +357,7 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, o
     else:
         def extract_seeds(vs, sel):
             vs = vs.sort_values()
-            median = vs[len(vs) //2]
+            median = vs.iloc[len(vs) //2]
 
             # the original version broke ties by picking the shortest query, so we
             # replicate that here:
