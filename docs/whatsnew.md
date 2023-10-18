@@ -1,11 +1,13 @@
 # What's New
 
-## Unreleased version
+## Version 2.0.0
 
 ### User-visible changes
 
 - Running SemiBin now writes a log file in the output directory
 - The `concatenate_fasta` subcommand now supports compression
+- Adds `bin_short` subcommand as alias for `bin` (by analogy with `bin_long`)
+
 
 ## Version 1.5.1 (SemiBin2 beta)
 

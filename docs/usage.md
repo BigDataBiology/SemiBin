@@ -257,7 +257,7 @@ Having access to a GPU can speed up this mode.
 (4) Bin
 
 ```bash
-SemiBin2 bin \
+SemiBin bin_short \
     -i contig.fa \
     --model contig_output/model.h5 \
     --data contig_output/data.csv \

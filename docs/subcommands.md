@@ -222,7 +222,7 @@ These have the same meaning as for `single_easy_bin`
 
 ### bin_short
 
-The `bin_short` subcommand (`bin` is an accepted alias, for backwards compatibility) requires the contig file and output (files `data.csv`, `model.h5`) from the `generate_sequence_features_single`, `generate_sequence_features_multi` and `train` subcommand as inputs and output the final bins in the `output_recluster_bins` directory.
+The `bin_short` subcommand (for backwards compatibility reasons, `bin` is accepted as an alias) requires the contig file and output (files `data.csv`, `model.h5`) from the `generate_sequence_features_single`, `generate_sequence_features_multi` and `train` subcommand as inputs and output the final bins in the `output_recluster_bins` directory.
 
 #### Required arguments
 

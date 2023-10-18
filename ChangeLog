@@ -1,4 +1,5 @@
-Unreleased
+Version 2.0.0
+	* SemiBin: Better error checking throughout
 	* SemiBin: Write a log file
 	* concatenate_fasta: support compression
 	* concatenate_fasta: slightly better error message when contig ID already
