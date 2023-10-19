@@ -1,11 +1,8 @@
 # SemiBin2
 
-Starting with version 1.5 (officially _SemiBin2 beta_), installing the SemiBin
-package installs two scripts: `SemiBin` and `SemiBin2`.
-
-They have the same functionality, but slightly different interfaces. The exact
-interface to `SemiBin2` should be considered as unstable (while we will strive
-to maintain backwards compatibility if you call the `SemiBin` script and will freeze `SemiBin2` when version 2.0 is released).
+Starting with version 1.5 (officially _SemiBin2 beta_), installing the SemiBin package installs two scripts: `SemiBin` and `SemiBin2`.
+They have the same functionality, but slightly different interfaces.
+As of version 2.0.0, the older `SemiBin` command is _not recommended_ (except for backwards compability) and newer projects should use `SemiBin2`.
 
 ## Upgrading to SemiBin2
 

@@ -2,7 +2,7 @@
 
 ## Binning modes
 
-SemiBin supports three different binning modes, with different tradeoffs.
+SemiBin2 supports three different binning modes, with different tradeoffs.
 
 ### Single sample binning
 
@@ -10,7 +10,7 @@ Single sample binning means that each sample is assembled and binned independent
 
 This mode allows for parallel binning of samples and avoids cross-sample chimeras, but it does not use co-abundance information across samples.
 
-Using a prebuilt model means that SemiBin can return results in a few minutes.
+Using a prebuilt model means that SemiBin2 can return results in a few minutes.
 
 ### Co-assembly binning
 
@@ -25,14 +25,13 @@ It is most appropriate when the samples are very similar and can be expected to 
 
 With multi-sample binning, multiple samples are assembled and binned individually, but _information from multiple samples is used together_.
 This mode can use co-abundance information and retain sample-specific variation at the same time.
-As we document in the [SemiBin manuscript](https://www.nature.com/articles/s41467-022-29843-y), this mode often returns the highest-number of bins (particularly for complex environments, such as soil).
+As we document in the [SemiBin1](https://www.nature.com/articles/s41467-022-29843-y) and [SemiBin2](https://academic.oup.com/bioinformatics/article/39/Supplement_1/i21/7210480) manuscripts, this mode often returns the highest-number of bins (particularly for complex environments, such as soil).
 
 However, it has increased computational costs.
 In particular, prebuilt models cannot be used.
 
 This mode is implemented by concatenating the contigs assembled from the individual samples together and then mapping reads from each sample to this concatenated database.
 Concatenating the inputs can be done with the `concatenate_fasta` subcommand.
-
 
 ## Single-sample binning
 
@@ -46,9 +45,8 @@ There are two options.
 
 **1. Using a pre-trained model.** This is the fastest option and should work the best if you have metagenomes from one of our prebuilt habitats (alternatively, you can use the `global` "habitat" which combines all of them).
 
-
 ```bash
-SemiBin single_easy_bin \
+SemiBin2 single_easy_bin \
         --environment human_gut \
         -i S1.fa \
         -b S1.sorted.bam \
@@ -58,12 +56,12 @@ SemiBin single_easy_bin \
 Binning assemblies from long reads:
 
 ```bash
-SemiBin single_easy_bin \
+SemiBin2 single_easy_bin \
         --environment human_gut \
+        --sequencing-type long_read \
         -i S1.fa \
         -b S1.sorted.bam \
         -o output
-        --sequencing-type long_read
 ```
 
 Supported habitats are (names should be self-explanatory, except `global` which is a generic model):
@@ -81,41 +79,39 @@ Supported habitats are (names should be self-explanatory, except `global` which 
 11. `chicken_caecum`
 12. `global`
 
-[Figure 5 in the manuscript](https://www.nature.com/articles/s41467-022-29843-y#Fig5) shows details of how well each habitat-specific model performs (except for the `chicken_caecum` model which was contributed after publication by [Florian Plaza Oñate](https://scholar.google.com/citations?user=-gE5y_4AAAAJ) and is available since version 1.2).
+[Figure 5 in the SemiBin1 manuscript](https://www.nature.com/articles/s41467-022-29843-y#Fig5) shows details of how well each habitat-specific model performs (except for the `chicken_caecum` model which was contributed after publication by [Florian Plaza Oñate](https://scholar.google.com/citations?user=-gE5y_4AAAAJ) and is available since version 1.2).
 
-**2a. Learn a new model (semi-supervised mode).** Alternatively, you can learn a new model for your data.
-The main disadvantage is that this approach will take a lot more time and use a lot more memory.
-While using a pre-trained model should take a few minutes and use 4-6GB of RAM, training a new model may take several hours and use 40GB of RAM.
-
-```bash
-SemiBin single_easy_bin \
-        -i S1.fa \
-        -b S1.sorted.bam \
-        -o output
-```
-
-The [Supplemental Tables 5 & 6 in the SemiBin manuscript](https://www.nature.com/articles/s41467-022-29843-y#MOESM1) contain a lot more information with respect to the computational trade-offs.
-
-If you have a lot of samples that are similar to each other while not fitting into any of our builtin trained models, you can also build your own model from a subset of them (see [[training a SemiBin model](training)])
-
-**2b. Learn a new model (self-supervised mode).** starting in version 1.3, SemiBin also supports a self-supervised mode, which is faster and appears to produce better results.
-At the moment (November 2022), a manuscript describing this mode is being prepared, but you can already run it by using the following command:
+**2a. Learn a new model (self-supervised mode).** You can also learn a new model for your data.
+It will take a bit of time, but may produce better results:
 
 ```bash
-SemiBin single_easy_bin \
+SemiBin2 single_easy_bin \
         --training-type self \
         -i S1.fa \
         -b S1.sorted.bam \
         -o output
 ```
 
-We expect to release SemiBin2 in early 2023 and self-supervised mode will become the default.
-In the meanwhile, we appreciate [feedback](mailto:luispedro@big-data-biology.org) or [bug reports](https://github.com/BigDataBiology/SemiBin/issues).
+**2a. Learn a new model (semi-supervised mode; generally discouraged).**
+An alternative, which was the default in SemiBin1 is to use semi-supervised learning.
+The main disadvantage is that this approach will take a lot more time and use a lot more memory.
+With this approach, training a new model may take several hours and use 40GB of RAM.
 
+```bash
+SemiBin2 single_easy_bin \
+        --training-type semi \
+        -i S1.fa \
+        -b S1.sorted.bam \
+        -o output
+```
+
+The [Supplemental Tables 5 & 6 in the SemiBin1 manuscript](https://www.nature.com/articles/s41467-022-29843-y#MOESM1) contain a lot more information with respect to the computational trade-offs.
+
+If you have a lot of samples that are similar to each other while not fitting into any of our builtin trained models, you can also build your own model from a subset of them (see [[training a SemiBin model](training)])
 
 ### Advanced single-sample binning workflows
 
-The basic idea of using SemiBin with single-sample and co-assembly is:
+The basic pipeline using SemiBin2 for either single-sample and co-assembly modes:
 
 1. generate _data.csv_ and _data_split.csv_ (used in training) for every sample,
 2. train the model for every sample, and
@@ -125,26 +121,24 @@ You can run the individual steps by yourself, which can enable using compute clu
 
 In particular, `single_easy_bin` includes the following steps:
 
-`generate_cannot_links`,`generate_data_single` and `bin`; while `multi_easy_bin`
-includes the following steps: `generate_cannot_links`, `generate_data_multi` and `bin`.
+1. `generate_data_single`
+2. `train` (if needed)
+3. `bin_short` or `bin_long`
+
+`multi_easy_bin` includes
+1. `generate_data_multi`
+2. `train` (if needed)
+3. `bin_short` or `bin_long`
 
 (1)  Generate features (`data.csv/data_split.csv` files)
 
 ```bash
-SemiBin generate_sequence_features_single -i S1.fa -b S1.sorted.bam -o S1_output
+SemiBin2 generate_sequence_features_single -i S1.fa -b S1.sorted.bam -o S1_output
 ```
-(2) Generate cannot-link file
-```bash
-SemiBin generate_cannot_links -i S1.fa -o S1_output
-```
-
-Be warned that this will run `mmseqs2`, which takes a lot of time.
-If you are running `mmseqs2` against the GTDB taxonomy as part of of your pipeline already, you can make SemiBin skip this step by passing it the results using the `--taxonomy-annotation-table` argument.
-
 (3) Train a model (if desired)
 
 ```bash
-SemiBin train \
+SemiBin2 train \
     -i S1.fa \
     --data S1_output/data.csv \
     --data-split S1_output/data_split.csv \
@@ -154,13 +148,13 @@ SemiBin train \
 ```
 
 This step heavily benefits from having access to a GPU.
-It will attempt to auto-detect whether one is available, but you can use the `--engine` argument to specify whether SemiBin should use CPU or GPU processing.
+It will attempt to auto-detect whether one is available, but you can use the `--engine` argument to specify whether SemiBin2 should use CPU or GPU processing.
 
 This step can be skipped if you want to use a pretrained model.
 
 (4) Bin
 ```bash
-SemiBin bin \
+SemiBin2 bin_short \
     -i S1.fa \
     --model S1_output/model.h5 \
     --data S1_output/data.csv \
@@ -168,7 +162,7 @@ SemiBin bin \
 ```
 or
 ```bash
-SemiBin bin_long \
+SemiBin2 bin_long \
     -i S1.fa \
     --model S1_output/model.h5 \
     --data S1_output/data.csv \
@@ -178,7 +172,7 @@ SemiBin bin_long \
 or, to use one of our built-in models (see above for the list of available models), you replace the `--model` argument with the `--environment` argument:
 
 ```bash
-SemiBin bin \
+SemiBin2 bin_short \
     -i S1.fa \
     --environment human_gut \
     --data S1_output/data.csv \
@@ -186,22 +180,22 @@ SemiBin bin \
 ```
 or
 ```bash
-SemiBin bin_long \
+SemiBin2 bin_long \
     -i S1.fa \
     --environment human_gut \
     --data S1_output/data.csv \
     -o S1_output
 ```
 
-### SemiBin(pretrain)
+### SemiBin2(pretrain)
 
-Another suggestion is that you can pre-train a model from part of your dataset, which can provide a balance as it is faster than training for each sample while achieving better results than a pre-trained model from another dataset (see the [manuscript](https://www.nature.com/articles/s41467-022-29843-y) for more information).
+Another suggestion is that you can pre-train a model from part of your dataset, which can provide a balance as it is faster than training for each sample while achieving better results than a pre-trained model from another dataset (see the [SemiBin1 manuscript](https://www.nature.com/articles/s41467-022-29843-y) for more information).
 
 If you have `S1.fa`, `S1/data.csv`, `S1/data_split.csv`, `S1/cannot/cannot.txt`; `S2.fa`, `S2/data.csv`, `S2/data_split.csv`, `S2/cannot/cannot.txt`; `S3.fa`, `S3/data.csv`, `S3/data_split.csv`, `S3/cannot/cannot.txt`.
 You can train the model from 3 samples.
 
 ```bash
-SemiBin train \
+SemiBin2 train \
     -i S1.fa S2.fa S3.fa \
     --data S1/data.csv S2/data.csv S3/data.csv \
     --data-split S1/data_split.csv S2/data_split.csv S3/data_split.csv \
@@ -222,7 +216,7 @@ Unfortunately, this also means that prebuilt models cannot be used (because mode
 
 
 ```bash
-SemiBin single_easy_bin \
+SemiBin2 single_easy_bin \
     -i contig.fa \
     -b S1.sorted.bam S2.sorted.bam S3.sorted.bam \
     -o co-assembly_output
@@ -234,7 +228,7 @@ SemiBin single_easy_bin \
 (1)  Generate `data.csv/data_split.csv`
 
 ```bash
-SemiBin generate_sequence_features_single \
+SemiBin2 generate_sequence_features_single \
     -i contig.fa \
     -b S1.sorted.bam S2.sorted.bam S3.sorted.bam \
     -o contig_output
@@ -244,11 +238,11 @@ Note that we use the `generate_sequence_features_single` mode because co-assembl
 
 (2) Generate cannot-link
 ```bash
-SemiBin generate_cannot_links -i contig.fa -o contig_output
+SemiBin2 generate_cannot_links -i contig.fa -o contig_output
 ```
 (3) Train
 ```bash
-SemiBin train \
+SemiBin2 train \
     -i contig.fa \
     --data contig_output/data.csv \
     --data-split contig_output/data_split.csv \
@@ -257,13 +251,13 @@ SemiBin train \
     --mode single
 ```
 
-SemiBin will attempt to detect a GPU and fallback to CPU if none is found, but you can use the `--engine` argument to specify which one to use.
+SemiBin2 will attempt to detect a GPU and fallback to CPU if none is found, but you can use the `--engine` argument to specify which one to use.
 Having access to a GPU can speed up this mode.
 
 (4) Bin
 
 ```bash
-SemiBin bin \
+SemiBin2 bin \
     -i contig.fa \
     --model contig_output/model.h5 \
     --data contig_output/data.csv \
@@ -274,18 +268,18 @@ SemiBin bin \
 ## Multi-sample binning
 
 Multi-sample binning requires more complex steps to prepare input data as well as more computation but can also result in more bins (particularly in complex habitats).
-See [Figure 3b in the manuscript](https://www.nature.com/articles/s41467-022-29843-y#Fig3) for a comparison of multi sample vs. single sample.
+See [Figure 3b in the SemiBin1 manuscript](https://www.nature.com/articles/s41467-022-29843-y#Fig3) for a comparison of multi sample vs. single sample.
 
 Inputs:
 - original FASTA files: `S1.fa`, `S2.fa`, `S3.fa`, `S4.fa`, and `S5.fa` (we will assume that there are 5 samples)
-- combined FASTA file: `concatenated.fa` (can be generated with the `concatenate_fasta` SemiBin subcommand)
+- combined FASTA file: `concatenated.fa` (can be generated with the `concatenate_fasta` SemiBin2 subcommand)
 - mapped reads to the combined FASTA file: `S1.sorted.bam`, `S2.sorted.bam`, `S3.sorted.bam`, `S4.sorted.bam`, and `S5.sorted.bam`.
 
 
 ### Generating `concatenated.fa`
 
 ```bash
-SemiBin concatenate_fasta \
+SemiBin2 concatenate_fasta \
     --input-fasta S1.fa S2.fa S3.fa S4.fa S5.fa \
     --output output
 ```
@@ -321,7 +315,7 @@ Afterwards, you should map each sample separately to the concatenated FASTA file
 ### Easy multi binning mode
 
 ```bash
-SemiBin multi_easy_bin \
+SemiBin2 multi_easy_bin \
         -i concatenated.fa \
         -b S1.sorted.bam S2.sorted.bam S3.sorted.bam S4.sorted.bam S5.sorted.bam \
         -o multi_output
@@ -330,7 +324,7 @@ SemiBin multi_easy_bin \
 or for long reads:
 
 ```bash
-SemiBin multi_easy_bin \
+SemiBin2 multi_easy_bin \
         -i concatenated.fa \
         -b S1.sorted.bam S2.sorted.bam S3.sorted.bam S4.sorted.bam S5.sorted.bam \
         -o multi_output
@@ -345,57 +339,34 @@ They can also be parallelized in a compute cluster, for example.
 (1)  Generate `data.csv/data_split.csv`
 
 ```bash
-SemiBin generate_sequence_features_multi \
+SemiBin2 generate_sequence_features_multi \
     -i concatenated.fa \
     -b S1.sorted.bam S2.sorted.bam S3.sorted.bam S4.sorted.bam S5.sorted.bam \
     -o output
 ```
-(2) Generate cannot-link
-
-You need to call `generate_cannot_links` for all the input FASTA files, independently:
-
-```bash
-for sample in S1 S2 S3 S4 S5; do
-    SemiBin generate_cannot_links -i ${sample}.fa -o ${sample}_output
-done
-```
-
-We used a bash for loop above, but it is equivalent to running the following:
-
-```bash
-SemiBin generate_cannot_links -i S1.fa -o S1_output
-SemiBin generate_cannot_links -i S2.fa -o S2_output
-SemiBin generate_cannot_links -i S3.fa -o S3_output
-SemiBin generate_cannot_links -i S4.fa -o S4_output
-SemiBin generate_cannot_links -i S5.fa -o S5_output
-```
-
-See the comment above about how you can bypass most of the computation if you have run `mmseqs2` to annotate your contigs against GTDB already.
-
-(3) Train
+(2) Train
 
 Training is performed independently for each sample (thus, could be parallelized), but uses the _input features that account for all the sample data_:
 
 ```bash
 for sample in S1 S2 S3 S4 S5 ; do
-    SemiBin train \
+    SemiBin2 train \
         -i ${sample}.fa \
         --data multi_output/samples/${sample}/data.csv \
         --data-split multi_output/samples/${sample}/data_split.csv \
-        -c ${sample}_output/cannot/cannot.txt \
         -o ${sample}_output
-        --mode single
 done
 ```
 
 The same comments about GPU access that applied to the other modes, apply here.
-Together with running `mmseqs2`, this is the more computational intensive step and may benefit from being run in parallel for each sample.
 
-(4) Bin
+(3) Bin
+
+There are two subcommands, depending on whether you want to use the binning mode for short reads (`bin_short`) of for long reads (`bin_long`), so that this would be either
 
 ```bash
 for sample in S1 S2 S3 S4 S5 ; do
-    SemiBin bin \
+    SemiBin2 bin_short \
         -i ${sample}.fa \
         --model ${sample}_output/model.h5 \
         --data multi_output/samples/${sample}/data.csv \
@@ -405,7 +376,7 @@ done
 or
 ```bash
 for sample in S1 S2 S3 S4 S5 ; do
-    SemiBin bin_long \
+    SemiBin2 bin_long \
         -i ${sample}.fa \
         --model ${sample}_output/model.h5 \
         --data multi_output/samples/${sample}/data.csv \
@@ -415,4 +386,43 @@ done
 
 Each sample is binned independently.
 This step is relatively fast.
+
+
+### Generating links for semi-supervised learning
+
+:::{warning}
+This is generally not needed as semi-supervised mode is not recommended anymore! This information is provided for backwards compability reasons.
+
+See the [SemiBin2 manuscript](https://academic.oup.com/bioinformatics/article/39/Supplement_1/i21/7210480) for details.
+:::
+
+### Generate cannot-link file (single or co-assembly modes)
+```bash
+SemiBin2 generate_cannot_links -i S1.fa -o S1_output
+```
+
+Be warned that this will run `mmseqs2`, which takes a lot of time.
+If you are running `mmseqs2` against the GTDB taxonomy as part of of your pipeline already, you can make SemiBin2 skip this step by passing it the results using the `--taxonomy-annotation-table` argument.
+
+### Generate cannot-link file (multi-sample mode)
+
+You need to call `generate_cannot_links` for all the input FASTA files, independently:
+
+```bash
+for sample in S1 S2 S3 S4 S5; do
+    SemiBin2 generate_cannot_links -i ${sample}.fa -o ${sample}_output
+done
+```
+
+We used a bash for loop above, but it is equivalent to running the following:
+
+```bash
+SemiBin2 generate_cannot_links -i S1.fa -o S1_output
+SemiBin2 generate_cannot_links -i S2.fa -o S2_output
+SemiBin2 generate_cannot_links -i S3.fa -o S3_output
+SemiBin2 generate_cannot_links -i S4.fa -o S4_output
+SemiBin2 generate_cannot_links -i S5.fa -o S5_output
+```
+
+See the comment above about how you can bypass most of the computation if you have run `mmseqs2` to annotate your contigs against GTDB already.
 

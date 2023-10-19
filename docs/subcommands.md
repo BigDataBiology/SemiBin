@@ -6,7 +6,7 @@ This page exhaustively lists all the subcommands and their options.
 SemiBin works using a _subcommand_ interface.
 Most uses are covered by either the `single_easy_bin` or `multi_easy_bin` subcommands, but you can use the other subcommands for more control.
 
-[![Overview of SemiBin subcommands](SemiBin.png)](SemiBin.png)
+[![Overview of SemiBin2 subcommands](SemiBin.png)](SemiBin.png)
 
 ### single_easy_bin
 
@@ -47,12 +47,12 @@ Starting in version 1.3, self-supervised learning is also supported, which shoul
 * `--write-pre-reclustering-bins`/`--no-write-pre-reclustering-bins`: Whether to write pre-reclustering bins (defaults to true in SemiBin1; and false in SemiBin2).
 * `--engine`: device used to train the model (`auto`/`gpu`/`cpu`); `auto` (default) means that SemiBin with attempt to detect and use GPU and fallback to CPU if no GPU is found.
 * `--tmpdir`: set temporary directory.
-* `-r/--reference-db-data-dir`: GTDB reference directory (Default: `$HOME/.cache/SemiBin/mmseqs2-GTDB`). SemiBin will lazily download GTDB if it is not found there. Note that a lot of disk space is used
+* `-r/--reference-db-data-dir`: GTDB reference directory (Default: `$HOME/.cache/SemiBin/mmseqs2-GTDB`). This is only useful if you are using the deprecated semi-supervised mode). In that case, SemiBin will lazily download GTDB if it is not found there. Note that a lot of disk space is used.
 
 #### Optional arguments to set internal parameters
 
 * `--random-seed`: Random seed to reproduce results.
-* `--orf-finder` : gene predictor used to estimate the number of bins. Must be one of `prodigal` (default since `v0.7`), `fast-naive` (available since `v1.5`, this is a very fast internal implementation), or `fraggenescan` (which is faster, but cannot be installed in all platforms).
+* `--orf-finder` : gene predictor used to estimate the number of bins. Must be one of `prodigal` (default since `v0.7`), `fast-naive` (available since `v1.5`, this is a very fast internal implementation, default if using `SemiBin2`), or `fraggenescan` (which is faster than `prodigal`, but cannot be installed in all platforms and is still not as fast as the `fast-naive` method).
 
 
 #### Optional arguments to bypass internal steps
@@ -101,6 +101,10 @@ The command `multi_easy_bin` requires the combined contig file from several samp
 * `--reference-db-data-dir`, `--processes`, `--minfasta-kbs`, `--recluster`,`--epochs`, `--batch-size`, `--max-node`, `--max-edges`, `--random-seed`, `--ratio`, `--min-len`, `--ml-threshold`, `--no-recluster`, `--orf-finder`，`--engine` and `--tmpdir` are same as for `single_easy_bin`
 
 ### generate_cannot_links
+
+:::{warning}
+This is only useful for using the older (deprecated) semi-supervised approach
+:::
 
 Run the contig annotations using mmseqs with GTDB and generate `cannot-link` file used in the semi-supervised deep learning model training.
 
@@ -165,7 +169,7 @@ These are the same as for `multi_easy_bin`.
 * `-p/--processes/-t/--threads`, `--ratio`, `--min-len`, `--ml-threshold` and `--tmpdir` are the same as for `single_easy_bin`.
 * `-s/--separator` are the same as for `multi_easy_bin`.
 
-### train (train_semi in SemiBin2)
+### train (`train_semi` in SemiBin2)
 
 The `train` (`train_semi` in `SemiBin2`) subcommand requires the contig file and outputs from the `generate_sequence_features_single`, `generate_sequence_features_multi` and `generate_cannot_links` subcommand as inputs (`data.csv`, `data_split.csv` and `cannot.txt`) and outputs the trained model.
 
@@ -216,9 +220,9 @@ The `train_self` subcommand requires the contig file and outputs from the `gener
 
 These have the same meaning as for `single_easy_bin`
 
-### bin
+### bin_short
 
-The `bin` subcommand requires the contig file and output (files `data.csv`, `model.h5`) from the `generate_sequence_features_single`, `generate_sequence_features_multi` and `train` subcommand as inputs and output the final bins in the `output_recluster_bins` directory.
+The `bin_short` subcommand (`bin` is an accepted alias, for backwards compatibility) requires the contig file and output (files `data.csv`, `model.h5`) from the `generate_sequence_features_single`, `generate_sequence_features_multi` and `train` subcommand as inputs and output the final bins in the `output_recluster_bins` directory.
 
 #### Required arguments
 

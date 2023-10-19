@@ -132,7 +132,7 @@ The `single_easy_bin` command can be used to produce results in a single step.
 For example:
 
 ```bash
-SemiBin \
+SemiBin2 \
     single_easy_bin \
     --input-fasta contig.fa \
     --input-bam mapped_reads.sorted.bam \
@@ -143,7 +143,7 @@ SemiBin \
 Alternatively, you can train a new model for that sample, by not passing in the `--environment` flag:
 
 ```bash
-SemiBin \
+SemiBin2 \
     single_easy_bin \
     --input-fasta contig.fa \
     --input-bam mapped_reads.sorted.bam \
@@ -206,7 +206,7 @@ CAAATACGAATGATTCTTTATTAGATTATCTTAATAAGAATATC
 You can use this to get the combined contig:
 
 ```bash
-SemiBin concatenate_fasta -i contig*.fa -o output
+SemiBin2 concatenate_fasta -i contig*.fa -o output
 ```
 
 If either the sample or the contig names use the default separator (`:`), you will need to change it with the `--separator`,`-s` argument.
@@ -214,7 +214,7 @@ If either the sample or the contig names use the default separator (`:`), you wi
 After mapping samples (individually) to the combined FASTA file, you can get the results with one line of code:
 
 ```bash
-SemiBin multi_easy_bin -i concatenated.fa -b *.sorted.bam -o output
+SemiBin2 multi_easy_bin -i concatenated.fa -b *.sorted.bam -o output
 ```
 
 ## Output
