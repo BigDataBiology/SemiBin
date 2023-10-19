@@ -1319,6 +1319,8 @@ def main2(args=None, is_semibin2=True):
     if args.cmd == 'check_install':
         check_install(True, allow_missing_mmseqs2=args.allow_missing_mmseqs2)
 
+    if is_semibin2 and getattr(args, 'training_type', None) == 'semi':
+        logger.info('Currently using semi-supervised mode. This is generally only useful for backwards compability.')
 
     if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'train_semi', 'bin', 'train_self', 'bin_long']:
         import torch
