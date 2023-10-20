@@ -32,7 +32,7 @@ def possibly_compressed_write(filename):
         if g is not f:
             g.close()
 
-def check_training_mode(logger, args):
+def check_training_type(logger, args):
     if args.is_semibin2:
         args.training_type = 'auto'
 
@@ -129,7 +129,7 @@ def validate_normalize_args(logger, args):
         expect_file(args.contig_fasta)
         expect_file_list(args.bams)
 
-    if args.cmd in ['train', 'train_self']:
+    if args.cmd in ['train', 'train_semi', 'train_self']:
         if not args.train_from_many:
             if len(args.data) > 1:
                 sys.stderr.write(
@@ -140,7 +140,7 @@ def validate_normalize_args(logger, args):
                 sys.stderr.write(
                     f"Error: Expected one data_split.csv file with single mode.\n")
                 exit_with_error = True
-            if args.cmd == 'train':
+            if args.cmd in ['train_semi', 'train']:
                 if len(args.contig_fasta) > 1:
                     sys.stderr.write(
                         f"Error: Expected one fasta file with single mode.\n")
@@ -157,7 +157,7 @@ def validate_normalize_args(logger, args):
             expect_file(args.data_split[0])
 
         else:
-            if args.cmd == 'train':
+            if args.cmd in ['train_semi', 'train']:
                 assert len(args.contig_fasta) == len(args.data) == len(args.data_split) == len(args.cannot_link), 'Must input same number of fasta, data, data_split, cannot files!'
                 expect_file_list(args.cannot_link)
                 expect_file_list(args.contig_fasta)
@@ -205,10 +205,10 @@ def validate_normalize_args(logger, args):
             # This triggers checking that the environment is valid
             get_model_path(args.environment)
         else:
-            check_training_mode(logger, args)
+            check_training_type(logger, args)
 
     if args.cmd == 'multi_easy_bin':
-        check_training_mode(logger, args)
+        check_training_type(logger, args)
         if args.GTDB_reference is not None:
             expect_file(args.GTDB_reference)
         expect_file(args.contig_fasta)
@@ -231,6 +231,8 @@ def validate_normalize_args(logger, args):
 
     if getattr(args, 'train_from_many', False):
         args.mode = 'several'
+    elif args.cmd in ['train', 'train_semi', 'train_self'] and not hasattr(args, 'mode'):
+        args.mode = 'single'
 
     if exit_with_error:
         sys.exit(1)

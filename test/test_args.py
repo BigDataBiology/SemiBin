@@ -91,6 +91,27 @@ def test_parse_args_backcompat():
     validate_normalize_args(logging, args)
     assert args.mode == 'single'
 
+    args = parse_args(
+        ['train_self',
+             '--data', 'test/train_data/data.csv',
+             '--data-split', 'test/train_data/data_split.csv',
+             '-o', 'test-outputs/output_train_fa',
+             '-p', '1'],
+        is_semibin2=True)
+    validate_normalize_args(logging, args)
+    assert args.mode == 'single'
+
+    args = parse_args(
+        ['train_self',
+             '--data', 'test/train_data/data.csv',
+             '--data-split', 'test/train_data/data_split.csv',
+             '-o', 'test-outputs/output_train_fa',
+             '--train-from-many',
+             '-p', '1'],
+        is_semibin2=True)
+    validate_normalize_args(logging, args)
+    assert args.mode == 'several'
+
 
 def test_quiet_before_or_after():
     args = parse_args([

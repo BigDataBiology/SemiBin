@@ -1,4 +1,7 @@
-Version 2.0.0
+Unreleased
+	* train_self: Fix bug with --mode
+
+Version 2.0.0 Oct 20 2023 by BigDataBiology
 	* SemiBin: Better error checking throughout
 	* SemiBin: Write a log file
 	* concatenate_fasta: support compression

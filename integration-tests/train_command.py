@@ -16,17 +16,18 @@ subprocess.check_call(
      '-p', '1'])
 assert os.path.exists('test-outputs/output_train_fa/model.h5')
 
-subprocess.check_call(
-    ['SemiBin', 'train_self',
-     '--data', 'test/train_data/data.csv',
-     '--data-split', 'test/train_data/data_split.csv',
-     '--epoches', '1',
-     '--batch-size', '2048',
-     '--epochs', '1',
-     '--batch-size', '2048',
-     '-o', 'test-outputs/output_train_fa_self',
-     '-p', '1'])
-assert os.path.exists('test-outputs/output_train_fa_self/model.h5')
+for cmd in ['SemiBin', 'SemiBin2']:
+    subprocess.check_call(
+        [cmd, 'train_self',
+         '--data', 'test/train_data/data.csv',
+         '--data-split', 'test/train_data/data_split.csv',
+         '--epoches', '1',
+         '--batch-size', '2048',
+         '--epochs', '1',
+         '--batch-size', '2048',
+         '-o', 'test-outputs/output_train_fa_self',
+         '-p', '1'])
+    assert os.path.exists('test-outputs/output_train_fa_self/model.h5')
 
 ### train from several samples
 subprocess.check_call(
