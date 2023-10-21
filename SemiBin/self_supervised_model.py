@@ -47,7 +47,7 @@ def train_self(out, logger, datapaths, data_splits, is_combined=True,
     for epoch in tqdm(range(epoches)):
         for data_index in range(len(datapaths)):
             if epoch == 0:
-                logger.info('Generate training data of {}:'.format(data_index))
+                logger.debug(f'Reading training data for index {data_index}...')
 
             data = pd.read_csv(datapaths[data_index], index_col=0)
             data.index = data.index.astype(str)
