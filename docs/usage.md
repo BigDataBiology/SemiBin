@@ -236,28 +236,22 @@ SemiBin2 generate_sequence_features_single \
 
 Note that we use the `generate_sequence_features_single` mode because co-assembly and single-sample modes are very similar.
 
-(2) Generate cannot-link
+(2) Train
 ```bash
-SemiBin2 generate_cannot_links -i contig.fa -o contig_output
-```
-(3) Train
-```bash
-SemiBin2 train \
+SemiBin2 train_self \
     -i contig.fa \
     --data contig_output/data.csv \
     --data-split contig_output/data_split.csv \
-    -c contig_output/cannot/cannot.txt \
     -o contig_output
-    --mode single
 ```
 
 SemiBin2 will attempt to detect a GPU and fallback to CPU if none is found, but you can use the `--engine` argument to specify which one to use.
 Having access to a GPU can speed up this mode.
 
-(4) Bin
+(3) Bin
 
 ```bash
-SemiBin bin_short \
+SemiBin2 bin_short \
     -i contig.fa \
     --model contig_output/model.h5 \
     --data contig_output/data.csv \
@@ -272,7 +266,7 @@ See [Figure 3b in the SemiBin1 manuscript](https://www.nature.com/articles/s4146
 
 Inputs:
 - original FASTA files: `S1.fa`, `S2.fa`, `S3.fa`, `S4.fa`, and `S5.fa` (we will assume that there are 5 samples)
-- combined FASTA file: `concatenated.fa` (can be generated with the `concatenate_fasta` SemiBin2 subcommand)
+- combined FASTA file: `concatenated.fa.gz` (can be generated with the `concatenate_fasta` SemiBin2 subcommand)
 - mapped reads to the combined FASTA file: `S1.sorted.bam`, `S2.sorted.bam`, `S3.sorted.bam`, `S4.sorted.bam`, and `S5.sorted.bam`.
 
 
@@ -325,10 +319,10 @@ or for long reads:
 
 ```bash
 SemiBin2 multi_easy_bin \
+        --sequencing-type long_read \
         -i concatenated.fa \
         -b S1.sorted.bam S2.sorted.bam S3.sorted.bam S4.sorted.bam S5.sorted.bam \
         -o multi_output
-        --sequencing-type long_read
 ```
 
 ### Advanced multi-sample binning workflows workflows
@@ -340,7 +334,7 @@ They can also be parallelized in a compute cluster, for example.
 
 ```bash
 SemiBin2 generate_sequence_features_multi \
-    -i concatenated.fa \
+    -i concatenated.fa.gz \
     -b S1.sorted.bam S2.sorted.bam S3.sorted.bam S4.sorted.bam S5.sorted.bam \
     -o output
 ```
@@ -350,11 +344,10 @@ Training is performed independently for each sample (thus, could be parallelized
 
 ```bash
 for sample in S1 S2 S3 S4 S5 ; do
-    SemiBin2 train \
-        -i ${sample}.fa \
+    SemiBin2 train_self \
         --data multi_output/samples/${sample}/data.csv \
         --data-split multi_output/samples/${sample}/data_split.csv \
-        -o ${sample}_output
+        --output ${sample}_output
 done
 ```
 

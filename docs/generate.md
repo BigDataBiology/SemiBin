@@ -48,7 +48,7 @@ samtools index contig.mapped.sorted.bam
 
 _**Note**: Unless you understand exactly what is going on, you probably **do not** want to do this. Feel free to check in [with us](https://groups.google.com/g/semibin-users) if you have doubts._
 
-SemiBin uses mmseqs2 by default, but you can also use [CAT](https://github.com/dutilh/CAT) to produce contig taxonomic classifications and generate the cannot-link pairs.
+SemiBin1 uses mmseqs2 by default, but you can also use [CAT](https://github.com/dutilh/CAT) to produce contig taxonomic classifications and generate the cannot-link pairs.
 
 ```bash
 CAT contigs \
