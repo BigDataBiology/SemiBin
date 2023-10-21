@@ -43,8 +43,9 @@ setup(name='SemiBin',
           'SemiBin': ['*.hmm','*.pl','*.h5']},
       zip_safe=False,
       entry_points={
-            'console_scripts': ['SemiBin=SemiBin.main:main1',
+            'console_scripts': ['SemiBin=SemiBin.main:main_no_version',
                                 'SemiBin2=SemiBin.main:main2',
+                                'SemiBin1=SemiBin.main:main1',
                                 ],
       }
 )

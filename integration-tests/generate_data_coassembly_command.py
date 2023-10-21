@@ -10,7 +10,7 @@ bam_files = glob('test/coassembly_sample_data/input.sorted*.bam')
 for ext in ['', '.gz', '.bz2', '.xz']:
     odir = f"test-outputs/output_coassembly{'_'+ext.replace('.', '_') if ext else '_fa'}"
     subprocess.check_call(
-        ['SemiBin', 'generate_sequence_features_single',
+        ['SemiBin2', 'generate_sequence_features_single',
          '-i', f'test/coassembly_sample_data/input.fasta{ext}',
          '-o', odir,
          '-m', '2500',

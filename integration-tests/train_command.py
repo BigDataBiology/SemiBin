@@ -3,7 +3,7 @@ import subprocess
 
 ### train from one sample
 subprocess.check_call(
-    ['SemiBin', 'train',
+    ['SemiBin1', 'train',
      '--data', 'test/train_data/data.csv',
      '--data-split', 'test/train_data/data_split.csv',
      '-c', 'test/train_data/cannot.txt',
@@ -16,7 +16,7 @@ subprocess.check_call(
      '-p', '1'])
 assert os.path.exists('test-outputs/output_train_fa/model.h5')
 
-for cmd in ['SemiBin', 'SemiBin2']:
+for cmd in ['SemiBin1', 'SemiBin2']:
     subprocess.check_call(
         [cmd, 'train_self',
          '--data', 'test/train_data/data.csv',
@@ -31,7 +31,7 @@ for cmd in ['SemiBin', 'SemiBin2']:
 
 ### train from several samples
 subprocess.check_call(
-        ['SemiBin', 'train',
+        ['SemiBin2', 'train_semi',
          '--data',
              'test/train_data/data.csv',
              'test/train_data/data.csv',
@@ -58,7 +58,7 @@ subprocess.check_call(
 assert os.path.exists('test-outputs/output_train_several/model.h5')
 
 subprocess.check_call(
-        ['SemiBin', 'train_self',
+        ['SemiBin2', 'train_self',
          '--data',
              'test/train_data/data.csv',
              'test/train_data/data.csv',

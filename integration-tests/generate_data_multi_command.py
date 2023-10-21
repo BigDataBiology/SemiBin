@@ -2,7 +2,7 @@ import subprocess
 import pandas as pd
 
 ### Input fa
-subprocess.check_call('SemiBin generate_sequence_features_multi -i test/multi_samples_data/input_multi.fasta -o test-outputs/output_multi_fa -m 2500 --ratio 0.05 --ml-threshold 4000 -p 1 -b test/multi_samples_data/input_multi_sorted*.bam -s :', shell=True)
+subprocess.check_call('SemiBin1 generate_sequence_features_multi -i test/multi_samples_data/input_multi.fasta -o test-outputs/output_multi_fa -m 2500 --ratio 0.05 --ml-threshold 4000 -p 1 -b test/multi_samples_data/input_multi_sorted*.bam -s :', shell=True)
 
 for i in range(10):
     data = pd.read_csv('test-outputs/output_multi_fa/samples/S{}/data.csv'.format(i + 1),
@@ -14,7 +14,7 @@ for i in range(10):
 
 
 ### Input .gz
-subprocess.check_call('SemiBin generate_sequence_features_multi -i test/multi_samples_data/input_multi.fasta.gz -o test-outputs/output_multi_gz -m 2500 --ratio 0.05 --ml-threshold 4000 -p 1 -b test/multi_samples_data/input_multi_sorted*.bam -s :', shell=True)
+subprocess.check_call('SemiBin1 generate_sequence_features_multi -i test/multi_samples_data/input_multi.fasta.gz -o test-outputs/output_multi_gz -m 2500 --ratio 0.05 --ml-threshold 4000 -p 1 -b test/multi_samples_data/input_multi_sorted*.bam -s :', shell=True)
 
 for i in range(10):
     data = pd.read_csv('test-outputs/output_multi_gz/samples/S{}/data.csv'.format(i + 1),
@@ -25,7 +25,7 @@ for i in range(10):
     assert data_split.shape == (40, 146)
 
 ### Input .bz2
-subprocess.check_call('SemiBin generate_sequence_features_multi -i test/multi_samples_data/input_multi.fasta.bz2 -o test-outputs/output_multi_bz2 -m 2500 --ratio 0.05 --ml-threshold 4000 -p 1 -b test/multi_samples_data/input_multi_sorted*.bam -s :', shell=True)
+subprocess.check_call('SemiBin1 generate_sequence_features_multi -i test/multi_samples_data/input_multi.fasta.bz2 -o test-outputs/output_multi_bz2 -m 2500 --ratio 0.05 --ml-threshold 4000 -p 1 -b test/multi_samples_data/input_multi_sorted*.bam -s :', shell=True)
 
 for i in range(10):
     data = pd.read_csv('test-outputs/output_multi_bz2/samples/S{}/data.csv'.format(i + 1),
@@ -36,7 +36,7 @@ for i in range(10):
     assert data_split.shape == (40, 146)
 
 ### Input .xz
-subprocess.check_call('SemiBin generate_sequence_features_multi -i test/multi_samples_data/input_multi.fasta.xz -o test-outputs/output_multi_xz -m 2500 --ratio 0.05 --ml-threshold 4000 -p 1 -b test/multi_samples_data/input_multi_sorted*.bam -s :', shell=True)
+subprocess.check_call('SemiBin1 generate_sequence_features_multi -i test/multi_samples_data/input_multi.fasta.xz -o test-outputs/output_multi_xz -m 2500 --ratio 0.05 --ml-threshold 4000 -p 1 -b test/multi_samples_data/input_multi_sorted*.bam -s :', shell=True)
 
 for i in range(10):
     data = pd.read_csv('test-outputs/output_multi_xz/samples/S{}/data.csv'.format(i + 1),
@@ -49,7 +49,7 @@ for i in range(10):
 
 multi_sample_input =  'test/multi_samples_data'
 multi_output_cram = 'test-outputs/multi_output_cram'
-subprocess.check_call(f'SemiBin generate_sequence_features_multi -i {multi_sample_input}/input_multi.fasta -o {multi_output_cram} -b {multi_sample_input}/*.cram -s :', shell=True)
+subprocess.check_call(f'SemiBin1 generate_sequence_features_multi -i {multi_sample_input}/input_multi.fasta -o {multi_output_cram} -b {multi_sample_input}/*.cram -s :', shell=True)
 
 for i in range(10):
     data = pd.read_csv(

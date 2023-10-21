@@ -31,7 +31,7 @@ for ifile, odir in [
 odir = f'test-outputs/output_long'
 shutil.rmtree(odir, ignore_errors=True)
 subprocess.check_call(
-    ['SemiBin', 'bin_long',
+    ['SemiBin2', 'bin_long',
      '--data', 'test/bin_data/data.csv',
      '--minfasta-kbs', '0',
      '--model', 'test/bin_data/model.h5',
@@ -79,7 +79,7 @@ single_cannot_ref_output = 'test-outputs/single_output_cannot_with_ref'
 
 shutil.rmtree(single_cannot_output, ignore_errors=True)
 subprocess.check_call(
-    ['SemiBin', 'generate_cannot_links',
+    ['SemiBin1', 'generate_cannot_links',
      '-i', f'{single_sample_input}/input.fasta',
      '-o', single_cannot_output,
      '--taxonomy-annotation-table', f'{single_sample_input}/taxonomyResult.tsv'])
@@ -87,7 +87,7 @@ assert os.path.exists(f'{single_cannot_output}/cannot/cannot.txt')
 
 shutil.rmtree(single_cannot_output, ignore_errors=True)
 subprocess.check_call(
-    ['SemiBin', 'generate_cannot_links',
+    ['SemiBin1', 'generate_cannot_links',
      '-i', f'{single_sample_input}/input.fasta',
      '-o', single_cannot_ref_output,
      f'-r{single_sample_input}/reference_genome'])

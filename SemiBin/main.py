@@ -1511,5 +1511,14 @@ def main2(args=None, is_semibin2=True):
 def main1(args=None):
     main2(args, is_semibin2=False)
 
+def main_no_version(args=None):
+    from time import sleep
+    print("Using `SemiBin` is deprecated. Please upgrade to `SemiBin2` or explicitly call `SemiBin1` if you want the older version")
+    print("See https://semibin.readthedocs.io/en/latest/semibin2/")
+    for i in range(5):
+        print(f"Will continue as SemiBin1 in {5-i} seconds...")
+        sleep(1)
+    main1(args)
+
 if __name__ == '__main__':
     main2()

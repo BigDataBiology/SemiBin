@@ -20,7 +20,7 @@ multi_output_ref = 'test-outputs/multi_output_with_ref'
 
 shutil.rmtree(single_output, ignore_errors=True)
 subprocess.check_call(
-    ['SemiBin', 'single_easy_bin',
+    ['SemiBin1', 'single_easy_bin',
      '-i', f'{single_sample_input}/input.fasta',
      '-o', single_output,
      '-b', f'{single_sample_input}/input.sorted.bam',
@@ -38,7 +38,7 @@ for f in os.listdir(f'{single_output}/output_recluster_bins'):
 
 shutil.rmtree(single_output_ref, ignore_errors=True)
 subprocess.check_call(
-    ['SemiBin', 'single_easy_bin',
+    ['SemiBin1', 'single_easy_bin',
      '-i', f'{single_sample_input}/input.fasta',
      '-o', single_output_ref,
      '-b', f'{single_sample_input}/input.sorted.bam',
@@ -50,7 +50,7 @@ assert os.path.exists(f'{single_output_ref}/output_recluster_bins')
 multi_sample_input_bams = sglob(f'{multi_sample_input}/*.bam')
 shutil.rmtree(multi_output, ignore_errors=True)
 subprocess.check_call(
-    ['SemiBin',
+    ['SemiBin1',
      'multi_easy_bin',
      '-i', f'{multi_sample_input}/input_multi.fasta',
      '-o', multi_output,
@@ -68,7 +68,7 @@ for i in range(len(multi_sample_input_bams)):
 
 shutil.rmtree(multi_output_ref, ignore_errors=True)
 subprocess.check_call(
-    ['SemiBin', 'multi_easy_bin',
+    ['SemiBin1', 'multi_easy_bin',
      '-i', f'{multi_sample_input}/input_multi.fasta',
      '-o', multi_output_ref,
      '-b'] + multi_sample_input_bams + [
@@ -86,7 +86,7 @@ for i in range(len(multi_sample_input_bams)):
 single_self_output_long = 'test-outputs/single_output_self_long'
 shutil.rmtree(single_self_output_long, ignore_errors=True)
 subprocess.check_call(
-    ['SemiBin', 'single_easy_bin',
+    ['SemiBin1', 'single_easy_bin',
      '-i', f'{single_sample_input}/input.fasta',
      '-o', single_self_output_long,
      '-b', f'{single_sample_input}/input.sorted.bam',
@@ -101,7 +101,7 @@ assert len(sglob(f'{single_self_output_long}/output_bins/*.gz')) == 0
 multi_self_output_long = 'test-outputs/multi_output_self_long'
 shutil.rmtree(multi_self_output_long, ignore_errors=True)
 subprocess.check_call(
-    ['SemiBin', 'multi_easy_bin',
+    ['SemiBin1', 'multi_easy_bin',
      '-i', f'{multi_sample_input}/input_multi.fasta',
      '-o', multi_self_output_long,
      '-b'] + multi_sample_input_bams + [
@@ -118,7 +118,7 @@ for i in range(len(multi_sample_input_bams)):
 single_self_output = 'test-outputs/single_output_self'
 shutil.rmtree(single_self_output, ignore_errors=True)
 subprocess.check_call(
-    ['SemiBin', 'single_easy_bin',
+    ['SemiBin1', 'single_easy_bin',
      '-i', f'{single_sample_input}/input.fasta',
      '-o', single_self_output,
      '-b', f'{single_sample_input}/input.sorted.bam',
@@ -130,7 +130,7 @@ assert os.path.exists(f'{single_self_output}/output_recluster_bins')
 multi_self_output = 'test-outputs/multi_output_self'
 shutil.rmtree(multi_self_output, ignore_errors=True)
 subprocess.check_call(
-        ['SemiBin', 'multi_easy_bin',
+        ['SemiBin1', 'multi_easy_bin',
         '-i', f'{multi_sample_input}/input_multi.fasta',
         '-o', multi_self_output,
         '-b'] + multi_sample_input_bams + [

@@ -11,7 +11,7 @@ for ifile in [
         ]:
     odir_suf = ifile.split('.')[1]
     subprocess.check_call(
-        ['SemiBin', 'generate_sequence_features_single',
+        ['SemiBin2', 'generate_sequence_features_single',
          '-i', f'test/single_sample_data/{ifile}',
          '-o', f'test-outputs/output_single_{odir_suf}',
          '-m', '2500',
