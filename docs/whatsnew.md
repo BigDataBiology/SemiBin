@@ -1,6 +1,14 @@
 # What's New
 
+## Version 2.0.1
+
+*Released Oct 21, 2023*
+
+This is a bugfix release for _version 2.0.0_.
+
 ## Version 2.0.0
+
+*Released Oct 20, 2023*
 
 ### User-visible changes
 

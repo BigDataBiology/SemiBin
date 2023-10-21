@@ -1,5 +1,7 @@
-Unreleased
+Version 2.0.1 Oct 21 2023 by BigDataBiology
 	* train_self: Fix bug with --mode
+	* concatenate_fasta: Fix bug with compression
+	* bin_short: Make alias work
 
 Version 2.0.0 Oct 20 2023 by BigDataBiology
 	* SemiBin: Better error checking throughout
