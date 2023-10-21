@@ -263,7 +263,20 @@ def parse_args(args, is_semibin2):
                     dest='no_write_pre_reclustering_bins',
                     action='store_true')
 
+        p.add_argument('--tag-output',
+                required=False,
+                type=str,
+                dest='output_tag',
+                default=('SemiBin' if is_semibin2 else None),
+                help='Tag to add to output file names')
 
+    for p in [single_easy_bin,
+                multi_easy_bin,
+                generate_cannot_links,
+                generate_sequence_features_single,
+                generate_sequence_features_multi,
+                binning, binning_long,
+                concatenate_fasta]:
         p.add_argument('--compression',
                 required=False,
                 type=str,
@@ -272,14 +285,6 @@ def parse_args(args, is_semibin2):
                     ' gz [default]/xz/bz2/none).')),
                 dest='output_compression',
                 default=('gz' if is_semibin2 else 'none'))
-
-        p.add_argument('--tag-output',
-                required=False,
-                type=str,
-                dest='output_tag',
-                default=('SemiBin' if is_semibin2 else None),
-                help='Tag to add to output file names')
-
 
     for p in [binning, binning_long]:
         p.add_argument('--model',
