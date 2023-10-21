@@ -564,6 +564,8 @@ def parse_args(args, is_semibin2):
                 setattr(args, hacked, getattr(args, f'{hacked}1'))
             delattr(args, f'{hacked}1')
 
+    if args.cmd == 'bin_short':
+        args.cmd = 'bin'
     return args
 
 
