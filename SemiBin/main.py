@@ -1372,8 +1372,8 @@ def main2(args=None, is_semibin2=True):
         set_random_seed(args.random_seed)
 
     with tempfile.TemporaryDirectory() as tdir:
-        if hasattr(args, 'bam'):
-            args.bam = extract_bams(args.bam, args.contig_fasta, args.num_process, tdir)
+        if hasattr(args, 'bams'):
+            args.bams = extract_bams(args.bams, args.contig_fasta, args.num_process, tdir)
 
         if args.cmd in ['generate_cannot_links', 'generate_sequence_features_single', 'bin','single_easy_bin', 'bin_long']:
             binned_short, must_link_threshold, contig_dict = process_fasta(args.contig_fasta, args.ratio)
