@@ -86,8 +86,16 @@ def test_generate_seq_feats_coassembly(tmpdir):
                          must_link_threshold=4000
                          )
 
-    data = pd.read_csv(f'{tmpdir}/output_coassembly/data.csv', index_col=0)
+    data = pd.read_csv(f'{tmpdir}/output_coassembly/data.csv', index_col=0).sort_index()
     data_split = pd.read_csv(f'{tmpdir}/output_coassembly/data_split.csv', index_col=0)
-
     assert data.shape == (40,141)
     assert data_split.shape == (80,141)
+
+    for ix in range(5):
+        assert f'input.sorted{ix+1}' in data.columns[-5 + ix]
+    col1 = pd.read_csv(f'{tmpdir}/output_coassembly/input.sorted1.bam_0_data_cov.csv', index_col=0).squeeze().sort_index()
+    pd.testing.assert_series_equal(data.iloc[:, 136], col1)
+
+    col2 = pd.read_csv(f'{tmpdir}/output_coassembly/input.sorted2.bam_1_data_cov.csv', index_col=0).squeeze().sort_index()
+    pd.testing.assert_series_equal(data.iloc[:, 137], col2)
+

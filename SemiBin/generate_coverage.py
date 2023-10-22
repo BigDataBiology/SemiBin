@@ -135,29 +135,24 @@ def combine_cov(cov_dir, bam_list, is_combined):
     generate cov/cov_split for every sample in one file
     """
     import pandas as pd
-    data_cov = pd.read_csv(os.path.join(cov_dir, '{}_data_cov.csv'.format(
-        os.path.split(bam_list[0])[-1] + '_{}'.format(0))), index_col=0)
-    if is_combined:
-        data_split_cov = pd.read_csv(os.path.join(cov_dir, '{}_data_split_cov.csv'
-                                    .format(os.path.split(bam_list[0])[-1] + '_{}'.format(0))), index_col=0)
 
+    covs = []
+    split_covs = []
     for bam_index, bam_file in enumerate(bam_list):
-        if bam_index == 0:
-            continue
-        cov = pd.read_csv(os.path.join(cov_dir, '{}_data_cov.csv'.format(
-                os.path.split(bam_file)[-1] + '_{}'.format(bam_index))),index_col=0)
-        cov.index = cov.index.astype(str)
-        data_cov = pd.merge(data_cov, cov, how='inner', on=None,
-                            left_index=True, right_index=True, sort=False, copy=True)
+        bam_fname = os.path.split(bam_file)[-1]
+        covs.append(
+                pd.read_csv(f'{cov_dir}/{bam_fname}_{bam_index}_data_cov.csv', index_col=0))
 
         if is_combined:
-            cov_split = pd.read_csv(os.path.join(cov_dir, '{}_data_split_cov.csv'.format(
-                os.path.split(bam_file)[-1] + '_{}'.format(bam_index))), index_col=0)
+            split_covs.append(
+                    pd.read_csv(f'{cov_dir}/{bam_fname}_{bam_index}_data_split_cov.csv', index_col=0))
 
-            data_split_cov = pd.merge(data_split_cov, cov_split, how='inner', on=None,
-                                      left_index=True, right_index=True, sort=False, copy=True)
+    data_cov = pd.concat(covs, axis=1)
     data_cov.index = data_cov.index.astype(str)
     if is_combined:
+        data_split_cov = pd.concat(split_covs, axis=1)
+        data_split_cov.index = data_split_cov.index.astype(str)
+
         return data_cov, data_split_cov
     else:
         return data_cov
