@@ -1373,6 +1373,9 @@ def main2(args=None, is_semibin2=True):
         os.environ['TMPDIR'] = args.tmpdir
         os.makedirs(args.tmpdir, exist_ok=True)
 
+    if getattr(args, 'random_seed', None) is not None:
+        set_random_seed(args.random_seed)
+
     with tempfile.TemporaryDirectory() as tdir:
         if hasattr(args, 'bam'):
             args.bam = extract_bams(args.bam, args.contig_fasta, args.num_process, tdir)
@@ -1438,15 +1441,11 @@ def main2(args=None, is_semibin2=True):
                 args.output)
 
         if args.cmd in ['train', 'train_semi']:
-            if args.random_seed is not None:
-                set_random_seed(args.random_seed)
             training(logger, args.contig_fasta, args.num_process,
                      args.data, args.data_split, args.cannot_link,
                      args.batchsize, args.epoches, args.output, device, args.ratio, args.min_len, args.mode, orf_finder=args.orf_finder, training_mode='semi')
 
         if args.cmd == 'train_self':
-            if args.random_seed is not None:
-                set_random_seed(args.random_seed)
             training(logger, None, args.num_process,
                      args.data, args.data_split, None,
                      args.batchsize, args.epoches, args.output, device, None, None,
@@ -1455,16 +1454,12 @@ def main2(args=None, is_semibin2=True):
 
 
         if args.cmd == 'bin':
-            if args.random_seed is not None:
-                set_random_seed(args.random_seed)
             binning_short(logger, args.data, args.minfasta_kb * 1000, binned_length,
                     environment=args.environment, contig_dict=contig_dict,
                     model_path=args.model_path, output=args.output,
                     device=device, args=args)
 
         if args.cmd == 'bin_long':
-            if args.random_seed is not None:
-                set_random_seed(args.random_seed)
             binning_long(logger, args.data, args.minfasta_kb * 1000,
                     binned_length, environment=args.environment,
                     contig_dict=contig_dict, model_path=args.model_path,
@@ -1472,8 +1467,6 @@ def main2(args=None, is_semibin2=True):
 
         if args.cmd == 'single_easy_bin':
             check_install(False, args.orf_finder, allow_missing_mmseqs2=(args.environment is not None or args.training_type == 'self'))
-            if args.random_seed is not None:
-                set_random_seed(args.random_seed)
             if args.environment is not None:
                 if args.depth_metabat2 is None:
                     if len(args.bams) != 1:
@@ -1492,8 +1485,6 @@ def main2(args=None, is_semibin2=True):
 
         if args.cmd == 'multi_easy_bin':
             check_install(False, args.orf_finder, args.training_type == 'self')
-            if args.random_seed is not None:
-                set_random_seed(args.random_seed)
             multi_easy_binning(
                 args,
                 logger,
