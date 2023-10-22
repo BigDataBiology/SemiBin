@@ -1337,8 +1337,6 @@ def main2(args=None, is_semibin2=True):
         logger.warning(f'SemiBin will keep going, but it may not work properly.')
 
     validate_normalize_args(logger, args)
-    if args.cmd == 'check_install':
-        check_install(True, allow_missing_mmseqs2=args.allow_missing_mmseqs2)
 
     if is_semibin2 and getattr(args, 'training_type', None) == 'semi':
         logger.info('Currently using semi-supervised mode. This is generally only useful for backwards compability.')
@@ -1401,11 +1399,13 @@ def main2(args=None, is_semibin2=True):
             if args.ml_threshold is not None:
                 must_link_threshold = args.ml_threshold
 
-        if args.cmd == 'download_GTDB':
+        if args.cmd == 'check_install':
+            check_install(True, allow_missing_mmseqs2=args.allow_missing_mmseqs2)
+        elif args.cmd == 'download_GTDB':
             from .gtdb import find_or_download_gtdb
             find_or_download_gtdb(logger, args.GTDB_reference, args.force)
 
-        if args.cmd == 'generate_cannot_links':
+        elif args.cmd == 'generate_cannot_links':
             predict_taxonomy(
                 logger,
                 args.contig_fasta,
@@ -1417,7 +1417,7 @@ def main2(args=None, is_semibin2=True):
                 must_link_threshold=must_link_threshold,
                 output=args.output)
 
-        if args.cmd == 'generate_sequence_features_single':
+        elif args.cmd == 'generate_sequence_features_single':
             generate_sequence_features_single(
                 logger,
                 args.contig_fasta,
@@ -1428,7 +1428,7 @@ def main2(args=None, is_semibin2=True):
                 args.output,
                 args.kmer)
 
-        if args.cmd == 'generate_sequence_features_multi':
+        elif args.cmd == 'generate_sequence_features_multi':
             generate_sequence_features_multi(
                 logger,
                 args.contig_fasta,
@@ -1440,12 +1440,12 @@ def main2(args=None, is_semibin2=True):
                 args.ml_threshold,
                 args.output)
 
-        if args.cmd in ['train', 'train_semi']:
+        elif args.cmd in ['train', 'train_semi']:
             training(logger, args.contig_fasta, args.num_process,
                      args.data, args.data_split, args.cannot_link,
                      args.batchsize, args.epoches, args.output, device, args.ratio, args.min_len, args.mode, orf_finder=args.orf_finder, training_mode='semi')
 
-        if args.cmd == 'train_self':
+        elif args.cmd == 'train_self':
             training(logger, None, args.num_process,
                      args.data, args.data_split, None,
                      args.batchsize, args.epoches, args.output, device, None, None,
@@ -1453,19 +1453,19 @@ def main2(args=None, is_semibin2=True):
                      prodigal_output_faa=None, training_mode='self')
 
 
-        if args.cmd == 'bin':
+        elif args.cmd == 'bin':
             binning_short(logger, args.data, args.minfasta_kb * 1000, binned_length,
                     environment=args.environment, contig_dict=contig_dict,
                     model_path=args.model_path, output=args.output,
                     device=device, args=args)
 
-        if args.cmd == 'bin_long':
+        elif args.cmd == 'bin_long':
             binning_long(logger, args.data, args.minfasta_kb * 1000,
                     binned_length, environment=args.environment,
                     contig_dict=contig_dict, model_path=args.model_path,
                     output=args.output, device=device, args=args)
 
-        if args.cmd == 'single_easy_bin':
+        elif args.cmd == 'single_easy_bin':
             check_install(False, args.orf_finder, allow_missing_mmseqs2=(args.environment is not None or args.training_type == 'self'))
             if args.environment is not None:
                 if args.depth_metabat2 is None:
@@ -1483,7 +1483,7 @@ def main2(args=None, is_semibin2=True):
                 args.output,
                 device)
 
-        if args.cmd == 'multi_easy_bin':
+        elif args.cmd == 'multi_easy_bin':
             check_install(False, args.orf_finder, args.training_type == 'self')
             multi_easy_binning(
                 args,
@@ -1491,10 +1491,14 @@ def main2(args=None, is_semibin2=True):
                 args.output,
                 device)
 
-        if args.cmd == 'concatenate_fasta':
+        elif args.cmd == 'concatenate_fasta':
             from .utils import concatenate_fasta
             ofname = concatenate_fasta(args.contig_fasta, args.min_length, args.output, args.separator, args.output_compression)
             logger.info(f'Concatenated contigs written to {ofname}')
+
+        else:
+            logger.error(f'Could not handle subcommand {arg.cmd}')
+            sys.exit(1)
 
         print('''If you find SemiBin useful, please cite:
         Pan, S.; Zhu, C.; Zhao, XM.; Coelho, LP. A deep siamese neural network improves metagenome-assembled genomes in microbiome datasets across different environments. Nat Commun 13, 2326 (2022). https://doi.org/10.1038/s41467-022-29843-y
