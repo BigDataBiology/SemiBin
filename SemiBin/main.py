@@ -8,7 +8,7 @@ import shutil
 import sys
 from itertools import groupby
 from .utils import validate_normalize_args, get_must_link_threshold, generate_cannot_link, \
-    set_random_seed, process_fasta, split_data, get_model_path
+    set_random_seed, process_fasta, split_data, get_model_path, extract_bams
 from .generate_coverage import generate_cov, combine_cov
 from .generate_kmer import generate_kmer_features_from_fasta
 from .fasta import fasta_iter
@@ -265,7 +265,7 @@ def parse_args(args, is_semibin2):
             m.add_argument('-b', '--input-bam',
                               required=True,
                               nargs='*',
-                              help='Path to the input BAM(.bam)/CRAM(.cram) file. '
+                              help='Path to the input BAM(.bam)/CRAM(.cram) file(s). '
                                    'If using multiple samples, you can input multiple files.',
                               dest='bams',
                               default=None,
@@ -388,9 +388,9 @@ def parse_args(args, is_semibin2):
         p.add_argument('-b', '--input-bam',
                               required=False,
                               nargs='*',
-                              help='Path to the input BAM(.bam)/CRAM(.cram) file. '
+                              help='Path to the input BAM(.bam)/CRAM(.cram) file(s). '
                                    'If using multiple samples, you can input multiple files.'
-                                    'If just need k-mer features, bam file is not needed.',
+                                    'If just computing k-mer features, a BAM file is not needed.',
                               dest='bams',
                               default=None,
                               )
@@ -1377,26 +1377,8 @@ def main2(args=None, is_semibin2=True):
             os.makedirs(tmp_output, exist_ok=True)
 
     with tempfile.TemporaryDirectory() as tdir:
-        if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'generate_sequence_features_single', 'generate_sequence_features_multi']:
-            bams_new = []
-            if args.bams is not None:
-                for bam in args.bams:
-                    bam_split = bam.split('.')
-                    if bam_split[-1] == 'cram':
-                        output_bam = bam.split('/')[-1][:-4] + 'bam'
-                        output_bam = os.path.join(tdir, output_bam)
-                        with open(output_bam, 'wb') as cram_out:
-                            subprocess.check_call(
-                                ['samtools', 'view',
-                                 '-bS',
-                                 '-@', str(args.num_process),
-                                 '-T', args.contig_fasta,
-                                 bam],
-                                stdout=cram_out)
-                        bams_new.append(output_bam)
-                    else:
-                        bams_new.append(bam)
-                args.bams = bams_new
+        if hasattr(args, 'bam'):
+            args.bam = extract_bams(args.bam, args.contig_fasta, args.num_process, tdir)
 
         if args.cmd in ['generate_cannot_links', 'generate_sequence_features_single', 'bin','single_easy_bin', 'bin_long']:
             binned_short, must_link_threshold, contig_dict = process_fasta(args.contig_fasta, args.ratio)

@@ -5,6 +5,7 @@ import tempfile
 import sys
 import random
 import contextlib
+import pathlib
 
 from .fasta import fasta_iter
 
@@ -576,4 +577,27 @@ def n50_l50(sizes):
     l50 = np.where(np.cumsum(s)>=s.sum()//2)[0][0]
     n50 = s[l50]
     return n50, l50+1
+
+
+def extract_bams(bams, contig_fasta : str, num_process : int, odir : str): # bams : list[str] is not available on Python 3.7
+    '''
+    extract_bams converts CRAM to BAM
+    '''
+    if bams is None: return None
+    rs = []
+    for bam in bams:
+        if bam.endswith('.cram'):
+            obam = pathlib.PurePath(odir) / pathlib.PurePath(bam).with_suffix('.bam').name
+            with open(obam, 'wb') as cram_out:
+                subprocess.check_call(
+                    ['samtools', 'view',
+                     '-bS',
+                     '-@', str(num_process),
+                     '-T', contig_fasta,
+                     bam],
+                    stdout=cram_out)
+            rs.append(str(obam))
+        else:
+            rs.append(bam)
+    return rs
 
