@@ -383,6 +383,17 @@ def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, o
             counts = data.groupby('gene')['orf'].count()
             return extract_seeds(counts, data)
 
+def maybe_uncompress(fafile, tdir):
+    if fafile.endswith('.gz') or \
+            fafile.endswith('.bz2') or \
+            fafile.endswith('.xz'):
+        oname = f'{tdir}/expanded.fa'
+        with open(oname, 'wt') as out:
+            for header, seq in fasta_iter(fafile):
+                    out.write(f'>{header}\n{seq}\n')
+        return oname
+    return fafile
+
 
 def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, output = None, orf_finder = 'prodigal', prodigal_output_faa=None):
     '''Estimate number of bins from a FASTA file
@@ -395,6 +406,7 @@ def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, outpu
     '''
     from .orffinding import run_orffinder
     with tempfile.TemporaryDirectory() as tdir:
+        fasta_path = maybe_uncompress(fasta_path, tdir)
         if output is not None:
             if os.path.exists(os.path.join(output, 'markers.hmmout')):
                 return get_marker(os.path.join(output, 'markers.hmmout'), fasta_path, binned_length, multi_mode, orf_finder=orf_finder)

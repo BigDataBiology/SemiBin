@@ -989,17 +989,6 @@ def training(logger, contig_fasta, num_process,
         is_combined = False
 
     if training_mode == 'semi':
-        contig_fasta_unzip = []
-        for fasta_index,temp_fasta in enumerate(contig_fasta):
-            if temp_fasta.endswith('.gz') or temp_fasta.endswith('.bz2') or temp_fasta.endswith('.xz'):
-                temp_fasta_unzip = os.path.join(output, 'unzip_contig_{}.fa'.format(fasta_index))
-                with open(temp_fasta_unzip, 'wt') as out:
-                    for h,seq in fasta_iter(temp_fasta):
-                            out.write(f'>{h}\n{seq}\n')
-                contig_fasta_unzip.append(temp_fasta_unzip)
-            else:
-                contig_fasta_unzip.append(temp_fasta)
-
         if mode == 'single':
             binned_lengths.append(
                     utils.compute_min_length(min_length, contig_fasta[0], ratio))
@@ -1010,7 +999,7 @@ def training(logger, contig_fasta, num_process,
 
         model = train(
             output,
-            contig_fasta_unzip,
+            contig_fasta,
             binned_lengths,
             logger,
             data,
