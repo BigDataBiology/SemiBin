@@ -22,7 +22,7 @@ def test_train(tmpdir):
             mode = 'single',
             ratio=0.05,
             min_length=None,
-            training_mode = 'semi'
+            training_type='semi'
             )
 
     assert os.path.exists(f'{odir}/model.h5')
@@ -44,7 +44,7 @@ def test_train_self(tmpdir):
             mode = 'single',
             ratio=0.05,
             min_length=None,
-            training_mode = 'self'
+            training_type='self'
             )
 
     assert os.path.exists(f'{odir}/model.h5')
@@ -57,7 +57,7 @@ def test_regression_137_semi(tmpdir):
     os.makedirs(odir)
     # 40 elements plus header: 41
     assert len(open('test/train_data/data.csv', 'r').readlines()) == 41
-    model = train(odir,
+    model = train(out = odir,
                        contig_fastas = ['test/train_data/input.fasta'],
                        logger = logging,
                        binned_lengths = [1000],

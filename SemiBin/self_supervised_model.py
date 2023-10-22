@@ -15,7 +15,7 @@ def loss_function(embedding1, embedding2, label):
     return supervised_loss
 
 
-def train_self(out, logger, datapaths, data_splits, is_combined=True,
+def train_self(logger, out, datapaths, data_splits, is_combined=True,
           batchsize=2048, epoches=15, device=None, num_process = 8, mode = 'single'):
     """
     Train model from one sample(--mode single) or several samples(--mode several)

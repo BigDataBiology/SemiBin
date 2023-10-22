@@ -46,8 +46,8 @@ def get_best_bin(results_dict, contig_to_marker, namelist, contig_dict, minfasta
         if max_F1 > 0: # if there is a bin with F1 > 0
             return max_bin
 
-def cluster_long_read(model, data, device, is_combined,
-            logger, n_sample, out, contig_dict, binned_length, *, args,
+def cluster_long_read(logger, model, data, device, is_combined,
+            n_sample, out, contig_dict, *, binned_length, args,
             minfasta):
     import pandas as pd
     contig_list = data.index.tolist()

@@ -3,6 +3,7 @@ import os
 import pytest
 import logging
 import pandas as pd
+from argparse import Namespace
 
 def test_generate_seq_feats_multi(tmpdir):
     logger = logging.getLogger('SemiBin')
@@ -12,7 +13,8 @@ def test_generate_seq_feats_multi(tmpdir):
     logger.addHandler(sh)
 
     os.makedirs(f'{tmpdir}/output_multi',exist_ok=True)
-    generate_sequence_features_multi(bams=['test/multi_samples_data/input_multi_sorted1.bam',
+    generate_sequence_features_multi(logger, Namespace(
+                        bams=['test/multi_samples_data/input_multi_sorted1.bam',
                               'test/multi_samples_data/input_multi_sorted2.bam',
                               'test/multi_samples_data/input_multi_sorted3.bam',
                               'test/multi_samples_data/input_multi_sorted4.bam',
@@ -24,13 +26,12 @@ def test_generate_seq_feats_multi(tmpdir):
                               'test/multi_samples_data/input_multi_sorted10.bam'],
                          num_process=1,
                          separator=':',
-                         logger=logger,
                          output=f'{tmpdir}/output_multi',
                          contig_fasta='test/multi_samples_data/input_multi.fasta.xz',
                          ratio=0.05,
-                         min_length=None,
+                         min_len=None,
                          ml_threshold=None,
-                         )
+                         ))
 
     for i in range(10):
         data = pd.read_csv(f'{tmpdir}/output_multi/samples/S{i+1}/data.csv', index_col=0)
