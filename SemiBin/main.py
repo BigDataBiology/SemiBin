@@ -804,13 +804,10 @@ def generate_sequence_features_single(logger, contig_fasta,
         data_split = kmer_split
         data.index = data.index.astype(str)
 
+        data_cov, data_split_cov = combine_cov(output, bam_list, is_combined)
         if is_combined:
-            data_cov, data_split_cov = combine_cov(output, bam_list, is_combined)
             data_split = pd.merge(data_split, data_split_cov, how='inner', on=None,
                                       left_index=True, right_index=True, sort=False, copy=True)
-        else:
-            data_cov = combine_cov(output, bam_list, is_combined)
-            data_split = kmer_split
 
         data = pd.merge(data, data_cov, how='inner', on=None,
                                       left_index=True, right_index=True, sort=False, copy=True)
@@ -909,14 +906,12 @@ def generate_sequence_features_multi(logger, contig_fasta,
                 sys.exit(1)
 
     # Generate cov features for every sample
+    data_cov, data_split_cov = combine_cov(os.path.join(output, 'samples'), bam_list, is_combined)
     if is_combined:
-        data_cov, data_split_cov = combine_cov(os.path.join(output, 'samples'), bam_list, is_combined)
         data_split_cov = data_split_cov.reset_index()
         columns_list = list(data_split_cov.columns)
         columns_list[0] = 'contig_name'
         data_split_cov.columns = columns_list
-    else:
-        data_cov = combine_cov(os.path.join(output, 'samples'), bam_list, is_combined)
 
     data_cov = data_cov.reset_index()
     columns_list = list(data_cov.columns)

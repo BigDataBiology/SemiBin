@@ -130,9 +130,20 @@ def generate_cov(bam_file, bam_index, out, threshold,
 
     return bam_file
 
-def combine_cov(cov_dir, bam_list, is_combined):
+def combine_cov(cov_dir : str, bam_list, is_combined : bool): # bam_list : list[str] does not work on Python 3.7
     """
     generate cov/cov_split for every sample in one file
+
+    Parameters
+    ----------
+    cov_dir : where coverage files are stored
+    bam_list : list of BAM files
+    is_combined : whether to process split files
+
+    Returns
+    -------
+    cov : DataFrame
+    split_cov : DataFrame (if is_combined) or None (otherwise)
     """
     import pandas as pd
 
@@ -152,8 +163,7 @@ def combine_cov(cov_dir, bam_list, is_combined):
     if is_combined:
         data_split_cov = pd.concat(split_covs, axis=1)
         data_split_cov.index = data_split_cov.index.astype(str)
-
-        return data_cov, data_split_cov
     else:
-        return data_cov
+        data_split_cov = None
+    return data_cov, data_split_cov
 
