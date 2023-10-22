@@ -1127,7 +1127,7 @@ def binning_short(logger, data, minfasta,
 
 def single_easy_binning(args, logger, binned_length,
                         must_link_threshold,
-                        contig_dict, output, device):
+                        contig_dict, device):
     """
     contain `generate_cannot_links`, `generate_sequence_features_single`, `train`, `bin` in one command for single-sample and co-assembly binning
     """
@@ -1152,12 +1152,12 @@ def single_easy_binning(args, logger, binned_length,
         binned_length,
         must_link_threshold,
         args.num_process,
-        output,
+        args.output,
         only_kmer=args.depth_metabat2)
 
-    data_path = os.path.join(output, 'data.csv')
+    data_path = os.path.join(args.output, 'data.csv')
     if not args.depth_metabat2:
-        data_split_path = os.path.join(output, 'data_split.csv')
+        data_split_path = os.path.join(args.output, 'data_split.csv')
 
     if args.environment is None:
         if args.training_type == 'semi':
@@ -1171,19 +1171,19 @@ def single_easy_binning(args, logger, binned_length,
                 args.num_process,
                 binned_length,
                 must_link_threshold,
-                output)
+                args.output)
             logger.info('Training model and clustering.')
             training(logger, [args.contig_fasta],
                      args.num_process, [data_path], [data_split_path],
-                     [os.path.join(output, 'cannot', 'cannot.txt')],
-                     args.batchsize, args.epoches, output, device,
+                     [os.path.join(args.output, 'cannot', 'cannot.txt')],
+                     args.batchsize, args.epoches, args.output, device,
                      args.ratio, args.min_len,  mode='single',
                      orf_finder=args.orf_finder, prodigal_output_faa=args.prodigal_output_faa,
                      training_mode='semi')
         else:
             training(logger, None,
                      args.num_process, [data_path], [data_split_path],
-                     None, args.batchsize, args.epoches, output, device, None, None,
+                     None, args.batchsize, args.epoches, args.output, device, None, None,
                      mode='single', orf_finder=None, prodigal_output_faa=args.prodigal_output_faa, training_mode='self')
 
     binning_kwargs = {
@@ -1194,10 +1194,10 @@ def single_easy_binning(args, logger, binned_length,
         'binned_length': binned_length,
         'contig_dict': contig_dict,
         'model_path':
-                os.path.join(output, 'model.h5') \
+                os.path.join(args.output, 'model.h5') \
                         if args.environment is None \
                         else None,
-        'output': output,
+        'output': args.output,
         'device': device,
         'environment': args.environment,
     }
@@ -1208,7 +1208,7 @@ def single_easy_binning(args, logger, binned_length,
         binning_long(**binning_kwargs)
 
 
-def multi_easy_binning(args, logger, output, device):
+def multi_easy_binning(args, logger, device):
     """
     contain `generate_cannot_links`, `generate_sequence_features_multi`, `train`, `bin` in one command for multi-sample binning
     """
@@ -1224,16 +1224,15 @@ def multi_easy_binning(args, logger, output, device):
         args.ratio,
         args.min_len,
         args.ml_threshold,
-        output,)
+        args.output,
+        )
 
     for sample_index, sample in enumerate(sample_list):
-        logger.info(
-            f'Running generating cannot-link file for {sample}')
         sample_fasta = os.path.join(
-            output, 'samples', '{}.fa'.format(sample))
-        sample_data = os.path.join(output, 'samples', sample, 'data.csv')
+            args.output, 'samples', '{}.fa'.format(sample))
+        sample_data = os.path.join(args.output, 'samples', sample, 'data.csv')
         sample_data_split = os.path.join(
-            output, 'samples', sample, 'data_split.csv')
+            args.output, 'samples', sample, 'data_split.csv')
 
         binned_short, must_link_threshold, contig_dict = process_fasta(sample_fasta, args.ratio)
 
@@ -1241,8 +1240,6 @@ def multi_easy_binning(args, logger, output, device):
             binned_length = 1000 if binned_short else 2500
         else:
             binned_length = args.min_len
-        if args.ml_threshold is not None:
-            must_link_threshold = args.ml_threshold
         logger.info('Training model and clustering for {}.'.format(sample))
         if args.training_type == 'semi':
             logger.debug(f'Running taxonomic prediction (semi-supervised mode) for {sample}')
@@ -1254,19 +1251,19 @@ def multi_easy_binning(args, logger, output, device):
                 args.GTDB_reference,
                 args.num_process,
                 binned_length,
-                must_link_threshold,
-                os.path.join(output, 'samples', sample))
+                must_link_threshold if args.ml_threshold is None else args.ml_threshold,
+                os.path.join(args.output, 'samples', sample))
 
             sample_cannot = os.path.join(
-                output, 'samples', sample, 'cannot/{}.txt'.format(sample))
+                args.output, 'samples', sample, 'cannot/{}.txt'.format(sample))
             training(logger, [sample_fasta], args.num_process,
                      [sample_data], [sample_data_split], [sample_cannot],
-                     args.batchsize, args.epoches, os.path.join(output, 'samples', sample),
+                     args.batchsize, args.epoches, os.path.join(args.output, 'samples', sample),
                      device, args.ratio, args.min_len, mode='single', orf_finder=args.orf_finder, prodigal_output_faa=args.prodigal_output_faa, training_mode='semi')
         else:
             training(logger, None, args.num_process,
                      [sample_data], [sample_data_split], None,
-                     args.batchsize, args.epoches, os.path.join(output, 'samples', sample),
+                     args.batchsize, args.epoches, os.path.join(args.output, 'samples', sample),
                      device, None, None, mode='single', orf_finder=None, prodigal_output_faa=args.prodigal_output_faa, training_mode='self')
 
         binning_kwargs = {
@@ -1276,8 +1273,8 @@ def multi_easy_binning(args, logger, output, device):
             'minfasta': args.minfasta_kb * 1000,
             'binned_length': binned_length,
             'contig_dict': contig_dict,
-            'model_path': os.path.join(output, 'samples', sample, 'model.h5'),
-            'output': os.path.join(output, 'samples', sample),
+            'model_path': os.path.join(args.output, 'samples', sample, 'model.h5'),
+            'output': os.path.join(args.output, 'samples', sample),
             'device': device,
             'environment': None,
         }
@@ -1287,16 +1284,16 @@ def multi_easy_binning(args, logger, output, device):
         else:
             binning_long(**binning_kwargs)
 
-    os.makedirs(os.path.join(output, 'bins'), exist_ok=True)
+    os.makedirs(os.path.join(args.output, 'bins'), exist_ok=True)
     for sample in sample_list:
         if args.sequencing_type != 'short_read' or (not args.is_semibin2 and not args.recluster) or (args.is_semibin2 and args.recluster):
             bin_dir_name = 'output_bins'
         else:
             bin_dir_name = 'output_recluster_bins' if args.recluster else 'output_prerecluster_bins'
-        for bf in os.listdir(os.path.join(output, 'samples', sample, bin_dir_name)):
-            original_path = os.path.join(output, 'samples', sample, bin_dir_name, bf)
+        for bf in os.listdir(os.path.join(args.output, 'samples', sample, bin_dir_name)):
+            original_path = os.path.join(args.output, 'samples', sample, bin_dir_name, bf)
             new_file = '{0}_{1}'.format(sample, bf)
-            new_path = os.path.join(output, 'bins', new_file)
+            new_path = os.path.join(args.output, 'bins', new_file)
             shutil.copyfile(original_path, new_path)
 
 def main2(args=None, is_semibin2=True):
@@ -1480,7 +1477,6 @@ def main2(args=None, is_semibin2=True):
                 binned_length,
                 must_link_threshold,
                 contig_dict,
-                args.output,
                 device)
 
         elif args.cmd == 'multi_easy_bin':
@@ -1488,7 +1484,6 @@ def main2(args=None, is_semibin2=True):
             multi_easy_binning(
                 args,
                 logger,
-                args.output,
                 device)
 
         elif args.cmd == 'concatenate_fasta':
