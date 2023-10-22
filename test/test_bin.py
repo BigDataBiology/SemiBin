@@ -1,4 +1,4 @@
-from SemiBin.main import binning, binning_preprocess, binning_long
+from SemiBin.main import binning_short, binning_preprocess, binning_long
 from SemiBin.cluster import run_embed_infomap, recluster_bins
 from SemiBin.fasta import fasta_iter
 from glob import glob
@@ -26,7 +26,7 @@ def test_bin(tmpdir):
 
     odir = f'{tmpdir}/output_test_bin'
     os.makedirs(odir,exist_ok=True)
-    binning(data='test/bin_data/data.csv',
+    binning_short(data='test/bin_data/data.csv',
             logger=logging,
             minfasta=0,
             device='cpu',

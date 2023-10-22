@@ -1096,7 +1096,7 @@ def binning_long(logger, data, minfasta, binned_length, contig_dict,
                       args=args,
                       )
 
-def binning(logger, data, minfasta,
+def binning_short(logger, data, minfasta,
             binned_length, contig_dict, model_path,
             output, device, environment, *, args):
     """
@@ -1203,7 +1203,7 @@ def single_easy_binning(args, logger, binned_length,
     }
 
     if args.sequencing_type == 'short_read':
-        binning(**binning_kwargs)
+        binning_short(**binning_kwargs)
     else:
         binning_long(**binning_kwargs)
 
@@ -1283,7 +1283,7 @@ def multi_easy_binning(args, logger, output, device):
         }
 
         if args.sequencing_type == 'short_read':
-            binning(**binning_kwargs)
+            binning_short(**binning_kwargs)
         else:
             binning_long(**binning_kwargs)
 
@@ -1457,7 +1457,7 @@ def main2(args=None, is_semibin2=True):
         if args.cmd == 'bin':
             if args.random_seed is not None:
                 set_random_seed(args.random_seed)
-            binning(logger, args.data, args.minfasta_kb * 1000, binned_length,
+            binning_short(logger, args.data, args.minfasta_kb * 1000, binned_length,
                     environment=args.environment, contig_dict=contig_dict,
                     model_path=args.model_path, output=args.output,
                     device=device, args=args)
