@@ -601,3 +601,9 @@ def extract_bams(bams, contig_fasta : str, num_process : int, odir : str): # bam
             rs.append(bam)
     return rs
 
+def compute_min_length(min_length, fafile, ratio):
+    if min_length is not None: return min_length
+    binned_short ,_ ,_ = process_fasta(fafile, ratio)
+    if binned_short:
+        return 1000
+    return 2500

@@ -7,6 +7,7 @@ from .atomicwrite import atomic_write
 import shutil
 import sys
 from itertools import groupby
+from . import utils
 from .utils import validate_normalize_args, get_must_link_threshold, generate_cannot_link, \
     set_random_seed, process_fasta, split_data, get_model_path, extract_bams
 from .generate_coverage import generate_cov, combine_cov
@@ -870,11 +871,10 @@ def generate_sequence_features_multi(logger, contig_fasta,
 
     binning_threshold = {}
     for sample in sample_list:
-        if min_length is not None:
-            binning_threshold[sample] = min_length
-        else:
-            binned_short ,_ ,_ = process_fasta(os.path.join(output, 'samples/{}.fa'.format(sample)), ratio)
-            binning_threshold[sample] = 1000 if binned_short else 2500
+        binning_threshold[sample] = utils.compute_min_length(
+                                        min_length,
+                                        os.path.join(output, f'samples/{sample}.fa'),
+                                        ratio)
 
     with Pool(num_process if num_process != 0 else None) as pool:
         results = [
@@ -1001,19 +1001,12 @@ def training(logger, contig_fasta, num_process,
                 contig_fasta_unzip.append(temp_fasta)
 
         if mode == 'single':
-            if min_length is None:
-                binned_short, _, _ = process_fasta(contig_fasta[0], ratio)
-                binned_lengths.append(1000) if binned_short else binned_lengths.append(2500)
-            else:
-                binned_lengths.append(min_length)
+            binned_lengths.append(
+                    utils.compute_min_length(min_length, contig_fasta[0], ratio))
         else:
-            for contig_index in contig_fasta:
-                if min_length is None:
-                    binned_short, _, _ = process_fasta(contig_index, ratio)
-                    binned_lengths.append(1000) if binned_short else binned_lengths.append(2500)
-                else:
-                    binned_lengths.append(min_length)
-
+            for fafile in contig_fasta:
+                binned_lengths.append(
+                        utils.compute_min_length(min_length, fafile, ratio))
 
         model = train(
             output,
