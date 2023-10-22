@@ -341,7 +341,7 @@ def parse_args(args, is_semibin2):
                        required=False,
                        type=str,
                        help='option to set temporary directory',
-                       dest='tmp_output',
+                       dest='tmpdir',
                        default=None,
                        )
 
@@ -1369,12 +1369,9 @@ def main2(args=None, is_semibin2=True):
                 device = torch.device("cpu")
                 logger.info('Did not detect GPU, using CPU.')
 
-    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'generate_cannot_links', 'train_semi', 'train', 'bin',
-                    'generate_sequence_features_single', 'generate_sequence_features_multi', 'train_self', 'bin_long']:
-        tmp_output = args.tmp_output
-        if tmp_output is not None:
-            os.environ['TMPDIR'] = tmp_output
-            os.makedirs(tmp_output, exist_ok=True)
+    if getattr(args, 'tmpdir', None) is not None:
+        os.environ['TMPDIR'] = args.tmpdir
+        os.makedirs(args.tmpdir, exist_ok=True)
 
     with tempfile.TemporaryDirectory() as tdir:
         if hasattr(args, 'bam'):
