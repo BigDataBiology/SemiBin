@@ -860,6 +860,9 @@ def generate_sequence_features_multi(logger, contig_fasta,
                 out.write(f'>{contig_name}\n{seq}\n')
                 contig_length_list.append(len(seq))
         sample_list.append(sample_name)
+    if len(sample_list) != len(set(sample_list)):
+        logger.error(f'Concatenated FASTA file {contig_fasta} not in expected format. Samples should follow each other.')
+        sys.exit(1)
 
     must_link_threshold = get_must_link_threshold(contig_length_list) if ml_threshold is None else ml_threshold
 
