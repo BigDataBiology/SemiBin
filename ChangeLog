@@ -1,4 +1,5 @@
 Unreleased
+	* citation: Add citation subcommand
 	* SemiBin1: Introduce separate SemiBin1 command
 
 Version 2.0.1 Oct 21 2023 by BigDataBiology

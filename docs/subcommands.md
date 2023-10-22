@@ -298,3 +298,14 @@ The separator character cannot occur in any of your samples, so if any sample co
 * `--compression` (since version `1.6`): whether to compress the output (defaults to `gz` if using `SemiBin2`)
 
 
+### citation
+
+_Available since version 2.1_
+
+Prints citation
+
+#### Optional argument
+
+* `--bibtex`: Use BibTeX format
+* `--ris`: Use RIS format (for Endnote and other tools)
+* `--chicago`: Use Chicago format (default)

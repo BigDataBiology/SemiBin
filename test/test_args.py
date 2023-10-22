@@ -220,3 +220,9 @@ def test_write_prerecluster():
                 is_semibin2=is_semibin2)
         validate_normalize_args(logging, args)
         assert not args.write_pre_reclustering_bins
+
+def test_bibtex():
+    for is_semibin2 in [False, True]:
+        args = parse_args(['citation', '--bibtex'], is_semibin2=is_semibin2)
+        assert args.cmd == 'citation'
+        assert args.cite_format == 'bibtex'

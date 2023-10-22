@@ -136,6 +136,25 @@ def parse_args(args, is_semibin2):
                             action='store_true',
                             default=None)
 
+    citation = subparsers.add_parser('citation',
+            help='Print citation information')
+    cite_format = citation.add_mutually_exclusive_group()
+    cite_format.add_argument('--bibtex',
+                        action='store_const',
+                        dest='cite_format',
+                        const='bibtex',
+                        help='Print bibTeX formatted citations')
+    cite_format.add_argument('--ris',
+                        action='store_const',
+                        dest='cite_format',
+                        const='ris',
+                        help='Print RIS formatted citations (can be used with Endnote)')
+    cite_format.add_argument('--chicago',
+                        action='store_const',
+                        dest='cite_format',
+                        const='chicago',
+                        help='Print Chicago-style citation (default)')
+
     training_mandatory = train_semi.add_argument_group('Mandatory arguments')
     training_mandatory.add_argument('-i', '--input-fasta',
                    required=True,
@@ -299,7 +318,7 @@ def parse_args(args, is_semibin2):
         p.add_argument('--orf-finder',
                        required=False,
                        type=str,
-                       help='ORF finder used to estimate the number of bins (prodigal/fraggenescan)',
+                       help='ORF finder used to estimate the number of bins (fast-naive/prodigal/fraggenescan)',
                        dest='orf_finder',
                        default=('fast-naive' if is_semibin2 else 'prodigal'))
         p.add_argument('--prodigal-output-faa',
@@ -1308,7 +1327,7 @@ def main2(args=None, is_semibin2=True):
         sh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
         logger.addHandler(sh)
 
-    if args.cmd not in ['download_GTDB', 'check_install']:
+    if args.cmd not in ['citation', 'download_GTDB', 'check_install']:
         os.makedirs(args.output, exist_ok=True)
         fh = logging.FileHandler(os.path.join(args.output, "SemiBinRun.log"))
         fh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
@@ -1329,6 +1348,18 @@ def main2(args=None, is_semibin2=True):
     if is_semibin2 and getattr(args, 'training_type', None) == 'semi':
         logger.info('Currently using semi-supervised mode. This is generally only useful for backwards compability.')
 
+    if args.cmd == 'citation':
+        from . import citation
+        if args.cite_format == 'bibtex':
+            print(citation.BIBTEX)
+        elif args.cite_format == 'ris':
+            print(citation.RIS)
+        elif args.cite_format == 'chicago':
+            print(citation.CHICAGO)
+        else:
+            print(citation.CHICAGO)
+            print(f'\nUse `SemiBin2 citation --help` to see all available citation formats')
+        sys.exit(0)
     if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'train_semi', 'bin', 'train_self', 'bin_long']:
         import torch
         if args.engine == 'cpu':
