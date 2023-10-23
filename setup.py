@@ -40,7 +40,7 @@ setup(name='SemiBin',
           'numexpr',
       ],
       package_data={
-          'SemiBin': ['*.hmm','*.pl','*.h5']},
+          'SemiBin': ['*.hmm', 'models/*.pt']},
       zip_safe=False,
       entry_points={
             'console_scripts': ['SemiBin=SemiBin.main:main_no_version',

@@ -532,7 +532,11 @@ def split_data(data, sample, separator, is_combined = True):
         part_data = part_data.div(abun_scale)
     return part_data
 
-def get_model_path(env):
+def get_model_path(env : str) -> str:
+    '''Finds model path
+
+    If not found, triggers `sys.exit(1)`
+    '''
     envn = env.lower().replace('-', '_')
     known_environments = [
             'human_gut',
@@ -549,7 +553,7 @@ def get_model_path(env):
             'global',
             ]
     if envn in known_environments:
-        return os.path.join(os.path.split(__file__)[0], f'{envn}_model.h5')
+        return os.path.join(os.path.split(__file__)[0], 'models', f'{envn}_model.pt')
     else:
         sys.stderr.write(
             f"Error: Expected environment '{env}' does not exist (known ones are {', '.join(known_environments)})\n")
