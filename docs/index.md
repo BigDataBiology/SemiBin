@@ -17,6 +17,14 @@ It supports single sample, co-assembly, and multi-samples binning modes.
 When you install the SemiBin package you get both the newer `SemiBin2` command and the older `SemiBin` command.
 It is recommended that you use the newer one exclusively for new project and the old one only for backwards compatibility.
 
+## Tutorial
+
+We have a tutorial available with example datasets that runs through most of the
+functionality of SemiBin:
+
+https://github.com/BigDataBiology/SemiBin_tutorial
+
+
 ## Install
 
 The simplest way to install is to use [conda](https://conda.io/).
