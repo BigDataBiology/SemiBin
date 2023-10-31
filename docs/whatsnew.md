@@ -1,5 +1,13 @@
 # What's New
 
+## Version 2.0.2
+
+*Released Oct 31, 2023*
+
+### Bugfix release
+
+Fixes issue with `multi_easy_bin --write-pre-reclustering-bins` [#128 on GH](https://github.com/BigDataBiology/SemiBin/issues/128#issuecomment-1784742272)
+
 ## Version 2.0.1
 
 *Released Oct 21, 2023*
