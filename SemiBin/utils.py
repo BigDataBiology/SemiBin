@@ -235,6 +235,12 @@ def validate_normalize_args(logger, args):
     elif args.cmd in ['train', 'train_semi', 'train_self'] and not hasattr(args, 'mode'):
         args.mode = 'single'
 
+    if getattr(args, 'write_pre_reclustering_bins', False) and \
+            not getattr(args, 'recluster', True):
+        sys.stderr.write(
+            f"Error: Cannot use --write-pre-reclustering-bins with --no-recluster.\n")
+        exit_with_error = True
+
     if exit_with_error:
         sys.exit(1)
 

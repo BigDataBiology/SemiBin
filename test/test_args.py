@@ -1,3 +1,4 @@
+import pytest
 from SemiBin.main import parse_args
 from SemiBin.utils import validate_normalize_args
 import logging
@@ -220,6 +221,19 @@ def test_write_prerecluster():
                 is_semibin2=is_semibin2)
         validate_normalize_args(logging, args)
         assert not args.write_pre_reclustering_bins
+
+        args = parse_args(
+                ['multi_easy_bin',
+                    '--semi-supervised',
+                    '--write-pre-reclustering-bins',
+                    '--no-recluster',
+                    '-i' ,'./test/single_sample_data/input.fasta',
+                    '-b', './test/single_sample_data/input.sorted.bam',
+                    '-o', 'output'],
+                is_semibin2=is_semibin2)
+        with pytest.raises(SystemExit):
+            validate_normalize_args(logging, args)
+
 
 def test_bibtex():
     for is_semibin2 in [False, True]:
