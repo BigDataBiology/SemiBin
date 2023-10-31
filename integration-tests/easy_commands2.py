@@ -139,7 +139,18 @@ subprocess.check_call(
         '-i', f'{multi_sample_input}/input_multi.fasta',
         '-o', multi_self_output,
         '-b'] + multi_sample_input_bams + [
-        '-s', ':',
+        '--epochs', '1',
+        '--self-supervised'])
+
+# https://github.com/BigDataBiology/SemiBin/issues/128#issuecomment-1784742272
+multi_self_output = 'test-outputs/multi_output_self_pre_recluster_bug'
+shutil.rmtree(multi_self_output, ignore_errors=True)
+subprocess.check_call(
+        ['SemiBin2', 'multi_easy_bin',
+        '--write-pre-reclustering-bins',
+        '-i', f'{multi_sample_input}/input_multi.fasta',
+        '-o', multi_self_output,
+        '-b'] + multi_sample_input_bams + [
         '--epochs', '1',
         '--self-supervised'])
 
