@@ -156,4 +156,5 @@ subprocess.check_call(
 
 assert os.path.exists(f'{multi_self_output}/bins')
 for i in range(len(multi_sample_input_bams)):
-    assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_bins')
+    assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_prerecluster_bins')
+    assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_recluster_bins')
