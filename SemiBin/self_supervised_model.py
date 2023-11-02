@@ -15,10 +15,16 @@ def loss_function(embedding1, embedding2, label):
     return supervised_loss
 
 
-def train_self(logger, out, datapaths, data_splits, is_combined=True,
+def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
           batchsize=2048, epoches=15, device=None, num_process = 8, mode = 'single'):
     """
-    Train model from one sample(--mode single) or several samples(--mode several)
+    Train model from one sample(mode=single) or several samples(mode=several)
+
+    Saves model to disk and returns it
+
+    Parameters
+    ----------
+    out : filename to write model to
     """
     from tqdm import tqdm
     import pandas as pd
@@ -135,6 +141,6 @@ def train_self(logger, out, datapaths, data_splits, is_combined=True,
         scheduler.step()
 
     logger.info('Training finished.')
-    torch.save(model, os.path.join(out, 'model.h5'))
+    torch.save(model, out)
 
     return model

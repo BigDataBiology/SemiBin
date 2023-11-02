@@ -9,6 +9,7 @@ def test_train(tmpdir):
 
     odir = f'{tmpdir}/output_train'
     os.makedirs(odir)
+    ofile = f'{odir}/model.h5'
     training(contig_fasta = ['test/train_data/input.fasta'],
             num_process = 1,
             data = ['test/train_data/data.csv'],
@@ -17,7 +18,7 @@ def test_train(tmpdir):
             batchsize = 2048,
             epoches = 1,
             logger = logging,
-            output = odir,
+            output = ofile,
             device = 'cpu',
             mode = 'single',
             ratio=0.05,
@@ -25,7 +26,7 @@ def test_train(tmpdir):
             training_type='semi'
             )
 
-    assert os.path.exists(f'{odir}/model.h5')
+    assert os.path.exists(ofile)
 
 def test_train_self(tmpdir):
     contig_dict = {h:seq for h,seq in fasta_iter('test/train_data/input.fasta')}
@@ -79,6 +80,7 @@ def test_regression_137_self(tmpdir):
     from SemiBin.self_supervised_model import train_self
     odir = f'{tmpdir}/output_train_self'
     os.makedirs(odir)
+    ofile = f'{odir}/model.pt'
     # 40 elements plus header: 41
     assert len(open('test/train_data/data.csv', 'r').readlines()) == 41
     # 80 elements plus header: 81
@@ -86,7 +88,7 @@ def test_regression_137_self(tmpdir):
 
     # Training adds len(<split>) * 1000//2 + 40 so that the total data is 40040
     # To trigger the bug, batchsize is set to 40039
-    model = train_self(out = odir,
+    model = train_self(out = ofile,
                        logger = logging,
                        datapaths=['test/train_data/data.csv'],
                        data_splits=['test/train_data/data_split.csv'],
@@ -97,5 +99,5 @@ def test_regression_137_self(tmpdir):
                        num_process=1,
                        mode='single',
                        )
-    assert os.path.exists(f'{odir}/model.h5')
+    assert os.path.exists(ofile)
 

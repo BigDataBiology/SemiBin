@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+from os import path
 from multiprocessing.pool import Pool
 import subprocess
 from .atomicwrite import atomic_write
@@ -1011,7 +1012,7 @@ def training(logger, contig_fasta, num_process,
             orf_finder=orf_finder)
     else:
         model = train_self(logger,
-                           output,
+                           path.join(output, 'model.h5'),
                            data,
                            data_split,
                            is_combined,
