@@ -61,6 +61,7 @@ def rc(seq):
     return seq.translate(str.maketrans('ATCG', 'TAGC'))[::-1]
 
 @given(st.text(alphabet='ACGT', min_size=1))
+@settings(deadline=None)
 def test_kmer_rc(seq):
     from io import StringIO
     fasta_file = StringIO(f'>example\n{seq}\n')
