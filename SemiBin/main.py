@@ -986,13 +986,11 @@ def training(logger, contig_fasta, num_process,
         is_combined = False
 
     if training_type == 'semi':
-        if mode == 'single':
+        for fafile in contig_fasta:
             binned_lengths.append(
-                    utils.compute_min_length(min_length, contig_fasta[0], ratio))
-        else:
-            for fafile in contig_fasta:
-                binned_lengths.append(
-                        utils.compute_min_length(min_length, fafile, ratio))
+                    utils.compute_min_length(min_length, fafile, ratio))
+            if mode == 'single':
+                break
 
         model = train(
             logger,

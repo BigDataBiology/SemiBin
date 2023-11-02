@@ -1,6 +1,7 @@
 Unreleased
 	* citation: Add citation subcommand
 	* SemiBin1: Introduce separate SemiBin1 command
+	* internal: Code simplification and refactor
 
 Version 2.0.2 Oct 31 2023 by BigDataBiology
 	* multi_easy_bin: Fix multi_easy_bin with --write-pre-recluster (#128)

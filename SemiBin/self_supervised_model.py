@@ -34,30 +34,30 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
     train_data = pd.read_csv(datapaths[0], index_col=0).values
 
     if not is_combined:
-        train_data_input = train_data[:, 0:136]
-    else:
-        train_data_input = train_data
+        train_data = train_data[:, :136]
 
     torch.set_num_threads(num_process)
 
     logger.info('Training model...')
 
     if not is_combined:
-        model = Semi_encoding_single(train_data_input.shape[1]).to(device)
+        model = Semi_encoding_single(train_data.shape[1])
     else:
-        model = Semi_encoding_multiple(train_data_input.shape[1]).to(device)
+        model = Semi_encoding_multiple(train_data.shape[1])
+
+    model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     scheduler = lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)
 
     for epoch in tqdm(range(epoches)):
-        for data_index in range(len(datapaths)):
+        for data_index, (datapath, data_split_path) in enumerate(zip(datapaths, data_splits)):
             if epoch == 0:
                 logger.debug(f'Reading training data for index {data_index}...')
 
-            data = pd.read_csv(datapaths[data_index], index_col=0)
+            data = pd.read_csv(datapath, index_col=0)
             data.index = data.index.astype(str)
-            data_split = pd.read_csv(data_splits[data_index], index_col=0)
+            data_split = pd.read_csv(data_split_path, index_col=0)
 
             if mode == 'several':
                 if data.shape[1] != 138 or data_split.shape[1] != 136:
