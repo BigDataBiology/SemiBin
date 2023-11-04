@@ -114,28 +114,31 @@ def loss_function(embedding1, embedding2, label, raw_x_1,
 
 
 class feature_Dataset(Dataset):
-    def __init__(self, embedding1_lists, embedding2_lists, label_lists):
-        self.embedding1_lists = embedding1_lists
-        self.embedding2_lists = embedding2_lists
-        self.label_lists = label_lists
+    def __init__(self, embedding1, embedding2, labels):
+        self.embedding1= embedding1
+        self.embedding2= embedding2
+        assert len(embedding1) == len(embedding2)
+        assert len(embedding1) == len(labels)
+        self.labels = labels
 
     def __getitem__(self, item):
-        return self.embedding1_lists[item], self.embedding2_lists[item], self.label_lists[item]
+        return self.embedding1[item], self.embedding2[item], self.labels[item]
 
     def __len__(self):
-        return len(self.embedding1_lists)
+        return len(self.embedding1)
 
 
 class unsupervised_feature_Dataset(Dataset):
-    def __init__(self, embedding1_lists, embedding2_lists):
-        self.embedding1_lists = embedding1_lists
-        self.embedding2_lists = embedding2_lists
+    def __init__(self, embedding1, embedding2):
+        self.embedding1= embedding1
+        self.embedding2= embedding2
+        assert len(embedding1) == len(embedding2)
 
     def __getitem__(self, item):
-        return self.embedding1_lists[item], self.embedding2_lists[item]
+        return self.embedding1[item], self.embedding2[item]
 
     def __len__(self):
-        return len(self.embedding1_lists)
+        return len(self.embedding1)
 
 
 def train(logger, out, contig_fastas, binned_lengths, datas, data_splits, cannot_links, is_combined=True,
