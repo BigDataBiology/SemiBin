@@ -114,15 +114,20 @@ def generate_cov(bam_file, bam_index, out, threshold,
         raise OSError(f"Running bedtools returned an empty file ({bam_file})")
 
     contig_cov += 1e-5
-    with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
-        contig_cov.to_csv(ofile)
+    if not is_combined:
+        with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
+            contig_cov.to_csv(ofile)
+    else:
+        if sep is None:
+            abun_scale = (contig_cov.mean() / 100).apply(np.ceil) * 100
+            contig_cov = contig_cov.div(abun_scale)
+        with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
+            contig_cov.to_csv(ofile)
 
     if is_combined:
         must_link_contig_cov = must_link_contig_cov.apply(lambda x: x + 1e-5)
         if sep is None:
-            abun_scale = (contig_cov.mean() / 100).apply(np.ceil) * 100
             abun_split_scale = (must_link_contig_cov.mean() / 100).apply(np.ceil) * 100
-            contig_cov = contig_cov.div(abun_scale)
             must_link_contig_cov = must_link_contig_cov.div(abun_split_scale)
 
         with atomic_write(os.path.join(out, '{}_data_split_cov.csv'.format(bam_name)), overwrite=True) as ofile:
