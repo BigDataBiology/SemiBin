@@ -103,8 +103,10 @@ def validate_normalize_args(logger, args):
     if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin']:
         if args.orf_finder not in ['prodigal', 'fraggenescan', 'fast-naive']:
             sys.stderr.write(
-                f"Error: SemiBin only supports 'prodigal'/'fraggenescan'/'fast-naive' as the ORF finder (--orf_finder option).\n")
+                f"Error: SemiBin only supports 'prodigal'/'fraggenescan'/'fast-naive' as the ORF finder (--orf-finder option).\n")
             exit_with_error = True
+        if args.orf_finder == 'fraggenescan':
+            logger.warning('Using FragGeneScan (--orf-finder=fraggenescan) as an ORF finder is considered deprecated and will be removed in a future version of SemiBin. Please use fast-naive or prodigal instead.')
         expect_file(args.prodigal_output_faa)
         if args.prodigal_output_faa is not None:
             args.orf_finder = 'prodigal'
