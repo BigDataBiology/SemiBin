@@ -978,7 +978,7 @@ def training(logger, contig_fasta, num_process,
     if mode == 'single':
         logger.info('Start training from a single sample.')
         data_ = pd.read_csv(data[0], index_col=0)
-        col_name = data_.columns.tolist()[-1].split('_')[-1]
+        col_name = data_.columns[-1].split('_')[-1]
         is_combined = col_name != 'var'
 
     else:
@@ -1028,7 +1028,7 @@ def binning_preprocess(data, depth_metabat2, model_path, environment, device):
     data.index = data.index.astype(str)
 
     if depth_metabat2 is None:
-        col_name = data.columns.tolist()[-1].split('_')[-1]
+        col_name = data.columns[-1].split('_')[-1]
         is_combined = col_name != 'var'
         n_sample = (data.shape[1] - 136) // 2 if not is_combined else (data.shape[1] - 136)
     else:
