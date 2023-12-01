@@ -6,7 +6,7 @@ If you use this software in a publication please cite:
 
 The self-supervised approach and the algorithms used for long-read datasets (as well as their benchmarking) are described in
 
-> Pan, S.; Zhao, XM; Coelho, LP. [SemiBin2: self-supervised contrastive learning leads to better MAGs for short- and long-read sequencing](https://doi.org/10.1101/2023.01.09.523201). *bioRxiv preprint* 2023.01.09.523201; [https://doi.org/10.1101/2023.01.09.523201](https://doi.org/10.1101/2023.01.09.523201)
+> Pan, S.; Zhao, XM; Coelho, LP. [SemiBin2: self-supervised contrastive learning leads to better MAGs for short- and long-read sequencing](https://doi.org/10.1093/bioinformatics/btad209). *Bioinformatics* Volume 39, Issue Supplement 1, June 2023, Pages i21–i29; [https://doi.org/10.1093/bioinformatics/btad209](https://doi.org/10.1093/bioinformatics/btad209)
 
 
 SemiBin is a command line tool for metagenomic binning with semi-supervised siamese neural network using additional information from reference genomes and contigs themselves.
