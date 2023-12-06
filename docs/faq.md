@@ -10,6 +10,11 @@ Use the flag `--sequencing-data=long_reads` when binning.
 
 See the [SemiBin2 preprint](https://doi.org/10.1101/2023.01.09.523201) for a description and benchmarking of the long-read algorithm.
 
+## What should I do if I have hybrid data (short- and long-reads)?
+
+From SemiBin's point-of-view, you should generally treat this using the
+long-reads pipeline (`--sequencing-type=long_read`).
+
 ## Does SemiBin work for eukaryotic genomes?
 
 Technically, yes, you can apply it to eukaryotic data and it will produce bins.
