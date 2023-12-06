@@ -8,31 +8,19 @@ import os
 import sys
 import tempfile
 import errno
+from os import fspath
 
 try:
     import fcntl
 except ImportError:
     fcntl = None
 
-# `fspath` was added in Python 3.6
-try:
-    from os import fspath
-except ImportError:
-    fspath = None
-
-
-PY2 = sys.version_info[0] == 2
-
-text_type = unicode if PY2 else str  # noqa
-
+DEFAULT_MODE = "wb"
 
 def _path_to_unicode(x):
     if not isinstance(x, text_type):
         return x.decode(sys.getfilesystemencoding())
     return x
-
-
-DEFAULT_MODE = "wb" if PY2 else "w"
 
 
 _proper_fsync = os.fsync
