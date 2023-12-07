@@ -68,7 +68,7 @@ However, if you want to use SemiBin with GPU (which is faster if you have one av
 conda create -n SemiBin
 conda activate SemiBin
 conda install -c conda-forge -c bioconda semibin
-conda install -c pytorch-lts pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch-lts
+conda install -c pytorch -c nvidia pytorch pytorch-cuda=11.8
 ```
 
 _MacOS note_: **you can only install the CPU version of PyTorch in MacOS with `conda` and you need to install from source to take advantage of a GPU** (see [#72](https://github.com/BigDataBiology/SemiBin/issues/72)).
