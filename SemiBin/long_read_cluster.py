@@ -50,12 +50,13 @@ def cluster_long_read(logger, model, data, device, is_combined,
             n_sample, out, contig_dict, *, binned_length, args,
             minfasta):
     import pandas as pd
+    from .utils import norm_abundance
     contig_list = data.index.tolist()
     if not is_combined:
         train_data_input = data.values[:, 0:136]
     else:
         train_data_input = data.values
-        if train_data_input.shape[1] - 136 > 20:
+        if norm_abundance(train_data_input):
             train_data_kmer = train_data_input[:, 0:136]
             train_data_depth = train_data_input[:, 136:len(data.values[0])]
             from sklearn.preprocessing import normalize

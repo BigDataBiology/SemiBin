@@ -151,6 +151,7 @@ def train(logger, out, contig_fastas, binned_lengths, datas, data_splits, cannot
     import pandas as pd
     from sklearn.preprocessing import normalize
     import numpy as np
+    from .utils import norm_abundance
 
     train_data = pd.read_csv(datas[0], index_col=0).values
     if not is_combined:
@@ -215,7 +216,7 @@ def train(logger, out, contig_fastas, binned_lengths, datas, data_splits, cannot
                 train_data_input = train_data[:, 0:136]
                 train_data_split_input = train_data_must_link
             else:
-                if train_data.shape[1] - 136 > 20:
+                if norm_abundance(train_data):
                     train_data_kmer  = train_data[:, :136]
                     train_data_depth = train_data[:, 136:]
                     train_data_depth = normalize(train_data_depth, axis=1, norm='l1')

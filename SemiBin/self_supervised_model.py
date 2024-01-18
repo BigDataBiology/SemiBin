@@ -4,6 +4,7 @@ import os
 from torch.optim import lr_scheduler
 import sys
 from .semi_supervised_model import Semi_encoding_single, Semi_encoding_multiple, feature_Dataset
+from .utils import norm_abundance
 
 def loss_function(embedding1, embedding2, label):
     relu = torch.nn.ReLU()
@@ -70,7 +71,7 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
             if not is_combined:
                 train_data = train_data[:, :136]
             else:
-                if train_data.shape[1] - 136 > 20:
+                if norm_abundance(train_data):
                     train_data_kmer  = train_data[:, :136]
                     train_data_depth = train_data[:, 136:]
                     train_data_depth = normalize(train_data_depth, axis=1, norm='l1')
@@ -82,7 +83,6 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
                     train_data_split = np.concatenate((train_data_split_kmer, train_data_split_depth), axis = 1)
 
             data_length = len(train_data)
-
             # cannot link data is sampled randomly
             n_cannot_link = min(len(train_data_split) * 1000 // 2, 4_000_000)
             indices1 = np.random.choice(data_length, size=n_cannot_link)
