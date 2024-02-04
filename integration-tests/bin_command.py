@@ -3,6 +3,28 @@ import subprocess
 import pandas as pd
 import shutil
 from glob import glob
+from SemiBin.fasta import fasta_iter
+
+def test_overlap(contig, bin_dir, prefix):
+    contig_dict = {}
+    for h, seq in fasta_iter(contig):
+        contig_dict[h] = seq
+
+    contig_bin_name = []
+    contig_bin_dict = {}
+    bin_list = os.listdir(bin_dir)
+    bin_list = [temp for temp in bin_list if temp.split('.')[-1] == '{}'.format(prefix)]
+
+    for bin in bin_list:
+        for h, seq in fasta_iter(
+                '{0}/{1}'.format(bin_dir, bin)):
+            contig_bin_name.append(h)
+            contig_bin_dict[h] = seq
+
+    assert len(contig_bin_name) == len(set(contig_bin_name))
+
+    for contig in contig_bin_dict:
+        assert contig_dict[contig] == contig_bin_dict[contig]
 
 # Test different input formats
 for ifile, odir in [
@@ -27,6 +49,7 @@ for ifile, odir in [
          '-p', '1'])
 
     assert len(os.listdir(f'{odir}/output_bins')) > 0
+    test_overlap(f'test/bin_data/{ifile}', f'{odir}/output_bins', "gz")
 
 odir = f'test-outputs/output_long'
 shutil.rmtree(odir, ignore_errors=True)
@@ -42,6 +65,7 @@ subprocess.check_call(
      '--tag-output', 'TestTag',
      '-p', '1'])
 assert len(glob(f'{odir}/output_bins/TestTag_*')) > 0
+test_overlap(f'test/bin_data/input.fasta', f'{odir}/output_bins', "gz")
 
 
 # Different pretrained models
