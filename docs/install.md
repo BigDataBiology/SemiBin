@@ -1,6 +1,6 @@
 # Install
 
-SemiBin can run on Python 3.7-3.11.
+SemiBin can run on Python 3.7-3.12.
 
 ## Install from bioconda
 
