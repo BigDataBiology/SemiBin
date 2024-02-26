@@ -31,6 +31,7 @@ def test_generate_seq_feats_multi(tmpdir):
                          ratio=0.05,
                          min_len=None,
                          ml_threshold=None,
+                         abundances = None,
                          ))
 
     for i in range(10):
