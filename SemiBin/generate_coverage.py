@@ -172,3 +172,51 @@ def combine_cov(cov_dir : str, bam_list, is_combined : bool): # bam_list : list[
         data_split_cov = None
     return data_cov, data_split_cov
 
+def generate_cov_from_abundances(abundances, output, contig_path, contig_threshold=1000, sep=None, contig_threshold_dict=None):
+    import pandas as pd
+    import numpy as np
+    from .fasta import fasta_iter
+
+    abun_split_list = []
+    for abun_file in abundances:
+        abun_split_data = pd.read_csv(abun_file, sep='\t', index_col=0, header=None)
+        abun_split_data.index.name = None
+        abun_split_data.columns = [f'{abun_file}']
+
+        binned_contig = []
+        for h, seq in fasta_iter(contig_path):
+            if sep is None:
+                cov_threshold = contig_threshold
+            else:
+                sample_name = h.split(sep)[0]
+                cov_threshold = contig_threshold_dict[sample_name]
+
+            if len(seq) >= cov_threshold:
+                binned_contig.append(h + '_1')
+                binned_contig.append(h + '_2')
+        abun_split_data = abun_split_data.loc[binned_contig]
+        abun_split_data = abun_split_data.apply(lambda x: x + 1e-5)
+        if sep is None:
+            abun_scale = (abun_split_data.mean() / 100).apply(np.ceil) * 100
+            abun_split_data = abun_split_data.div(abun_scale)
+        abun_split_list.append(abun_split_data)
+
+    abun_split = pd.concat(abun_split_list, axis=1)
+    if sep is None:
+        with atomic_write(os.path.join(output, 'cov_split.csv'), overwrite=True) as ofile:
+            abun_split.to_csv(ofile)
+
+        index_name = abun_split.index.tolist()
+        data_index_name = []
+        for i in range(len(index_name) // 2):
+            data_index_name.append(index_name[2 * i][0:-2])
+
+        abun_split_values = abun_split.values
+        abun = (abun_split_values[::2] + abun_split_values[1::2]) / 2
+        columns = [f'{abun_file}' for abun_file in abundances]
+        abun = pd.DataFrame(abun, index=data_index_name, columns=columns)
+        with atomic_write(os.path.join(output, 'cov.csv'), overwrite=True) as ofile:
+            abun.to_csv(ofile)
+        return abun, abun_split
+    else:
+        return abun_split

@@ -60,9 +60,25 @@ subprocess.check_call(
      '--epochs', '1',
      '--semi-supervised'])
 
+multi_sample_input_abuns = sglob(f'{multi_sample_input}/*.txt')
+shutil.rmtree(multi_output, ignore_errors=True)
+subprocess.check_call(
+    ['SemiBin2',
+     'multi_easy_bin',
+     '-i', f'{multi_sample_input}/input_multi.fasta',
+     '-o', multi_output,
+     '-a'] + multi_sample_input_abuns + [
+     '--taxonomy-annotation-table'] + [
+         f'{single_sample_input}/taxonomyResult.tsv' for _ in multi_sample_input_bams] + [
+     '-s', ':',
+     '--epochs', '1',
+     '--semi-supervised'])
+
 assert os.path.exists(f'{multi_output}/bins')
 for i in range(len(multi_sample_input_bams)):
     assert os.path.exists(f'{multi_output}/samples/S{i+1}/output_bins')
+
+
 
 shutil.rmtree(multi_output_ref, ignore_errors=True)
 subprocess.check_call(
@@ -151,6 +167,23 @@ subprocess.check_call(
         '-i', f'{multi_sample_input}/input_multi.fasta',
         '-o', multi_self_output,
         '-b'] + multi_sample_input_bams + [
+        '--epochs', '1',
+        '--self-supervised'])
+
+assert os.path.exists(f'{multi_self_output}/bins')
+for i in range(len(multi_sample_input_bams)):
+    assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_prerecluster_bins')
+    assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_recluster_bins')
+
+
+multi_self_output = 'test-outputs/multi_output_self_pre_recluster_bug'
+shutil.rmtree(multi_self_output, ignore_errors=True)
+subprocess.check_call(
+        ['SemiBin2', 'multi_easy_bin',
+        '--write-pre-reclustering-bins',
+        '-i', f'{multi_sample_input}/input_multi.fasta',
+        '-o', multi_self_output,
+        '-a'] + multi_sample_input_abuns + [
         '--epochs', '1',
         '--self-supervised'])
 

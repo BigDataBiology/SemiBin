@@ -11,7 +11,7 @@ from itertools import groupby
 from . import utils
 from .utils import validate_normalize_args, get_must_link_threshold, generate_cannot_link, \
     set_random_seed, process_fasta, split_data, get_model_path, extract_bams
-from .generate_coverage import generate_cov, combine_cov
+from .generate_coverage import generate_cov, combine_cov, generate_cov_from_abundances
 from .generate_kmer import generate_kmer_features_from_fasta
 from .fasta import fasta_iter
 
@@ -265,13 +265,20 @@ def parse_args(args, is_semibin2):
                              default=None,)
         if p in [multi_easy_bin, generate_sequence_features_multi]:
             m.add_argument('-b', '--input-bam',
-                              required=True,
+                              required=False,
                               nargs='*',
                               help='Path to the input BAM(.bam)/CRAM(.cram) file(s). '
                                    'If using multiple samples, you can input multiple files.',
                               dest='bams',
                               default=None,
                               )
+            p.add_argument('-a', '--abundance',
+                           required=False,
+                           nargs='*',
+                           help='Path to the abundance file from strobealign-aemb. This can only be used when samples used in binning above or equal 5.',
+                           dest='abundances',
+                           default=None,
+                           )
         p.add_argument('--write-pre-reclustering-bins',
                 required=False,
                 help='Write pre-reclustering bins to disk.',
@@ -394,6 +401,14 @@ def parse_args(args, is_semibin2):
                                    'If using multiple samples, you can input multiple files.'
                                     'If just computing k-mer features, a BAM file is not needed.',
                               dest='bams',
+                              default=None,
+                              )
+
+        p.add_argument('-a', '--abundance',
+                              required=False,
+                              nargs='*',
+                              help='Path to the abundance file from strobealign-aemb. This can only be used when samples used in binning above or equal 5.',
+                              dest='abundances',
                               default=None,
                               )
 
@@ -740,7 +755,7 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
 
 def generate_sequence_features_single(logger, contig_fasta,
                          bams, binned_length,
-                         must_link_threshold, num_process, output, only_kmer=False):
+                         must_link_threshold, num_process, output, abundances, only_kmer=False):
     """
     Generate data.csv and data_split.csv for training and clustering of single-sample and co-assembly binning mode.
     data.csv has the features(kmer and abundance) for original contigs.
@@ -749,77 +764,99 @@ def generate_sequence_features_single(logger, contig_fasta,
     """
     import pandas as pd
 
-    if bams is None and not only_kmer:
+    if bams is None and abundances is None and not only_kmer:
         sys.stderr.write(
-            f"Error: You need to specify input BAM files if you want to calculate coverage features.\n")
+            f"Error: You need to specify input BAM files or abundance files if you want to calculate coverage features.\n")
         sys.exit(1)
 
-    if bams is not None and only_kmer:
+    if (bams is not None or abundances is not None) and only_kmer:
         logger.info('We will only calculate k-mer features.')
 
     if not only_kmer:
-        n_sample = len(bams)
-        is_combined = n_sample >= 5
-        bam_list = bams
-
-        logger.info('Calculating coverage for every sample.')
-
-        with Pool(num_process if num_process != 0 else None) as pool:
-            results = [
-                pool.apply_async(
-                    generate_cov,
-                    args=(
-                        bam_file,
-                        bam_index,
-                        output,
-                        must_link_threshold,
-                        is_combined,
-                        binned_length,
-                        logger,
-                        None
-                    ))
-                for bam_index, bam_file in enumerate(bams)]
-            for r in results:
-                s = r.get()
-                logger.info(f'Processed: {s}')
-
-        for bam_index, bam_file in enumerate(bams):
-            if not os.path.exists(os.path.join(output, '{}_data_cov.csv'.format(
-                    os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
-                sys.stderr.write(
-                    f"Error: Generating coverage file fail\n")
-                sys.exit(1)
-            if is_combined:
-                if not os.path.exists(os.path.join(output, '{}_data_split_cov.csv'.format(
-                        os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
-                    sys.stderr.write(
-                        f"Error: Generating coverage file fail\n")
-                    sys.exit(1)
-
         logger.debug('Start generating kmer features from fasta file.')
         kmer_whole = generate_kmer_features_from_fasta(
             contig_fasta, binned_length, 4)
         kmer_split = generate_kmer_features_from_fasta(
             contig_fasta, 1000, 4, split=True, split_threshold=must_link_threshold)
 
-        data = kmer_whole
-        data_split = kmer_split
-        data.index = data.index.astype(str)
+        if bams:
+            n_sample = len(bams)
+            is_combined = n_sample >= 5
+            bam_list = bams
+            logger.info('Calculating coverage for every sample.')
 
-        data_cov, data_split_cov = combine_cov(output, bam_list, is_combined)
-        if is_combined:
-            data_split = pd.merge(data_split, data_split_cov, how='inner', on=None,
-                                      left_index=True, right_index=True, sort=False, copy=True)
+            with Pool(num_process if num_process != 0 else None) as pool:
+                results = [
+                    pool.apply_async(
+                        generate_cov,
+                        args=(
+                            bam_file,
+                            bam_index,
+                            output,
+                            must_link_threshold,
+                            is_combined,
+                            binned_length,
+                            logger,
+                            None
+                        ))
+                    for bam_index, bam_file in enumerate(bams)]
+                for r in results:
+                    s = r.get()
+                    logger.info(f'Processed: {s}')
 
-        data = pd.merge(data, data_cov, how='inner', on=None,
-                                      left_index=True, right_index=True, sort=False, copy=True)
+            for bam_index, bam_file in enumerate(bams):
+                if not os.path.exists(os.path.join(output, '{}_data_cov.csv'.format(
+                        os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
+                    sys.stderr.write(
+                        f"Error: Generating coverage file fail\n")
+                    sys.exit(1)
+                if is_combined:
+                    if not os.path.exists(os.path.join(output, '{}_data_split_cov.csv'.format(
+                            os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
+                        sys.stderr.write(
+                            f"Error: Generating coverage file fail\n")
+                        sys.exit(1)
 
+            data = kmer_whole
+            data_split = kmer_split
+            data.index = data.index.astype(str)
 
-        with atomic_write(os.path.join(output, 'data.csv'), overwrite=True) as ofile:
-            data.to_csv(ofile)
+            data_cov, data_split_cov = combine_cov(output, bam_list, is_combined)
+            if is_combined:
+                data_split = pd.merge(data_split, data_split_cov, how='inner', on=None,
+                                          left_index=True, right_index=True, sort=False, copy=True)
 
-        with atomic_write(os.path.join(output, 'data_split.csv'), overwrite=True) as ofile:
-            data_split.to_csv(ofile)
+            data = pd.merge(data, data_cov, how='inner', on=None,
+                                          left_index=True, right_index=True, sort=False, copy=True)
+
+            with atomic_write(os.path.join(output, 'data.csv'), overwrite=True) as ofile:
+                data.to_csv(ofile)
+
+            with atomic_write(os.path.join(output, 'data_split.csv'), overwrite=True) as ofile:
+                data_split.to_csv(ofile)
+
+        if abundances:
+            if len(abundances) < 5:
+                sys.stderr.write(
+                    f"Error: abundances from strobealign-aemb can only be used when samples used above or equal to 5.\n")
+                sys.exit(1)
+
+            abun, abun_split = generate_cov_from_abundances(abundances, output, contig_fasta, binned_length)
+
+            data = kmer_whole
+            data.index = data.index.astype(str)
+            data = pd.merge(data, abun, how='inner', on=None,
+                                          left_index=True, right_index=True, sort=False, copy=True)
+
+            data_split = kmer_split
+            data_split = pd.merge(data_split, abun_split, how='inner', on=None,
+                                          left_index=True, right_index=True, sort=False, copy=True)
+
+            with atomic_write(os.path.join(output, 'data.csv'), overwrite=True) as ofile:
+                data.to_csv(ofile)
+
+            with atomic_write(os.path.join(output, 'data_split.csv'), overwrite=True) as ofile:
+                data_split.to_csv(ofile)
 
     else:
         logger.info('Only generating kmer features from fasta file.')
@@ -836,7 +873,18 @@ def generate_sequence_features_multi(logger, args):
     data_split.csv has the features(kmer and abundace) for contigs that are breaked up as must-link pair.
     """
     import pandas as pd
-    n_sample = len(args.bams)
+
+    if not args.bams and not args.abundances:
+        sys.stderr.write(
+            f"Error: You need to specify input BAM files or abundance files.\n")
+        sys.exit(1)
+
+    n_sample = len(args.bams) if args.bams else len(args.abundances)
+    if args.abundances and n_sample < 5:
+        sys.stderr.write(
+            f"Error: abundances from strobealign-aemb can only be used when samples used above or equal to 5.\n")
+        sys.exit(1)
+
     is_combined = n_sample >= 5
 
     # Gererate contig file for every sample
@@ -874,89 +922,132 @@ def generate_sequence_features_multi(logger, args):
                                         os.path.join(args.output, f'samples/{sample}.fa'),
                                         args.ratio)
 
-    with Pool(args.num_process if args.num_process != 0 else None) as pool:
-        results = [
-            pool.apply_async(
-                        generate_cov,
-                         args=(
-                             bam_file,
-                             bam_index,
-                             os.path.join(args.output, 'samples'),
-                             must_link_threshold,
-                             is_combined,
-                             binning_threshold,
-                             logger,
-                             args.separator,
-                         ))
-            for bam_index, bam_file in enumerate(args.bams)]
-        for r in results:
-            s = r.get()
-            logger.info(f'Processed: {s}')
+    if args.bams:
+        with Pool(args.num_process if args.num_process != 0 else None) as pool:
+            results = [
+                pool.apply_async(
+                            generate_cov,
+                             args=(
+                                 bam_file,
+                                 bam_index,
+                                 os.path.join(args.output, 'samples'),
+                                 must_link_threshold,
+                                 is_combined,
+                                 binning_threshold,
+                                 logger,
+                                 args.separator,
+                             ))
+                for bam_index, bam_file in enumerate(args.bams)]
+            for r in results:
+                s = r.get()
+                logger.info(f'Processed: {s}')
 
-    for bam_index, bam_file in enumerate(args.bams):
-        if not os.path.exists(os.path.join(os.path.join(args.output, 'samples'), '{}_data_cov.csv'.format(
-                os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
-            sys.stderr.write(
-                f"Error: Generating coverage file fail\n")
-            sys.exit(1)
-        if is_combined:
-            if not os.path.exists(os.path.join(os.path.join(args.output, 'samples'), '{}_data_split_cov.csv'.format(
+        for bam_index, bam_file in enumerate(args.bams):
+            if not os.path.exists(os.path.join(os.path.join(args.output, 'samples'), '{}_data_cov.csv'.format(
                     os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
                 sys.stderr.write(
                     f"Error: Generating coverage file fail\n")
                 sys.exit(1)
+            if is_combined:
+                if not os.path.exists(os.path.join(os.path.join(args.output, 'samples'), '{}_data_split_cov.csv'.format(
+                        os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
+                    sys.stderr.write(
+                        f"Error: Generating coverage file fail\n")
+                    sys.exit(1)
 
-    # Generate cov features for every sample
-    data_cov, data_split_cov = combine_cov(os.path.join(args.output, 'samples'), args.bams, is_combined)
-    if is_combined:
-        data_split_cov = data_split_cov.reset_index()
-        columns_list = list(data_split_cov.columns)
-        columns_list[0] = 'contig_name'
-        data_split_cov.columns = columns_list
-
-    data_cov = data_cov.reset_index()
-    columns_list = list(data_cov.columns)
-    columns_list[0] = 'contig_name'
-    data_cov.columns = columns_list
-
-    for sample in sample_list:
-        output_path = os.path.join(args.output, 'samples', sample)
-        os.makedirs(output_path, exist_ok=True)
-
-        part_data = split_data(data_cov, sample, args.separator, is_combined)
-        part_data.to_csv(os.path.join(output_path, 'data_cov.csv'))
-
+        # Generate cov features for every sample
+        data_cov, data_split_cov = combine_cov(os.path.join(args.output, 'samples'), args.bams, is_combined)
         if is_combined:
-            part_data = split_data(data_split_cov, sample, args.separator, is_combined)
-            part_data.to_csv(os.path.join(
+            data_split_cov = data_split_cov.reset_index()
+            columns_list = list(data_split_cov.columns)
+            columns_list[0] = 'contig_name'
+            data_split_cov.columns = columns_list
+
+        data_cov = data_cov.reset_index()
+        columns_list = list(data_cov.columns)
+        columns_list[0] = 'contig_name'
+        data_cov.columns = columns_list
+
+        for sample in sample_list:
+            output_path = os.path.join(args.output, 'samples', sample)
+            os.makedirs(output_path, exist_ok=True)
+
+            part_data = split_data(data_cov, sample, args.separator, is_combined)
+            part_data.to_csv(os.path.join(output_path, 'data_cov.csv'))
+
+            if is_combined:
+                part_data = split_data(data_split_cov, sample, args.separator, is_combined)
+                part_data.to_csv(os.path.join(
+                    output_path, 'data_split_cov.csv'))
+
+            sample_contig_fasta = os.path.join(
+                args.output, f'samples/{sample}.fa')
+            kmer_whole = generate_kmer_features_from_fasta(
+                sample_contig_fasta, binning_threshold[sample], 4)
+            kmer_split = generate_kmer_features_from_fasta(
+                sample_contig_fasta, 1000, 4, split=True, split_threshold=must_link_threshold)
+
+            sample_cov = pd.read_csv(os.path.join(output_path, 'data_cov.csv'), index_col=0)
+            kmer_whole.index = kmer_whole.index.astype(str)
+            sample_cov.index = sample_cov.index.astype(str)
+            data = pd.merge(kmer_whole, sample_cov, how='inner', on=None,
+                            left_index=True, right_index=True, sort=False, copy=True)
+            if is_combined:
+                sample_cov_split = pd.read_csv(os.path.join(
+                    output_path, 'data_split_cov.csv'), index_col=0)
+                data_split = pd.merge(kmer_split, sample_cov_split, how='inner', on=None,
+                                      left_index=True, right_index=True, sort=False, copy=True)
+            else:
+                data_split = kmer_split
+
+            with atomic_write(os.path.join(output_path, 'data.csv'), overwrite=True) as ofile:
+                data.to_csv(ofile)
+
+            with atomic_write(os.path.join(output_path, 'data_split.csv'), overwrite=True) as ofile:
+                data_split.to_csv(ofile)
+
+    if args.abundances:
+        abun_split = generate_cov_from_abundances(args.abundances, os.path.join(args.output, 'samples'), args.contig_fasta, sep=args.separator, contig_threshold_dict=binning_threshold)
+        abun_split = abun_split.reset_index()
+        columns_list = list(abun_split.columns)
+        columns_list[0] = 'contig_name'
+        abun_split.columns = columns_list
+
+        for sample in sample_list:
+            output_path = os.path.join(args.output, 'samples', sample)
+            os.makedirs(output_path, exist_ok=True)
+            part_data_split = split_data(abun_split, sample, args.separator, is_combined=True)
+            part_data_split.to_csv(os.path.join(
                 output_path, 'data_split_cov.csv'))
 
-        sample_contig_fasta = os.path.join(
-            args.output, f'samples/{sample}.fa')
-        kmer_whole = generate_kmer_features_from_fasta(
-            sample_contig_fasta, binning_threshold[sample], 4)
-        kmer_split = generate_kmer_features_from_fasta(
-            sample_contig_fasta, 1000, 4, split=True, split_threshold=must_link_threshold)
+            index_name = part_data_split.index.tolist()
+            data_index_name = []
+            for t in range(len(index_name) // 2):
+                data_index_name.append(index_name[2 * t][0:-2])
+            part_data_split_values = part_data_split.values
 
+            part_data = (part_data_split_values[::2] + part_data_split_values[1::2]) / 2
+            columns = [f'{abun}' for abun in args.abundances]
+            part_data = pd.DataFrame(part_data, index=data_index_name, columns=columns)
+            part_data.to_csv(os.path.join(
+                output_path, 'data_cov.csv'))
 
-        sample_cov = pd.read_csv(os.path.join(output_path, 'data_cov.csv'),index_col=0)
-        kmer_whole.index = kmer_whole.index.astype(str)
-        sample_cov.index = sample_cov.index.astype(str)
-        data = pd.merge(kmer_whole, sample_cov, how='inner', on=None,
-                        left_index=True, right_index=True, sort=False, copy=True)
-        if is_combined:
-            sample_cov_split = pd.read_csv(os.path.join(
-                output_path, 'data_split_cov.csv'), index_col=0)
-            data_split = pd.merge(kmer_split, sample_cov_split, how='inner', on=None,
+            sample_contig_fasta = os.path.join(
+                args.output, f'samples/{sample}.fa')
+            kmer_whole = generate_kmer_features_from_fasta(
+                sample_contig_fasta, binning_threshold[sample], 4)
+            kmer_split = generate_kmer_features_from_fasta(
+                sample_contig_fasta, 1000, 4, split=True, split_threshold=must_link_threshold)
+            data = pd.merge(kmer_whole, part_data, how='inner', on=None,
+                            left_index=True, right_index=True, sort=False, copy=True)
+            data_split = pd.merge(kmer_split, part_data_split, how='inner', on=None,
                                   left_index=True, right_index=True, sort=False, copy=True)
-        else:
-            data_split = kmer_split
 
-        with atomic_write(os.path.join(output_path, 'data.csv'), overwrite=True) as ofile:
-            data.to_csv(ofile)
+            with atomic_write(os.path.join(output_path, 'data.csv'), overwrite=True) as ofile:
+                data.to_csv(ofile)
 
-        with atomic_write(os.path.join(output_path, 'data_split.csv'), overwrite=True) as ofile:
-            data_split.to_csv(ofile)
+            with atomic_write(os.path.join(output_path, 'data_split.csv'), overwrite=True) as ofile:
+                data_split.to_csv(ofile)
 
     return sample_list
 
@@ -1112,12 +1203,12 @@ def single_easy_binning(logger, args, binned_length,
     contain `generate_cannot_links`, `generate_sequence_features_single`, `train`, `bin` in one command for single-sample and co-assembly binning
     """
     logger.info('Generating training data...')
-    if args.depth_metabat2 is None and args.bams is None:
+    if args.depth_metabat2 is None and args.bams is None and args.abundances is None:
         sys.stderr.write(
             f"Error: You need to input bam files if you want to calculate coverage features.\n")
         sys.exit(1)
 
-    if args.bams is not None and args.depth_metabat2 is not None:
+    if (args.bams is not None or args.abundances is not None) and args.depth_metabat2 is not None:
         logger.info('We will use abundance information from Metabat2.')
 
     if args.depth_metabat2 and args.environment is None:
@@ -1133,6 +1224,7 @@ def single_easy_binning(logger, args, binned_length,
         must_link_threshold,
         args.num_process,
         args.output,
+        args.abundances,
         only_kmer=args.depth_metabat2)
 
     data_path = os.path.join(args.output, 'data.csv')
@@ -1395,6 +1487,7 @@ def main2(args=None, is_semibin2=True):
                 must_link_threshold,
                 args.num_process,
                 args.output,
+                args.abundances,
                 args.kmer)
 
         elif args.cmd == 'generate_sequence_features_multi':

@@ -217,6 +217,28 @@ After mapping samples (individually) to the combined FASTA file, you can get the
 SemiBin2 multi_easy_bin -i concatenated.fa -b *.sorted.bam -o output
 ```
 
+## Running with abundance information from strobealign-aemb (only used when samples above or equal to 5)
+
+1. split the fasta files 
+```bash
+python script/generate_split.py -c contig.fa -o output
+```
+2. map reads using [strobealign-aemb](https://github.com/ksahlin/strobealign) to generate the abundance information
+```bash
+strobealign --aemb output/split.fa read1_1.fq read1_2.fq -R 6 > sample1.txt
+strobealign --aemb output/split.fa read2_1.fq read2_2.fq -R 6 > sample2.txt
+strobealign --aemb output/split.fa read3_1.fq read3_2.fq -R 6 > sample3.txt
+strobealign --aemb output/split.fa read4_1.fq read4_2.fq -R 6 > sample4.txt
+strobealign --aemb output/split.fa read5_1.fq read5_2.fq -R 6 > sample5.txt
+```
+3. Running SemiBin2 (like running SemiBin with BAM files)
+```bash
+SemiBin2 generate_sequence_features_single -i contig.fa -a *.txt -o output
+SemiBin2 generate_sequence_features_multi -i contig.fa -a *.txt -s : -o output
+SemiBin2 single_easy_bin -i contig.fa -a *.txt -o output
+SemiBin2 multi_easy_bin i contig.fa -a *.txt -s : -o output
+``` 
+
 ## Output
 
 The output folder will contain:

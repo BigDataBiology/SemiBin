@@ -124,13 +124,25 @@ def validate_normalize_args(logger, args):
         expect_file(args.contig_fasta)
         expect_file_list(args.taxonomy_results_fname)
 
+    if args.cmd in ['generate_sequence_features_single', 'generate_sequence_features_multi', 'single_easy_bin', 'multi_easy_bin']:
+        if args.bams and args.abundances:
+            sys.stderr.write(
+                f"Error: can not use BAM files and abundance files at the same time.\n")
+            exit_with_error = True
+
     if args.cmd == 'generate_sequence_features_single':
         expect_file(args.contig_fasta)
-        expect_file_list(args.bams)
+        if args.bams:
+            expect_file_list(args.bams)
+        if args.abundances:
+            expect_file_list(args.abundances)
 
     if args.cmd == 'generate_sequence_features_multi':
         expect_file(args.contig_fasta)
-        expect_file_list(args.bams)
+        if args.bams:
+            expect_file_list(args.bams)
+        if args.abundances:
+            expect_file_list(args.abundances)
 
     if args.cmd in ['train', 'train_semi', 'train_self']:
         if not args.train_from_many:
@@ -202,7 +214,10 @@ def validate_normalize_args(logger, args):
         if args.GTDB_reference is not None:
             expect_file(args.GTDB_reference)
         expect_file(args.contig_fasta)
-        expect_file_list(args.bams)
+        if args.bams:
+            expect_file_list(args.bams)
+        if args.abundances:
+            expect_file_list(args.abundances)
 
         if args.environment is not None:
             # This triggers checking that the environment is valid
@@ -215,7 +230,10 @@ def validate_normalize_args(logger, args):
         if args.GTDB_reference is not None:
             expect_file(args.GTDB_reference)
         expect_file(args.contig_fasta)
-        expect_file_list(args.bams)
+        if args.bams:
+            expect_file_list(args.bams)
+        if args.abundances:
+            expect_file_list(args.abundances)
 
         if args.training_type not in ['semi', 'self']:
             sys.stderr.write(
