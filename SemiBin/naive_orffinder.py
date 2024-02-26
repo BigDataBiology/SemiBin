@@ -9,6 +9,12 @@ START_CODONS = ['ATG', 'GTG', 'TTG']
 STOP_CODONS = ['TAA', 'TAG', 'TGA']
 MIN_LEN = 90
 
+# See https://github.com/BigDataBiology/SemiBin/issues/155
+# A bit of testing showed that scaling tops up at 10~12 processes (on a 16-core
+# machine). This leaves a little leeway for a few more processes, but still
+# caps it to avoid #155
+MAX_PROCESS_ORFS = 24
+
 def reverse_complement(seq):
     return seq[::-1].translate(str.maketrans('ATGC', 'TACG'))
 
@@ -123,7 +129,7 @@ def run_naiveorf(fasta_path, num_process, output):
                     out.write(f'{translate(extract(seq, orf))}\n')
         else:
             ctx = mp.get_context('spawn')
-            with ctx.Pool(processes=num_process) as p:
+            with ctx.Pool(processes=min(num_process, MAX_PROCESS_ORFS)) as p:
                 outs = p.imap(get_orfs,
                         fasta.fasta_iter(fasta_path),
                         chunksize=8)

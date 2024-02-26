@@ -764,7 +764,7 @@ def generate_sequence_features_single(logger, contig_fasta,
 
         logger.info('Calculating coverage for every sample.')
 
-        with Pool(num_process if num_process != 0 else None) as pool:
+        with Pool(min(num_process, len(bams))) as pool:
             results = [
                 pool.apply_async(
                     generate_cov,
@@ -874,7 +874,7 @@ def generate_sequence_features_multi(logger, args):
                                         os.path.join(args.output, f'samples/{sample}.fa'),
                                         args.ratio)
 
-    with Pool(args.num_process if args.num_process != 0 else None) as pool:
+    with Pool(min(args.num_process, len(args.bams))) as pool:
         results = [
             pool.apply_async(
                         generate_cov,

@@ -3,6 +3,7 @@ Unreleased
 	* SemiBin1: Introduce separate SemiBin1 command
 	* internal: Code simplification and refactor
 	* deprecation: Deprecate --orf-finder=fraggenescan option
+	* SemiBin: do not use more processes than can be taken advantage of (#155)
 
 Version 2.0.2 Oct 31 2023 by BigDataBiology
 	* multi_easy_bin: Fix multi_easy_bin with --write-pre-recluster (#128)
