@@ -6,7 +6,7 @@ import shutil
 
 os.makedirs('test-outputs', exist_ok=True)
 bam_files = glob('test/coassembly_sample_data/input.sorted*.bam')
-
+abun_files = glob('test/coassembly_sample_data/*.txt')
 
 for ext in ['', '.gz', '.bz2', '.xz']:
     odir = f"test-outputs/output_coassembly{'_'+ext.replace('.', '_') if ext else '_fa'}"
@@ -37,7 +37,7 @@ for ext in ['', '.gz', '.bz2', '.xz']:
          '--ratio', '0.05',
          '--ml-threshold', '4000',
          '-p', '1',
-         '-a', 'test/coassembly_sample_data/*.txt'])
+         '-a'] + abun_files)
 
     data = pd.read_csv(f'{odir}/data.csv', index_col=0)
     data_split = pd.read_csv(f'{odir}/data_split.csv', index_col=0)
