@@ -94,6 +94,14 @@ def test_cluster():
             res,
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
+def _renumber_cluster(xs):
+    ys = np.zeros_like(xs)
+    renumber = {}
+    for ix,x in enumerate(xs):
+        if x not in renumber:
+            renumber[x] = len(renumber)
+        ys[ix] = renumber[x]
+    return ys
 
 def test_recluster():
     contig_dict = {h:seq for h,seq in fasta_iter('test/bin_data/input.fasta')}
@@ -116,10 +124,12 @@ def test_recluster():
             random_seed=123)
 
     # Computed with a previous version
-    np.testing.assert_array_equal(
-            reclustered,
-            np.array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 29, 21, 22, 23, 24, 25, 26,
+    expected = np.array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 29, 21, 22, 23, 24, 25, 26,
                26, 28, 27, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 10, 11, 12, 13,
-               14, 15, 16, 17, 18, 19]))
+               14, 15, 16, 17, 18, 19])
+
+    np.testing.assert_array_equal(
+            _renumber_cluster(reclustered),
+            _renumber_cluster(expected))
 
 
