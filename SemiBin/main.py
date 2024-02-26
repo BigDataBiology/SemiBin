@@ -841,7 +841,7 @@ def generate_sequence_features_single(logger, contig_fasta,
                 sys.stderr.write(
                     f"Error: abundances from strobealign-aemb can only be used when samples used above or equal to 5.\n")
                 sys.exit(1)
-
+            logger.info('Reading abundance information from abundance files.')
             abun, abun_split = generate_cov_from_abundances(abundances, output, contig_fasta, binned_length)
 
             data = kmer_whole
@@ -913,9 +913,6 @@ def generate_sequence_features_multi(logger, args):
         sys.exit(1)
 
     must_link_threshold = get_must_link_threshold(contig_length_list) if args.ml_threshold is None else args.ml_threshold
-
-    logger.info('Calculating coverage for every sample.')
-
     binning_threshold = {}
     for sample in sample_list:
         binning_threshold[sample] = utils.compute_min_length(
@@ -924,6 +921,7 @@ def generate_sequence_features_multi(logger, args):
                                         args.ratio)
 
     if args.bams:
+        logger.info('Calculating coverage for every sample.')
         with Pool(min(args.num_process, len(args.bams))) as pool:
             results = [
                 pool.apply_async(
@@ -1008,6 +1006,7 @@ def generate_sequence_features_multi(logger, args):
                 data_split.to_csv(ofile)
 
     if args.abundances:
+        logger.info('Reading abundance information from abundance files.')
         abun_split = generate_cov_from_abundances(args.abundances, os.path.join(args.output, 'samples'), args.contig_fasta, sep=args.separator, contig_threshold_dict=binning_threshold)
         abun_split = abun_split.reset_index()
         columns_list = list(abun_split.columns)
