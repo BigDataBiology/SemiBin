@@ -17,8 +17,8 @@ def run_infomap(g, edge_weights, vertex_weights, num_process):
     '''Run infomap, using multiple processors (if available)'''
     if num_process == 1:
         return g.community_infomap(edge_weights=edge_weights, vertex_weights=vertex_weights, trials=NR_INFOMAP_TRIALS)
-    import multiprocessing
-    with multiprocessing.Pool(num_process) as p:
+    import multiprocessing as mp
+    with mp.Pool(min(num_process, NR_INFOMAP_TRIALS)) as p:
         rs = [p.apply_async(run_infomap1, (g, edge_weights, vertex_weights, 1))
                 for _ in range(NR_INFOMAP_TRIALS)]
         p.close()

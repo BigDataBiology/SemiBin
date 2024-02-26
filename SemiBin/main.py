@@ -773,6 +773,44 @@ def generate_sequence_features_single(logger, contig_fasta,
         logger.info('We will only calculate k-mer features.')
 
     if not only_kmer:
+        n_sample = len(bams)
+        is_combined = n_sample >= 5
+        bam_list = bams
+
+        logger.info('Calculating coverage for every sample.')
+
+        with Pool(min(num_process, len(bams))) as pool:
+            results = [
+                pool.apply_async(
+                    generate_cov,
+                    args=(
+                        bam_file,
+                        bam_index,
+                        output,
+                        must_link_threshold,
+                        is_combined,
+                        binned_length,
+                        logger,
+                        None
+                    ))
+                for bam_index, bam_file in enumerate(bams)]
+            for r in results:
+                s = r.get()
+                logger.info(f'Processed: {s}')
+
+        for bam_index, bam_file in enumerate(bams):
+            if not os.path.exists(os.path.join(output, '{}_data_cov.csv'.format(
+                    os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
+                sys.stderr.write(
+                    f"Error: Generating coverage file fail\n")
+                sys.exit(1)
+            if is_combined:
+                if not os.path.exists(os.path.join(output, '{}_data_split_cov.csv'.format(
+                        os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
+                    sys.stderr.write(
+                        f"Error: Generating coverage file fail\n")
+                    sys.exit(1)
+
         logger.debug('Start generating kmer features from fasta file.')
         kmer_whole = generate_kmer_features_from_fasta(
             contig_fasta, binned_length, 4)
@@ -921,6 +959,7 @@ def generate_sequence_features_multi(logger, args):
                                         args.min_len,
                                         os.path.join(args.output, f'samples/{sample}.fa'),
                                         args.ratio)
+
 
     if args.bams:
         with Pool(args.num_process if args.num_process != 0 else None) as pool:
