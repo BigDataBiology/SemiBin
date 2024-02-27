@@ -217,7 +217,11 @@ After mapping samples (individually) to the combined FASTA file, you can get the
 SemiBin2 multi_easy_bin -i concatenated.fa -b *.sorted.bam -o output
 ```
 
-## Running with abundance information from strobealign-aemb (only used when samples above or equal to 5)
+## Running with abundance information from strobealign-aemb
+
+Strobealign-aemb is a fast abundance estimation method for metagenomic binning. 
+As strobealign-aemb can not provide the mapping information for every position of the contig, so we can not run SemiBin2 with strobealign-aemb in binning modes where samples used smaller 5 and need to split the contigs to generate the must-link constratints. 
+
 
 1. split the fasta files 
 ```bash
