@@ -19,6 +19,7 @@ Reconstruct bins with single or co-assembly binning using one command.
 * `-i/--input-fasta` : Path to the input contig fasta file (`gzip` and `bzip2` compression are accepted).
 * `-b/--input-bam`: Path to the input BAM (`.bam` extension)  or CRAM (`.cram`) files. You can pass multiple BAM files, one per sample.
 * `-o/--output`: Output directory (will be created if non-existent).
+* `-a/--abundance` Path to the abundance file from strobealign-aemb. This can only be used when samples used in binning above or equal 5.
 
 #### Recommended arguments
 
@@ -126,6 +127,7 @@ These are the are same as for `single_easy_bin`.
 * `--ml-threshold`
 * `--taxonomy-annotation-table`
 * `--tmpdir`
+* `-a/--abundance`
 
 These are the are same as for `single_easy_bin`.
 
@@ -138,6 +140,7 @@ The subcommand `generate_sequence_features_single` requires the contig file and 
 * `-i/--input-fasta`
 * `-b/--input-bam`
 * `-o/--output`
+* `-a/--abundance`
 
 These are the are same as for `single_easy_bin`.
 
@@ -161,6 +164,7 @@ The subcommand `generate_sequence_features_multi` requires the combined contig f
 * `-i/--input-fasta`
 * `-o/--output`
 * `-b/--input-bam`
+* `-a/--abundance`
 
 These are the same as for `multi_easy_bin`.
 

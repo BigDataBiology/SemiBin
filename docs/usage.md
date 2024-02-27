@@ -419,3 +419,29 @@ SemiBin2 generate_cannot_links -i S5.fa -o S5_output
 
 See the comment above about how you can bypass most of the computation if you have run `mmseqs2` to annotate your contigs against GTDB already.
 
+
+## Running SemiBin with strobealign-aemb
+
+Strobealign-aemb is a fast abundance estimation method for metagenomic binning. 
+As strobealign-aemb can not provide the mapping information for every position of the contig, so we can not run SemiBin2 with strobealign-aemb in binning modes where samples used smaller 5 and need to split the contigs to generate the must-link constratints. 
+
+
+1. Split the fasta files 
+```bash
+python script/generate_split.py -c contig.fa -o output
+```
+2. Map reads using [strobealign-aemb](https://github.com/ksahlin/strobealign) to generate the abundance information
+```bash
+strobealign --aemb output/split.fa read1_1.fq read1_2.fq -R 6 > sample1.txt
+strobealign --aemb output/split.fa read2_1.fq read2_2.fq -R 6 > sample2.txt
+strobealign --aemb output/split.fa read3_1.fq read3_2.fq -R 6 > sample3.txt
+strobealign --aemb output/split.fa read4_1.fq read4_2.fq -R 6 > sample4.txt
+strobealign --aemb output/split.fa read5_1.fq read5_2.fq -R 6 > sample5.txt
+```
+3. Run SemiBin2 (like running SemiBin with BAM files)
+```bash
+SemiBin2 generate_sequence_features_single -i contig.fa -a *.txt -o output
+SemiBin2 generate_sequence_features_multi -i contig.fa -a *.txt -s : -o output
+SemiBin2 single_easy_bin -i contig.fa -a *.txt -o output
+SemiBin2 multi_easy_bin i contig.fa -a *.txt -s : -o output
+
