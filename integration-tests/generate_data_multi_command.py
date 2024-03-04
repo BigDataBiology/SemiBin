@@ -13,7 +13,7 @@ for i in range(10):
     assert data_split.shape == (40, 146)
 
 # running with abundance file from strobealign-aemb
-subprocess.check_call('SemiBin1 generate_sequence_features_multi '
+subprocess.check_call('SemiBin2 generate_sequence_features_multi '
                       '-i test/multi_samples_data/input_multi.fasta '
                       '-o test-outputs/output_multi_fa -m 2500 '
                       '--ratio 0.05 --ml-threshold 4000 -p 1 '

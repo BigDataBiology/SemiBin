@@ -1402,6 +1402,10 @@ def main2(args=None, is_semibin2=True):
     if is_semibin2 and getattr(args, 'training_type', None) == 'semi':
         logger.info('Currently using semi-supervised mode. This is generally only useful for backwards compability.')
 
+    if not is_semibin2 and getattr(args, 'abundances', None) is not None:
+        logger.error(f'--abundances cannot be used in SemiBin1.')
+        sys.exit(1)
+
     if args.cmd == 'citation':
         from . import citation
         if args.cite_format == 'bibtex':
