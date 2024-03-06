@@ -102,6 +102,29 @@ def parse_args(args, is_semibin2):
                         default=0,
                         dest='min_length')
 
+    split_contigs = subparsers.add_parser('split_contigs',
+                                          help = 'Split contigs to generate data (only for strobealign-aemb pipeline)')
+
+    split_contigs.add_argument('-i', '--input-fasta',
+                   required=True,
+                   help='Path to the input fasta file.',
+                   dest='contig_fasta',
+                   default=None, )
+
+    split_contigs.add_argument('-o', '--output',
+                        required=True,
+                        help='Output directory (will be created if non-existent)',
+                        dest='output',
+                        default=None
+                        )
+
+    split_contigs.add_argument('-m', '--min-len',
+                        required=False,
+                        type=int,
+                        help='Discard sequences below this length (default:0)',
+                        default=0,
+                        dest='min_length')
+
     generate_sequence_features_single.add_argument('--kmer',
                                                    required=False,
                                                    help='Just output data.csv with k-mer features.',
@@ -1360,6 +1383,26 @@ def multi_easy_binning(logger, args, device):
             new_path = os.path.join(args.output, 'bins', new_file)
             shutil.copyfile(original_path, new_path)
 
+
+def split_contigs(logger, contig_fasta, *, output, min_length):
+    from .utils import possibly_compressed_write
+    os.makedirs(output, exist_ok=True)
+
+    oname = f"{output}/split_contigs.fna.gz"
+    with possibly_compressed_write(oname) as ofile:
+        for h, seq in fasta_iter(contig_fasta):
+            if len(seq) < min_length:
+                continue
+            half = len(seq) // 2
+            h1 = h + "_1"
+            seq1 = seq[:half]
+            h2 = h + "_2"
+            seq2 = seq[half:]
+            ofile.write(f">{h1}\n{seq1}\n")
+            ofile.write(f">{h2}\n{seq2}\n")
+    return oname
+
+
 def main2(args=None, is_semibin2=True):
     import tempfile
 
@@ -1573,6 +1616,11 @@ def main2(args=None, is_semibin2=True):
             from .utils import concatenate_fasta
             ofname = concatenate_fasta(args.contig_fasta, args.min_length, args.output, args.separator, args.output_compression)
             logger.info(f'Concatenated contigs written to {ofname}')
+        elif args.cmd == 'split_contigs':
+            if not is_semibin2:
+                logger.error('Command `split_contigs` is not available in SemiBin1. Please upgrade to SemiBin2.')
+            oname = split_contigs(logger, args.contig_fasta, output=args.output, min_length=args.min_length)
+            logger.info(f'Split contigs written to {oname}')
 
         else:
             logger.error(f'Could not handle subcommand {arg.cmd}')

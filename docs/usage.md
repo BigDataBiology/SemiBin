@@ -426,22 +426,22 @@ Strobealign-aemb is a fast abundance estimation method for metagenomic binning.
 As strobealign-aemb can not provide the mapping information for every position of the contig, so we can not run SemiBin2 with strobealign-aemb in binning modes where samples used smaller 5 and need to split the contigs to generate the must-link constratints. 
 
 
-1. Split the fasta files 
+1. Split the fasta files using the `split_contigs` subcommand:
 ```bash
-python script/generate_split.py -c contig.fa -o output
+SemiBin2 split_contigs -i contig.fa -o output
 ```
-2. Map reads using [strobealign-aemb](https://github.com/ksahlin/strobealign) to generate the abundance information
+2. Map reads using [strobealign-aemb](https://github.com/ksahlin/strobealign) to generate the abundance information. Note that version 0.13 (or newer) is required
 ```bash
-strobealign --aemb output/split.fa read1_1.fq read1_2.fq -R 6 > sample1.txt
-strobealign --aemb output/split.fa read2_1.fq read2_2.fq -R 6 > sample2.txt
-strobealign --aemb output/split.fa read3_1.fq read3_2.fq -R 6 > sample3.txt
-strobealign --aemb output/split.fa read4_1.fq read4_2.fq -R 6 > sample4.txt
-strobealign --aemb output/split.fa read5_1.fq read5_2.fq -R 6 > sample5.txt
+strobealign --aemb output/split_contigs.fna.gz read1_1.fq read1_2.fq -R 6 > sample1.tsv
+strobealign --aemb output/split_contigs.fna.gz read2_1.fq read2_2.fq -R 6 > sample2.tsv
+strobealign --aemb output/split_contigs.fna.gz read3_1.fq read3_2.fq -R 6 > sample3.tsv
+strobealign --aemb output/split_contigs.fna.gz read4_1.fq read4_2.fq -R 6 > sample4.tsv
+strobealign --aemb output/split_contigs.fna.gz read5_1.fq read5_2.fq -R 6 > sample5.tsv
 ```
-3. Run SemiBin2 (like running SemiBin with BAM files)
+3. Run SemiBin2 (running SemiBin with BAM files)
 ```bash
-SemiBin2 generate_sequence_features_single -i contig.fa -a *.txt -o output
-SemiBin2 generate_sequence_features_multi -i contig.fa -a *.txt -s : -o output
-SemiBin2 single_easy_bin -i contig.fa -a *.txt -o output
-SemiBin2 multi_easy_bin i contig.fa -a *.txt -s : -o output
+SemiBin2 generate_sequence_features_single -i contig.fa -a *.tsv -o output
+SemiBin2 generate_sequence_features_multi -i contig.fa -a *.tsv -s : -o output
+SemiBin2 single_easy_bin -i contig.fa -a *.tsv -o output
+SemiBin2 multi_easy_bin i contig.fa -a *.tsv -s : -o output
 
