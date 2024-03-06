@@ -1,5 +1,28 @@
 # What's New
 
+## Version 2.1.0
+
+*Released Mar 6, 2024*
+
+Main new feature is adding support for using output of strobealign-aemb.
+
+Use of the `SemiBin` command (instead of `SemiBin2`) will continue to work, but
+print a warning and set a delay to ask users to upgrade.
+
+### User-visible changes
+
+- Support running SemiBin with [strobealign-aemb](https://github.com/ksahlin/strobealign/releases/tag/v0.13.0) (`--abundance`/`-a`)
+- Add `citation` subcommand
+- Introduce separate `SemiBin1` command as use of `SemiBin` is now deprecated and will trigger a warning
+
+### Internal improvements
+- Code simplification and refactor
+- deprecation: Deprecate --orf-finder=fraggenescan option
+- Update abundance normalization
+
+### Bugfixes
+- SemiBin: do not use more processes than can be taken advantage of [#155](https://github.com/BigDataBiology/SemiBin/issues/155)
+
 ## Version 2.0.2
 
 *Released Oct 31, 2023*

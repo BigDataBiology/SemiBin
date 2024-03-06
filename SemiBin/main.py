@@ -295,7 +295,7 @@ def parse_args(args, is_semibin2):
                               dest='bams',
                               default=None,
                               )
-            p.add_argument('-a', '--abundance',
+            p.add_argument('-a', '--abundance', '--abundances',
                            required=False,
                            nargs='*',
                            help='Path to the abundance file from strobealign-aemb. This can only be used when samples used in binning above or equal 5.',
