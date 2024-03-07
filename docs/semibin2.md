@@ -1,20 +1,24 @@
 # SemiBin2
 
+**Summary**: For new code, use the `SemiBin2` command. The only reason to use `SemiBin` or `SemiBin1` is for backwards compatibility.
+
+## History and future plans
+
 Starting with version 1.5 (officially _SemiBin2 beta_), installing the SemiBin package installs two scripts: `SemiBin` and `SemiBin2`.
 They have the same functionality, but slightly different interfaces.
 As of version 2.0, the older `SemiBin` command is _not recommended_ (except for backwards compability) and newer projects should use `SemiBin2`.
 
-In version 2.1, we will deprecate the `SemiBin` command and introduce a more explicit `SemiBin1` subcommand for backwards compatibility.
+In version 2.1 (released March 2024), we deprecated the `SemiBin` command and introduced a more explicit `SemiBin1` subcommand for backwards compatibility.
 
 In version 2.2, `SemiBin` not be installed and `SemiBin1` will be deprecated.
 
+In version 2.3, `SemiBin1` will not be installed by default.
+
 ## Upgrading to SemiBin2
 
-1. If you are using the `easy_*` workflows, then they will probably continue to
-   work exactly the same (except that you will get better results faster).
+1. If you are using the `easy_*` workflows, then they will probably continue to work exactly the same (except that you will get better results faster).
 2. Outputs are now **always** in a directory called `output_bins` (unless you explicitly ask for the pre-reclustered bins to be written out with the `--write-pre-reclustering-bins` option).
-3. By default, bins are in file named as `SemiBin_{label}.fa.gz` (and
-   compressed with _gzip_ as the name indicates; you can change the compression with the `--compression` flag).
+3. By default, bins are in file named as `SemiBin_{label}.fa.gz` (and compressed with _gzip_ as the name indicates; you can change the compression with the `--compression` flag, including setting `compression=none` if you prefer no compression).
 
 Points `2` and `3` may require some minor modifications to wrapper scripts.
 
