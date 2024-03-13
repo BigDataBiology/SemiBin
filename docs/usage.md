@@ -438,10 +438,12 @@ strobealign --aemb output/split_contigs.fna.gz read3_1.fq read3_2.fq -R 6 > samp
 strobealign --aemb output/split_contigs.fna.gz read4_1.fq read4_2.fq -R 6 > sample4.tsv
 strobealign --aemb output/split_contigs.fna.gz read5_1.fq read5_2.fq -R 6 > sample5.tsv
 ```
-3. Run SemiBin2 (running SemiBin with BAM files)
+3. Run SemiBin2 (same as running SemiBin with BAM files, except using `-a` to pass in the abundance files instead of `-b` to pass in BAM/SAM):
+
 ```bash
 SemiBin2 generate_sequence_features_single -i contig.fa -a *.tsv -o output
 SemiBin2 generate_sequence_features_multi -i contig.fa -a *.tsv -s : -o output
 SemiBin2 single_easy_bin -i contig.fa -a *.tsv -o output
 SemiBin2 multi_easy_bin i contig.fa -a *.tsv -s : -o output
+```
 
