@@ -6,11 +6,7 @@ import pandas as pd
 from argparse import Namespace
 
 def test_generate_seq_feats_multi(tmpdir):
-    logger = logging.getLogger('SemiBin')
-    logger.setLevel(logging.INFO)
-    sh = logging.StreamHandler()
-    sh.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
-    logger.addHandler(sh)
+    logger = logging.getLogger('SemiBin2')
 
     os.makedirs(f'{tmpdir}/output_multi',exist_ok=True)
     generate_sequence_features_multi(logger, Namespace(
@@ -41,11 +37,7 @@ def test_generate_seq_feats_multi(tmpdir):
         assert data_split.shape == (40,146)
 
 def test_generate_seq_feats_multi_abun(tmpdir):
-    logger = logging.getLogger('SemiBin')
-    logger.setLevel(logging.INFO)
-    sh = logging.StreamHandler()
-    sh.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
-    logger.addHandler(sh)
+    logger = logging.getLogger('SemiBin2')
 
     os.makedirs(f'{tmpdir}/output_multi',exist_ok=True)
     generate_sequence_features_multi(logger, Namespace(
@@ -77,11 +69,7 @@ def test_generate_seq_feats_multi_abun(tmpdir):
         assert data_split.shape == (40,146)
 
 def test_generate_seq_feats_single(tmpdir):
-    logger = logging.getLogger('SemiBin')
-    logger.setLevel(logging.INFO)
-    sh = logging.StreamHandler()
-    sh.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
-    logger.addHandler(sh)
+    logger = logging.getLogger('SemiBin2')
 
     os.makedirs(f'{tmpdir}/output_single',exist_ok=True)
     generate_sequence_features_single(
@@ -102,11 +90,7 @@ def test_generate_seq_feats_single(tmpdir):
     assert data_split.shape == (80,136)
 
 def test_generate_seq_feats_coassembly(tmpdir):
-    logger = logging.getLogger('SemiBin')
-    logger.setLevel(logging.INFO)
-    sh = logging.StreamHandler()
-    sh.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
-    logger.addHandler(sh)
+    logger = logging.getLogger('SemiBin2')
 
     os.makedirs(f'{tmpdir}/output_coassembly',exist_ok=True)
     generate_sequence_features_single(bams=['test/coassembly_sample_data/input.sorted1.bam',
@@ -137,11 +121,7 @@ def test_generate_seq_feats_coassembly(tmpdir):
     pd.testing.assert_series_equal(data.iloc[:, 137], col2)
 
 def test_generate_seq_feats_coassembly_abun(tmpdir):
-    logger = logging.getLogger('SemiBin')
-    logger.setLevel(logging.INFO)
-    sh = logging.StreamHandler()
-    sh.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
-    logger.addHandler(sh)
+    logger = logging.getLogger('SemiBin2')
 
     os.makedirs(f'{tmpdir}/output_coassembly',exist_ok=True)
     generate_sequence_features_single(bams=None,

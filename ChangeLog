@@ -1,3 +1,6 @@
+Unreleased
+	* logging: use 'SemiBin2' as logger name
+
 Version 2.1.0 Mar 6 2024 by BigDataBiology
 	* SemiBin: Support running SemiBin with strobealign-aemb
 	(--abundance/-a)

@@ -1410,7 +1410,7 @@ def main2(args=None, is_semibin2=True):
         args = sys.argv[1:]
     args = parse_args(args, is_semibin2)
 
-    logger = logging.getLogger('SemiBin')
+    logger = logging.getLogger('SemiBin2')
     if args.verbose:
         loglevel = logging.DEBUG
     elif args.quiet:
