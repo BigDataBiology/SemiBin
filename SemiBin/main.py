@@ -1403,27 +1403,31 @@ def split_contigs(logger, contig_fasta, *, output, min_length):
     return oname
 
 
-def main2(args=None, is_semibin2=True):
+def main2(raw_args=None, is_semibin2=True):
     import tempfile
 
-    if args is None:
-        args = sys.argv[1:]
-    args = parse_args(args, is_semibin2)
+    if raw_args is None:
+        raw_args = sys.argv[1:]
+    args = parse_args(raw_args, is_semibin2)
 
     logger = logging.getLogger('SemiBin2')
+
+    # We will always log to the log file with DEBUG level and set the console
+    # log level based on the arguments
+    logger.setLevel(logging.DEBUG)
     if args.verbose:
         loglevel = logging.DEBUG
     elif args.quiet:
         loglevel = logging.ERROR
     else:
         loglevel = logging.INFO
-    logger.setLevel(loglevel)
     try:
         import coloredlogs
         coloredlogs.install(level=loglevel, logger=logger)
     except ImportError:
         sh = logging.StreamHandler()
         sh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
+        sh.setLevel(loglevel)
         logger.addHandler(sh)
 
     if args.cmd not in ['citation', 'download_GTDB', 'check_install']:
@@ -1431,6 +1435,8 @@ def main2(args=None, is_semibin2=True):
         fh = logging.FileHandler(os.path.join(args.output, "SemiBinRun.log"))
         fh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
         logger.addHandler(fh)
+    logger.debug(f'Starting SemiBin2 with arguments: {raw_args}')
+    logger.debug(f'Parsed arguments as: {args}')
 
     if args.verbose and args.quiet:
         logger.warning('Both verbose and quiet are set, output will be verbose')
