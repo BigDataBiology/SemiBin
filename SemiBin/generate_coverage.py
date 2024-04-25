@@ -173,7 +173,7 @@ def combine_cov(cov_dir : str, bam_list, is_combined : bool): # bam_list : list[
     return data_cov, data_split_cov
 
 
-def combine_sample_cov(sample: str, cov_dir: str, bam_list, is_combined: bool, separator):
+def combine_sample_cov(sample: str, cov_dir: str, bam_list, suffix: str, is_combined: bool, separator):
     """
     generate cov/cov_split for specific sample in one file
 
@@ -187,17 +187,15 @@ def combine_sample_cov(sample: str, cov_dir: str, bam_list, is_combined: bool, s
 
     Returns
     -------
-    sample_cov : DataFrame
-    sample_cov_split : DataFrame (if is_combined) or None (otherwise)
+    sample_cov : DataFrame (if is_combined) or None (otherwise)
     """
     import pandas as pd
     import numpy as np
 
     covs = []
-    split_covs = []
     for bam_index, bam_file in enumerate(bam_list):
         bam_fname = os.path.split(bam_file)[-1]
-        data_cov = pd.read_csv(f'{cov_dir}/{bam_fname}_{bam_index}_data_cov.csv', index_col=0)
+        data_cov = pd.read_csv(f'{cov_dir}/{bam_fname}_{bam_index}_{suffix}', index_col=0)
         data_cov = data_cov.reset_index()
         columns_list = list(data_cov.columns)
         columns_list[0] = 'contig_name'
@@ -209,29 +207,15 @@ def combine_sample_cov(sample: str, cov_dir: str, bam_list, is_combined: bool, s
         part_data.index = [ix.split(separator)[1] for ix in part_data.index]
         covs.append(part_data)
 
-        if is_combined:
-            data_split_cov = pd.read_csv(f'{cov_dir}/{bam_fname}_{bam_index}_data_split_cov.csv', index_col=0)
-            data_split_cov = data_split_cov.reset_index()
-            columns_list = list(data_split_cov.columns)
-            columns_list[0] = 'contig_name'
-            data_split_cov.columns = columns_list
-
-            part_data = data_split_cov[data_split_cov['contig_name'].str.contains(sample + separator, regex=False)]
-            part_data = part_data.set_index("contig_name")
-            part_data.index.name = None
-            part_data.index = [ix.split(separator)[1] for ix in part_data.index]
-            split_covs.append(part_data)
-
     sample_cov = pd.concat(covs, axis=1)
     sample_cov.index = sample_cov.index.astype(str)
+
     if is_combined:
-        sample_cov_split = pd.concat(split_covs, axis=1)
-        sample_cov_split.index = sample_cov_split.index.astype(str)
-        abun_scale = (sample_cov_split.mean() / 100).apply(np.ceil) * 100
-        sample_cov_split = sample_cov_split.div(abun_scale)
+        abun_scale = (sample_cov.mean() / 100).apply(np.ceil) * 100
+        sample_cov = sample_cov.div(abun_scale)
     else:
-        sample_cov_split = None
-    return sample_cov, sample_cov_split
+        sample_cov = None
+    return sample_cov
 
 
 def generate_cov_from_abundances(abundances, output, contig_path, contig_threshold=1000, sep=None, contig_threshold_dict=None):
