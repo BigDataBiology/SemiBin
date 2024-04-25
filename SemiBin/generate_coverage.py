@@ -187,7 +187,7 @@ def combine_sample_cov(sample: str, cov_dir: str, bam_list, suffix: str, is_comb
 
     Returns
     -------
-    sample_cov : DataFrame (if is_combined) or None (otherwise)
+    sample_cov : DataFrame
     """
     import pandas as pd
     import numpy as np
@@ -213,8 +213,6 @@ def combine_sample_cov(sample: str, cov_dir: str, bam_list, suffix: str, is_comb
     if is_combined:
         abun_scale = (sample_cov.mean() / 100).apply(np.ceil) * 100
         sample_cov = sample_cov.div(abun_scale)
-    else:
-        sample_cov = None
     return sample_cov
 
 
