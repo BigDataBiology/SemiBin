@@ -11,7 +11,7 @@ from itertools import groupby
 from . import utils
 from .utils import validate_normalize_args, get_must_link_threshold, generate_cannot_link, \
     set_random_seed, process_fasta, split_data, get_model_path, extract_bams
-from .generate_coverage import generate_cov, combine_cov, generate_cov_from_abundances
+from .generate_coverage import generate_cov, combine_cov, combine_sample_cov, generate_cov_from_abundances
 from .generate_kmer import generate_kmer_features_from_fasta
 from .fasta import fasta_iter
 
@@ -978,29 +978,17 @@ def generate_sequence_features_multi(logger, args):
                     sys.exit(1)
 
         # Generate cov features for every sample
-        data_cov, data_split_cov = combine_cov(os.path.join(args.output, 'samples'), args.bams, is_combined)
-        if is_combined:
-            data_split_cov = data_split_cov.reset_index()
-            columns_list = list(data_split_cov.columns)
-            columns_list[0] = 'contig_name'
-            data_split_cov.columns = columns_list
-
-        data_cov = data_cov.reset_index()
-        columns_list = list(data_cov.columns)
-        columns_list[0] = 'contig_name'
-        data_cov.columns = columns_list
-
         for sample in sample_list:
             output_path = os.path.join(args.output, 'samples', sample)
             os.makedirs(output_path, exist_ok=True)
 
-            part_data = split_data(data_cov, sample, args.separator, is_combined)
-            part_data.to_csv(os.path.join(output_path, 'data_cov.csv'))
+            sample_cov, sample_cov_split = combine_sample_cov(
+                sample, os.path.join(args.output, "samples"), args.bams, is_combined, args.separator)
+
+            sample_cov.to_csv(os.path.join(output_path, 'data_cov.csv'))
 
             if is_combined:
-                part_data = split_data(data_split_cov, sample, args.separator, is_combined)
-                part_data.to_csv(os.path.join(
-                    output_path, 'data_split_cov.csv'))
+                sample_cov_split.to_csv(os.path.join(output_path, 'data_split_cov.csv'))
 
             sample_contig_fasta = os.path.join(
                 args.output, f'samples/{sample}.fa')
