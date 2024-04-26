@@ -195,7 +195,7 @@ def combine_sample_cov(sample: str, cov_dir: str, bam_list, suffix: str, is_comb
     covs = []
     for bam_index, bam_file in enumerate(bam_list):
         bam_fname = os.path.split(bam_file)[-1]
-        data_cov = pd.read_csv(f'{cov_dir}/{bam_fname}_{bam_index}_{suffix}', index_col=0)
+        data_cov = pd.read_csv(f'{cov_dir}/{bam_fname}_{bam_index}_{suffix}', index_col=0, enigine="pyarrow", low_memory=False)
         data_cov = data_cov.reset_index()
         columns_list = list(data_cov.columns)
         columns_list[0] = 'contig_name'

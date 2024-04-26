@@ -998,14 +998,13 @@ def generate_sequence_features_multi(logger, args):
             kmer_split = generate_kmer_features_from_fasta(
                 sample_contig_fasta, 1000, 4, split=True, split_threshold=must_link_threshold)
 
-            sample_cov = pd.read_csv(os.path.join(output_path, 'data_cov.csv'), index_col=0)
+            sample_cov = pd.read_csv(os.path.join(output_path, 'data_cov.csv'), index_col=0, engine="pyarrow", low_memory=False)
             kmer_whole.index = kmer_whole.index.astype(str)
             sample_cov.index = sample_cov.index.astype(str)
             data = pd.merge(kmer_whole, sample_cov, how='inner', on=None,
                             left_index=True, right_index=True, sort=False, copy=True)
             if is_combined:
-                sample_cov_split = pd.read_csv(os.path.join(
-                    output_path, 'data_split_cov.csv'), index_col=0)
+                sample_cov_split = pd.read_csv(os.path.join(output_path, 'data_split_cov.csv'), index_col=0, engine="pyarrow", low_memory=False)
                 data_split = pd.merge(kmer_split, sample_cov_split, how='inner', on=None,
                                       left_index=True, right_index=True, sort=False, copy=True)
             else:
