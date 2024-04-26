@@ -173,47 +173,56 @@ def combine_cov(cov_dir : str, bam_list, is_combined : bool): # bam_list : list[
     return data_cov, data_split_cov
 
 
-def combine_sample_cov(sample: str, cov_dir: str, bam_list, suffix: str, is_combined: bool, separator):
+def combine_sample_cov(sample: str, cov_dir: str, bam_list, suffix: str, is_combined: bool, separator, logger, outcsv):
     """
     generate cov/cov_split for specific sample in one file
 
     Parameters
     ----------
-    sample_id : sample name
+    sample : sample name
     cov_dir : where coverage files are stored
     bam_list : list of BAM files
+    suffix: data_cov.csv or data_split_cov.csv
     is_combined : whether to process split files
     separator: separator
+    logger: logger
+    outcsv: writable path to csv file
 
     Returns
     -------
-    sample_cov : DataFrame
+    True : Bool
     """
-    import pandas as pd
+    import polars as pl
     import numpy as np
 
     covs = []
     for bam_index, bam_file in enumerate(bam_list):
         bam_fname = os.path.split(bam_file)[-1]
-        data_cov = pd.read_csv(f'{cov_dir}/{bam_fname}_{bam_index}_{suffix}', index_col=0, engine="pyarrow")
-        data_cov = data_cov.reset_index()
-        columns_list = list(data_cov.columns)
-        columns_list[0] = 'contig_name'
-        data_cov.columns = columns_list
+        logger.info(f"\tprocessing #{bam_index}: {bam_fname}_{bam_index}_{suffix}")
 
-        part_data = data_cov[data_cov['contig_name'].str.contains(sample + separator, regex=False)]
-        part_data = part_data.set_index("contig_name")
-        part_data.index.name = None
-        part_data.index = [ix.split(separator)[1] for ix in part_data.index]
-        covs.append(part_data)
+        data_cov = pl.scan_csv(f'{cov_dir}/{bam_fname}_{bam_index}_{suffix}')\
+            .rename({"": "contig_name"})\
+            .filter(pl.col("contig_name").str.contains(sample + separator))\
+            .collect()
+        covs.append(data_cov)
 
-    sample_cov = pd.concat(covs, axis=1)
-    sample_cov.index = sample_cov.index.astype(str)
+    sample_cov = pl.concat(covs, how="align")
+    contig_names = [i.split(":")[1] for i in sample_cov["contig_name"]]
+    sample_cov = sample_cov.drop("contig_name")
+    headers = ["contig_name"] + list(sample_cov.columns)
 
     if is_combined:
-        abun_scale = (sample_cov.mean() / 100).apply(np.ceil) * 100
-        sample_cov = sample_cov.div(abun_scale)
-    return sample_cov
+        abun_scale = (sample_cov.mean() / 100).map_rows(np.ceil) * 100
+        divided_columns = [pl.col(col) / abun_scale[0, index] for index, col in enumerate(list(sample_cov.columns))]
+
+        sample_cov = sample_cov.select(divided_columns)
+
+    sample_cov = sample_cov.with_columns(pl.Series("contig_name", contig_names))
+    sample_cov = sample_cov.select(headers)
+
+    sample_cov.write_csv(outcsv)
+
+    return True
 
 
 def generate_cov_from_abundances(abundances, output, contig_path, contig_threshold=1000, sep=None, contig_threshold_dict=None):

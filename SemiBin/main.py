@@ -982,14 +982,16 @@ def generate_sequence_features_multi(logger, args):
             output_path = os.path.join(args.output, 'samples', sample)
             os.makedirs(output_path, exist_ok=True)
 
-            sample_cov = combine_sample_cov(
-                sample, os.path.join(args.output, "samples"), args.bams, "data_cov.csv", is_combined, args.separator)
-            sample_cov.to_csv(os.path.join(output_path, 'data_cov.csv'))
+            combine_sample_cov(
+                sample, os.path.join(args.output, "samples"), args.bams, "data_cov.csv",
+                is_combined, args.separator, logger,
+                os.path.join(output_path, "data_cov.csv"))
 
             if is_combined:
-                sample_cov_split = combine_sample_cov(
-                    sample, os.path.join(args.output, "samples"), args.bams, "data_split_cov.csv", is_combined, args.separator)
-                sample_cov_split.to_csv(os.path.join(output_path, 'data_split_cov.csv'))
+                combine_sample_cov(
+                    sample, os.path.join(args.output, "samples"), args.bams, "data_split_cov.csv",
+                    is_combined, args.separator, logger,
+                    os.path.join(output_path, 'data_split_cov.csv'))
 
             sample_contig_fasta = os.path.join(
                 args.output, f'samples/{sample}.fa')
