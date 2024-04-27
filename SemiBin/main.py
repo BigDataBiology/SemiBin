@@ -11,7 +11,7 @@ from itertools import groupby
 from . import utils
 from .utils import validate_normalize_args, get_must_link_threshold, generate_cannot_link, \
     set_random_seed, process_fasta, split_data, get_model_path, extract_bams
-from .generate_coverage import generate_cov, combine_cov, combine_sample_cov, generate_cov_from_abundances
+from .generate_coverage import generate_cov, combine_cov, combine_sample_cov, generate_sample_cov, generate_cov_from_abundances
 from .generate_kmer import generate_kmer_features_from_fasta
 from .fasta import fasta_iter
 
@@ -978,45 +978,36 @@ def generate_sequence_features_multi(logger, args):
                     sys.exit(1)
 
         # Generate cov features for every sample
+        logger.info('Generating coverage for every sample.')
+        with Pool(min(args.num_process, len(sample_list))) as pool:
+            results = [
+                pool.apply_async(
+                            generate_sample_cov,
+                             args=(
+                                 sample,
+                                 args.bams,
+                                 args.output,
+                                 is_combined,
+                                 args.separator,
+                                 logger,
+                                 binning_threshold,
+                                 must_link_threshold
+                             ))
+                for sample in sample_list]
+            for r in results:
+                s = r.get()
+                logger.info(f'Generated coverage: {s}')
+
         for sample in sample_list:
-            output_path = os.path.join(args.output, 'samples', sample)
-            os.makedirs(output_path, exist_ok=True)
-
-            combine_sample_cov(
-                sample, os.path.join(args.output, "samples"), args.bams, "data_cov.csv",
-                is_combined, args.separator, logger,
-                os.path.join(output_path, "data_cov.csv"))
-
+            if not os.path.exists(os.path.join(args.output, 'samples', sample, 'data_cov.csv')):
+                sys.stderr.write(
+                    f"Error: Generating coverage file fail\n")
+                sys.exit(1)
             if is_combined:
-                combine_sample_cov(
-                    sample, os.path.join(args.output, "samples"), args.bams, "data_split_cov.csv",
-                    is_combined, args.separator, logger,
-                    os.path.join(output_path, 'data_split_cov.csv'))
-
-            sample_contig_fasta = os.path.join(
-                args.output, f'samples/{sample}.fa')
-            kmer_whole = generate_kmer_features_from_fasta(
-                sample_contig_fasta, binning_threshold[sample], 4)
-            kmer_split = generate_kmer_features_from_fasta(
-                sample_contig_fasta, 1000, 4, split=True, split_threshold=must_link_threshold)
-
-            sample_cov = pd.read_csv(os.path.join(output_path, 'data_cov.csv'), index_col=0, engine="pyarrow")
-            kmer_whole.index = kmer_whole.index.astype(str)
-            sample_cov.index = sample_cov.index.astype(str)
-            data = pd.merge(kmer_whole, sample_cov, how='inner', on=None,
-                            left_index=True, right_index=True, sort=False, copy=True)
-            if is_combined:
-                sample_cov_split = pd.read_csv(os.path.join(output_path, 'data_split_cov.csv'), index_col=0, engine="pyarrow")
-                data_split = pd.merge(kmer_split, sample_cov_split, how='inner', on=None,
-                                      left_index=True, right_index=True, sort=False, copy=True)
-            else:
-                data_split = kmer_split
-
-            with atomic_write(os.path.join(output_path, 'data.csv'), overwrite=True) as ofile:
-                data.to_csv(ofile)
-
-            with atomic_write(os.path.join(output_path, 'data_split.csv'), overwrite=True) as ofile:
-                data_split.to_csv(ofile)
+                if not os.path.join(os.path.join(args.output, 'samples', sample, 'data_split_cov.csv')):
+                    sys.stderr.write(
+                        f"Error: Generating coverage file fail\n")
+                    sys.exit(1)
 
     if args.abundances:
         logger.info('Reading abundance information from abundance files.')
