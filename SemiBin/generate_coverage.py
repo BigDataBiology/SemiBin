@@ -196,9 +196,11 @@ def combine_sample_cov(sample: str, cov_dir: str, bam_list, suffix: str, is_comb
     import numpy as np
 
     covs = []
+    count = 0
+    batch = 0
     for bam_index, bam_file in enumerate(bam_list):
         bam_fname = os.path.split(bam_file)[-1]
-        logger.info(f"\tprocessing #{bam_index}: {bam_fname}_{bam_index}_{suffix}")
+        logger.info(f"\tProcessing #{bam_index}: {bam_fname}_{bam_index}_{suffix}")
 
         data_cov = pl.scan_csv(f'{cov_dir}/{bam_fname}_{bam_index}_{suffix}')\
             .rename({"": "contig_name"})\
@@ -206,7 +208,25 @@ def combine_sample_cov(sample: str, cov_dir: str, bam_list, suffix: str, is_comb
             .collect()
         covs.append(data_cov)
 
-    sample_cov = pl.concat(covs, how="align")
+        count += 1
+        if count > 99:
+            batch += 1
+            logger.info(f"\tConcating #batch {batch} dataframe")
+            data_cov_merged = pl.concat(covs, how="align")
+            logger.info(f"\tConcating #batch {batch} dataframe done")
+            covs = []
+            covs.append(data_cov_merged)
+            count = 0
+
+    if len(covs) > 1:
+        batch += 1
+        logger.info(f"\tConcating #batch {batch} dataframe")
+        sample_cov = pl.concat(covs, how="align") # signal SIGSEGV (Address boundary error)
+        logger.info(f"\tConcating #batch {batch} dataframe done")
+    else:
+        sample_cov = covs[0]
+        #covs = []
+
     contig_names = [i.split(":")[1] for i in sample_cov["contig_name"]]
     sample_cov = sample_cov.drop("contig_name")
     headers = ["contig_name"] + list(sample_cov.columns)
@@ -220,7 +240,9 @@ def combine_sample_cov(sample: str, cov_dir: str, bam_list, suffix: str, is_comb
     sample_cov = sample_cov.with_columns(pl.Series("contig_name", contig_names))
     sample_cov = sample_cov.select(headers)
 
+    logger.info(f"\tSaving {outcsv}")
     sample_cov.write_csv(outcsv)
+    logger.info(f"\tSaving {outcsv} done")
 
     return True
 
