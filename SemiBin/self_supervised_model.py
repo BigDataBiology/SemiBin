@@ -16,6 +16,57 @@ def loss_function(embedding1, embedding2, label):
     return supervised_loss
 
 
+def check_motif(column):
+    """
+    Check if a column is a motif.
+    
+    Parameters:
+        column (str): The column name to check.
+    
+    Returns:
+        bool: True if the column is a motif, False otherwise.
+    """
+    try:
+        motif, mod_pos = column.split('_')
+        mod, pos = mod_pos.split('-')
+        if mod in ["m", "a"] and int(pos) in range(0, 15):
+            return True
+    except:
+        return False
+    
+    
+    return column.startswith('motif_')
+
+def get_features(df):
+    """
+    Takes a DataFrame and extracts indices of features to populate the provided features dictionary.
+    Specific features are extracted based on the column names:
+    - Indices of columns ending in 'bam_mean' or 'bam_var' are considered depth features.
+    
+    Parameters:
+        df (pd.DataFrame): The DataFrame from which to extract features.
+        features_dict (dict): The dictionary to populate with feature indices.
+    """
+    features_dict = {
+        'kmer': list(range(136)),
+        'depth': [],
+        'motif': []
+    }
+    
+    try:
+        columns = df.columns
+        # Populate 'depth' with indices of columns ending with 'bam_mean' or 'bam_var'
+        features_dict['depth'] = [i for i, column in enumerate(columns) if column.endswith('bam_mean') or column.endswith('bam_var')]
+        
+        # Populate 'motif' with indices of columns
+        features_dict['motif'] = [i for i, column in enumerate(columns) if check_motif(column)]
+        
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    
+    return features_dict
+
+
 def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
           batchsize=2048, epoches=15, device=None, num_process = 8, mode = 'single'):
     """
@@ -31,16 +82,22 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
     import pandas as pd
     from sklearn.preprocessing import normalize
     import numpy as np
-
-    train_data = pd.read_csv(datapaths[0], index_col=0).values
-
+    
+    train_data = pd.read_csv(datapaths[0], index_col=0)
+    features_data = get_features(train_data)
+    train_data = train_data.values
+    
+    features_data_split = get_features(pd.read_csv(data_splits[0], index_col=0))
+    
+    
+    
     if not is_combined:
-        train_data = train_data[:, :136]
+        train_data = train_data[:, features_data['kmer'] + features_data['motif']]
 
     torch.set_num_threads(num_process)
 
     logger.info('Training model...')
-
+    
     if not is_combined:
         model = Semi_encoding_single(train_data.shape[1])
     else:
@@ -60,7 +117,7 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
             data_split = pd.read_csv(data_split_path, index_col=0)
 
             if mode == 'several':
-                if data.shape[1] != 138 or data_split.shape[1] != 136:
+                if data.shape[1] != len(features_data['kmer'] + features_data['motif'] + 2) or data_split.shape[1] != len(features_data['kmer'] + features_data["motif"]): # + from having a sample column bam_mean + bam_var
                     sys.stderr.write(
                         f"Error: training mode with several only used in single-sample binning!\n")
                     sys.exit(1)
@@ -69,20 +126,21 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
             train_data_split = data_split.values
 
             if not is_combined:
-                train_data = train_data[:, :136]
+                train_data = train_data[:, features_data['kmer'] + features_data['motif']]
             else:
                 if norm_abundance(train_data):
-                    train_data_kmer  = train_data[:, :136]
-                    train_data_depth = train_data[:, 136:]
+                    train_data_kmer  = train_data[:, features_data['kmer'] + features_data['motif']]
+                    train_data_depth = train_data[:, features_data['depth']]
                     train_data_depth = normalize(train_data_depth, axis=1, norm='l1')
                     train_data = np.concatenate((train_data_kmer, train_data_depth), axis=1)
 
-                    train_data_split_kmer  = train_data_split[:, :136]
-                    train_data_split_depth = train_data_split[:, 136:]
+                    train_data_split_kmer  = train_data_split[:, features_data_split['kmer'] + features_data_split['motif']]
+                    train_data_split_depth = train_data_split[:, features_data_split['depth']]
                     train_data_split_depth = normalize(train_data_split_depth, axis=1, norm='l1')
                     train_data_split = np.concatenate((train_data_split_kmer, train_data_split_depth), axis = 1)
 
             data_length = len(train_data)
+            
             # cannot link data is sampled randomly
             n_cannot_link = min(len(train_data_split) * 1000 // 2, 4_000_000)
             indices1 = np.random.choice(data_length, size=n_cannot_link)
@@ -103,6 +161,7 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
             train_input_2 = np.concatenate(
                                     (train_data[indices2],
                                     train_data_split[1::2]))
+            
             train_labels = np.zeros(len(train_input_1), dtype=np.float32)
             train_labels[len(indices1):] = 1
             dataset = feature_Dataset(train_input_1, train_input_2, train_labels)
