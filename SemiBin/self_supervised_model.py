@@ -128,7 +128,7 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
             if not is_combined:
                 train_data = train_data[:, features_data['kmer'] + features_data['motif']]
             else:
-                if norm_abundance(train_data):
+                if norm_abundance(train_data, features_data):
                     train_data_kmer  = train_data[:, features_data['kmer'] + features_data['motif']]
                     train_data_depth = train_data[:, features_data['depth']]
                     train_data_depth = normalize(train_data_depth, axis=1, norm='l1')

@@ -57,7 +57,7 @@ def cluster_long_read(logger, model, data, device, is_combined,
         
     else:
         train_data_input = data.values
-        if norm_abundance(train_data_input):
+        if norm_abundance(train_data_input, features_data):
             train_data_kmer = train_data_input[:, features_data["kmer"] + features_data["motif"]]
             train_data_depth = train_data_input[:, features_data["depth"]]
             from sklearn.preprocessing import normalize
