@@ -139,13 +139,65 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
                     train_data_split_depth = normalize(train_data_split_depth, axis=1, norm='l1')
                     train_data_split = np.concatenate((train_data_split_kmer, train_data_split_depth), axis = 1)
 
+            
+            # informed cannot-links
+            ## Calculate kmer cosine distance
+            from sklearn.metrics.pairwise import cosine_distances
+            kmer_profiles = train_data[:, features_data['kmer']]
+            kmer_distances = cosine_distances(kmer_profiles)
+
+            ## Calculate motif hamming distance
+            methylation_profiles = train_data[:, features_data['motif']]
+            methylation_binary = (methylation_profiles > 0.5).astype(int)
+            
+            ### Calculate the Hamming distance using broadcasting
+            motif_distances = np.sum(methylation_binary[:, np.newaxis] != methylation_binary[np.newaxis, :], axis=2)
+
+            ## Combine values
+            from sklearn.preprocessing import MinMaxScaler
+            # Normalize the matrices
+            cosine_distances_normalized = MinMaxScaler().fit_transform(kmer_distances)
+            hamming_distances_normalized = MinMaxScaler().fit_transform(motif_distances)
+
+            # Define weights for the distance matrices
+            w1 = 0.5  # Weight for cosine distance
+            w2 = 0.5  # Weight for Hamming distance
+
+            # Combine the distance matrices
+            combined_distance_matrix = w1 * cosine_distances_normalized + w2 * hamming_distances_normalized
+
+            # Get the upper triangle indices of the combined distance matrix to avoid duplicate pairs
+            upper_triangle_indices = np.triu_indices_from(combined_distance_matrix, k=1)
+
+            # Get the combined distances for these pairs
+            distances = combined_distance_matrix[upper_triangle_indices]
+
+            # Filter pairs where the distance is at least 0.1
+            valid_pairs = np.where(distances >= 0.1)[0]
+
+            # Get the corresponding indices
+            filtered_indices1 = upper_triangle_indices[0][valid_pairs]
+            filtered_indices2 = upper_triangle_indices[1][valid_pairs]
+            # Calculate the number of cannot-links
+            n_cannot_link = min(len(data_split) * 1000 // 2, 4_000_000)
+
+            # Ensure we do not exceed the available number of valid pairs
+            n_cannot_link = min(n_cannot_link, len(filtered_indices1))
+
+            # Randomly sample indices from the filtered pairs
+            sample_indices = np.random.choice(len(filtered_indices1), size=n_cannot_link, replace=False)
+
+            # Get the sampled cannot-link indices
+            indices1 = filtered_indices1[sample_indices]
+            indices2 = filtered_indices2[sample_indices]
+            
             data_length = len(train_data)
             
             # cannot link data is sampled randomly
-            n_cannot_link = min(len(train_data_split) * 1000 // 2, 4_000_000)
-            indices1 = np.random.choice(data_length, size=n_cannot_link)
-            indices2 = indices1 + 1 + np.random.choice(data_length - 1,
-                                                       size=n_cannot_link)
+            # n_cannot_link = min(len(train_data_split) * 1000 // 2, 4_000_000)
+            # indices1 = np.random.choice(data_length, size=n_cannot_link)
+            # indices2 = indices1 + 1 + np.random.choice(data_length - 1,
+            #                                            size=n_cannot_link)
             indices2 %= data_length
 
 
