@@ -29,7 +29,7 @@ def check_motif(column):
     try:
         motif, mod_pos = column.split('_')
         mod, pos = mod_pos.split('-')
-        if mod in ["m", "a"] and int(pos) in range(0, 15):
+        if mod in ["m", "a", "c", "21839"] and int(pos) in range(0, 20):
             return True
     except:
         return False
@@ -143,11 +143,11 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
             # informed cannot-links
             ## Calculate kmer cosine distance
             from sklearn.metrics.pairwise import cosine_distances
-            kmer_profiles = train_data[:, features_data['kmer']]
+            kmer_profiles = data.values[:, features_data['kmer']]
             kmer_distances = cosine_distances(kmer_profiles)
 
             ## Calculate motif hamming distance
-            methylation_profiles = train_data[:, features_data['motif']]
+            methylation_profiles = data.values[:, features_data['motif']]
             methylation_binary = (methylation_profiles > 0.5).astype(int)
             
             ### Calculate the Hamming distance using broadcasting
