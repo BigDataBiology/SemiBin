@@ -117,7 +117,7 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
             data_split = pd.read_csv(data_split_path, index_col=0)
 
             if mode == 'several':
-                if data.shape[1] != len(features_data['kmer'] + features_data['motif'] + 2) or data_split.shape[1] != len(features_data['kmer'] + features_data["motif"]): # + from having a sample column bam_mean + bam_var
+                if data.shape[1] != (len(features_data['kmer']) + len(features_data['motif']) + 2) or data_split.shape[1] != (len(features_data['kmer']) + len(features_data["motif"])): # + from having a sample column bam_mean + bam_var
                     sys.stderr.write(
                         f"Error: training mode with several only used in single-sample binning!\n")
                     sys.exit(1)
