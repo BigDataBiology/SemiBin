@@ -70,6 +70,12 @@ def parse_args(args, is_semibin2):
                                                   ' This will produce the data.csv and data_split.csv files.'
                                                   )
 
+    generate_methylation_features = subparsers.add_parser(
+        'generate_methylation_features',
+        help='Generate methylation features as training data'
+            ' for (semi/self)-supervised deep learning model training.'
+            ' This will modify the data.csv and data_split.csv files.'
+    )
 
     check_install = subparsers.add_parser('check_install', help = 'Check whether required dependencies are present.')
 
@@ -130,8 +136,9 @@ def parse_args(args, is_semibin2):
                                                    help='Just output data.csv with k-mer features.',
                                                    dest='kmer',
                                                    action='store_true',)
-
-
+    
+    
+    
     training_self = subparsers.add_parser('train_self',
                                           help = 'Train the model with self-supervised learning')
 
@@ -265,7 +272,7 @@ def parse_args(args, is_semibin2):
 
 
     for p in [single_easy_bin, multi_easy_bin, generate_cannot_links,
-                generate_sequence_features_single, generate_sequence_features_multi,
+                generate_sequence_features_single, generate_sequence_features_multi, generate_methylation_features,
                 binning, binning_long]:
         m = p.add_argument_group('Mandatory arguments')
 
@@ -302,24 +309,38 @@ def parse_args(args, is_semibin2):
                            dest='abundances',
                            default=None,
                            )
-        p.add_argument('--write-pre-reclustering-bins',
-                required=False,
-                help='Write pre-reclustering bins to disk.',
-                dest='write_pre_reclustering_bins',
-                action=BooleanOptionalAction)
-        if not hasattr(argparse, 'BooleanOptionalAction'):
-            p.add_argument('--no-write-pre-reclustering-bins',
+        if p is not generate_methylation_features:
+            p.add_argument('--write-pre-reclustering-bins',
                     required=False,
-                    help='Do not write pre-reclustering bins to disk.',
-                    dest='no_write_pre_reclustering_bins',
-                    action='store_true')
+                    help='Write pre-reclustering bins to disk.',
+                    dest='write_pre_reclustering_bins',
+                    action=BooleanOptionalAction)
+            if not hasattr(argparse, 'BooleanOptionalAction'):
+                p.add_argument('--no-write-pre-reclustering-bins',
+                        required=False,
+                        help='Do not write pre-reclustering bins to disk.',
+                        dest='no_write_pre_reclustering_bins',
+                        action='store_true')
 
-        p.add_argument('--tag-output',
-                required=False,
-                type=str,
-                dest='output_tag',
-                default=('SemiBin' if is_semibin2 else None),
-                help='Tag to add to output file names')
+            p.add_argument('--tag-output',
+                    required=False,
+                    type=str,
+                    dest='output_tag',
+                    default=('SemiBin' if is_semibin2 else None),
+                    help='Tag to add to output file names')
+        if p is generate_methylation_features:
+            m.add_argument('-b', '--pileup',
+                            required=True,
+                            help='Path to the pileup file.',
+                            dest='pileup',
+                            default=None,
+                            )
+            m.add_argument('-m', '--motifs-scored',
+                            required=True,
+                            help='Path to the motifs-scored file created by nanomotif.',
+                            dest='motifs',
+                            default=None,
+                            )
 
     for p in [single_easy_bin,
                 multi_easy_bin,
@@ -378,7 +399,7 @@ def parse_args(args, is_semibin2):
                        )
 
 
-    for p in [train_semi, generate_cannot_links, binning, single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi, training_self, binning_long]:
+    for p in [train_semi, generate_cannot_links, binning, single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi, generate_methylation_features, training_self, binning_long]:
         p.add_argument('-p', '--processes', '-t', '--threads',
                    required=False,
                    type=int,
@@ -1086,13 +1107,16 @@ def training(logger, contig_fasta, num_process,
     """
     from .semi_supervised_model import train
     from .self_supervised_model import train_self
+    from .self_supervised_model import get_features
     import pandas as pd
     binned_lengths = []
 
     if mode == 'single':
         logger.info('Start training from a single sample.')
         data_ = pd.read_csv(data[0], index_col=0)
-        col_name = data_.columns[-1].split('_')[-1]
+        feature_data = get_features(data_)
+        
+        col_name = data_.columns[feature_data["depth"][-1]].split('_')[-1]
         is_combined = col_name != 'var'
 
     else:
@@ -1138,13 +1162,16 @@ def training(logger, contig_fasta, num_process,
 def binning_preprocess(data, depth_metabat2, model_path, environment, device):
     import pandas as pd
     import torch
+    from .self_supervised_model import get_features
+    
     data = pd.read_csv(data, index_col=0)
+    features_data = get_features(data)
     data.index = data.index.astype(str)
 
     if depth_metabat2 is None:
-        col_name = data.columns[-1].split('_')[-1]
+        col_name = data.columns[features_data["depth"][-1]].split('_')[-1]
         is_combined = col_name != 'var'
-        n_sample = (data.shape[1] - 136) // 2 if not is_combined else (data.shape[1] - 136)
+        n_sample = (len(features_data["depth"])) // 2 if not is_combined else (len(features_data["depth"]))
     else:
         is_combined = False
         n_sample = 1
@@ -1154,14 +1181,14 @@ def binning_preprocess(data, depth_metabat2, model_path, environment, device):
         depth_metabat2.index.name = None
         data = pd.merge(data, depth_metabat2, how='inner', on=None,
                  left_index=True, right_index=True, sort=False, copy=True)
-        if data.shape[1] != 138:
+        if len(features_data["depth"]) != 2:
             sys.stderr.write(
                 f"Error: Depth file from Metabat2 can only be used in single-sample binning!\n")
             sys.exit(1)
 
     model_path = model_path if environment is None else get_model_path(environment)
     if environment is not None:
-        if data.shape[1] != 138:
+        if len(features_data["depth"]) != 2:
             sys.stderr.write(f"Error: provided pretrained model only used in single-sample binning!\n")
             sys.exit(1)
 
@@ -1170,13 +1197,14 @@ def binning_preprocess(data, depth_metabat2, model_path, environment, device):
     else:
         model = torch.load(model_path).to(device)
 
-    return is_combined, n_sample, data, model
+    return is_combined, n_sample, data, model, features_data
 
 def binning_long(logger, data, minfasta, binned_length, contig_dict,
         model_path, output, device, environment, *, args):
     from .long_read_cluster import cluster_long_read
     logger.info('Start binning.')
-    is_combined, n_sample, data, model = binning_preprocess(data, getattr(args, 'depth_metabat2', None), model_path, environment, device)
+    is_combined, n_sample, data, model, features_data = binning_preprocess(data, getattr(args, 'depth_metabat2', None), model_path, environment, device)
+    
     cluster_long_read(logger,
                       model,
                       data,
@@ -1188,6 +1216,7 @@ def binning_long(logger, data, minfasta, binned_length, contig_dict,
                       binned_length=binned_length,
                       minfasta=minfasta,
                       args=args,
+                      features_data=features_data
                       )
 
 def binning_short(logger, data, minfasta,

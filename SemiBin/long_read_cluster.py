@@ -48,17 +48,18 @@ def get_best_bin(results_dict, contig_to_marker, namelist, contig_dict, minfasta
 
 def cluster_long_read(logger, model, data, device, is_combined,
             n_sample, out, contig_dict, *, binned_length, args,
-            minfasta):
+            minfasta, features_data):
     import pandas as pd
     from .utils import norm_abundance
     contig_list = data.index.tolist()
     if not is_combined:
-        train_data_input = data.values[:, 0:136]
+        train_data_input = data.values[:, features_data["kmer"] + features_data["motif"]]
+        
     else:
         train_data_input = data.values
-        if norm_abundance(train_data_input):
-            train_data_kmer = train_data_input[:, 0:136]
-            train_data_depth = train_data_input[:, 136:len(data.values[0])]
+        if norm_abundance(train_data_input, features_data):
+            train_data_kmer = train_data_input[:, features_data["kmer"] + features_data["motif"]]
+            train_data_depth = train_data_input[:, features_data["depth"]]
             from sklearn.preprocessing import normalize
             train_data_depth = normalize(train_data_depth, axis=1, norm='l1')
             train_data_input = np.concatenate((train_data_kmer, train_data_depth), axis=1)
@@ -67,15 +68,17 @@ def cluster_long_read(logger, model, data, device, is_combined,
         model.eval()
         x = torch.from_numpy(train_data_input).to(device)
         embedding = model.embedding(x.float()).detach().cpu().numpy()
+        
 
     length_weight = np.array(
         [len(contig_dict[name]) for name in contig_list])
 
     if not is_combined:
-        depth = data.values[:, 136:len(data.values[0])].astype(np.float32)
+        depth = data.values[:, features_data["depth"]].astype(np.float32)
         mean_index = [2 * temp for temp in range(n_sample)]
         depth = depth[:, mean_index]
         embedding_new = np.concatenate((embedding, np.log(depth)), axis=1)
+        # embedding_new = embedding
     else:
         embedding_new = embedding
 
