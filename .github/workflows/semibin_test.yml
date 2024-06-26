@@ -17,12 +17,11 @@ jobs:
           - "3.12"
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - uses: conda-incubator/setup-miniconda@v2
+    - name: Checking out code
+      uses: actions/checkout@v3
+
+    - name: Setup miniconda
+      uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: test
         python-version: ${{ matrix.python-version }}
