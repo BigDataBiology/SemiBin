@@ -70,12 +70,16 @@ def parse_args(args, is_semibin2):
                                                   ' This will produce the data.csv and data_split.csv files.'
                                                   )
 
+    # Methylation
+    
     generate_methylation_features = subparsers.add_parser(
         'generate_methylation_features',
         help='Generate methylation features as training data'
             ' for (semi/self)-supervised deep learning model training.'
             ' This will modify the data.csv and data_split.csv files.'
     )
+    
+    
 
     check_install = subparsers.add_parser('check_install', help = 'Check whether required dependencies are present.')
 
@@ -329,18 +333,19 @@ def parse_args(args, is_semibin2):
                     default=('SemiBin' if is_semibin2 else None),
                     help='Tag to add to output file names')
         if p is generate_methylation_features:
-            m.add_argument('-b', '--pileup',
-                            required=True,
-                            help='Path to the pileup file.',
-                            dest='pileup',
-                            default=None,
-                            )
-            m.add_argument('-m', '--motifs-scored',
-                            required=True,
-                            help='Path to the motifs-scored file created by nanomotif.',
-                            dest='motifs',
-                            default=None,
-                            )
+            m.add_argument("--motifs-scored", help="Path to the motifs scored file.", required=True)
+            # TODO create correct filtering of motifs_scored
+            m.add_argument("--bin-motifs", help = "Path to the bin-consensus file from nanomotif", required = False)
+            # m.add_argument("--must-links", help="Path to the must-links file.", required=False)
+            m.add_argument("--motif-index-dir", help="Path to the motif index directory.", required=True)
+            # m.add_argument("-t", "--threads", help="Number of threads to use.", default=1, type=int)
+            p.add_argument("--data", help="Path to the data file to append methylation.", required=False)
+            p.add_argument("--data-split", help="Path to the data split file to append methylation.", required=False)
+            p.add_argument("--motif-occurence-cutoff", help="Percent occurences in contigs.", default=0.9, type=float)
+            p.add_argument("--min-motif-observations", help="Minimum motif coverage.", default=8, type=int)
+            # p.add_argument("--ambiguous-interval", help="Interval for ambiguous motifs. Must be enclosed interval i.e. [0.05,0.15]", default="[0.05,0.15]", type=parse_interval)
+            p.add_argument("--ambiguous-motif-percentage-cutoff", help="Percentage of ambiguous motifs [0-1].", default=0.4, type=float)
+            # p.add_argument("-o","--output", help="Output directory.", default="output")
 
     for p in [single_easy_bin,
                 multi_easy_bin,
