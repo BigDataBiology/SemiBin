@@ -402,27 +402,23 @@ def add_must_links(data, data_split, must_links):
     
     return data_split
 
+def check_data_files(logger, args):
+    if args.data and args.data_split:
+        logger.info("Using provided data and data_split files.")
+    elif args.data or args.data_split:
+        logger.error("Missing data or data_split path. Either both should be provided or none.")
+        sys.exit(1)
+    else:
+        logger.info("Using default data and data_split files. Checking output directory.")
+        
+
 
 def generate_methylation_features(logger, args):
     logger.info("Adding Methylation Features")    
     logger.info("Loading data...")
     
-    if args.data or args.data_split:
-        logger.info("Using provided data and data_split files.")
-        for file in [args.data, args.data_split]:
-            if not file:
-                logger.error("Error: Both data and data_split should be provided.")
-                sys.stderr.write("Error: Both data and data_split should be provided.\n")
-                sys.exit(1)
-    else:
-        logger.info("Using default data and data_split files. Checking output directory.")
-        if not os.path.exists(args.output, "data.csv"):
-            logger.error("Error: data.csv file not found in the output directory.")
-            sys.stderr.write("Error: data.csv file not found in the output directory.\n")
-            sys.exit(1)
-        args.data = os.path.join(args.output, "data.csv")
-        args.data_split = os.path.join(args.output, "data_split.csv")
-        
+    # Check if the required files exist
+    check_data_files(logger, args)
         
         
     paths = [args.motifs_scored, args.data, args.data_split, args.contig_fasta, args.bin_motifs]
@@ -455,15 +451,13 @@ def generate_methylation_features(logger, args):
     )
     
     if len(motifs) == 0:
-        print(f"No motifs found with --motif-occurence-cutoff {args.motif_occurence_cutoff}, --min-motif-observations {args.min_motif_observations}, --ambiguous-interval {args.ambiguous_interval}, and --.")
+        logger.debug(f"No motifs found with --motif-occurence-cutoff {args.motif_occurence_cutoff}, --min-motif-observations {args.min_motif_observations}")
         sys.exit(1)
     
     # Create methylation matrix for contig_splits
     print("Calculating methylation pattern for each contig split using multiple threads.")
-    start_time = time.time()
+    
     contig_split_methylation = data_split_methylation_parallel(contig_lengths, motifs, args.motif_index_dir, threads=args.num_process)
-    end_time = time.time()  # Record the end time after function execution
-    print(f"Methylation Pattern Execution time: {end_time - start_time} seconds")  # Print the execution time
     
     data_split_methylation_matrix = create_methylation_matrix(
         methylation_features = contig_split_methylation,
@@ -507,8 +501,8 @@ def generate_methylation_features(logger, args):
         .fill_nan(0.0)
     
     try:
-        data_split.write_csv(os.path.join(args.output, "data_split_methylation_matrix.csv"), separator=",", quote_style='never') 
-        data.write_csv(os.path.join(args.output, "data_methylation_matrix.csv"), separator=",", quote_style='never')
+        data_split.write_csv(os.path.join(args.output, "data_split.csv"), separator=",", quote_style='never') 
+        data.write_csv(os.path.join(args.output, "data.csv"), separator=",", quote_style='never')
     except Exception as e:
         print(f"An error occurred while writing the output: {e}")
         sys.exit(1)

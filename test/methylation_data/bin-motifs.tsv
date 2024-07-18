@@ -1,0 +1,70 @@
+bin	mod_type	motif	mod_position	n_mod_bin	n_nomod_bin	motif_type	motif_complement	mod_position_complement	n_mod_complement	n_nomod_complement
+b1	a	AAGATC	0	6	219	non-palindrome				
+b1	a	AAGNAG	4	2	770	non-palindrome				
+b1	a	AAGRAG	4	1	434	non-palindrome				
+b1	a	ACCNANC	4	1	764	ambiguous				
+b1	a	ACCNAYC	4	1	374	non-palindrome				
+b1	a	AGCNGC	0	19	1410	non-palindrome				
+b1	a	AGSGGG	0	1	268	non-palindrome				
+b1	a	CAACAT	4	0	206	non-palindrome				
+b1	a	CATATG	3	0	99	palindrome	CATATG	3	0	99
+b1	a	CGGGAG	4	91	81	non-palindrome				
+b1	a	CGWAAT	4	2	360	non-palindrome				
+b1	a	CTGAAG	4	3	250	non-palindrome				
+b1	a	CTKCAG	4	3	520	non-palindrome				
+b1	a	CTKNAG	4	11	1317	non-palindrome				
+b1	a	CTNCAG	4	3	744	non-palindrome	CTGNAG	4	8	739
+b1	a	GACGTC	1	145	24	palindrome	GACGTC	1	145	24
+b1	a	GATC	1	439	3256	palindrome	GATC	1	439	3256
+b1	a	GATGNNNNNNTAC	1	0	39	bipartite				
+b1	a	GATYAAC	5	0	75	non-palindrome				
+b1	a	GATYAAT	5	1	36	non-palindrome				
+b1	a	GAYCAT	4	9	601	non-palindrome				
+b1	a	GCATC	2	17	1559	non-palindrome	GATGC	1	24	1552
+b1	a	GGATCY	2	224	30	non-palindrome				
+b2	a	AAGATC	0	6	219	non-palindrome				
+b2	a	AAGNAG	4	2	770	non-palindrome				
+b2	a	AAGRAG	4	1	434	non-palindrome				
+b2	a	ACCNANC	4	1	764	ambiguous				
+b2	a	ACCNAYC	4	1	374	non-palindrome				
+b2	a	AGCNGC	0	19	1410	non-palindrome				
+b2	a	AGSGGG	0	1	268	non-palindrome				
+b2	a	CAACAT	4	0	206	non-palindrome				
+b2	a	CATATG	3	0	99	palindrome	CATATG	3	0	99
+b2	a	CGGGAG	4	91	81	non-palindrome				
+b2	a	CGWAAT	4	2	360	non-palindrome				
+b2	a	CTGAAG	4	3	250	non-palindrome				
+b2	a	CTKCAG	4	3	520	non-palindrome				
+b2	a	CTKNAG	4	11	1317	non-palindrome				
+b2	a	CTNCAG	4	3	744	non-palindrome	CTGNAG	4	8	739
+b2	a	GACGTC	1	145	24	palindrome	GACGTC	1	145	24
+b2	a	GATC	1	439	3256	palindrome	GATC	1	439	3256
+b2	a	GATGNNNNNNTAC	1	0	39	bipartite				
+b2	a	GATYAAC	5	0	75	non-palindrome				
+b2	a	GATYAAT	5	1	36	non-palindrome				
+b2	a	GAYCAT	4	9	601	non-palindrome				
+b2	a	GCATC	2	17	1559	non-palindrome	GATGC	1	24	1552
+b2	a	GGATCY	2	224	30	non-palindrome				
+b2	a	GGATGC	2	8	325	non-palindrome				
+b2	a	GRTANNNNNNTCC	3	1	62	bipartite	GGANNNNNNTAYC	2	3	60
+b2	a	GSGCNNNGGGNANG	11	2	6	ambiguous				
+b2	a	RACGTC	1	191	233	non-palindrome				
+b2	a	RGATCY	2	422	65	palindrome	RGATCY	2	422	65
+b2	a	TCATNNNNNNNTCC	2	30	40	bipartite				
+b2	a	TCAYNNNNNNNTCC	2	58	85	bipartite	GGANNNNNNNRTGA	2	56	87
+b2	a	TCNAAT	4	8	487	non-palindrome				
+b2	a	TCNTANNNNNNTTC	4	0	30	ambiguous				
+b2	a	TTCGAA	5	4	203	palindrome	TTCGAA	5	4	203
+b2	m	CCATGG	0	0	403	palindrome	CCATGG	0	0	403
+b2	m	CCNGG	1	6	3513	palindrome	CCNGG	1	6	3513
+b2	m	CCRTGG	0	1	952	non-palindrome				
+b2	m	CCTGG	1	1	779	non-palindrome				
+b2	m	CCWGG	1	5	1554	palindrome	CCWGG	1	5	1554
+b2	m	GATC	3	0	3695	palindrome	GATC	3	0	3695
+b2	m	GCGGG	1	1	1171	non-palindrome	CCCGC	1	0	1172
+b2	m	GCNGC	1	5	7994	palindrome	GCNGC	1	5	7994
+b2	m	GGNCC	3	4	3135	palindrome	GGNCC	3	4	3135
+b2	m	GGNNNNNNGCNGCNG	9	3	196	ambiguous				
+b2	m	GSNNNNGGCNGCNG	8	1	182	ambiguous				
+b2	m	RCCGGC	1	3	2023	non-palindrome	GCCGGY	1	4	2022
+b2	m	RCCGGY	1	5	3198	palindrome	RCCGGY	1	5	3198

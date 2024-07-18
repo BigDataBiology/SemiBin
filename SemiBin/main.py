@@ -14,6 +14,7 @@ from .utils import validate_normalize_args, get_must_link_threshold, generate_ca
 from .generate_coverage import generate_cov, combine_cov, generate_cov_from_abundances
 from .generate_kmer import generate_kmer_features_from_fasta
 from .fasta import fasta_iter
+from .generate_methylation import generate_methylation_features
 
 
 def parse_args(args, is_semibin2, with_methylation):
@@ -314,7 +315,7 @@ def parse_args(args, is_semibin2, with_methylation):
                            dest='abundances',
                            default=None,
                            )
-        if "generate_methylation_features" in p.prog:
+        if "generate_methylation_features" not in p.prog:
             p.add_argument('--write-pre-reclustering-bins',
                     required=False,
                     help='Write pre-reclustering bins to disk.',
