@@ -123,34 +123,6 @@ def get_contigs(data_split):
     contigs_in_split.sort()  # Sort the list in place
     return contigs_in_split
 
-def identify_ambiguous_motifs(motifs_scored, min_motif_observations = 8, ambiguous_interval = [0.05, 0.15], ambiguous_motif_percentage_cutoff = 0.4):
-    # Remove motifs where the majority of the mean methylation of motifs is in the range of 0.05-0.4
-    #
-    contig_motif_mean_density = motifs_scored \
-        .filter(pl.col("n_motifs") >= min_motif_observations) \
-        .select(["contig", "motif_mod", "mod_position", "n_mod", "n_motifs"]) \
-        .with_columns(
-            (pl.col("n_mod") / pl.col("n_motifs")).alias("mean"),
-        )\
-        .filter(pl.col("mean") > 0.05)\
-        .with_columns(
-            ((pl.col("mean") > ambiguous_interval[0]) & (pl.col("mean") < ambiguous_interval[1])).alias("is_ambiguous")
-        )
-    
-    # Identify ambigous motifs in sample
-    motif_ambiguity = contig_motif_mean_density.group_by(["motif_mod"]) \
-        .agg(
-            pl.col("is_ambiguous").sum().alias("total_ambiguous"),
-            pl.col("is_ambiguous").count().alias("n_contigs_with_motif")
-        ) \
-        .with_columns((pl.col("total_ambiguous") / pl.col("n_contigs_with_motif")).alias("percentage_ambiguous"))
-    
-    ambiguous_motifs = motif_ambiguity.filter(pl.col("percentage_ambiguous") >= ambiguous_motif_percentage_cutoff)\
-        .get_column("motif_mod")
-    
-    return ambiguous_motifs
-
-
 def get_motifs(motifs_scored, bin_consensus, occurence_cutoff=0.9, min_motif_observations = 8, ambiguous_interval = [0.05, 0.15], ambiguous_motif_percentage_cutoff = 0.4):
     """Extracts and returns unique motifs for each contig."""
     motifs_in_bin_consensus = bin_consensus\
@@ -174,9 +146,6 @@ def get_motifs(motifs_scored, bin_consensus, occurence_cutoff=0.9, min_motif_obs
 
     # Total contigs in motifs_scored
     total_contigs_in_motifs = motifs_scored.unique(subset=["contig"]).shape[0]
-    
-    # TODO is n_motifs filter > 1 relevant after removing unambiguous motifs?
-    # .filter(~pl.col("motif_mod").is_in(ambiguous_motifs))\
     
     motif_occurences_in_contigs = motifs_scored\
         .filter(pl.col("n_motifs") >= min_motif_observations)\
@@ -439,12 +408,14 @@ def generate_methylation_features(logger, args):
     logger.info("Loading data...")
     
     if args.data or args.data_split:
+        logger.info("Using provided data and data_split files.")
         for file in [args.data, args.data_split]:
             if not file:
                 logger.error("Error: Both data and data_split should be provided.")
                 sys.stderr.write("Error: Both data and data_split should be provided.\n")
                 sys.exit(1)
     else:
+        logger.info("Using default data and data_split files.")
         args.data = os.path.join(args.output, "data.csv")
         args.data_split = os.path.join(args.output, "data_split.csv")
         
