@@ -435,12 +435,24 @@ def add_must_links(data, data_split, must_links):
 
 
 def generate_methylation_features(logger, args):
+    logger.info("Adding Methylation Features")    
+    logger.info("Loading data...")
     
-    
+    if args.data or args.data_split:
+        for file in [args.data, args.data_split]:
+            if not file:
+                logger.error("Error: Both data and data_split should be provided.")
+                sys.stderr.write("Error: Both data and data_split should be provided.\n")
+                sys.exit(1)
+    else:
+        args.data = os.path.join(args.output, "data.csv")
+        args.data_split = os.path.join(args.output, "data_split.csv")
+        
+        
+        
     paths = [args.motifs_scored, args.data, args.data_split, args.contig_fasta, args.bin_motifs]
     directories = [args.motif_index_dir]
-    # if args.must_links:
-    #     paths = paths + [args.must_links]
+
     check_files_exist(paths, directories)
     
     # check if output directory exists
@@ -520,13 +532,6 @@ def generate_methylation_features(logger, args):
         .rename({"contig": ''})\
         .fill_null(0.0)\
         .fill_nan(0.0)
-    
-    # If must_links are provided, add them to the data
-    # if args.must_links:
-    #     must_links = pl.read_csv(args.must_links, has_header = False, new_columns = ["ml_1", "ml_2"])
-    #     data_split = add_must_links(data, data_split, must_links)
-    
-    
     
     try:
         data_split.write_csv(os.path.join(args.output, "data_split_methylation_matrix.csv"), separator=",", quote_style='never') 
