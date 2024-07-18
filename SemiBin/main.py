@@ -1437,7 +1437,7 @@ def split_contigs(logger, contig_fasta, *, output, min_length):
     return oname
 
 
-def main2(args=None, is_semibin2=True):
+def main2(args=None, is_semibin2=True, with_methylation=True):
     import tempfile
 
     if args is None:
@@ -1679,6 +1679,9 @@ def main_no_version(args=None):
         print(f"Will continue as SemiBin1 in {5-i} seconds...")
         sleep(1)
     main1(args)
+
+def main3():
+    main2(is_semibin2=False, with_methylation=True)
 
 if __name__ == '__main__':
     main2()
