@@ -123,7 +123,7 @@ def get_contigs(data_split):
     contigs_in_split.sort()  # Sort the list in place
     return contigs_in_split
 
-def get_motifs(motifs_scored, bin_consensus, occurence_cutoff=0.9, min_motif_observations = 8, ambiguous_interval = [0.05, 0.15], ambiguous_motif_percentage_cutoff = 0.4):
+def get_motifs(motifs_scored, bin_consensus, occurence_cutoff=0.9, min_motif_observations = 8):
     """Extracts and returns unique motifs for each contig."""
     motifs_in_bin_consensus = bin_consensus\
         .select(["motif", "mod_position", "mod_type", "n_mod_bin", "n_nomod_bin"])\
@@ -415,7 +415,11 @@ def generate_methylation_features(logger, args):
                 sys.stderr.write("Error: Both data and data_split should be provided.\n")
                 sys.exit(1)
     else:
-        logger.info("Using default data and data_split files.")
+        logger.info("Using default data and data_split files. Checking output directory.")
+        if not os.path.exists(args.output, "data.csv"):
+            logger.error("Error: data.csv file not found in the output directory.")
+            sys.stderr.write("Error: data.csv file not found in the output directory.\n")
+            sys.exit(1)
         args.data = os.path.join(args.output, "data.csv")
         args.data_split = os.path.join(args.output, "data_split.csv")
         
@@ -447,9 +451,7 @@ def generate_methylation_features(logger, args):
         motifs_scored = motifs_scored, 
         bin_consensus = bin_consensus,
         occurence_cutoff = args.motif_occurence_cutoff,
-        min_motif_observations=args.min_motif_observations,
-        ambiguous_interval = args.ambiguous_interval,
-        ambiguous_motif_percentage_cutoff = args.ambiguous_motif_percentage_cutoff
+        min_motif_observations=args.min_motif_observations
     )
     
     if len(motifs) == 0:
