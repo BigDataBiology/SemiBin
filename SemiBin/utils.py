@@ -716,3 +716,14 @@ def get_features(df):
         print(f"An error occurred: {e}")
     
     return features_dict
+
+def normalize_kmer_motif_features(train_data, train_data_split):
+    """
+    MinMax scaling was chosen to normalize kmers which is in the range of 0-0.07 however motifs are in the range of 0-1.
+    """
+    from sklearn.preprocessing import MinMaxScaler
+    scaler = MinMaxScaler()
+    train_data = scaler.fit_transform(train_data)
+    train_data_split = scaler.transform(train_data_split)
+    
+    return train_data, train_data_split

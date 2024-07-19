@@ -1,7 +1,7 @@
 import os
 import torch
 import numpy as np
-from .utils import cal_num_bins, get_marker, write_bins
+from .utils import cal_num_bins, get_marker, write_bins, normalize_kmer_motif_features
 from sklearn.cluster import DBSCAN
 from sklearn.neighbors import kneighbors_graph
 from collections import defaultdict
@@ -54,11 +54,13 @@ def cluster_long_read(logger, model, data, device, is_combined,
     contig_list = data.index.tolist()
     if not is_combined:
         train_data_input = data.values[:, features_data["kmer"] + features_data["motif"]]
-        
+        train_data_input, _ = normalize_kmer_motif_features(train_data_input, train_data_input)
     else:
         train_data_input = data.values
         if norm_abundance(train_data_input, features_data):
             train_data_kmer = train_data_input[:, features_data["kmer"] + features_data["motif"]]
+            train_data_kmer, _ = normalize_kmer_motif_features(train_data_kmer, train_data_kmer)
+            
             train_data_depth = train_data_input[:, features_data["depth"]]
             from sklearn.preprocessing import normalize
             train_data_depth = normalize(train_data_depth, axis=1, norm='l1')
@@ -78,7 +80,6 @@ def cluster_long_read(logger, model, data, device, is_combined,
         mean_index = [2 * temp for temp in range(n_sample)]
         depth = depth[:, mean_index]
         embedding_new = np.concatenate((embedding, np.log(depth)), axis=1)
-        # embedding_new = embedding
     else:
         embedding_new = embedding
 

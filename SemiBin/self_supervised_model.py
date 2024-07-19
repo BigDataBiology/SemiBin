@@ -4,7 +4,7 @@ import os
 from torch.optim import lr_scheduler
 import sys
 from .semi_supervised_model import Semi_encoding_single, Semi_encoding_multiple, feature_Dataset
-from .utils import norm_abundance, get_features
+from .utils import norm_abundance, get_features, normalize_kmer_motif_features
 
 def loss_function(embedding1, embedding2, label):
     relu = torch.nn.ReLU()
@@ -16,13 +16,7 @@ def loss_function(embedding1, embedding2, label):
     return supervised_loss
 
 
-def normalize_kmer_motif_features(train_data, train_data_split):
-    from sklearn.preprocessing import MinMaxScaler
-    scaler = MinMaxScaler()
-    train_data = scaler.fit_transform(train_data)
-    train_data_split = scaler.transform(train_data_split)
-    
-    return train_data, train_data_split
+
 
 def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
           batchsize=2048, epoches=15, device=None, num_process = 8, mode = 'single'):
