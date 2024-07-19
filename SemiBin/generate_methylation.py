@@ -87,30 +87,30 @@ def check_files_exist(paths=[], directories=[]):
             raise FileNotFoundError(f"The directory {d} does not exist.")
 
 
-def load_data(args):
+def load_data(args, logger):
     """Loads data"""
-    try:
-        motifs_scored = pl.read_csv(args.motifs_scored, separator="\t")
-        # Remove beta initial 1 from n_nomod
-        motifs_scored = motifs_scored\
-            .with_columns(
-                n_nomod = pl.col("n_nomod") - 1
-            )
-        
-        bin_consensus = pl.read_csv(args.bin_motifs, separator="\t")
-        
-        data = pl.read_csv(args.data)
-        data = data\
-            .rename({"": "contig"})
-        data_split = pl.read_csv(args.data_split)
-        data_split = data_split\
-            .rename({"": "contig"})
+    # try:
+    motifs_scored = pl.read_csv(args.motifs_scored, separator="\t")
+    # Remove beta initial 1 from n_nomod
+    motifs_scored = motifs_scored\
+        .with_columns(
+            n_nomod = pl.col("n_nomod") - 1
+        )
+    
+    bin_consensus = pl.read_csv(args.bin_motifs, separator="\t")
+    
+    data = pl.read_csv(args.data)
+    data = data\
+        .rename({"": "contig"})
+    data_split = pl.read_csv(args.data_split)
+    data_split = data_split\
+        .rename({"": "contig"})
 
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        sys.exit(1)  # Exit the program with an error code
+    # except Exception as e:
+    #     logger.error(f"An unexpected error occurred: {e}")
+    #     sys.exit(1)  # Exit the program with an error code
 
-    print("All files loaded successfully.")
+    logger.info("Data loaded successfully.")
     return motifs_scored, data, data_split, bin_consensus
 
 
@@ -402,7 +402,7 @@ def add_must_links(data, data_split, must_links):
     
     return data_split
 
-def check_data_files(logger, args):
+def check_data_file_args(logger, args):
     if args.data and args.data_split:
         logger.info("Using provided data and data_split files.")
     elif args.data or args.data_split:
@@ -410,6 +410,9 @@ def check_data_files(logger, args):
         sys.exit(1)
     else:
         logger.info("Using default data and data_split files. Checking output directory.")
+        args.data = os.path.join(args.output, "data.csv")
+        args.data_split = os.path.join(args.output, "data_split.csv")
+    return args
         
 
 
@@ -417,8 +420,8 @@ def generate_methylation_features(logger, args):
     logger.info("Adding Methylation Features")    
     logger.info("Loading data...")
     
-    # Check if the required files exist
-    check_data_files(logger, args)
+    # Check for the data and data_split file
+    args = check_data_file_args(logger, args)
         
         
     paths = [args.motifs_scored, args.data, args.data_split, args.contig_fasta, args.bin_motifs]
@@ -431,7 +434,8 @@ def generate_methylation_features(logger, args):
         os.makedirs(args.output)
     
     # Load the data
-    motifs_scored, data, data_split, bin_consensus = load_data(args)
+    logger.info("Loading methylation data...")
+    motifs_scored, data, data_split, bin_consensus = load_data(args, logger)
     
     # Get the unique contigs from the data split
     contigs = get_contigs(data_split)
@@ -449,14 +453,15 @@ def generate_methylation_features(logger, args):
         occurence_cutoff = args.motif_occurence_cutoff,
         min_motif_observations=args.min_motif_observations
     )
-    
+
     if len(motifs) == 0:
-        logger.debug(f"No motifs found with --motif-occurence-cutoff {args.motif_occurence_cutoff}, --min-motif-observations {args.min_motif_observations}")
+        logger.error(f"No motifs found with --motif-occurence-cutoff {args.motif_occurence_cutoff}, --min-motif-observations {args.min_motif_observations}")
         sys.exit(1)
+    number_of_motifs = sum([len(motifs[mod_type]) for mod_type in motifs])
+    logger.info(f"Motifs found (#{number_of_motifs}): {motifs}")
     
     # Create methylation matrix for contig_splits
-    print("Calculating methylation pattern for each contig split using multiple threads.")
-    
+    logger.info(f"Calculating methylation pattern for each contig split using {args.num_process} threads.")
     contig_split_methylation = data_split_methylation_parallel(contig_lengths, motifs, args.motif_index_dir, threads=args.num_process)
     
     data_split_methylation_matrix = create_methylation_matrix(
@@ -501,6 +506,7 @@ def generate_methylation_features(logger, args):
         .fill_nan(0.0)
     
     try:
+        logger.info("Writing to data and data_split files...")
         data_split.write_csv(os.path.join(args.output, "data_split.csv"), separator=",", quote_style='never') 
         data.write_csv(os.path.join(args.output, "data.csv"), separator=",", quote_style='never')
     except Exception as e:
