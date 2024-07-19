@@ -10,7 +10,7 @@ import sys
 from itertools import groupby
 from . import utils
 from .utils import validate_normalize_args, get_must_link_threshold, generate_cannot_link, \
-    set_random_seed, process_fasta, split_data, get_model_path, extract_bams
+    set_random_seed, process_fasta, split_data, get_model_path, extract_bams, get_features
 from .generate_coverage import generate_cov, combine_cov, generate_cov_from_abundances
 from .generate_kmer import generate_kmer_features_from_fasta
 from .fasta import fasta_iter
@@ -335,21 +335,20 @@ def parse_args(args, is_semibin2, with_methylation):
                     default=('SemiBin' if is_semibin2 else None),
                     help='Tag to add to output file names')
             
-        
-        if "generate_methylation_features" in p.prog:
-            m.add_argument("--motifs-scored", help="Path to the motifs scored file.", required=True)
-            # TODO create correct filtering of motifs_scored
-            m.add_argument("--bin-motifs", help = "Path to the bin-consensus file from nanomotif", required = False)
-            # m.add_argument("--must-links", help="Path to the must-links file.", required=False)
-            m.add_argument("--motif-index-dir", help="Path to the motif index directory.", required=True)
-            # m.add_argument("-t", "--threads", help="Number of threads to use.", default=1, type=int)
-            p.add_argument("--data", help="Path to the data file to append methylation.", required=False)
-            p.add_argument("--data-split", help="Path to the data split file to append methylation.", required=False)
-            p.add_argument("--motif-occurence-cutoff", help="Percent occurences in contigs.", default=0.9, type=float)
-            p.add_argument("--min-motif-observations", help="Minimum motif coverage.", default=8, type=int)
-            # p.add_argument("--ambiguous-interval", help="Interval for ambiguous motifs. Must be enclosed interval i.e. [0.05,0.15]", default="[0.05,0.15]", type=parse_interval)
-            p.add_argument("--ambiguous-motif-percentage-cutoff", help="Percentage of ambiguous motifs [0-1].", default=0.4, type=float)
-            # p.add_argument("-o","--output", help="Output directory.", default="output")
+        if with_methylation:
+            if p in [generate_methylation_features, single_easy_bin, multi_easy_bin]:    
+                m.add_argument("--motifs-scored", help="Path to the motifs scored file.", required=True)
+                m.add_argument("--bin-motifs", help = "Path to the bin-consensus file from nanomotif", required = False)
+                # m.add_argument("--must-links", help="Path to the must-links file.", required=False)
+                m.add_argument("--motif-index-dir", help="Path to the motif index directory.", required=True)
+                # m.add_argument("-t", "--threads", help="Number of threads to use.", default=1, type=int)
+                p.add_argument("--data", help="Path to the data file to append methylation.", required=False)
+                p.add_argument("--data-split", help="Path to the data split file to append methylation.", required=False)
+                p.add_argument("--motif-occurence-cutoff", help="Percent occurences in contigs.", default=0.9, type=float)
+                p.add_argument("--min-motif-observations", help="Minimum motif coverage.", default=8, type=int)
+                # p.add_argument("--ambiguous-interval", help="Interval for ambiguous motifs. Must be enclosed interval i.e. [0.05,0.15]", default="[0.05,0.15]", type=parse_interval)
+                p.add_argument("--ambiguous-motif-percentage-cutoff", help="Percentage of ambiguous motifs [0-1].", default=0.4, type=float)
+                # p.add_argument("-o","--output", help="Output directory.", default="output")
 
     for p in [single_easy_bin,
                 multi_easy_bin,
@@ -1120,7 +1119,6 @@ def training(logger, contig_fasta, num_process,
     """
     from .semi_supervised_model import train
     from .self_supervised_model import train_self
-    from .self_supervised_model import get_features
     import pandas as pd
     binned_lengths = []
 
@@ -1175,7 +1173,6 @@ def training(logger, contig_fasta, num_process,
 def binning_preprocess(data, depth_metabat2, model_path, environment, device):
     import pandas as pd
     import torch
-    from .self_supervised_model import get_features
     
     data = pd.read_csv(data, index_col=0)
     features_data = get_features(data)
@@ -1263,7 +1260,7 @@ def binning_short(logger, data, minfasta,
 
 def single_easy_binning(logger, args, binned_length,
                         must_link_threshold,
-                        contig_dict, device):
+                        contig_dict, device, with_methylation=False):
     """
     contain `generate_cannot_links`, `generate_sequence_features_single`, `train`, `bin` in one command for single-sample and co-assembly binning
     """
@@ -1291,6 +1288,9 @@ def single_easy_binning(logger, args, binned_length,
         args.output,
         args.abundances,
         only_kmer=args.depth_metabat2)
+    
+    if with_methylation:
+        generate_methylation_features(logger, args)
 
     data_path = os.path.join(args.output, 'data.csv')
     if not args.depth_metabat2:
@@ -1345,7 +1345,7 @@ def single_easy_binning(logger, args, binned_length,
         binning_long(**binning_kwargs)
 
 
-def multi_easy_binning(logger, args, device):
+def multi_easy_binning(logger, args, device, with_methylation=False):
     """
     contain `generate_cannot_links`, `generate_sequence_features_multi`, `train`, `bin` in one command for multi-sample binning
     """
@@ -1353,6 +1353,9 @@ def multi_easy_binning(logger, args, device):
     logger.info('Generating training data...')
 
     sample_list = generate_sequence_features_multi(logger, args)
+    
+    if with_methylation:
+        generate_methylation_features(logger, args)
 
     for sample_index, sample in enumerate(sample_list):
         sample_fasta = os.path.join(
@@ -1648,14 +1651,16 @@ def main2(args=None, is_semibin2=True, with_methylation=False):
                 binned_length,
                 must_link_threshold,
                 contig_dict,
-                device)
+                device,
+                with_methylation=with_methylation)
 
         elif args.cmd == 'multi_easy_bin':
             check_install(False, args.orf_finder, args.training_type == 'self')
             multi_easy_binning(
                 logger,
                 args,
-                device)
+                device,
+                with_methylation=with_methylation)
 
         elif args.cmd == 'concatenate_fasta':
             from .utils import concatenate_fasta
