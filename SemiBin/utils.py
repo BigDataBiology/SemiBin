@@ -664,3 +664,55 @@ def norm_abundance(data, features):
             if np.mean(np.sum(data[:, features["depth"]], axis=1)) > 2:
                 flag = True
     return flag
+
+
+
+def check_motif(column):
+    """
+    Check if a column is a motif.
+    
+    Parameters:
+        column (str): The column name to check.
+    
+    Returns:
+        bool: True if the column is a motif, False otherwise.
+    """
+    try:
+        motif, mod_pos = column.split('_')
+        mod, pos = mod_pos.split('-')
+        if mod in ["m", "a", "c", "21839"] and int(pos) in range(0, 20):
+            return True
+    except:
+        return False
+    
+    
+    return column.startswith('motif_')
+
+def get_features(df):
+    """
+    Takes a DataFrame and extracts indices of features to populate the provided features dictionary.
+    Specific features are extracted based on the column names:
+    - Indices of columns ending in 'bam_mean' or 'bam_var' are considered depth features.
+    
+    Parameters:
+        df (pd.DataFrame): The DataFrame from which to extract features.
+        features_dict (dict): The dictionary to populate with feature indices.
+    """
+    features_dict = {
+        'kmer': list(range(136)),
+        'depth': [],
+        'motif': []
+    }
+    
+    try:
+        columns = df.columns
+        # Populate 'depth' with indices of columns ending with 'bam_mean' or 'bam_var'
+        features_dict['depth'] = [i for i, column in enumerate(columns) if column.endswith('bam_mean') or column.endswith('bam_var')]
+        
+        # Populate 'motif' with indices of columns
+        features_dict['motif'] = [i for i, column in enumerate(columns) if check_motif(column)]
+        
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    
+    return features_dict
