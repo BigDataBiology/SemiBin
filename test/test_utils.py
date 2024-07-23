@@ -1,7 +1,8 @@
-from SemiBin.utils import get_must_link_threshold, get_marker, split_data, n50_l50, extract_bams
+from SemiBin.utils import get_must_link_threshold, get_marker, split_data, n50_l50, extract_bams, normalize_kmer_motif_features
 from hypothesis import given, strategies as st
 from io import StringIO
 import numpy as np
+import pandas as pd
 
 def slow_get_must_link_threshold(contig_len):
     """
@@ -135,3 +136,32 @@ def test_extract_bams(tmpdir):
              tmpdir)
     assert rs is None
 
+def test_normalize_kmer_motif_features():
+    # Test case 1: Normalizing a 3x3 array
+    data = {
+        "kmer1": [1, 2, 3],
+        "kmer2": [4, 5, 6],
+        "kmer3": [7, 8, 9]
+    }
+    
+    df = pd.DataFrame(data)
+    df = df.values
+    df_norm, _ = normalize_kmer_motif_features(df, df)
+    expected_df_norm = np.array([[0., 0., 0.], [0.5, 0.5, 0.5], [1., 1., 1.]])
+    assert np.allclose(df_norm, expected_df_norm), f"Expected {expected_df_norm}, but got {df_norm}"
+    
+    # Test case 2: Normalizing train_data with a different train_data_split
+    df_split = pd.DataFrame({
+        "kmer1": [1, 2],
+        "kmer2": [4, 5],
+        "kmer3": [7, 8]
+    })
+    df_split = df_split.values
+
+    df_norm, df_split_norm = normalize_kmer_motif_features(df, df_split)
+    expected_df_split_norm = np.array([
+        [0.0, 0.0, 0.0],
+        [0.5, 0.5, 0.5]
+    ])
+    assert np.allclose(df_norm, expected_df_norm), f"Expected {expected_df_norm}, but got {df_norm}"
+    assert np.allclose(df_split_norm, expected_df_split_norm), f"Expected {expected_df_split_norm}, but got {df_split_norm}"
