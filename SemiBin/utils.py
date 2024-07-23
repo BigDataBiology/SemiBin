@@ -707,7 +707,7 @@ def get_features(df):
     try:
         columns = df.columns
         # Populate 'depth' with indices of columns ending with 'bam_mean' or 'bam_var'
-        features_dict['depth'] = [i for i, column in enumerate(columns) if column.endswith('bam_mean') or column.endswith('bam_var')]
+        features_dict['depth'] = [i for i, column in enumerate(columns) if column.endswith('mean') or column.endswith('var')]
         
         # Populate 'motif' with indices of columns
         features_dict['motif'] = [i for i, column in enumerate(columns) if check_motif(column)]
@@ -721,9 +721,9 @@ def normalize_kmer_motif_features(train_data, train_data_split):
     """
     MinMax scaling was chosen to normalize kmers which is in the range of 0-0.07 however motifs are in the range of 0-1.
     """
-    from sklearn.preprocessing import MinMaxScaler
-    scaler = MinMaxScaler()
-    train_data = scaler.fit_transform(train_data)
-    train_data_split = scaler.transform(train_data_split)
+    # from sklearn.preprocessing import MinMaxScaler
+    # scaler = MinMaxScaler()
+    # train_data = scaler.fit_transform(train_data)
+    # train_data_split = scaler.transform(train_data_split)
     
     return train_data, train_data_split
