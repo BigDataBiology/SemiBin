@@ -341,14 +341,11 @@ def parse_args(args, is_semibin2, with_methylation):
                 m.add_argument("--bin-motifs", help = "Path to the bin-consensus file from nanomotif", required = False)
                 # m.add_argument("--must-links", help="Path to the must-links file.", required=False)
                 m.add_argument("--motif-index-dir", help="Path to the motif index directory.", required=True)
-                # m.add_argument("-t", "--threads", help="Number of threads to use.", default=1, type=int)
                 p.add_argument("--data", help="Path to the data file to append methylation.", required=False)
                 p.add_argument("--data-split", help="Path to the data split file to append methylation.", required=False)
                 p.add_argument("--motif-occurence-cutoff", help="Percent occurences in contigs.", default=0.9, type=float)
                 p.add_argument("--min-motif-observations", help="Minimum motif coverage.", default=8, type=int)
-                # p.add_argument("--ambiguous-interval", help="Interval for ambiguous motifs. Must be enclosed interval i.e. [0.05,0.15]", default="[0.05,0.15]", type=parse_interval)
-                p.add_argument("--ambiguous-motif-percentage-cutoff", help="Percentage of ambiguous motifs [0-1].", default=0.4, type=float)
-                # p.add_argument("-o","--output", help="Output directory.", default="output")
+                
 
     for p in [single_easy_bin,
                 multi_easy_bin,
@@ -608,17 +605,18 @@ def parse_args(args, is_semibin2, with_methylation):
                        default='auto')
 
     for p in [single_easy_bin, multi_easy_bin]:
-        p.add_argument('--semi-supervised',
-                           required=False,
-                           help='Train the model with semi-supervised learning.',
-                           dest='semi_supervised',
-                           action='store_true', )
+        if not with_methylation:
+            p.add_argument('--semi-supervised',
+                            required=False,
+                            help='Train the model with semi-supervised learning.',
+                            dest='semi_supervised',
+                            action='store_true', )
 
-        p.add_argument('--self-supervised',
-                           required=False,
-                           help='Train the model with self-supervised learning.',
-                           dest='self_supervised',
-                           action='store_true', )
+            p.add_argument('--self-supervised',
+                            required=False,
+                            help='Train the model with self-supervised learning.',
+                            dest='self_supervised',
+                            action='store_true', )
 
         if not is_semibin2:
             p.add_argument('--training-type',
@@ -628,12 +626,13 @@ def parse_args(args, is_semibin2, with_methylation):
                             'DEPRECATED: use --self-supervised/--semi-supervised',
                        dest='training_type')
 
-        p.add_argument('--sequencing-type',
-               required=False,
-               type=str,
-               help='sequencing type in [short_read/long_read], Default: short_read.',
-               dest='sequencing_type',
-               default='short_read',)
+        if not with_methylation:
+            p.add_argument('--sequencing-type',
+                required=False,
+                type=str,
+                help='sequencing type in [short_read/long_read], Default: short_read.',
+                dest='sequencing_type',
+                default='short_read',)
 
 
     if not args:
@@ -1242,7 +1241,7 @@ def binning_short(logger, data, minfasta,
     from .cluster import cluster
     logger.info('Start binning.')
 
-    is_combined, n_sample, data, model = binning_preprocess(data, getattr(args, 'depth_metabat2', None), model_path, environment, device)
+    is_combined, n_sample, data, model, _ = binning_preprocess(data, getattr(args, 'depth_metabat2', None), model_path, environment, device)
 
     cluster(
         logger,
@@ -1455,6 +1454,11 @@ def main2(args=None, is_semibin2=True, with_methylation=False):
         args = sys.argv[1:]
     args = parse_args(args, is_semibin2, with_methylation)
 
+    if with_methylation and args.cmd in ["single_easy_bin", "multi_easy_bin"]:
+        args.sequencing_type = 'long_read'
+        args.self_supervised = True
+        args.semi_supervised = False
+    
     logger = logging.getLogger('SemiBin')
     if args.verbose:
         loglevel = logging.DEBUG
