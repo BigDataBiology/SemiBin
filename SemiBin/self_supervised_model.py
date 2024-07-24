@@ -59,6 +59,10 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     scheduler = lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)
 
+    # Set seet for reproducibility
+    torch.manual_seed(0)
+    np.random.seed(0)
+    
     for epoch in tqdm(range(epoches)):
         for data_index, (datapath, data_split_path) in enumerate(zip(datapaths, data_splits)):
             if epoch == 0:
