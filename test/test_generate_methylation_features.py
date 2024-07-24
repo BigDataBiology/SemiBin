@@ -23,8 +23,8 @@ class SetupArgs:
 @pytest.fixture
 def data():
     args = SetupArgs()
-    
-    motifs_scored, data, data_split, bin_consensus = load_data(args)
+    logger = MagicMock()
+    motifs_scored, data, data_split, bin_consensus = load_data(args, logger)
     
     contigs = get_contigs(data_split)
     
@@ -191,7 +191,7 @@ class TestCheckFilesAndLog(unittest.TestCase):
         args.data_split = None
         logger = MagicMock()
         
-        check_data_files(logger, args)
+        check_data_file_args(logger, args)
         
         # Ensure sys.exit(1) was called
         mock_exit.assert_called_once_with(1)
@@ -205,7 +205,7 @@ class TestCheckFilesAndLog(unittest.TestCase):
         args.data = ""
         logger = MagicMock()
         
-        check_data_files(logger, args)
+        check_data_file_args(logger, args)
         
         # Ensure sys.exit(1) was called
         mock_exit.assert_called_once_with(1)
@@ -220,7 +220,7 @@ class TestCheckFilesAndLog(unittest.TestCase):
         args.data_split = None
         logger = MagicMock()
         
-        check_data_files(logger, args)
+        check_data_file_args(logger, args)
         
         # Ensure the correct error message was logged
         logger.info.assert_called_with("Using default data and data_split files. Checking output directory.")
