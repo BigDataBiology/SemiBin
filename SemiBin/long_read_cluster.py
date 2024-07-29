@@ -5,7 +5,7 @@ from .utils import cal_num_bins, get_marker, write_bins, normalize_kmer_motif_fe
 from sklearn.cluster import DBSCAN
 from sklearn.neighbors import kneighbors_graph
 from collections import defaultdict
-
+from scipy.sparse import save_npz
 
 def get_best_bin(results_dict, contig_to_marker, namelist, contig_dict, minfasta):
 
@@ -46,6 +46,17 @@ def get_best_bin(results_dict, contig_to_marker, namelist, contig_dict, minfasta
         if max_F1 > 0: # if there is a bin with F1 > 0
             return max_bin
 
+
+
+def expand_cluster_based_on_methylation():
+    pass
+
+
+
+
+
+
+
 def cluster_long_read(logger, model, data, device, is_combined,
             n_sample, out, contig_dict, *, binned_length, args,
             minfasta, features_data):
@@ -74,7 +85,8 @@ def cluster_long_read(logger, model, data, device, is_combined,
 
     length_weight = np.array(
         [len(contig_dict[name]) for name in contig_list])
-
+    length_weight = np.log10(length_weight)
+        
     if not is_combined:
         depth = data.values[:, features_data["depth"]].astype(np.float32)
         mean_index = [2 * temp for temp in range(n_sample)]
@@ -82,6 +94,12 @@ def cluster_long_read(logger, model, data, device, is_combined,
         embedding_new = np.concatenate((embedding, np.log(depth)), axis=1)
     else:
         embedding_new = embedding
+
+    # Create a DataFrame to save the embeddings
+    embedding_df = pd.DataFrame(embedding_new, index=contig_list)
+
+    # Save the embeddings to a CSV file
+    embedding_df.to_csv(os.path.join(out, 'embedding_space.csv'))
 
     import tempfile
     with tempfile.TemporaryDirectory() as tdir:
@@ -110,21 +128,39 @@ def cluster_long_read(logger, model, data, device, is_combined,
         p=2,
         n_jobs=args.num_process)
 
+    # Save distance matrix
+    save_npz(os.path.join(out, "dist_matrix.npz"), dist_matrix)
+    
     DBSCAN_results_dict = {}
-    for eps_value in [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55]:
+    eps_values = [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55]
+    for eps_value in eps_values:
         dbscan = DBSCAN(eps=eps_value, min_samples=5, n_jobs=args.num_process, metric='precomputed')
         dbscan.fit(dist_matrix, sample_weight=length_weight)
         labels = dbscan.labels_
         DBSCAN_results_dict[eps_value] = labels.tolist()
 
+    
+    # Prepare DataFrame for saving results
+    results_df = pd.DataFrame({'Contig': contig_list})
+
+    # Add cluster labels for each eps value to the DataFrame
+    for eps_value in eps_values:
+        results_df[f'Cluster_Label_eps_{eps_value}'] = DBSCAN_results_dict[eps_value]
+
+    # Save results to CSV
+    results_df.to_csv(os.path.join(out,'dbscan_results_multiple_eps.csv'), index=False)
+    
     logger.debug('Integrating results.')
 
     extracted = []
+    # while the sum of contigs is higher than the smallest bin allowed continue to find bins
     while sum(len(contig_dict[contig]) for contig in contig_list) >= minfasta:
+        # If there is only one contig left, add it to the extracted list
         if len(contig_list) == 1:
             extracted.append(contig_list)
             break
-
+        
+        
         max_bin = get_best_bin(DBSCAN_results_dict,
                                 contig2marker,
                                 contig_list,
@@ -140,6 +176,10 @@ def cluster_long_read(logger, model, data, device, is_combined,
             for eps_value in DBSCAN_results_dict:
                 DBSCAN_results_dict[eps_value].pop(temp_index)
 
+    if len(features_data["motif"]) > 0:
+        # expand clusters
+        print("hello")
+        
     contig2ix = {}
     for i, cs in enumerate(extracted):
         for c in cs:
