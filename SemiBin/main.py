@@ -299,6 +299,15 @@ def parse_args(args, is_semibin2, with_methylation):
                              help='Path to the input data.csv file.',
                              dest='data',
                              default=None,)
+            if with_methylation:
+                m.add_argument(
+                    "--motifs-scored",
+                    help="Path to the motifs scored file.",
+                    required=True,
+                    dest="motifs_scored",
+                    default=None,
+                )
+            
         if p in [multi_easy_bin, generate_sequence_features_multi]:
             m.add_argument('-b', '--input-bam',
                               required=False,

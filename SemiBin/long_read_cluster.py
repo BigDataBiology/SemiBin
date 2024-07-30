@@ -1,6 +1,7 @@
 import os
 import torch
 import numpy as np
+import polars as pl
 from .utils import cal_num_bins, get_marker, write_bins, normalize_kmer_motif_features
 from sklearn.cluster import DBSCAN
 from sklearn.neighbors import kneighbors_graph
@@ -48,8 +49,144 @@ def get_best_bin(results_dict, contig_to_marker, namelist, contig_dict, minfasta
 
 
 
-def expand_cluster_based_on_methylation():
-    pass
+def expand_cluster_based_on_methylation(
+    extracted,
+    results_df,
+    unbinned_df,
+    eps_values,
+    data,
+    features_data,
+    logger,
+    args,
+    
+):
+    
+
+    
+    
+    from .methylation_pattern import generate_methylation_pattern
+    # expand clusters
+    motifs = data.columns.tolist()[min(features_data["motif"]):(max(features_data["motif"]) + 1)]
+    
+    
+    methylation_comparison = generate_methylation_pattern(
+        logger = logger,
+        motifs_scored = args.motif_scored,
+        motif_features = motifs,
+        ambiguous_interval = [0.1, 0.6],
+        min_motif_observations = 5,
+        threads = 20,
+        min_comparisons = 5
+    )
+    
+    refined_extracted = []
+    unbinned_df2 = unbinned_df
+    n=0
+    t_contigs_added = 0
+    for ibin in extracted:
+        print("Bin: {}".format(n))
+        print("Length of ibin: {}".format(len(ibin)))
+        
+        ibin_eps = results_df\
+            .filter(pl.col("Contig").is_in(ibin))\
+            .melt(id_vars = "Contig")\
+            .filter(pl.col("value") != -1)\
+            .group_by("variable")\
+            .agg(
+                pl.col("value").n_unique().alias("unique_values"),
+                pl.col("value").len().alias("count")    
+            )\
+            .filter((pl.col("unique_values") == 1) & (pl.col("count") == len(ibin)))\
+            .with_columns(
+                pl.col("variable").str.extract(r"_(\d+\.\d+)").cast(pl.Float32).alias("eps")
+            )\
+            .sort("eps")\
+            .get_column("variable")[0]
+        # print(ibin_eps)
+        # strip string from "Cluster_label_eps_" to get the eps value and convert to float
+        ibin_eps = float(ibin_eps[18:])
+        
+        # Check methylation pattern of ibin
+        ibin_pattern = methylation_comparison\
+            .filter(pl.col("contig").is_in(ibin))\
+            .filter(pl.col("contig_compare").is_in(ibin))
+            
+        # Check the ibin for mismatches
+        if sum(ibin_pattern["sum_mismatches"] > 0):
+            print("Mismatches found for ibin: {}".format(ibin))
+            refined_extracted.append(ibin)
+            continue     
+        
+        # If there are no methylation pattern: continue
+        motif_features_for_bin = data.loc[data.index.isin(ibin), motifs]
+        motif_features_for_bin = (motif_features_for_bin > 0).astype(int)
+        if (motif_features_for_bin.mean() < 0.5).sum() == 0:
+            print("No methylation pattern found for ibin: {}".format(ibin))
+            refined_extracted.append(ibin)
+            continue
+        
+        # get remaining eps values
+        remaining_eps = [x for x in eps_values if x > ibin_eps]
+        
+        # Create a copy of ibin to modify
+        nbin = ibin.copy()
+        tmp_bin = ibin.copy()
+        
+        for eps in remaining_eps:
+            # Get cluster label for rbin (refined bin)
+            rbin_label = results_df\
+                .filter(pl.col("Contig").is_in(ibin))\
+                .get_column(f"Cluster_Label_eps_{eps}")
+            
+            assert len(rbin_label.unique()) == 1, "rbin should have a unique cluster label"
+            
+            rbin_label = rbin_label[0]
+            
+            # Get rbin contigs
+            rbin = unbinned_df2\
+                .filter(pl.col(f"Cluster_Label_eps_{eps}") == rbin_label)\
+                .get_column("Contig")
+            
+            if len(rbin) == 0:
+                print("No extra contigs found with increased eps value: {}".format(eps))
+                continue
+            
+            # Add rbin to ibin
+            tmp_bin.extend(rbin)
+            # Remove duplicates
+            tmp_bin = list(set(tmp_bin))
+            
+            rbin_pattern = methylation_comparison\
+                .filter(pl.col("contig").is_in(tmp_bin))\
+                .filter(pl.col("contig_compare").is_in(tmp_bin))
+            
+            # Check the rbin for mismatches
+            if sum(rbin_pattern["sum_mismatches"] > 0):
+                print("Mismatches found for eps: {}".format(eps))
+                break
+            
+            nbin.extend(rbin)
+            # Remove duplicates
+            nbin = list(set(nbin))
+        
+        # Remove contigs from ubinned_df
+        unbinned_df2 = unbinned_df2\
+            .filter(~pl.col("Contig").is_in(nbin))
+        
+        print("Length of nbin: {}".format(len(nbin)))
+        # Make sure all contigs are unique
+        all_contigs = [item for sublist in refined_extracted for item in sublist]
+        assert len(all_contigs) == len(set(all_contigs)), "Not all contigs are unique"
+        refined_extracted.append(nbin)
+        
+        print("# Of added contigs to ibin: {}".format(len(nbin) - len(ibin)))
+        t_contigs_added += len(nbin) - len(ibin)
+        n+=1
+        
+    print("Total bins added: {}".format(t_contigs_added))
+    print(len(all_contigs))
+    assert len(all_contigs) == len(set(all_contigs)), "Not all contigs are unique"
+    return refined_extracted
 
 
 
@@ -177,8 +314,26 @@ def cluster_long_read(logger, model, data, device, is_combined,
                 DBSCAN_results_dict[eps_value].pop(temp_index)
 
     if len(features_data["motif"]) > 0:
-        # expand clusters
-        print("hello")
+        # Prepare DataFrame for saving results
+        unbinned_df = pd.DataFrame({'Contig': contig_list})
+
+        # Add cluster labels for each eps value to the DataFrame
+        for eps_value in eps_values:
+            unbinned_df[f'Cluster_Label_eps_{eps_value}'] = DBSCAN_results_dict[eps_value]
+
+        unbinned_df = pl.DataFrame(unbinned_df)
+
+        extracted = expand_cluster_based_on_methylation(
+            extracted,
+            results_df,
+            unbinned_df,
+            eps_values,
+            data,
+            features_data,
+            logger,
+            args
+        )
+    
         
     contig2ix = {}
     for i, cs in enumerate(extracted):
