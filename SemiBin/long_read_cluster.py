@@ -47,7 +47,19 @@ def get_best_bin(results_dict, contig_to_marker, namelist, contig_dict, minfasta
         if max_F1 > 0: # if there is a bin with F1 > 0
             return max_bin
 
-
+# Remove clusters smaller than 500_000 bp
+def remove_small_clusters(extracted, contig_dict, unbinned_df, results_df, min_fasta, logger):
+    logger.info("Removing clusters smaller than {} bp".format(min_fasta))
+    n_clusters = len(extracted)
+    logger.info("Number of clusters before removal: {}".format(n_clusters))
+    for cluster in extracted:
+        if sum(len(contig_dict[contig]) for contig in cluster) < min_fasta:
+            extracted.remove(cluster)
+            eps_values_for_cluster = results_df.filter(pl.col("Contig").is_in(cluster))
+            unbinned_df = pl.concat([unbinned_df, eps_values_for_cluster])
+            assert unbinned_df.get_column("Contig").n_unique() == unbinned_df.shape[0], "Not all contigs are unique"    
+    logger.info("removed {} clusters".format(n_clusters - len(extracted)))
+    return extracted, unbinned_df
 
 def expand_cluster_based_on_methylation(
     extracted,
@@ -311,8 +323,9 @@ def cluster_long_read(logger, model, data, device, is_combined,
             unbinned_df[f'Cluster_Label_eps_{eps_value}'] = DBSCAN_results_dict[eps_value]
 
         unbinned_df = pl.DataFrame(unbinned_df)
-        print(unbinned_df.shape)
-        print("extracted length:", len([item for sublist in extracted for item in sublist]))
+        
+        extracted, unbinned_df = remove_small_clusters(extracted, contig_dict, unbinned_df, results_df, 500_000, logger)
+        
         extracted = expand_cluster_based_on_methylation(
             extracted,
             results_df,
@@ -324,7 +337,7 @@ def cluster_long_read(logger, model, data, device, is_combined,
             args
         )
 
-        print("refined extracted length:", len([item for sublist in extracted for item in sublist]))
+        
         
     contig2ix = {}
     for i, cs in enumerate(extracted):
