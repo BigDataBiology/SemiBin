@@ -60,10 +60,6 @@ def expand_cluster_based_on_methylation(
     args,
     
 ):
-    
-
-    
-    
     from .methylation_pattern import generate_methylation_pattern
     # expand clusters
     motifs = data.columns.tolist()[min(features_data["motif"]):(max(features_data["motif"]) + 1)]
@@ -71,7 +67,7 @@ def expand_cluster_based_on_methylation(
     
     methylation_comparison = generate_methylation_pattern(
         logger = logger,
-        motifs_scored = args.motif_scored,
+        motifs_scored = args.motifs_scored,
         motif_features = motifs,
         ambiguous_interval = [0.1, 0.6],
         min_motif_observations = 5,
@@ -80,13 +76,9 @@ def expand_cluster_based_on_methylation(
     )
     
     refined_extracted = []
-    unbinned_df2 = unbinned_df
-    n=0
     t_contigs_added = 0
     for ibin in extracted:
-        print("Bin: {}".format(n))
-        print("Length of ibin: {}".format(len(ibin)))
-        
+        logger.debug("Processing ibin: {}".format(ibin))
         ibin_eps = results_df\
             .filter(pl.col("Contig").is_in(ibin))\
             .melt(id_vars = "Contig")\
@@ -102,9 +94,8 @@ def expand_cluster_based_on_methylation(
             )\
             .sort("eps")\
             .get_column("variable")[0]
-        # print(ibin_eps)
         # strip string from "Cluster_label_eps_" to get the eps value and convert to float
-        ibin_eps = float(ibin_eps[18:])
+        ibin_eps = ibin_eps[18:]
         
         # Check methylation pattern of ibin
         ibin_pattern = methylation_comparison\
@@ -113,20 +104,20 @@ def expand_cluster_based_on_methylation(
             
         # Check the ibin for mismatches
         if sum(ibin_pattern["sum_mismatches"] > 0):
-            print("Mismatches found for ibin: {}".format(ibin))
+            logger.debug("Mismatches found for ibin: {}".format(ibin))
             refined_extracted.append(ibin)
             continue     
         
-        # If there are no methylation pattern: continue
+        # If there are no methylation defined as at least one motif with a mean above 0.5: continue
         motif_features_for_bin = data.loc[data.index.isin(ibin), motifs]
-        motif_features_for_bin = (motif_features_for_bin > 0).astype(int)
-        if (motif_features_for_bin.mean() < 0.5).sum() == 0:
-            print("No methylation pattern found for ibin: {}".format(ibin))
+        motif_features_for_bin = (motif_features_for_bin.mean() > 0.5).astype(int)
+        if motif_features_for_bin.sum() == 0:
+            logger.debug("No methylation pattern found for ibin: {}".format(ibin))
             refined_extracted.append(ibin)
             continue
         
         # get remaining eps values
-        remaining_eps = [x for x in eps_values if x > ibin_eps]
+        remaining_eps = [x for x in eps_values if x > float(ibin_eps)]
         
         # Create a copy of ibin to modify
         nbin = ibin.copy()
@@ -143,12 +134,11 @@ def expand_cluster_based_on_methylation(
             rbin_label = rbin_label[0]
             
             # Get rbin contigs
-            rbin = unbinned_df2\
+            rbin = unbinned_df\
                 .filter(pl.col(f"Cluster_Label_eps_{eps}") == rbin_label)\
                 .get_column("Contig")
             
             if len(rbin) == 0:
-                print("No extra contigs found with increased eps value: {}".format(eps))
                 continue
             
             # Add rbin to ibin
@@ -162,7 +152,7 @@ def expand_cluster_based_on_methylation(
             
             # Check the rbin for mismatches
             if sum(rbin_pattern["sum_mismatches"] > 0):
-                print("Mismatches found for eps: {}".format(eps))
+                logger.debug("Mismatches found for eps: {}".format(eps))
                 break
             
             nbin.extend(rbin)
@@ -170,22 +160,19 @@ def expand_cluster_based_on_methylation(
             nbin = list(set(nbin))
         
         # Remove contigs from ubinned_df
-        unbinned_df2 = unbinned_df2\
+        unbinned_df = unbinned_df\
             .filter(~pl.col("Contig").is_in(nbin))
         
-        print("Length of nbin: {}".format(len(nbin)))
         # Make sure all contigs are unique
         all_contigs = [item for sublist in refined_extracted for item in sublist]
         assert len(all_contigs) == len(set(all_contigs)), "Not all contigs are unique"
         refined_extracted.append(nbin)
         
-        print("# Of added contigs to ibin: {}".format(len(nbin) - len(ibin)))
         t_contigs_added += len(nbin) - len(ibin)
-        n+=1
         
-    print("Total bins added: {}".format(t_contigs_added))
-    print(len(all_contigs))
+    all_contigs = [item for sublist in refined_extracted for item in sublist]
     assert len(all_contigs) == len(set(all_contigs)), "Not all contigs are unique"
+    logger.info("Total contigs added: {}".format(t_contigs_added))
     return refined_extracted
 
 
@@ -269,7 +256,7 @@ def cluster_long_read(logger, model, data, device, is_combined,
     save_npz(os.path.join(out, "dist_matrix.npz"), dist_matrix)
     
     DBSCAN_results_dict = {}
-    eps_values = [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55]
+    eps_values = [0.01] + [round(x, 2) for x in np.arange(0.05, 1, 0.05)]
     for eps_value in eps_values:
         dbscan = DBSCAN(eps=eps_value, min_samples=5, n_jobs=args.num_process, metric='precomputed')
         dbscan.fit(dist_matrix, sample_weight=length_weight)
@@ -286,10 +273,12 @@ def cluster_long_read(logger, model, data, device, is_combined,
 
     # Save results to CSV
     results_df.to_csv(os.path.join(out,'dbscan_results_multiple_eps.csv'), index=False)
+    results_df = pl.DataFrame(results_df)
     
     logger.debug('Integrating results.')
 
     extracted = []
+    initial_cluster_dict = {k: v for k, v in DBSCAN_results_dict.items() if 0.01 <= k <= 0.55}
     # while the sum of contigs is higher than the smallest bin allowed continue to find bins
     while sum(len(contig_dict[contig]) for contig in contig_list) >= minfasta:
         # If there is only one contig left, add it to the extracted list
@@ -298,7 +287,7 @@ def cluster_long_read(logger, model, data, device, is_combined,
             break
         
         
-        max_bin = get_best_bin(DBSCAN_results_dict,
+        max_bin = get_best_bin(initial_cluster_dict,
                                 contig2marker,
                                 contig_list,
                                 contig_dict,
@@ -322,7 +311,8 @@ def cluster_long_read(logger, model, data, device, is_combined,
             unbinned_df[f'Cluster_Label_eps_{eps_value}'] = DBSCAN_results_dict[eps_value]
 
         unbinned_df = pl.DataFrame(unbinned_df)
-
+        print(unbinned_df.shape)
+        print("extracted length:", len([item for sublist in extracted for item in sublist]))
         extracted = expand_cluster_based_on_methylation(
             extracted,
             results_df,
@@ -333,7 +323,8 @@ def cluster_long_read(logger, model, data, device, is_combined,
             logger,
             args
         )
-    
+
+        print("refined extracted length:", len([item for sublist in extracted for item in sublist]))
         
     contig2ix = {}
     for i, cs in enumerate(extracted):
