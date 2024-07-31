@@ -29,7 +29,6 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
     """
     from tqdm import tqdm
     import pandas as pd
-    from sklearn.preprocessing import normalize
     import numpy as np
 
     train_data = pd.read_csv(datapaths[0], index_col=0).values
@@ -57,6 +56,7 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
                 logger.debug(f'Reading training data for index {data_index}...')
 
             data = pd.read_csv(datapath, index_col=0)
+            data.index = data.index.astype(str)
             data_split = pd.read_csv(data_split_path, index_col=0)
 
             if mode == 'several':
@@ -67,24 +67,22 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
 
             train_data = data.values
             train_data_split = data_split.values
-
+            n_must_link = len(train_data_split)
             if not is_combined:
                 train_data = train_data[:, :136]
             else:
                 if norm_abundance(train_data):
-                    train_data_kmer  = train_data[:, :136]
-                    train_data_depth = train_data[:, 136:]
-                    train_data_depth = normalize(train_data_depth, axis=1, norm='l1')
-                    train_data = np.concatenate((train_data_kmer, train_data_depth), axis=1)
+                    from sklearn.preprocessing import normalize
+                    norm = np.sum(train_data, axis=0)
+                    train_data = train_data / norm
+                    train_data_split = train_data_split / norm
+                    train_data = normalize(train_data, axis=1, norm='l1')
+                    train_data_split = normalize(train_data_split, axis=1, norm='l1')
 
-                    train_data_split_kmer  = train_data_split[:, :136]
-                    train_data_split_depth = train_data_split[:, 136:]
-                    train_data_split_depth = normalize(train_data_split_depth, axis=1, norm='l1')
-                    train_data_split = np.concatenate((train_data_split_kmer, train_data_split_depth), axis = 1)
 
             data_length = len(train_data)
             # cannot link data is sampled randomly
-            n_cannot_link = min(len(train_data_split) * 1000 // 2, 4_000_000)
+            n_cannot_link = min(n_must_link * 1000 // 2, 4_000_000)
             indices1 = np.random.choice(data_length, size=n_cannot_link)
             indices2 = indices1 + 1 + np.random.choice(data_length - 1,
                                                        size=n_cannot_link)
@@ -126,6 +124,7 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
                 supervised_loss = supervised_loss.to(device)
                 supervised_loss.backward()
                 optimizer.step()
+
         scheduler.step()
 
     logger.info('Training finished.')

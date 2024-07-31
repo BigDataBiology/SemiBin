@@ -286,8 +286,9 @@ def parse_args(args, is_semibin2):
                              help='Path to the input data.csv file.',
                              dest='data',
                              default=None,)
+
         if p in [multi_easy_bin, generate_sequence_features_multi]:
-            m.add_argument('-b', '--input-bam',
+            p.add_argument('-b', '--input-bam',
                               required=False,
                               nargs='*',
                               help='Path to the input BAM(.bam)/CRAM(.cram) file(s). '
@@ -796,7 +797,6 @@ def generate_sequence_features_single(logger, contig_fasta,
         logger.info('We will only calculate k-mer features.')
 
     if not only_kmer:
-
         logger.debug('Start generating kmer features from fasta file.')
         kmer_whole = generate_kmer_features_from_fasta(
             contig_fasta, binned_length, 4)
@@ -1201,10 +1201,10 @@ def binning_short(logger, data, minfasta,
     model_path: path to the trained model
     """
     from .cluster import cluster
+    import pandas as pd
     logger.info('Start binning.')
 
     is_combined, n_sample, data, model = binning_preprocess(data, getattr(args, 'depth_metabat2', None), model_path, environment, device)
-
     cluster(
         logger,
         model=model,

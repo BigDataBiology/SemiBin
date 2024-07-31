@@ -217,15 +217,13 @@ def train(logger, out, contig_fastas, binned_lengths, datas, data_splits, cannot
                 train_data_split_input = train_data_must_link
             else:
                 if norm_abundance(train_data):
-                    train_data_kmer  = train_data[:, :136]
-                    train_data_depth = train_data[:, 136:]
-                    train_data_depth = normalize(train_data_depth, axis=1, norm='l1')
-                    train_data_input = np.concatenate((train_data_kmer, train_data_depth), axis=1)
+                    from sklearn.preprocessing import normalize
+                    norm = np.sum(train_data, axis=0)
+                    train_data = train_data / norm
+                    train_data_must_link = train_data_must_link / norm
+                    train_data_input = normalize(train_data, axis=1, norm='l1')
+                    train_data_split_input = normalize(train_data_must_link, axis=1, norm='l1')
 
-                    train_data_split_kmer = train_data_must_link[:, :136]
-                    train_data_split_depth = train_data_must_link[:, 136:]
-                    train_data_split_depth = normalize(train_data_split_depth, axis=1, norm='l1')
-                    train_data_split_input = np.concatenate((train_data_split_kmer, train_data_split_depth), axis = 1)
                 else:
                     train_data_input = train_data
                     train_data_split_input = train_data_must_link
@@ -314,6 +312,7 @@ def train(logger, out, contig_fastas, binned_lengths, datas, data_splits, cannot
                                      decoder2.double(), is_label=False).to(device)
                 loss.backward()
                 optimizer.step()
+
         scheduler.step()
 
     logger.info('Training finished.')
