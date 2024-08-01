@@ -9,7 +9,7 @@ def test_parse_args():
                 '-i' ,'./test/single_sample_data/input.fasta',
                 '-b', './test/single_sample_data/input.sorted.bam',
                 '-o', 'output'],
-            is_semibin2=False
+            is_semibin2=False, with_methylation=False
             )
     validate_normalize_args(logging, args)
     assert args.training_type == 'semi'
@@ -22,7 +22,7 @@ def test_sequencing_type():
                 '-b', './test/single_sample_data/input.sorted.bam',
                 '--sequencing-type', 'Long-Reads',
                 '-o', 'output'],
-            is_semibin2=False
+            is_semibin2=False, with_methylation=False
             )
     validate_normalize_args(logging, args)
     assert args.training_type == 'semi'
@@ -36,7 +36,7 @@ def test_parse_args_backcompat():
                     '-b', './test/single_sample_data/input.sorted.bam',
                     '-o', 'output',
                     '--training-type', t],
-                is_semibin2=False
+                is_semibin2=False, with_methylation=False
                 )
         validate_normalize_args(logging, args)
         assert args.training_type == t
@@ -48,7 +48,7 @@ def test_parse_args_backcompat():
                     '-b', './test/single_sample_data/input.sorted.bam',
                     '-o', 'output',
                     f'--{t}-supervised'],
-                is_semibin2=False
+                is_semibin2=False, with_methylation=False
                 )
         validate_normalize_args(logging, args2)
         assert args2.training_type == t
@@ -63,7 +63,7 @@ def test_parse_args_backcompat():
                  '-i', 'test/train_data/input.fasta',
                  '-o', 'test-outputs/output_train_fa',
                  '-p', '1'],
-            is_semibin2=False,
+            is_semibin2=False, with_methylation=False,
             )
         validate_normalize_args(logging, args)
         assert args.mode == 'several'
@@ -76,7 +76,7 @@ def test_parse_args_backcompat():
              '-i', 'test/train_data/input.fasta',
              '-o', 'test-outputs/output_train_fa',
              '-p', '1'],
-        is_semibin2=False)
+        is_semibin2=False, with_methylation=False)
     validate_normalize_args(logging, args)
     assert args.mode == 'single'
 
@@ -88,7 +88,7 @@ def test_parse_args_backcompat():
              '-i', 'test/train_data/input.fasta',
              '-o', 'test-outputs/output_train_fa',
              '-p', '1'],
-        is_semibin2=False)
+        is_semibin2=False, with_methylation=False)
     validate_normalize_args(logging, args)
     assert args.mode == 'single'
 
@@ -98,7 +98,7 @@ def test_parse_args_backcompat():
              '--data-split', 'test/train_data/data_split.csv',
              '-o', 'test-outputs/output_train_fa',
              '-p', '1'],
-        is_semibin2=True)
+        is_semibin2=True, with_methylation=False)
     validate_normalize_args(logging, args)
     assert args.mode == 'single'
 
@@ -109,7 +109,7 @@ def test_parse_args_backcompat():
              '-o', 'test-outputs/output_train_fa',
              '--train-from-many',
              '-p', '1'],
-        is_semibin2=True)
+        is_semibin2=True, with_methylation=False)
     validate_normalize_args(logging, args)
     assert args.mode == 'several'
 
@@ -121,7 +121,7 @@ def test_quiet_before_or_after():
             '-i' ,'./test/single_sample_data/input.fasta',
             '-b', './test/single_sample_data/input.sorted.bam',
             '-o', 'output'],
-            is_semibin2=False)
+            is_semibin2=False, with_methylation=False)
     assert args.quiet
     args_after = parse_args([
             'single_easy_bin',
@@ -129,7 +129,7 @@ def test_quiet_before_or_after():
             '-i' ,'./test/single_sample_data/input.fasta',
             '-b', './test/single_sample_data/input.sorted.bam',
             '-o', 'output'],
-            is_semibin2=False)
+            is_semibin2=False, with_methylation=False)
     assert args_after.quiet
     assert args == args_after
 
@@ -140,7 +140,7 @@ def test_multi_easy_bin_args():
                 '-i' ,'./test/single_sample_data/input.fasta',
                 '-b', './test/single_sample_data/input.sorted.bam',
                 '-o', 'output'],
-            is_semibin2=False)
+            is_semibin2=False, with_methylation=False)
     assert args.cmd == 'multi_easy_bin'
 
 def test_semibin2_args():
@@ -150,7 +150,7 @@ def test_semibin2_args():
                     '-i' ,'./test/single_sample_data/input.fasta',
                     '-b', './test/single_sample_data/input.sorted.bam',
                     '-o', 'output'],
-                is_semibin2=is_semibin2)
+                is_semibin2=is_semibin2, with_methylation=False)
         validate_normalize_args(logging, args)
         assert args.cmd == 'single_easy_bin'
         assert args.training_type == def_mode
@@ -161,7 +161,7 @@ def test_semibin2_args():
                     '-i' ,'./test/single_sample_data/input.fasta',
                     '-b', './test/single_sample_data/input.sorted.bam',
                     '-o', 'output'],
-                is_semibin2=is_semibin2)
+                is_semibin2=is_semibin2, with_methylation=False)
         validate_normalize_args(logging, args)
         assert args.cmd == 'single_easy_bin'
         assert args.training_type == 'self'
@@ -171,7 +171,7 @@ def test_semibin2_args():
                     '-i' ,'./test/single_sample_data/input.fasta',
                     '-b', './test/single_sample_data/input.sorted.bam',
                     '-o', 'output'],
-                is_semibin2=is_semibin2)
+                is_semibin2=is_semibin2, with_methylation=False)
         validate_normalize_args(logging, args)
         assert args.cmd == 'multi_easy_bin'
         assert args.training_type == def_mode
@@ -183,7 +183,7 @@ def test_semibin2_args():
                     '-i' ,'./test/single_sample_data/input.fasta',
                     '-b', './test/single_sample_data/input.sorted.bam',
                     '-o', 'output'],
-                is_semibin2=is_semibin2)
+                is_semibin2=is_semibin2, with_methylation=False)
         validate_normalize_args(logging, args)
         assert args.cmd == 'multi_easy_bin'
         assert args.training_type == 'semi'
@@ -196,7 +196,7 @@ def test_write_prerecluster():
                     '-i' ,'./test/single_sample_data/input.fasta',
                     '-b', './test/single_sample_data/input.sorted.bam',
                     '-o', 'output'],
-                is_semibin2=is_semibin2)
+                is_semibin2=is_semibin2, with_methylation=False)
         validate_normalize_args(logging, args)
         assert bool(args.write_pre_reclustering_bins) != is_semibin2
 
@@ -207,7 +207,7 @@ def test_write_prerecluster():
                     '-i' ,'./test/single_sample_data/input.fasta',
                     '-b', './test/single_sample_data/input.sorted.bam',
                     '-o', 'output'],
-                is_semibin2=is_semibin2)
+                is_semibin2=is_semibin2, with_methylation=False)
         validate_normalize_args(logging, args)
         assert args.write_pre_reclustering_bins
 
@@ -218,7 +218,7 @@ def test_write_prerecluster():
                     '-i' ,'./test/single_sample_data/input.fasta',
                     '-b', './test/single_sample_data/input.sorted.bam',
                     '-o', 'output'],
-                is_semibin2=is_semibin2)
+                is_semibin2=is_semibin2, with_methylation=False)
         validate_normalize_args(logging, args)
         assert not args.write_pre_reclustering_bins
 
@@ -230,13 +230,13 @@ def test_write_prerecluster():
                     '-i' ,'./test/single_sample_data/input.fasta',
                     '-b', './test/single_sample_data/input.sorted.bam',
                     '-o', 'output'],
-                is_semibin2=is_semibin2)
+                is_semibin2=is_semibin2, with_methylation=False)
         with pytest.raises(SystemExit):
             validate_normalize_args(logging, args)
 
 
 def test_bibtex():
     for is_semibin2 in [False, True]:
-        args = parse_args(['citation', '--bibtex'], is_semibin2=is_semibin2)
+        args = parse_args(['citation', '--bibtex'], is_semibin2=is_semibin2, with_methylation=False)
         assert args.cmd == 'citation'
         assert args.cite_format == 'bibtex'

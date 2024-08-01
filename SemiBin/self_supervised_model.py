@@ -4,7 +4,7 @@ import os
 from torch.optim import lr_scheduler
 import sys
 from .semi_supervised_model import Semi_encoding_single, Semi_encoding_multiple, feature_Dataset
-from .utils import norm_abundance
+from .utils import norm_abundance, get_features, normalize_kmer_motif_features
 
 def loss_function(embedding1, embedding2, label):
     relu = torch.nn.ReLU()
@@ -16,55 +16,6 @@ def loss_function(embedding1, embedding2, label):
     return supervised_loss
 
 
-def check_motif(column):
-    """
-    Check if a column is a motif.
-    
-    Parameters:
-        column (str): The column name to check.
-    
-    Returns:
-        bool: True if the column is a motif, False otherwise.
-    """
-    try:
-        motif, mod_pos = column.split('_')
-        mod, pos = mod_pos.split('-')
-        if mod in ["m", "a", "c", "21839"] and int(pos) in range(0, 20):
-            return True
-    except:
-        return False
-    
-    
-    return column.startswith('motif_')
-
-def get_features(df):
-    """
-    Takes a DataFrame and extracts indices of features to populate the provided features dictionary.
-    Specific features are extracted based on the column names:
-    - Indices of columns ending in 'bam_mean' or 'bam_var' are considered depth features.
-    
-    Parameters:
-        df (pd.DataFrame): The DataFrame from which to extract features.
-        features_dict (dict): The dictionary to populate with feature indices.
-    """
-    features_dict = {
-        'kmer': list(range(136)),
-        'depth': [],
-        'motif': []
-    }
-    
-    try:
-        columns = df.columns
-        # Populate 'depth' with indices of columns ending with 'bam_mean' or 'bam_var'
-        features_dict['depth'] = [i for i, column in enumerate(columns) if column.endswith('bam_mean') or column.endswith('bam_var')]
-        
-        # Populate 'motif' with indices of columns
-        features_dict['motif'] = [i for i, column in enumerate(columns) if check_motif(column)]
-        
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    
-    return features_dict
 
 
 def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
@@ -108,6 +59,10 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     scheduler = lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)
 
+    # Set seet for reproducibility
+    torch.manual_seed(0)
+    np.random.seed(0)
+    
     for epoch in tqdm(range(epoches)):
         for data_index, (datapath, data_split_path) in enumerate(zip(datapaths, data_splits)):
             if epoch == 0:
@@ -127,14 +82,21 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
 
             if not is_combined:
                 train_data = train_data[:, features_data['kmer'] + features_data['motif']]
+                if len(features_data["motif"]) > 0:
+                    train_data, train_data_split = normalize_kmer_motif_features(train_data, train_data_split)
+                
             else:
                 if norm_abundance(train_data, features_data):
                     train_data_kmer  = train_data[:, features_data['kmer'] + features_data['motif']]
+                    train_data_split_kmer  = train_data_split[:, features_data_split['kmer'] + features_data_split['motif']]
+                    
+                    if len(features_data["motif"]) > 0:
+                        train_data_kmer, train_data_split_kmer = normalize_kmer_motif_features(train_data_kmer, train_data_split_kmer)
+                    
                     train_data_depth = train_data[:, features_data['depth']]
                     train_data_depth = normalize(train_data_depth, axis=1, norm='l1')
                     train_data = np.concatenate((train_data_kmer, train_data_depth), axis=1)
 
-                    train_data_split_kmer  = train_data_split[:, features_data_split['kmer'] + features_data_split['motif']]
                     train_data_split_depth = train_data_split[:, features_data_split['depth']]
                     train_data_split_depth = normalize(train_data_split_depth, axis=1, norm='l1')
                     train_data_split = np.concatenate((train_data_split_kmer, train_data_split_depth), axis = 1)

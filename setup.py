@@ -45,6 +45,7 @@ setup(name='SemiBin',
       zip_safe=False,
       entry_points={
             'console_scripts': ['SemiBin=SemiBin.main:main_no_version',
+                                'SemiBin3=SemiBin.main:main3',
                                 'SemiBin2=SemiBin.main:main2',
                                 'SemiBin1=SemiBin.main:main1',
                                 ],

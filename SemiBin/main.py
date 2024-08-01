@@ -10,13 +10,14 @@ import sys
 from itertools import groupby
 from . import utils
 from .utils import validate_normalize_args, get_must_link_threshold, generate_cannot_link, \
-    set_random_seed, process_fasta, split_data, get_model_path, extract_bams
+    set_random_seed, process_fasta, split_data, get_model_path, extract_bams, get_features
 from .generate_coverage import generate_cov, combine_cov, generate_cov_from_abundances
 from .generate_kmer import generate_kmer_features_from_fasta
 from .fasta import fasta_iter
+from .generate_methylation import generate_methylation_features
 
 
-def parse_args(args, is_semibin2):
+def parse_args(args, is_semibin2, with_methylation):
     from .semibin_version import __version__
     # BooleanOptionalAction is available in Python 3.9; before that, we fall back on the default
     BooleanOptionalAction = getattr(argparse, 'BooleanOptionalAction', 'store_true')
@@ -63,19 +64,23 @@ def parse_args(args, is_semibin2):
                                                   ' This will produce the data.csv and data_split.csv files.'
                                                   )
 
-
+    
     generate_sequence_features_multi = subparsers.add_parser('generate_sequence_features_multi', aliases=['generate_sequence_features_multi'],
                                             help='Generate sequence features (kmer and abundance) as training data'
                                                   ' for (semi/self)-supervised deep learning model training (multi-sample mode).'
                                                   ' This will produce the data.csv and data_split.csv files.'
                                                   )
 
-    generate_methylation_features = subparsers.add_parser(
-        'generate_methylation_features',
-        help='Generate methylation features as training data'
-            ' for (semi/self)-supervised deep learning model training.'
-            ' This will modify the data.csv and data_split.csv files.'
-    )
+    if with_methylation:
+        # Methylation
+        generate_methylation_features = subparsers.add_parser(
+            'generate_methylation_features',
+            help='Generate methylation features as training data'
+                ' for (semi/self)-supervised deep learning model training.'
+                ' This will modify the data.csv and data_split.csv files.'
+        )
+    
+    
 
     check_install = subparsers.add_parser('check_install', help = 'Check whether required dependencies are present.')
 
@@ -270,10 +275,11 @@ def parse_args(args, is_semibin2):
                        default=15)
 
 
-
-    for p in [single_easy_bin, multi_easy_bin, generate_cannot_links,
-                generate_sequence_features_single, generate_sequence_features_multi, generate_methylation_features,
-                binning, binning_long]:
+    parsers = [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_sequence_features_single, generate_sequence_features_multi, binning, binning_long]
+    if with_methylation:
+        parsers.append(generate_methylation_features)
+        
+    for p in parsers:
         m = p.add_argument_group('Mandatory arguments')
 
         m.add_argument('-i', '--input-fasta',
@@ -293,6 +299,15 @@ def parse_args(args, is_semibin2):
                              help='Path to the input data.csv file.',
                              dest='data',
                              default=None,)
+            if with_methylation:
+                m.add_argument(
+                    "--motifs-scored",
+                    help="Path to the motifs scored file.",
+                    required=True,
+                    dest="motifs_scored",
+                    default=None,
+                )
+            
         if p in [multi_easy_bin, generate_sequence_features_multi]:
             m.add_argument('-b', '--input-bam',
                               required=False,
@@ -309,7 +324,7 @@ def parse_args(args, is_semibin2):
                            dest='abundances',
                            default=None,
                            )
-        if p is not generate_methylation_features:
+        if "generate_methylation_features" not in p.prog:
             p.add_argument('--write-pre-reclustering-bins',
                     required=False,
                     help='Write pre-reclustering bins to disk.',
@@ -328,19 +343,18 @@ def parse_args(args, is_semibin2):
                     dest='output_tag',
                     default=('SemiBin' if is_semibin2 else None),
                     help='Tag to add to output file names')
-        if p is generate_methylation_features:
-            m.add_argument('-b', '--pileup',
-                            required=True,
-                            help='Path to the pileup file.',
-                            dest='pileup',
-                            default=None,
-                            )
-            m.add_argument('-m', '--motifs-scored',
-                            required=True,
-                            help='Path to the motifs-scored file created by nanomotif.',
-                            dest='motifs',
-                            default=None,
-                            )
+            
+        if with_methylation:
+            if p in [generate_methylation_features, single_easy_bin, multi_easy_bin]:    
+                m.add_argument("--motifs-scored", help="Path to the motifs scored file.", required=True)
+                m.add_argument("--bin-motifs", help = "Path to the bin-consensus file from nanomotif", required = False)
+                # m.add_argument("--must-links", help="Path to the must-links file.", required=False)
+                m.add_argument("--motif-index-dir", help="Path to the motif index directory.", required=True)
+                p.add_argument("--data", help="Path to the data file to append methylation.", required=False)
+                p.add_argument("--data-split", help="Path to the data split file to append methylation.", required=False)
+                p.add_argument("--motif-occurence-cutoff", help="Percent occurences in contigs.", default=0.9, type=float)
+                p.add_argument("--min-motif-observations", help="Minimum motif coverage.", default=8, type=int)
+                
 
     for p in [single_easy_bin,
                 multi_easy_bin,
@@ -398,8 +412,12 @@ def parse_args(args, is_semibin2):
                        default=None,
                        )
 
-
-    for p in [train_semi, generate_cannot_links, binning, single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi, generate_methylation_features, training_self, binning_long]:
+    parsers = [train_semi, generate_cannot_links, binning, single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi, training_self, binning_long]
+    if with_methylation:
+        parsers.append(generate_methylation_features)
+        
+        
+    for p in parsers:
         p.add_argument('-p', '--processes', '-t', '--threads',
                    required=False,
                    type=int,
@@ -596,17 +614,18 @@ def parse_args(args, is_semibin2):
                        default='auto')
 
     for p in [single_easy_bin, multi_easy_bin]:
-        p.add_argument('--semi-supervised',
-                           required=False,
-                           help='Train the model with semi-supervised learning.',
-                           dest='semi_supervised',
-                           action='store_true', )
+        if not with_methylation:
+            p.add_argument('--semi-supervised',
+                            required=False,
+                            help='Train the model with semi-supervised learning.',
+                            dest='semi_supervised',
+                            action='store_true', )
 
-        p.add_argument('--self-supervised',
-                           required=False,
-                           help='Train the model with self-supervised learning.',
-                           dest='self_supervised',
-                           action='store_true', )
+            p.add_argument('--self-supervised',
+                            required=False,
+                            help='Train the model with self-supervised learning.',
+                            dest='self_supervised',
+                            action='store_true', )
 
         if not is_semibin2:
             p.add_argument('--training-type',
@@ -616,12 +635,13 @@ def parse_args(args, is_semibin2):
                             'DEPRECATED: use --self-supervised/--semi-supervised',
                        dest='training_type')
 
-        p.add_argument('--sequencing-type',
-               required=False,
-               type=str,
-               help='sequencing type in [short_read/long_read], Default: short_read.',
-               dest='sequencing_type',
-               default='short_read',)
+        if not with_methylation:
+            p.add_argument('--sequencing-type',
+                required=False,
+                type=str,
+                help='sequencing type in [short_read/long_read], Default: short_read.',
+                dest='sequencing_type',
+                default='short_read',)
 
 
     if not args:
@@ -1107,7 +1127,6 @@ def training(logger, contig_fasta, num_process,
     """
     from .semi_supervised_model import train
     from .self_supervised_model import train_self
-    from .self_supervised_model import get_features
     import pandas as pd
     binned_lengths = []
 
@@ -1162,7 +1181,6 @@ def training(logger, contig_fasta, num_process,
 def binning_preprocess(data, depth_metabat2, model_path, environment, device):
     import pandas as pd
     import torch
-    from .self_supervised_model import get_features
     
     data = pd.read_csv(data, index_col=0)
     features_data = get_features(data)
@@ -1232,7 +1250,7 @@ def binning_short(logger, data, minfasta,
     from .cluster import cluster
     logger.info('Start binning.')
 
-    is_combined, n_sample, data, model = binning_preprocess(data, getattr(args, 'depth_metabat2', None), model_path, environment, device)
+    is_combined, n_sample, data, model, _ = binning_preprocess(data, getattr(args, 'depth_metabat2', None), model_path, environment, device)
 
     cluster(
         logger,
@@ -1250,7 +1268,7 @@ def binning_short(logger, data, minfasta,
 
 def single_easy_binning(logger, args, binned_length,
                         must_link_threshold,
-                        contig_dict, device):
+                        contig_dict, device, with_methylation=False):
     """
     contain `generate_cannot_links`, `generate_sequence_features_single`, `train`, `bin` in one command for single-sample and co-assembly binning
     """
@@ -1278,6 +1296,9 @@ def single_easy_binning(logger, args, binned_length,
         args.output,
         args.abundances,
         only_kmer=args.depth_metabat2)
+    
+    if with_methylation:
+        generate_methylation_features(logger, args)
 
     data_path = os.path.join(args.output, 'data.csv')
     if not args.depth_metabat2:
@@ -1332,7 +1353,7 @@ def single_easy_binning(logger, args, binned_length,
         binning_long(**binning_kwargs)
 
 
-def multi_easy_binning(logger, args, device):
+def multi_easy_binning(logger, args, device, with_methylation=False):
     """
     contain `generate_cannot_links`, `generate_sequence_features_multi`, `train`, `bin` in one command for multi-sample binning
     """
@@ -1340,6 +1361,9 @@ def multi_easy_binning(logger, args, device):
     logger.info('Generating training data...')
 
     sample_list = generate_sequence_features_multi(logger, args)
+    
+    if with_methylation:
+        generate_methylation_features(logger, args)
 
     for sample_index, sample in enumerate(sample_list):
         sample_fasta = os.path.join(
@@ -1432,13 +1456,18 @@ def split_contigs(logger, contig_fasta, *, output, min_length):
     return oname
 
 
-def main2(args=None, is_semibin2=True):
+def main2(args=None, is_semibin2=True, with_methylation=False):
     import tempfile
 
     if args is None:
         args = sys.argv[1:]
-    args = parse_args(args, is_semibin2)
+    args = parse_args(args, is_semibin2, with_methylation)
 
+    if with_methylation and args.cmd in ["single_easy_bin", "multi_easy_bin"]:
+        args.sequencing_type = 'long_read'
+        args.self_supervised = True
+        args.semi_supervised = False
+    
     logger = logging.getLogger('SemiBin')
     if args.verbose:
         loglevel = logging.DEBUG
@@ -1568,6 +1597,9 @@ def main2(args=None, is_semibin2=True):
 
         elif args.cmd == 'generate_sequence_features_multi':
             generate_sequence_features_multi(logger, args)
+            
+        elif args.cmd == 'generate_methylation_features':
+            generate_methylation_features(logger, args)
 
         elif args.cmd in ['train', 'train_semi']:
             training(logger,
@@ -1632,14 +1664,16 @@ def main2(args=None, is_semibin2=True):
                 binned_length,
                 must_link_threshold,
                 contig_dict,
-                device)
+                device,
+                with_methylation=with_methylation)
 
         elif args.cmd == 'multi_easy_bin':
             check_install(False, args.orf_finder, args.training_type == 'self')
             multi_easy_binning(
                 logger,
                 args,
-                device)
+                device,
+                with_methylation=with_methylation)
 
         elif args.cmd == 'concatenate_fasta':
             from .utils import concatenate_fasta
@@ -1674,6 +1708,9 @@ def main_no_version(args=None):
         print(f"Will continue as SemiBin1 in {5-i} seconds...")
         sleep(1)
     main1(args)
+
+def main3():
+    main2(with_methylation=True)
 
 if __name__ == '__main__':
     main2()
