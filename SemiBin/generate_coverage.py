@@ -3,7 +3,7 @@ import subprocess
 from .atomicwrite import atomic_write
 
 def calculate_coverage(depth_stream, bam_file, must_link_threshold, edge=75, is_combined=False,
-                       contig_threshold=1000, sep=None, contig_threshold_dict=None):
+                       contig_threshold=1000, sep=None, sample_contig_threshold=None):
     """
     depth_stream : an iterable like the output of bedtools genomecov
     bam_file : str filename
@@ -41,8 +41,13 @@ def calculate_coverage(depth_stream, bam_file, must_link_threshold, edge=75, is_
         if sep is None:
             cov_threshold = contig_threshold
         else:
-            sample_name = contig_name.split(sep)[0]
-            cov_threshold = contig_threshold_dict[sample_name]
+            try:
+                sample, contig = contig_name.split(sep)
+                cov_threshold = sample_contig_threshold[sample]
+            except ValueError:
+                raise ValueError(f"Error parsing contig name '{contig_name}' in file {bam_file} (trying to split by {sep} separator)")
+            except KeyError:
+                raise KeyError(f"Error: {sample} not found (parsing {bam_file}")
         if len(depth_value) < cov_threshold:
             continue
         depth_value_ = depth_value[edge:-edge]
@@ -104,7 +109,7 @@ def generate_cov(bam_file, bam_index, out, threshold,
                                     is_combined=is_combined,
                                     sep=sep,
                                     contig_threshold=(contig_threshold if sep is None else 1000),
-                                    contig_threshold_dict=(contig_threshold if sep is not None else None))
+                                    sample_contig_threshold=(contig_threshold if sep is not None else None))
 
     if bed_p.wait() != 0:
         raise OSError(f"Failure in running bedtools ({bam_file})")
@@ -172,7 +177,7 @@ def combine_cov(cov_dir : str, bam_list, is_combined : bool): # bam_list : list[
         data_split_cov = None
     return data_cov, data_split_cov
 
-def generate_cov_from_abundances(abundances, output, contig_path, contig_threshold=1000, sep=None, contig_threshold_dict=None):
+def generate_cov_from_abundances(abundances, output, contig_path, contig_threshold=1000, sep=None, sample_contig_threshold=None):
     import pandas as pd
     import numpy as np
     from .fasta import fasta_iter
@@ -188,8 +193,13 @@ def generate_cov_from_abundances(abundances, output, contig_path, contig_thresho
             if sep is None:
                 cov_threshold = contig_threshold
             else:
-                sample_name = h.split(sep)[0]
-                cov_threshold = contig_threshold_dict[sample_name]
+                try:
+                    sample_name, contig_name = h.split(sep)
+                    cov_threshold = sample_contig_threshold[sample_name]
+                except ValueError:
+                    raise ValueError(f"Error parsing contig name '{h}' in file {abun_file} (trying to split by {sep} separator)")
+                except KeyError:
+                    raise KeyError(f"Error: {sample_name} not found")
 
             if len(seq) >= cov_threshold:
                 binned_contig.append(h + '_1')

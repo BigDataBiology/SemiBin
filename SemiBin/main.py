@@ -1030,7 +1030,11 @@ def generate_sequence_features_multi(logger, args):
 
     if args.abundances:
         logger.info('Reading abundance information from abundance files.')
-        abun_split = generate_cov_from_abundances(args.abundances, os.path.join(args.output, 'samples'), args.contig_fasta, sep=args.separator, contig_threshold_dict=binning_threshold)
+        abun_split = generate_cov_from_abundances(args.abundances,
+                                                  os.path.join(args.output, 'samples'),
+                                                  contig_path=args.contig_fasta,
+                                                  sep=args.separator,
+                                                  sample_contig_threshold=binning_threshold)
         abun_split = abun_split.reset_index()
         columns_list = list(abun_split.columns)
         columns_list[0] = 'contig_name'
