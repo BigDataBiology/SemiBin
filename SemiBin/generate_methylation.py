@@ -176,104 +176,41 @@ def get_motifs(motifs_scored, bin_consensus, occurence_cutoff=0.9, min_motif_obs
     return motifs_dict
 
 
-def find_data_split_methylation_pattern(contig_lengths, motifs, motif_index_dir):
-    """
-    For each contig in the data split, find the methylation pattern on each contig half.
-    """
-    
-    methylation = pl.DataFrame()
-    
-    for contig in contig_lengths.keys():
-        length = contig_lengths[contig]
-        for mod_type in motifs.keys():
-            motif_list = motifs[mod_type]
-            index_file = os.path.join(motif_index_dir, f"{contig}_{mod_type}_motifs_positions.npz")
-            if not os.path.exists(index_file):
-                print(f"Index file not found: {index_file}")
-                continue
-            else:
-                try:
-                    with np.load(index_file, allow_pickle=True) as data:
-                        data = {key: data[key] for key in data.files if key in motif_list}
-                        
-                        for motif in data.keys():
-                            motif_data = data[motif].item()  # If it's a pickled object
-                            index_meth_forward = motif_data["index_meth_fwd"]
-                            index_nonmeth_forward = motif_data["index_nonmeth_fwd"]
-                            index_meth_reverse = motif_data["index_meth_rev"]
-                            index_nonmeth_reverse = motif_data["index_nonmeth_rev"]
-        
-                            n_mod = [
-                                len(index_meth_forward[index_meth_forward < (length / 2)]) + len(index_meth_reverse[index_meth_reverse < (length / 2)]),
-                                len(index_meth_forward[index_meth_forward >= (length / 2)]) + len(index_meth_reverse[index_meth_reverse >= (length / 2)])
-                            ]
-                            
-                            n_nomod = [
-                                len(index_nonmeth_forward[index_nonmeth_forward < (length / 2)]) + len(index_nonmeth_reverse[index_nonmeth_reverse < (length / 2)]),
-                                len(index_nonmeth_forward[index_nonmeth_forward >= (length / 2)]) + len(index_nonmeth_reverse[index_nonmeth_reverse >= (length / 2)])
-                            ]
-                            
-                            motif_str = motif.split("_")[0]
-                            
-                            methylation_tmp = pl.DataFrame({
-                                    "contig": [f"{contig}_1", f"{contig}_2"],
-                                    "motif": [motif_str, motif_str],
-                                    "mod_type": [mod_type, mod_type],
-                                    "mod_position": [motif.split("_")[-2], motif.split("_")[-2]],
-                                    "n_mod": n_mod,
-                                    "n_nomod": n_nomod
-                                })
-                            
-                            methylation = pl.concat([methylation, methylation_tmp])
-                except Exception as e:
-                    print(f"Error reading index file: {e}")
-                    continue
-    
-    return methylation
-
-
-def calculate_contig_methylation_pattern(contig, contig_length, motifs, mod_type, index_file):
+def calculate_contig_methylation_pattern(contig, contig_length, motifs, mod_type, contig_meth_pos):
     
     methylation = pl.DataFrame()
     motif_list = motifs[mod_type]
-    
-    try:
-        with np.load(index_file, allow_pickle=True) as data:
-            data = {key: data[key] for key in data.files if key in motif_list}
+    contig_meth_pos = {key: contig_meth_pos[key] for key in contig_meth_pos.keys() if key in motif_list}
             
-            for motif in data.keys():
-                motif_data = data[motif].item()
-                index_meth_forward = motif_data["index_meth_fwd"]
-                index_nonmeth_forward = motif_data["index_nonmeth_fwd"]
-                index_meth_reverse = motif_data["index_meth_rev"]
-                index_nonmeth_reverse = motif_data["index_nonmeth_rev"]
+    for motif in contig_meth_pos.keys():
+        motif_data = contig_meth_pos[motif]
+        index_meth_forward = motif_data["index_meth_fwd"]
+        index_nonmeth_forward = motif_data["index_nonmeth_fwd"]
+        index_meth_reverse = motif_data["index_meth_rev"]
+        index_nonmeth_reverse = motif_data["index_nonmeth_rev"]
 
-                n_mod = [
-                    len(index_meth_forward[index_meth_forward < (contig_length / 2)]) + len(index_meth_reverse[index_meth_reverse < (contig_length / 2)]),
-                    len(index_meth_forward[index_meth_forward >= (contig_length / 2)]) + len(index_meth_reverse[index_meth_reverse >= (contig_length / 2)])
-                ]
-                
-                n_nomod = [
-                    len(index_nonmeth_forward[index_nonmeth_forward < (contig_length / 2)]) + len(index_nonmeth_reverse[index_nonmeth_reverse < (contig_length / 2)]),
-                    len(index_nonmeth_forward[index_nonmeth_forward >= (contig_length / 2)]) + len(index_nonmeth_reverse[index_nonmeth_reverse >= (contig_length / 2)])
-                ]
-                
-                motif_str = motif.split("_")[0]
-                
-                methylation_tmp = pl.DataFrame({
-                        "contig": [f"{contig}_1", f"{contig}_2"],
-                        "motif": [motif_str, motif_str],
-                        "mod_type": [mod_type, mod_type],
-                        "mod_position": [motif.split("_")[-2], motif.split("_")[-2]],
-                        "n_mod": n_mod,
-                        "n_nomod": n_nomod
-                    })
-                
-                methylation = pl.concat([methylation, methylation_tmp])
-    except Exception as e:
-        print(f"Error reading index file: {e}")
-        return None
-            
+        n_mod = [
+            len(index_meth_forward[index_meth_forward < (contig_length / 2)]) + len(index_meth_reverse[index_meth_reverse < (contig_length / 2)]),
+            len(index_meth_forward[index_meth_forward >= (contig_length / 2)]) + len(index_meth_reverse[index_meth_reverse >= (contig_length / 2)])
+        ]
+        
+        n_nomod = [
+            len(index_nonmeth_forward[index_nonmeth_forward < (contig_length / 2)]) + len(index_nonmeth_reverse[index_nonmeth_reverse < (contig_length / 2)]),
+            len(index_nonmeth_forward[index_nonmeth_forward >= (contig_length / 2)]) + len(index_nonmeth_reverse[index_nonmeth_reverse >= (contig_length / 2)])
+        ]
+        
+        motif_str = motif.split("_")[0]
+        
+        methylation_tmp = pl.DataFrame({
+                "contig": [f"{contig}_1", f"{contig}_2"],
+                "motif": [motif_str, motif_str],
+                "mod_type": [mod_type, mod_type],
+                "mod_position": [motif.split("_")[-2], motif.split("_")[-2]],
+                "n_mod": n_mod,
+                "n_nomod": n_nomod
+            })
+        
+        methylation = pl.concat([methylation, methylation_tmp])       
     
     return methylation
     
@@ -281,7 +218,7 @@ def worker_function(task, motifs, counter, lock):
     """
     
     """
-    contig, contig_length, mod_type, index_file = task
+    contig, contig_length, mod_type, contig_meth_pos = task
     
     try:
         result = calculate_contig_methylation_pattern(
@@ -289,7 +226,7 @@ def worker_function(task, motifs, counter, lock):
             contig_length=contig_length,
             motifs=motifs,
             mod_type=mod_type,
-            index_file=index_file
+            contig_meth_pos=contig_meth_pos
         )
         with lock:
             counter.value += 1
@@ -305,7 +242,16 @@ def data_split_methylation_parallel(contig_lengths, motifs, motif_index_dir, thr
     Calculate methylation pattern for each contig in the data split in parallel.
     """
     # Create and filter tasks: compile only those tasks with existing index files for each contig and modification type.
-    tasks = [(contig, contig_lengths[contig], mod_type, os.path.join(motif_index_dir, f"{contig}_{mod_type}_motifs_positions.npz")) for contig in contig_lengths for mod_type in motifs if os.path.exists(os.path.join(motif_index_dir, f"{contig}_{mod_type}_motifs_positions.npz"))]
+    with np.load(os.path.join(motif_index_dir, "motif_positions_combined.npz"), allow_pickle=True) as d:
+        data = {key: d[key].item() for key in d.files}
+        tasks = [
+            (contig, contig_lengths[contig], mod_type, data[contig][mod_type])
+                for contig in contig_lengths
+                for mod_type in motifs
+                if mod_type in data.get(contig, {}) and data[contig][mod_type] is not None
+        ]
+    
+    # tasks = [(contig, contig_lengths[contig], mod_type, os.path.join(motif_index_dir, f"{contig}_{mod_type}_motifs_positions.npz")) for contig in contig_lengths for mod_type in motifs if os.path.exists(os.path.join(motif_index_dir, f"{contig}_{mod_type}_motifs_positions.npz"))]
 
     # Create a progress manager
     manager = multiprocessing.Manager()
