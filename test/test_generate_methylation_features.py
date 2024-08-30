@@ -64,7 +64,7 @@ def test_get_motifs(data):
 
 
 
-def test_find_data_split_methylation_pattern(data):
+def test_data_split_methylation_parallel(data):
     contig_lengths = data["contig_lengths"]
     motifs_scored = data["motifs_scored"]
     bin_consensus = data["bin_consensus"]
@@ -72,7 +72,7 @@ def test_find_data_split_methylation_pattern(data):
     
     motifs = get_motifs(motifs_scored, bin_consensus, 0.9)
     
-    contig_split_methylation = find_data_split_methylation_pattern(contig_lengths, motifs, args.motif_index_dir)
+    contig_split_methylation = data_split_methylation_parallel(contig_lengths, motifs, args.motif_index_dir)
     
     contig_split_methylation = contig_split_methylation\
         .with_columns(
