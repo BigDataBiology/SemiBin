@@ -98,4 +98,9 @@ def run_orffinder(fasta_path, num_process, tdir, orf_finder, prodigal_output_faa
         logger = logging.getLogger('SemiBin2')
         logger.info('Running naive ORF finder')
         return run_naiveorf(fasta_path, num_process, tdir)
-    return run_fraggenescan(fasta_path, num_process, tdir)
+    elif orf_finder == 'fraggenescan':
+        return run_fraggenescan(fasta_path, num_process, tdir)
+    else:
+        sys.stderr.write(
+            f"Error: Unknown ORF finder {orf_finder}\n")
+        sys.exit(1)

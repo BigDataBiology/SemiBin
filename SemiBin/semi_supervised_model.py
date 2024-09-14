@@ -141,7 +141,7 @@ class unsupervised_feature_Dataset(Dataset):
         return len(self.embedding1)
 
 
-def train(logger, out, contig_fastas, binned_lengths, datas, data_splits, cannot_links, is_combined=True,
+def train_semi(logger, out, contig_fastas, binned_lengths, datas, data_splits, cannot_links, is_combined=True,
           batchsize=2048, epoches=20, device=None, num_process = 8, mode = 'single', orf_finder = 'prodigal',
           prodigal_output_faa=None):
     """

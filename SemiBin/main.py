@@ -1079,19 +1079,18 @@ def generate_sequence_features_multi(logger, args):
     return sample_list
 
 
-def training(logger, contig_fasta, num_process,
-             data, data_split, cannot_link, batchsize,
-             epoches,  output, device, ratio, min_length, *, mode,
-             orf_finder=None, prodigal_output_faa=None, training_type='semi'):
+def training(logger, contig_fasta,
+             data, data_split, cannot_link,
+             *, output, device, mode,
+             args, training_type='semi'):
     """
     Training the model
 
     model: [single/several]
     """
-    from .semi_supervised_model import train
+    from .semi_supervised_model import train_semi
     from .self_supervised_model import train_self
     import pandas as pd
-    binned_lengths = []
 
     if mode == 'single':
         logger.info('Start training from a single sample.')
@@ -1104,13 +1103,14 @@ def training(logger, contig_fasta, num_process,
         is_combined = False
 
     if training_type == 'semi':
+        binned_lengths = []
         for fafile in contig_fasta:
             binned_lengths.append(
-                    utils.compute_min_length(min_length, fafile, ratio))
+                    utils.compute_min_length(args.min_len, fafile, args.ratio))
             if mode == 'single':
                 break
 
-        model = train(
+        model = train_semi(
             logger,
             output,
             contig_fasta,
@@ -1119,23 +1119,23 @@ def training(logger, contig_fasta, num_process,
             data_split,
             cannot_link,
             is_combined=is_combined,
-            batchsize=batchsize,
-            epoches=epoches,
+            batchsize=args.batchsize,
+            epoches=args.epoches,
             device=device,
-            num_process=num_process,
+            num_process=args.num_process,
             mode=mode,
-            prodigal_output_faa=prodigal_output_faa,
-            orf_finder=orf_finder)
+            prodigal_output_faa=args.prodigal_output_faa,
+            orf_finder=args.orf_finder)
     else:
         model = train_self(logger,
                            path.join(output, 'model.h5'),
                            data,
                            data_split,
                            is_combined,
-                           batchsize,
-                           epoches,
+                           args.batchsize,
+                           args.epoches,
                            device,
-                           num_process,
+                           args.num_process,
                            mode)
 
 
@@ -1272,18 +1272,23 @@ def single_easy_binning(logger, args, binned_length,
                 must_link_threshold,
                 args.output)
             logger.info('Training model and clustering.')
-            training(logger, [args.contig_fasta],
-                     args.num_process, [data_path], [data_split_path],
-                     [os.path.join(args.output, 'cannot', 'cannot.txt')],
-                     args.batchsize, args.epoches, args.output, device,
-                     args.ratio, args.min_len,  mode='single',
-                     orf_finder=args.orf_finder, prodigal_output_faa=args.prodigal_output_faa,
-                     training_type='semi')
+            fasta = [args.contig_fasta]
+            cannot_link = [os.path.join(args.output, 'cannot', 'cannot.txt')]
+
+            training_type = 'semi'
+
         else:
-            training(logger, None,
-                     args.num_process, [data_path], [data_split_path],
-                     None, args.batchsize, args.epoches, args.output, device, None, None,
-                     mode='single', orf_finder=None, prodigal_output_faa=args.prodigal_output_faa, training_type='self')
+            fasta = None
+            cannot_link = None
+            training_type = 'self'
+        training(logger, fasta,
+                 [data_path], [data_split_path],
+                 cannot_link=cannot_link,
+                 output=args.output,
+                 device=device,
+                 mode='single',
+                 args=args,
+                 training_type=training_type)
 
     binning_kwargs = {
         'logger': logger,
@@ -1343,17 +1348,21 @@ def multi_easy_binning(logger, args, device):
                 must_link_threshold if args.ml_threshold is None else args.ml_threshold,
                 os.path.join(args.output, 'samples', sample))
 
-            sample_cannot = os.path.join(
-                args.output, 'samples', sample, 'cannot/{}.txt'.format(sample))
-            training(logger, [sample_fasta], args.num_process,
-                     [sample_data], [sample_data_split], [sample_cannot],
-                     args.batchsize, args.epoches, os.path.join(args.output, 'samples', sample),
-                     device, args.ratio, args.min_len, mode='single', orf_finder=args.orf_finder, prodigal_output_faa=args.prodigal_output_faa, training_type='semi')
+            sample_fasta = [sample_fasta]
+            sample_cannot = [os.path.join(
+                args.output, 'samples', sample, 'cannot', f'{sample}.txt')]
+            training_type = 'semi'
         else:
-            training(logger, None, args.num_process,
-                     [sample_data], [sample_data_split], None,
-                     args.batchsize, args.epoches, os.path.join(args.output, 'samples', sample),
-                     device, None, None, mode='single', orf_finder=None, prodigal_output_faa=args.prodigal_output_faa, training_type='self')
+            sample_fasta = None
+            sample_cannot = None
+            training_type = 'self'
+        training(logger, sample_fasta,
+                 [sample_data], [sample_data_split], sample_cannot,
+                 output=os.path.join(args.output, 'samples', sample),
+                 device=device,
+                 mode='single',
+                 args=args,
+                 training_type=training_type)
 
         binning_kwargs = {
             'logger': logger,
@@ -1553,36 +1562,25 @@ def main2(raw_args=None, is_semibin2=True):
         elif args.cmd in ['train', 'train_semi']:
             training(logger,
                     contig_fasta=args.contig_fasta,
-                    num_process=args.num_process,
                     data=args.data,
                     data_split=args.data_split,
                     cannot_link=args.cannot_link,
-                    batchsize=args.batchsize,
-                    epoches=args.epoches,
                     output=args.output,
                     device=device,
-                    ratio=args.ratio,
-                    min_length=args.min_len,
                     mode=args.mode,
-                    orf_finder=args.orf_finder,
+                    args=args,
                     training_type='semi')
 
         elif args.cmd == 'train_self':
             training(logger,
                     contig_fasta=None,
-                    num_process=args.num_process,
                     data=args.data,
                     data_split=args.data_split,
                     cannot_link=None,
-                    batchsize=args.batchsize,
-                    epoches=args.epoches,
                     output=args.output,
                     device=device,
-                    ratio=None,
-                    min_length=None,
                     mode=args.mode,
-                    orf_finder=None,
-                    prodigal_output_faa=None,
+                    args=args,
                     training_type='self')
 
 

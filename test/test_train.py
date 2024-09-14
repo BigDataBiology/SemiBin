@@ -3,6 +3,17 @@ from SemiBin.fasta import fasta_iter
 import os
 import logging
 import pandas as pd
+import argparse
+
+args = argparse.Namespace(
+        num_process = 1,
+        ratio = 0.05,
+        batchsize = 2048,
+        epoches = 1,
+        orf_finder = 'fast-naive',
+        min_len = None,
+        prodigal_output_faa = None,
+        )
 
 def test_train(tmpdir):
     contig_dict = {h:seq for h,seq in fasta_iter('test/train_data/input.fasta')}
@@ -10,19 +21,16 @@ def test_train(tmpdir):
     odir = f'{tmpdir}/output_train'
     os.makedirs(odir)
     ofile = f'{odir}/model.h5'
+
     training(contig_fasta = ['test/train_data/input.fasta'],
-            num_process = 1,
             data = ['test/train_data/data.csv'],
             data_split = ['test/train_data/data_split.csv'],
             cannot_link = ['test/train_data/cannot.txt'],
-            batchsize = 2048,
-            epoches = 1,
             logger = logging,
             output = ofile,
             device = 'cpu',
             mode = 'single',
-            ratio=0.05,
-            min_length=None,
+            args = args,
             training_type='semi'
             )
 
@@ -33,18 +41,14 @@ def test_train_self(tmpdir):
     odir = f'{tmpdir}/output_train_self'
     os.makedirs(odir)
     training(contig_fasta = ['test/train_data/input.fasta'],
-            num_process = 1,
             data = ['test/train_data/data.csv'],
             data_split = ['test/train_data/data_split.csv'],
             cannot_link = ['test/train_data/cannot.txt'],
-            batchsize = 2048,
-            epoches = 1,
             logger = logging,
             output = odir,
             device = 'cpu',
             mode = 'single',
-            ratio=0.05,
-            min_length=None,
+            args = args,
             training_type='self'
             )
 
@@ -53,12 +57,12 @@ def test_train_self(tmpdir):
 
 # https://github.com/BigDataBiology/SemiBin/issues/137
 def test_regression_137_semi(tmpdir):
-    from SemiBin.semi_supervised_model import train
+    from SemiBin.semi_supervised_model import train_semi
     odir = f'{tmpdir}/output_train_semi'
     os.makedirs(odir)
     # 40 elements plus header: 41
     assert len(open('test/train_data/data.csv', 'r').readlines()) == 41
-    model = train(out = odir,
+    model = train_semi(out = odir,
                        contig_fastas = ['test/train_data/input.fasta'],
                        logger = logging,
                        binned_lengths = [1000],
