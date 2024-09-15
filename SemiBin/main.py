@@ -792,98 +792,81 @@ def generate_sequence_features_single(logger, contig_fasta,
     if (bams is not None or abundances is not None) and only_kmer:
         logger.info('We will only calculate k-mer features.')
 
-    if not only_kmer:
-        logger.debug('Start generating kmer features from fasta file.')
-        kmer_whole = generate_kmer_features_from_fasta(
-            contig_fasta, binned_length, 4)
-        kmer_split = generate_kmer_features_from_fasta(
-            contig_fasta, 1000, 4, split=True, split_threshold=must_link_threshold)
-
-        if bams:
-            n_sample = len(bams)
-            is_combined = n_sample >= 5
-            bam_list = bams
-            logger.info('Calculating coverage for every sample.')
-
-            with Pool(min(num_process, len(bams))) as pool:
-                results = [
-                    pool.apply_async(
-                        generate_cov,
-                        args=(
-                            bam_file,
-                            bam_index,
-                            output,
-                            must_link_threshold,
-                            is_combined,
-                            binned_length,
-                            logger,
-                            None
-                        ))
-                    for bam_index, bam_file in enumerate(bams)]
-                for r in results:
-                    s = r.get()
-                    logger.info(f'Processed: {s}')
-
-            for bam_index, bam_file in enumerate(bams):
-                if not os.path.exists(os.path.join(output, '{}_data_cov.csv'.format(
-                        os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
-                    sys.stderr.write(
-                        f"Error: Generating coverage file fail\n")
-                    sys.exit(1)
-                if is_combined:
-                    if not os.path.exists(os.path.join(output, '{}_data_split_cov.csv'.format(
-                            os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
-                        sys.stderr.write(
-                            f"Error: Generating coverage file fail\n")
-                        sys.exit(1)
-
-            data = kmer_whole
-            data_split = kmer_split
-            data.index = data.index.astype(str)
-
-            data_cov, data_split_cov = combine_cov(output, bam_list, is_combined)
-            if is_combined:
-                data_split = pd.merge(data_split, data_split_cov, how='inner', on=None,
-                                          left_index=True, right_index=True, sort=False, copy=True)
-
-            data = pd.merge(data, data_cov, how='inner', on=None,
-                                          left_index=True, right_index=True, sort=False, copy=True)
-
-            with atomic_write(os.path.join(output, 'data.csv'), overwrite=True) as ofile:
-                data.to_csv(ofile)
-
-            with atomic_write(os.path.join(output, 'data_split.csv'), overwrite=True) as ofile:
-                data_split.to_csv(ofile)
-
-        if abundances:
-            if len(abundances) < 5:
-                sys.stderr.write(
-                    f"Error: abundances from strobealign-aemb can only be used when samples used above or equal to 5.\n")
-                sys.exit(1)
-            logger.info('Reading abundance information from abundance files.')
-            abun, abun_split = generate_cov_from_abundances(abundances, output, contig_fasta, binned_length)
-
-            data = kmer_whole
-            data.index = data.index.astype(str)
-            data = pd.merge(data, abun, how='inner', on=None,
-                                          left_index=True, right_index=True, sort=False, copy=True)
-
-            data_split = kmer_split
-            data_split = pd.merge(data_split, abun_split, how='inner', on=None,
-                                          left_index=True, right_index=True, sort=False, copy=True)
-
-            with atomic_write(os.path.join(output, 'data.csv'), overwrite=True) as ofile:
-                data.to_csv(ofile)
-
-            with atomic_write(os.path.join(output, 'data_split.csv'), overwrite=True) as ofile:
-                data_split.to_csv(ofile)
-
-    else:
-        logger.info('Only generating kmer features from fasta file.')
-        kmer_whole = generate_kmer_features_from_fasta(
-            contig_fasta, binned_length, 4)
+    logger.debug('Start generating kmer features from fasta file.')
+    kmer_whole = generate_kmer_features_from_fasta(
+        contig_fasta, binned_length, 4)
+    if only_kmer:
         with atomic_write(os.path.join(output, 'data.csv'), overwrite=True) as ofile:
             kmer_whole.to_csv(ofile)
+        return
+
+    kmer_split = generate_kmer_features_from_fasta(
+        contig_fasta, 1000, 4, split=True, split_threshold=must_link_threshold)
+
+    if bams:
+        is_combined = len(bams) >= 5
+        logger.info('Calculating coverage for every sample.')
+
+        with Pool(min(num_process, len(bams))) as pool:
+            results = [
+                pool.apply_async(
+                    generate_cov,
+                    args=(
+                        bam_file,
+                        bam_index,
+                        output,
+                        must_link_threshold,
+                        is_combined,
+                        binned_length,
+                        logger,
+                        None
+                    ))
+                for bam_index, bam_file in enumerate(bams)]
+            for r in results:
+                s = r.get()
+                logger.info(f'Processed: {s}')
+
+        for bam_index, bam_file in enumerate(bams):
+            if not os.path.exists(
+                    os.path.join(output,
+                                 f'{os.path.split(bam_file)[-1]}_{bam_index}_data_cov.csv')):
+                sys.stderr.write(
+                    f"Error: Generating coverage file failed\n")
+                sys.exit(1)
+            if is_combined:
+                if not os.path.exists(
+                    os.path.join(output,
+                                 f'{os.path.split(bam_file)[-1]}_{bam_index}_data_split_cov.csv')):
+                    sys.stderr.write(
+                        f"Error: Generating coverage file failed\n")
+                    sys.exit(1)
+
+        data_cov, data_split_cov = combine_cov(output, bams, is_combined)
+
+    if abundances:
+        if len(abundances) < 5:
+            sys.stderr.write(
+                f"Error: abundances from strobealign-aemb can only be used with at least 5 samples.\n")
+            sys.exit(1)
+        logger.info('Reading abundance information from abundance files.')
+        data_cov, data_split_cov = generate_cov_from_abundances(abundances, output, contig_fasta, binned_length)
+        is_combined = True
+
+    if is_combined:
+        data_split = pd.merge(kmer_split, data_split_cov, how='inner', on=None,
+                                  left_index=True, right_index=True, sort=False, copy=True)
+    else:
+        data_split = kmer_split
+
+    kmer_whole.index = kmer_whole.index.astype(str)
+    data = pd.merge(kmer_whole, data_cov, how='inner', on=None,
+                                  left_index=True, right_index=True, sort=False, copy=True)
+
+    with atomic_write(os.path.join(output, 'data.csv'), overwrite=True) as ofile:
+        data.to_csv(ofile)
+
+    with atomic_write(os.path.join(output, 'data_split.csv'), overwrite=True) as ofile:
+        data_split.to_csv(ofile)
 
 
 def generate_sequence_features_multi(logger, args):
