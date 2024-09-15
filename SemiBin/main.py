@@ -63,6 +63,13 @@ def parse_args(args, is_semibin2):
                                                   ' This will produce the data.csv and data_split.csv files.'
                                                   )
 
+    generate_sequence_features_single.add_argument('--kmer',
+                                                   required=False,
+                                                   help='Just output data.csv with k-mer features.',
+                                                   dest='kmer',
+                                                   action='store_true',)
+
+
 
     generate_sequence_features_multi = subparsers.add_parser('generate_sequence_features_multi', aliases=['generate_sequence_features_multi'],
                                             help='Generate sequence features (kmer and abundance) as training data'
@@ -95,12 +102,6 @@ def parse_args(args, is_semibin2):
                         default=None
                         )
 
-    concatenate_fasta.add_argument('-m', '--min-len',
-                        required=False,
-                        type=int,
-                        help='Discard sequences below this length (default:0)',
-                        default=0,
-                        dest='min_length')
 
     split_contigs = subparsers.add_parser('split_contigs',
                                           help = 'Split contigs to generate data (only for strobealign-aemb pipeline)')
@@ -118,18 +119,13 @@ def parse_args(args, is_semibin2):
                         default=None
                         )
 
-    split_contigs.add_argument('-m', '--min-len',
+    for p in [concatenate_fasta, split_contigs]:
+        p.add_argument('-m', '--min-len',
                         required=False,
                         type=int,
                         help='Discard sequences below this length (default:0)',
                         default=0,
-                        dest='min_length')
-
-    generate_sequence_features_single.add_argument('--kmer',
-                                                   required=False,
-                                                   help='Just output data.csv with k-mer features.',
-                                                   dest='kmer',
-                                                   action='store_true',)
+                        dest='min_len')
 
 
     training_self = subparsers.add_parser('train_self',
@@ -1622,12 +1618,12 @@ def main2(raw_args=None, is_semibin2=True):
 
         elif args.cmd == 'concatenate_fasta':
             from .utils import concatenate_fasta
-            ofname = concatenate_fasta(args.contig_fasta, args.min_length, args.output, args.separator, args.output_compression)
+            ofname = concatenate_fasta(args.contig_fasta, args.min_len, args.output, args.separator, args.output_compression)
             logger.info(f'Concatenated contigs written to {ofname}')
         elif args.cmd == 'split_contigs':
             if not is_semibin2:
                 logger.error('Command `split_contigs` is not available in SemiBin1. Please upgrade to SemiBin2.')
-            oname = split_contigs(logger, args.contig_fasta, output=args.output, min_length=args.min_length)
+            oname = split_contigs(logger, args.contig_fasta, output=args.output, min_length=args.min_len)
             logger.info(f'Split contigs written to {oname}')
 
         else:
