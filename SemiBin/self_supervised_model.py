@@ -59,6 +59,10 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
             data.index = data.index.astype(str)
             data_split = pd.read_csv(data_split_path, index_col=0)
 
+            if epoch == 0:
+                logger.debug(f'Data shape from file `{datapath}`: {data.shape}')
+                logger.debug(f'Data shape from file `{data_split_path}` (split data file): {data_split.shape}')
+
             if mode == 'several':
                 if data.shape[1] != 138 or data_split.shape[1] != 136:
                     sys.stderr.write(
