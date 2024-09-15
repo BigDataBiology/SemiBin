@@ -22,6 +22,7 @@ def test_train(tmpdir):
     os.makedirs(odir)
     ofile = f'{odir}/model.h5'
 
+    args.training_type = 'semi'
     training(contig_fasta = ['test/train_data/input.fasta'],
             data = ['test/train_data/data.csv'],
             data_split = ['test/train_data/data_split.csv'],
@@ -31,7 +32,6 @@ def test_train(tmpdir):
             device = 'cpu',
             mode = 'single',
             args = args,
-            training_type='semi'
             )
 
     assert os.path.exists(ofile)
@@ -40,6 +40,7 @@ def test_train_self(tmpdir):
     contig_dict = {h:seq for h,seq in fasta_iter('test/train_data/input.fasta')}
     odir = f'{tmpdir}/output_train_self'
     os.makedirs(odir)
+    args.training_type = 'self'
     training(contig_fasta = ['test/train_data/input.fasta'],
             data = ['test/train_data/data.csv'],
             data_split = ['test/train_data/data_split.csv'],
@@ -49,7 +50,6 @@ def test_train_self(tmpdir):
             device = 'cpu',
             mode = 'single',
             args = args,
-            training_type='self'
             )
 
     assert os.path.exists(f'{odir}/model.h5')

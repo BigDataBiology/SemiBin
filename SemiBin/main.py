@@ -1078,7 +1078,7 @@ def generate_sequence_features_multi(logger, args):
 def training(logger, contig_fasta,
              data, data_split, cannot_link,
              *, output, device, mode,
-             args, training_type='semi'):
+             args):
     """
     Training the model
 
@@ -1098,7 +1098,7 @@ def training(logger, contig_fasta,
         logger.info('Start training from multiple samples.')
         is_combined = False
 
-    if training_type == 'semi':
+    if args.training_type == 'semi':
         binned_lengths = []
         for fafile in contig_fasta:
             binned_lengths.append(
@@ -1271,20 +1271,17 @@ def single_easy_binning(logger, args, binned_length,
             fasta = [args.contig_fasta]
             cannot_link = [os.path.join(args.output, 'cannot', 'cannot.txt')]
 
-            training_type = 'semi'
 
         else:
             fasta = None
             cannot_link = None
-            training_type = 'self'
         training(logger, fasta,
                  [data_path], [data_split_path],
                  cannot_link=cannot_link,
                  output=args.output,
                  device=device,
                  mode='single',
-                 args=args,
-                 training_type=training_type)
+                 args=args)
 
     binning_kwargs = {
         'logger': logger,
@@ -1347,18 +1344,15 @@ def multi_easy_binning(logger, args, device):
             sample_fasta = [sample_fasta]
             sample_cannot = [os.path.join(
                 args.output, 'samples', sample, 'cannot', f'{sample}.txt')]
-            training_type = 'semi'
         else:
             sample_fasta = None
             sample_cannot = None
-            training_type = 'self'
         training(logger, sample_fasta,
                  [sample_data], [sample_data_split], sample_cannot,
                  output=os.path.join(args.output, 'samples', sample),
                  device=device,
                  mode='single',
-                 args=args,
-                 training_type=training_type)
+                 args=args)
 
         binning_kwargs = {
             'logger': logger,
@@ -1476,7 +1470,7 @@ def main2(raw_args=None, is_semibin2=True):
             print(citation.CHICAGO)
             print(f'\nUse `SemiBin2 citation --help` to see all available citation formats')
         sys.exit(0)
-    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'train_semi', 'bin', 'train_self', 'bin_long']:
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train_semi', 'bin', 'train_self', 'bin_long']:
         import torch
         if args.engine == 'cpu':
             device = torch.device("cpu")
@@ -1488,7 +1482,7 @@ def main2(raw_args=None, is_semibin2=True):
                 logger.info('Running with GPU.')
             else:
                 device = torch.device("cpu")
-                logger.info('Did not detect GPU, using CPU.')
+                logger.warning('Did not detect GPU or CUDA was not installed/supported, using CPU.')
 
     if getattr(args, 'tmpdir', None) is not None:
         os.environ['TMPDIR'] = args.tmpdir
@@ -1555,7 +1549,7 @@ def main2(raw_args=None, is_semibin2=True):
         elif args.cmd == 'generate_sequence_features_multi':
             generate_sequence_features_multi(logger, args)
 
-        elif args.cmd in ['train', 'train_semi']:
+        elif args.cmd == 'train_semi':
             training(logger,
                     contig_fasta=args.contig_fasta,
                     data=args.data,
@@ -1564,8 +1558,7 @@ def main2(raw_args=None, is_semibin2=True):
                     output=args.output,
                     device=device,
                     mode=args.mode,
-                    args=args,
-                    training_type='semi')
+                    args=args)
 
         elif args.cmd == 'train_self':
             training(logger,
@@ -1576,8 +1569,7 @@ def main2(raw_args=None, is_semibin2=True):
                     output=args.output,
                     device=device,
                     mode=args.mode,
-                    args=args,
-                    training_type='self')
+                    args=args)
 
 
         elif args.cmd == 'bin':

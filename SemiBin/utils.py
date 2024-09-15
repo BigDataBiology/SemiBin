@@ -99,8 +99,14 @@ def validate_normalize_args(logger, args):
         os.environ['NUMEXPR_MAX_THREADS'] = str(args.num_process)
         os.environ['OMP_NUM_THREADS'] = str(args.num_process)
 
+    if args.cmd in ['train', 'train_semi']:
+        args.cmd = 'train_semi'
+        args.training_type = 'semi'
 
-    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin']:
+    if args.cmd == 'train_self':
+        args.training_type = 'self'
+
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train_semi', 'bin']:
         if args.orf_finder not in ['prodigal', 'fraggenescan', 'fast-naive']:
             sys.stderr.write(
                 f"Error: SemiBin only supports 'prodigal'/'fraggenescan'/'fast-naive' as the ORF finder (--orf-finder option).\n")
@@ -144,7 +150,7 @@ def validate_normalize_args(logger, args):
         if args.abundances:
             expect_file_list(args.abundances)
 
-    if args.cmd in ['train', 'train_semi', 'train_self']:
+    if args.cmd in ['train_semi', 'train_self']:
         if not args.train_from_many:
             if len(args.data) > 1:
                 sys.stderr.write(
@@ -155,7 +161,7 @@ def validate_normalize_args(logger, args):
                 sys.stderr.write(
                     f"Error: Expected one data_split.csv file with single mode.\n")
                 exit_with_error = True
-            if args.cmd in ['train_semi', 'train']:
+            if args.cmd == 'train_semi':
                 if len(args.contig_fasta) > 1:
                     sys.stderr.write(
                         f"Error: Expected one fasta file with single mode.\n")
@@ -172,7 +178,7 @@ def validate_normalize_args(logger, args):
             expect_file(args.data_split[0])
 
         else:
-            if args.cmd in ['train_semi', 'train']:
+            if args.cmd == 'train_semi':
                 assert len(args.contig_fasta) == len(args.data) == len(args.data_split) == len(args.cannot_link), 'Must input same number of fasta, data, data_split, cannot files!'
                 expect_file_list(args.cannot_link)
                 expect_file_list(args.contig_fasta)
@@ -252,7 +258,7 @@ def validate_normalize_args(logger, args):
 
     if getattr(args, 'train_from_many', False):
         args.mode = 'several'
-    elif args.cmd in ['train', 'train_semi', 'train_self'] and not hasattr(args, 'mode'):
+    elif args.cmd in ['train_semi', 'train_self'] and not hasattr(args, 'mode'):
         args.mode = 'single'
 
     if getattr(args, 'write_pre_reclustering_bins', False) and \
