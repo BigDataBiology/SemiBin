@@ -659,12 +659,7 @@ def compute_min_length(min_length, fafile, ratio):
 def norm_abundance(data):
     import numpy as np
     n = data.shape[1] - 136
-    flag = False
 
     if n >= 20:
-        flag = True
-    else:
-        if n >= 5:
-            if np.mean(np.sum(data[:, 136:], axis=1)) > 2:
-                flag = True
-    return flag
+        return True
+    return (n >= 5 and np.mean(np.sum(data[:, 136:], axis=1)) > 2)

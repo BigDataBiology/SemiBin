@@ -1,4 +1,4 @@
-from SemiBin.utils import get_must_link_threshold, get_marker, split_data, n50_l50, extract_bams
+from SemiBin.utils import get_must_link_threshold, get_marker, split_data, n50_l50, extract_bams, norm_abundance
 from hypothesis import given, strategies as st
 from io import StringIO
 import numpy as np
@@ -134,4 +134,17 @@ def test_extract_bams(tmpdir):
              2,
              tmpdir)
     assert rs is None
+
+def test_norm_abundance():
+    assert not norm_abundance(np.random.randn(10, 136))
+    assert not norm_abundance(np.random.randn(12, 137))
+    assert not norm_abundance(np.random.randn(12, 140))
+    assert not norm_abundance(np.random.randn(12, 148))
+    assert not norm_abundance(np.abs(np.random.randn(12, 138))*2)
+    assert not norm_abundance(np.abs(np.random.randn(12, 138))*4)
+
+    assert norm_abundance(np.abs(np.random.randn(12, 148)))
+    assert norm_abundance(       np.random.randn(12, 156) )
+    assert norm_abundance(       np.random.randn(12, 164) )
+    assert norm_abundance(np.abs(np.random.randn(12, 164)))
 
