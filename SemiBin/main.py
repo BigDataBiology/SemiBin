@@ -1643,14 +1643,27 @@ def main2(raw_args=None, is_semibin2=True):
 
 
 def main1(args=None):
+    print("""Using `SemiBin1` is deprecated. Please upgrade to `SemiBin2`
+
+Note that all the same functionality is available in `SemiBin2`, and the command-line interface is almost identical.
+
+See https://semibin.readthedocs.io/en/latest/semibin2/
+
+""")
     main2(args, is_semibin2=False)
 
 def main_no_version(args=None):
     from time import sleep
-    print("Using `SemiBin` is deprecated. Please upgrade to `SemiBin2` or explicitly call `SemiBin1` if you want the older version")
-    print("See https://semibin.readthedocs.io/en/latest/semibin2/")
-    for i in range(5):
-        print(f"Will continue as SemiBin1 in {5-i} seconds...")
+    print("""Using `SemiBin` is deprecated (and will be removed in the future).
+
+Please upgrade to `SemiBin2` or explicitly call `SemiBin1` if you want to run the older version.
+SemiBin1 itself is only available for backwards compatibility and will be removed in the future.
+
+See https://semibin.readthedocs.io/en/latest/semibin2/
+
+""")
+    for i in range(10):
+        print(f"Will continue as SemiBin1 in {10-i} seconds...")
         sleep(1)
     main1(args)
 
