@@ -12,12 +12,12 @@ from os import fspath
 
 try:
     import fcntl
-except ImportError:
+except ImportError: # pragma: no cover
     fcntl = None
 
 DEFAULT_MODE = "wb"
 
-def _path_to_unicode(x):
+def _path_to_unicode(x): # pragma: no cover
     if not isinstance(x, text_type):
         return x.decode(sys.getfilesystemencoding())
     return x
@@ -60,7 +60,7 @@ if sys.platform != 'win32':
         _sync_directory(dst_dir)
         if src_dir != dst_dir:
             _sync_directory(src_dir)
-else:
+else: # pragma: no cover
     from ctypes import windll, WinError
 
     _MOVEFILE_REPLACE_EXISTING = 0x1
