@@ -15,6 +15,7 @@ nav:
         - 'SemiBin2': semibin2.md
         - 'Generating inputs to SemiBin': generate.md
         - 'Output': output.md
+        - 'Running AEMB': aemb.md
         - "Subcommand reference": subcommands.md
         - "What's New": whatsnew.md
         - "Training SemiBin models": training.md
