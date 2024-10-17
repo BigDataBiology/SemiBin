@@ -16,6 +16,8 @@ mkdir -p aemb_output/sample1
 SemiBin2 split_contigs -i sample1_contigs.fna.gz -o aemb_output/sample1
 ```
 
+After this step, there will be a file `aemb_output/sample1/split_contigs.fna.gz` that contains both the original contigs as well as split versions (which are required to run SemiBin2).
+
 2. Map reads using [strobealign-aemb](https://github.com/ksahlin/strobealign) to generate the abundance information. Note that version 0.13 (or newer) is required
 ```bash
 strobealign --aemb aemb_output/sample1/split_contigs.fna.gz read1.pair.1.fq.gz read1.pair.2.fq.gz -R 6 -t 8 > sample1_sample1.tsv
@@ -25,9 +27,11 @@ strobealign --aemb aemb_output/sample1/split_contigs.fna.gz read4.pair.1.fq.gz r
 strobealign --aemb aemb_output/sample1/split_contigs.fna.gz read5.pair.1.fq.gz read5.pair.2.fq.gz -R 6 -t 8 > sample1_sample5.tsv
 ```
 
+Each of these commands will generate a file with the abundance information for the sample in the format `sample1_sampleX.tsv`.
+
 ## Running SemiBin2
 
-Run SemiBin2 (this same as running BAM files, except using `-a` to pass in the abundance files instead of `-b` to pass in BAM/SAM):
+Run SemiBin2 for this sample using the `single_easy_bin` subcommand:
 
 ```bash
 SemiBin2 single_easy_bin -i contig.fa -a sample1_*.tsv -o aemb_output/sample1
@@ -35,12 +39,15 @@ SemiBin2 single_easy_bin -i contig.fa -a sample1_*.tsv -o aemb_output/sample1
 
 This will generate the bins in the `aemb_output/sample1` directory.
 
+Note that—from SemiBin2's point-of-view—this is still single sample binning even if the abundance information is generated from multiple samples as the assembly is from a single sample.
+
 ## A helper script to run all-by-all abundance estimates
 
+The process above must be repeated for all samples, which can quickly become tedious and error-prone.
 Here is a helper script using [Jug](https://jug.readthedocs.io/en/latest/) to automate the process for all samples.
-It is helpful if you are using Jug to parallelize the process, but if you remove the `@TaskGenerator` decorators, it will run sequentially.
+It is most helpful if you are using Jug to parallelize the process, but if you remove the `@TaskGenerator` decorators, it will run sequentially.
 
-It expects the following directory structure:
+It expects the following file structure:
 
 - `samples/` containing the assembled contigs in the format `sample1_assembled.fna.gz`, `sample2_assembled.fna.gz`, ...
 - `clean-reads/` containing the reads in the format `sample1.pair.1.fq.gz`, `sample1.pair.2.fq.gz`, `sample2.pair.1.fq.gz`, `sample2.pair.2.fq.gz`, ...
