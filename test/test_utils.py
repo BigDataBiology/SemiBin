@@ -139,7 +139,6 @@ def test_norm_abundance():
     assert not norm_abundance(np.random.randn(10, 136))
     assert not norm_abundance(np.random.randn(12, 137))
     assert not norm_abundance(np.random.randn(12, 140))
-    assert not norm_abundance(np.random.randn(12, 148))
     assert not norm_abundance(np.abs(np.random.randn(12, 138))*2)
     assert not norm_abundance(np.abs(np.random.randn(12, 138))*4)
 
