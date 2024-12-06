@@ -14,10 +14,10 @@ from .utils import validate_normalize_args, get_must_link_threshold, generate_ca
 from .generate_coverage import generate_cov, combine_cov, generate_cov_from_abundances
 from .generate_kmer import generate_kmer_features_from_fasta
 from .fasta import fasta_iter
+from .semibin_version import __version__
 
 
 def parse_args(args, is_semibin2):
-    from .semibin_version import __version__
     # BooleanOptionalAction is available in Python 3.9; before that, we fall back on the default
     BooleanOptionalAction = getattr(argparse, 'BooleanOptionalAction', 'store_true')
 
@@ -1421,6 +1421,7 @@ def main2(raw_args=None, is_semibin2=True):
         fh = logging.FileHandler(os.path.join(args.output, "SemiBinRun.log"))
         fh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
         logger.addHandler(fh)
+    logger.info(f'Running SemiBin2 version {__version__}')
     logger.debug(f'Starting SemiBin2 with arguments: {raw_args}')
     logger.debug(f'Parsed arguments as: {args}')
 
