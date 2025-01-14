@@ -667,26 +667,55 @@ def norm_abundance(data, features):
 
 
 
-def check_motif(column):
+    
+import re
+
+# IUPAC codes dictionary for sequence pattern matching
+iupac_chars = [
+    "A", "T", "C", "G",
+    "R", "Y", 
+    "S", "W", 
+    "K", "M",
+    "B",
+    "D",
+    "H",
+    "V",
+    "N"
+]
+
+def check_motif(column_name):
     """
     Check if a column is a motif.
-    
+
     Parameters:
-        column (str): The column name to check.
-    
+    column_name (str): The column name to check.
+
     Returns:
-        bool: True if the column is a motif, False otherwise.
+    bool: True if the column is a motif, False otherwise.
     """
-    try:
-        motif, mod_pos = column.split('_')
-        mod, pos = mod_pos.split('-')
-        if mod in ["m", "a", "c", "21839"] and int(pos) in range(0, 20):
+    # Regex pattern to capture the motif
+    pattern = r"(\b\w+_(m|a|21839)-\d+)"
+    
+    motif_mod = re.search(pattern, str(column_name))
+   
+    if not motif_mod:
+        return False
+
+    motif_mod = motif_mod.group(1)
+    
+    string_motif, mod_pos = motif_mod.rsplit('_', 1)  # rsplit on the last underscore
+    _, motif = string_motif.rsplit('_', 1)
+    mod, pos = mod_pos.split('-')
+
+    if all(char in iupac_chars for char in motif):
+        # Check if mod is valid and pos is within range
+        if mod in ["m", "a", "21839"] and 0 <= int(pos) < 20:
             return True
-    except:
+        else:
+            return False
+    else:
         return False
     
-    
-    return column.startswith('motif_')
 
 def get_features(df):
     """
@@ -701,29 +730,32 @@ def get_features(df):
     features_dict = {
         'kmer': list(range(136)),
         'depth': [],
-        'motif': []
+        'motif': [],
+        'motif_present': []
     }
     
-    try:
-        columns = df.columns
-        # Populate 'depth' with indices of columns ending with 'bam_mean' or 'bam_var'
-        features_dict['depth'] = [i for i, column in enumerate(columns) if column.endswith('mean') or column.endswith('var')]
-        
-        # Populate 'motif' with indices of columns
-        features_dict['motif'] = [i for i, column in enumerate(columns) if check_motif(column)]
-        
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    columns = df.columns
+    # Populate 'depth' with indices of columns ending with 'bam_mean' or 'bam_var'
+    features_dict['depth'] = [i for i, column in enumerate(columns) if column.endswith('mean') or column.endswith('var')]
     
+    # Populate 'motif' with indices of columns
+    features_dict['motif'] = [i for i, column in enumerate(columns) if column.startswith("median") and check_motif(column)]
+    
+    features_dict['motif_present'] = [i for i, column in enumerate(columns) if column.startswith("motif_present") and check_motif(column)]
+    assert len(features_dict['depth'] + features_dict['motif'] + features_dict['motif_present']) == len(set(features_dict['depth'] + features_dict['motif'] + features_dict['motif_present']) )
     return features_dict
 
 def normalize_kmer_motif_features(train_data, train_data_split):
     """
     MinMax scaling was chosen to normalize kmers which is in the range of 0-0.07 however motifs are in the range of 0-1.
     """
+    import numpy as np
     from sklearn.preprocessing import MinMaxScaler
+   
     scaler = MinMaxScaler()
     train_data = scaler.fit_transform(train_data)
     train_data_split = scaler.transform(train_data_split)
-    
+
+    assert train_data.shape[1] == train_data_split.shape[1]
+    # assert (train_data.shape[1] - train_data_split.shape[1]) % 2 == 0
     return train_data, train_data_split

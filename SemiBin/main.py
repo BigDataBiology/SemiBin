@@ -299,14 +299,6 @@ def parse_args(args, is_semibin2, with_methylation):
                              help='Path to the input data.csv file.',
                              dest='data',
                              default=None,)
-            if with_methylation:
-                m.add_argument(
-                    "--motifs-scored",
-                    help="Path to the motifs scored file.",
-                    required=True,
-                    dest="motifs_scored",
-                    default=None,
-                )
             
         if p in [multi_easy_bin, generate_sequence_features_multi]:
             m.add_argument('-b', '--input-bam',
@@ -346,14 +338,15 @@ def parse_args(args, is_semibin2, with_methylation):
             
         if with_methylation:
             if p in [generate_methylation_features, single_easy_bin, multi_easy_bin]:    
-                m.add_argument("--motifs-scored", help="Path to the motifs scored file.", required=True)
-                m.add_argument("--bin-motifs", help = "Path to the bin-consensus file from nanomotif", required = False)
-                # m.add_argument("--must-links", help="Path to the must-links file.", required=False)
-                m.add_argument("--motif-index-dir", help="Path to the motif index directory.", required=True)
+                m.add_argument("--bin-motifs", help = "Path to the bin-consensus file from nanomotif", required = True)
+                m.add_argument("--pileup", help = "Path to the pileup file", required = True)
                 p.add_argument("--data", help="Path to the data file to append methylation.", required=False)
                 p.add_argument("--data-split", help="Path to the data split file to append methylation.", required=False)
-                p.add_argument("--motif-occurence-cutoff", help="Percent occurences in contigs.", default=0.9, type=float)
-                p.add_argument("--min-motif-observations", help="Minimum motif coverage.", default=8, type=int)
+                p.add_argument("--min-motif-methylation", help="Minimum motif methylation degree (Default: 0.5).", default=0.5, type=float)
+                p.add_argument("--min-valid-read-coverage", help="Minimum number of valid read observations for a motif in a contig (Default: 8).", default=8, type=int)
+                p.add_argument("--min-motif-observations-bin", help="Minimum motif coverage in bin-motifs", default=1000, type=int)
+                p.add_argument("--min-motif-observations-contig", help="Minimum motif observations for a contig methylation", default=5, dest='min_motif_obs_contig', type=int)
+
                 
 
     for p in [single_easy_bin,

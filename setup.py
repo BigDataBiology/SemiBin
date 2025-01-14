@@ -39,6 +39,7 @@ setup(name='SemiBin',
           'scikit-learn',
           'requests',
           'numexpr',
+          'pymethylation_utils==0.5.1'
       ],
       package_data={
           'SemiBin': ['*.hmm', 'models/*.pt']},

@@ -47,21 +47,6 @@ def get_best_bin(results_dict, contig_to_marker, namelist, contig_dict, minfasta
         if max_F1 > 0: # if there is a bin with F1 > 0
             return max_bin
 
-# Remove clusters smaller than 500_000 bp
-def remove_small_clusters(extracted, contig_dict, unbinned_df, results_df, min_fasta, logger):
-    logger.info("Removing clusters smaller than {} bp".format(min_fasta))
-    n_clusters = len(extracted)
-    logger.info("Number of clusters before removal: {}".format(n_clusters))
-    for cluster in extracted:
-        if sum(len(contig_dict[contig]) for contig in cluster) < min_fasta:
-            extracted.remove(cluster)
-            eps_values_for_cluster = results_df.filter(pl.col("Contig").is_in(cluster))
-            unbinned_df = pl.concat([unbinned_df, eps_values_for_cluster])
-            assert unbinned_df.get_column("Contig").n_unique() == unbinned_df.shape[0], "Not all contigs are unique"    
-    logger.info("removed {} clusters".format(n_clusters - len(extracted)))
-    return extracted, unbinned_df
-
-
 
 def cluster_long_read(logger, model, data, device, is_combined,
             n_sample, out, contig_dict, *, binned_length, args,
@@ -69,14 +54,24 @@ def cluster_long_read(logger, model, data, device, is_combined,
     import pandas as pd
     from .utils import norm_abundance
     contig_list = data.index.tolist()
+
+    if len(features_data['motif_present']) > 0:
+        train_data_motif_present = data.values[:, features_data['motif_present']]
+    
     if not is_combined:
         train_data_input = data.values[:, features_data["kmer"] + features_data["motif"]]
-        train_data_input, _ = normalize_kmer_motif_features(train_data_input, train_data_input)
+        print(train_data_input.shape)
+        if len(features_data["motif"]) > 0:
+            print("I was here")
+            train_data_input, _ = normalize_kmer_motif_features(train_data_input, train_data_input)
+            train_data_input = np.concatenate((train_data_input, train_data_motif_present), axis = 1)
     else:
         train_data_input = data.values
         if norm_abundance(train_data_input, features_data):
             train_data_kmer = train_data_input[:, features_data["kmer"] + features_data["motif"]]
-            train_data_kmer, _ = normalize_kmer_motif_features(train_data_kmer, train_data_kmer)
+            if len(features_data["motif"]) > 0:
+                train_data_kmer, _ = normalize_kmer_motif_features(train_data_kmer, train_data_kmer)
+                train_data_kmer = np.concatenate((train_data_kmer, train_data_motif_present), axis = 1)
             
             train_data_depth = train_data_input[:, features_data["depth"]]
             from sklearn.preprocessing import normalize
@@ -91,7 +86,8 @@ def cluster_long_read(logger, model, data, device, is_combined,
 
     length_weight = np.array(
         [len(contig_dict[name]) for name in contig_list])
-    length_weight = np.log10(length_weight)
+    if len(features_data["motif"]) > 0:
+        length_weight = np.log10(length_weight)
         
     if not is_combined:
         depth = data.values[:, features_data["depth"]].astype(np.float32)
@@ -138,7 +134,7 @@ def cluster_long_read(logger, model, data, device, is_combined,
     save_npz(os.path.join(out, "dist_matrix.npz"), dist_matrix)
     
     DBSCAN_results_dict = {}
-    eps_values = [0.01] + [round(x, 2) for x in np.arange(0.05, 1, 0.05)]
+    eps_values = [0.01] + [round(x, 2) for x in np.arange(0.05, 0.6, 0.05)]
     for eps_value in eps_values:
         dbscan = DBSCAN(eps=eps_value, min_samples=5, n_jobs=args.num_process, metric='precomputed')
         dbscan.fit(dist_matrix, sample_weight=length_weight)

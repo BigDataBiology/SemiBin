@@ -137,19 +137,27 @@ def test_extract_bams(tmpdir):
     assert rs is None
 
 def test_normalize_kmer_motif_features():
+
     # Test case 1: Normalizing a 3x3 array
     data = {
         "kmer1": [1, 2, 3],
         "kmer2": [4, 5, 6],
         "kmer3": [7, 8, 9]
     }
-    
+
     df = pd.DataFrame(data)
     df = df.values
     df_norm, _ = normalize_kmer_motif_features(df, df)
-    expected_df_norm = np.array([[0., 0., 0.], [0.5, 0.5, 0.5], [1., 1., 1.]])
-    assert np.allclose(df_norm, expected_df_norm), f"Expected {expected_df_norm}, but got {df_norm}"
+
     
+    # Expected normalized and concatenated DataFrame
+    expected_df_norm = np.array([
+        [0., 0., 0.],
+        [0.5, 0.5, 0.5],
+        [1., 1., 1.]
+    ])
+    assert np.allclose(df_norm, expected_df_norm), f"Expected {expected_df_norm}, but got {df_norm}"
+
     # Test case 2: Normalizing train_data with a different train_data_split
     df_split = pd.DataFrame({
         "kmer1": [1, 2],
@@ -159,6 +167,8 @@ def test_normalize_kmer_motif_features():
     df_split = df_split.values
 
     df_norm, df_split_norm = normalize_kmer_motif_features(df, df_split)
+    
+    # We normalize the split df values based on the full df. That is why we expect 0.5 
     expected_df_split_norm = np.array([
         [0.0, 0.0, 0.0],
         [0.5, 0.5, 0.5]

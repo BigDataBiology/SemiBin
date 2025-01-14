@@ -40,10 +40,8 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
     
     features_data_split = get_features(pd.read_csv(data_splits[0], index_col=0))
     
-    
-    
     if not is_combined:
-        train_data = train_data[:, features_data['kmer'] + features_data['motif']]
+        train_data = train_data[:, features_data['kmer'] + features_data['motif'] + features_data['motif_present']]
 
     torch.set_num_threads(num_process)
 
@@ -78,12 +76,20 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
                     sys.exit(1)
 
             train_data = data.values
+            train_data_motif_is_present_matrix = train_data[:, features_data["motif_present"]]
+            
             train_data_split = data_split.values
+            train_data_split_motif_is_present_matrix = train_data_split[:, features_data_split["motif_present"]]
 
             if not is_combined:
                 train_data = train_data[:, features_data['kmer'] + features_data['motif']]
+                train_data_split = train_data_split[:, features_data_split['kmer'] + features_data_split['motif']]
+                
                 if len(features_data["motif"]) > 0:
                     train_data, train_data_split = normalize_kmer_motif_features(train_data, train_data_split)
+                    train_data = np.concatenate((train_data, train_data_motif_is_present_matrix), axis = 1)
+                    train_data_split = np.concatenate((train_data_split, train_data_split_motif_is_present_matrix), axis = 1)
+                    
                 
             else:
                 if norm_abundance(train_data, features_data):
@@ -92,6 +98,8 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
                     
                     if len(features_data["motif"]) > 0:
                         train_data_kmer, train_data_split_kmer = normalize_kmer_motif_features(train_data_kmer, train_data_split_kmer)
+                        train_data_kmer = np.concatenate((train_data_kmer, train_data_motif_is_present_matrix), axis = 1)
+                        train_data_split_kmer = np.concatenate((train_data_split_kmer, train_data_split_motif_is_present_matrix), axis = 1)
                     
                     train_data_depth = train_data[:, features_data['depth']]
                     train_data_depth = normalize(train_data_depth, axis=1, norm='l1')
@@ -112,6 +120,7 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
             indices2 %= data_length
 
 
+            print(train_data)
             if epoch == 0:
                 logger.debug(
                     f'Number of must-link pairs: {len(train_data_split)//2}')
