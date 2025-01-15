@@ -101,7 +101,7 @@ def create_split_pileup(lf_pileup, contig_lengths, output):
                 
             ]
         )\
-        .drop(["length"])
+        .drop(["contig_length"])
 
     pileup.write_csv(output, separator = "\t", include_header = False)
         
