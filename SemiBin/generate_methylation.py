@@ -169,7 +169,7 @@ def create_methylation_matrix(methylation_features):
     matrix = matrix.select(["contig", "motif_mod", "median", "motif_present"])\
         .pivot(
             index = "contig",
-            columns = "motif_mod",
+            on = "motif_mod",
             values = ["median", "motif_present"],
             aggregate_function = None,
             maintain_order = True
