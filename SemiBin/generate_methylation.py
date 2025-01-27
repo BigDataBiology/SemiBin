@@ -3,8 +3,6 @@
 import numpy as np
 from multiprocessing import get_context
 import multiprocessing
-from nanomotif.parallel import update_progress_bar
-from nanomotif.candidate import Motif
 from pymethylation_utils.utils import run_epimetheus
 import os
 import sys
