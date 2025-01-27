@@ -282,11 +282,21 @@ def generate_methylation_features(logger, args):
         logger.error("Error running methylation_utils for split contigs")
         sys.exit(1)
 
-    contig_methylation = pl.read_csv(os.path.join(args.output, "contig_methylation.tsv"), separator = "\t")\
+    schema = {
+        'contig': pl.String(),
+        'motif': pl.String(),
+        'mod_type': pl.String(),
+        'mod_position': pl.Int8(),
+        'median': pl.Float64(),
+        'mean_read_cov': pl.Float64(),
+        'N_motif_obs': pl.Int32(),
+        'motif_occurences_total': pl.Int32(),
+    }
+    contig_methylation = pl.read_csv(os.path.join(args.output, "contig_methylation.tsv"), separator = "\t", schema = schema)\
         .with_columns(
             pl.when(pl.col("N_motif_obs") > 0).then(1).otherwise(0).alias("motif_present")
         )
-    contig_split_methylation = pl.read_csv(os.path.join(args.output, "contig_split_methylation.tsv"), separator = "\t")\
+    contig_split_methylation = pl.read_csv(os.path.join(args.output, "contig_split_methylation.tsv"), separator = "\t", schema = schema)\
         .with_columns(
             pl.when(pl.col("N_motif_obs") > 0).then(1).otherwise(0).alias("motif_present")
         )
