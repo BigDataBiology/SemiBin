@@ -76,34 +76,83 @@ def create_assembly_with_split_contigs(assembly, contig_lengths, output):
     with open(output, "w") as output_handle:
         SeqIO.write(split_records, output_handle, "fasta")
 
-def create_split_pileup(lf_pileup, contig_lengths, output):
-    length_df = pl.DataFrame({
-                                 "contig": list(contig_lengths.keys()),
-                                 "contig_length": list(contig_lengths.values())
-                             })
-    pileup = lf_pileup\
-        .filter(pl.col("contig").is_in(contig_lengths.keys()))\
-        .collect()
+def create_split_pileup(
+    pileup_path: str,
+    contig_lengths: dict[str, int],
+    output_path: str
+):
+    """
+    Reads a large TSV/CSV file line by line, splitting contigs in half
+    and adjusting 'start' positions accordingly, then writes out the result.
 
-    pileup = pileup.join(length_df, on = "contig", how = "left")
+    :param pileup_path: Path to the pileup file (tab-delimited).
+    :param contig_lengths: Dictionary {contig_name: length}.
+    :param output_path: Path to write the processed file.
+    """
 
-    pileup = pileup\
-        .with_columns(
-            [
-                pl.when(pl.col("start") < (pl.col("contig_length") // 2))
-                    .then(pl.col("contig") + "_1")
-                    .otherwise(pl.col("contig") + "_2")
-                    .alias("contig"),
-                pl.when(pl.col("start") < (pl.col("contig_length") // 2))
-                    .then(pl.col("start"))
-                    .otherwise(pl.col("start") - (pl.col("contig_length") // 2))
-                    .alias("start")
-                
+    with open(pileup_path, "r") as f_in, open(output_path, "w") as f_out:
+        for line in f_in:
+            # Split into the 18 expected columns (assuming no header).
+            (
+                contig,
+                start,
+                end,
+                mod_type,
+                score,
+                strand,
+                start2,
+                end2,
+                color,
+                N_valid_cov,
+                percent_modified,
+                N_modified,
+                N_canonical,
+                N_other_mod,
+                N_delete,
+                N_fail,
+                N_diff,
+                N_nocall,
+            ) = line.strip().split("\t")
+
+            # Filter for relevant contigs.
+            if contig not in contig_lengths:
+                continue
+
+            c_len = contig_lengths[contig]
+
+            # Convert start to an integer before comparisons.
+            start_val = int(start)
+            half_length = c_len // 2
+
+            # Decide if row belongs to the first half or the second half.
+            if start_val < half_length:
+                contig = f"{contig}_1"
+            else:
+                contig = f"{contig}_2"
+                start_val -= half_length
+
+            # Write out the updated line.
+            out_cols = [
+                contig,
+                str(start_val),
+                end,
+                mod_type,
+                score,
+                strand,
+                start2,
+                end2,
+                color,
+                N_valid_cov,
+                percent_modified,
+                N_modified,
+                N_canonical,
+                N_other_mod,
+                N_delete,
+                N_fail,
+                N_diff,
+                N_nocall,
             ]
-        )\
-        .drop(["contig_length"])
-
-    pileup.write_csv(output, separator = "\t", include_header = False)
+            f_out.write("\t".join(out_cols) + "\n")
         
 def check_files_exist(paths=[], directories=[]):
     """
@@ -233,7 +282,7 @@ def generate_methylation_features(logger, args):
     create_assembly_with_split_contigs(
         assembly, contig_lengths_for_splitting , os.path.join(args.output, "contig_split.fasta")
     )
-    create_split_pileup(lf_pileup, contig_lengths_for_splitting, os.path.join(args.output, "pileup_split.bed"))
+    create_split_pileup(args.pileup, contig_lengths_for_splitting, os.path.join(args.output, "pileup_split.bed"))
 
     
         

@@ -1,3 +1,4 @@
+import shutil
 import pytest
 import polars as pl
 import pandas as pd
@@ -32,6 +33,8 @@ def data():
     pileup, data, data_split, bin_consensus = load_data(args, logger)
     
     
+    if not os.path.exists(args.output):
+        os.makedirs(args.output)
     assembly = read_fasta(args.contig_fasta)
     
     # Get the unique motifs
@@ -96,7 +99,7 @@ def test_split_contigs(data):
 
     create_assembly_with_split_contigs(data["assembly"], lengths, os.path.join(args.output, "plasmid_split.fasta"))
 
-    create_split_pileup(data["pileup"], lengths, os.path.join(args.output, "plasmid_split.bed"))
+    create_split_pileup(args.pileup, lengths, os.path.join(args.output, "plasmid_split.bed"))
 
     run_epimetheus(
         os.path.join(args.output, "plasmid_split.bed"),
@@ -121,8 +124,8 @@ def test_split_contigs(data):
 
     os.remove(os.path.join(args.output, "plasmid_split.bed"))
     os.remove(os.path.join(args.output, "plasmid_split.fasta"))
-    os.remove(os.path.join(args.output, "pileup_split.bed"))
     os.remove(os.path.join(args.output, "contig_split_methylation.tsv"))
+    shutil.rmtree(args.output)
 
 
 
