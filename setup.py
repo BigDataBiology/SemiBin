@@ -39,7 +39,7 @@ setup(name='SemiBin',
           'scikit-learn',
           'requests',
           'numexpr',
-          'pymethylation_utils==0.5.1',
+          'pymethylation_utils',
           'polars==1.19.0'
       ],
       package_data={
