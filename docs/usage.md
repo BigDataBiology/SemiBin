@@ -281,7 +281,7 @@ SemiBin2 concatenate_fasta \
 This will produce the file `output/concatenated.fa`
 
 **Technical note on the format of `concatenated.fa`**: every contig is renamed to the name `<sample_name>:<original_contig_name>`, where `:` is the default separator (it can be changed with the `--separator` argument, which _must then be passed to all the commands that use it_).
-Using the `concatenate_fasta` subcammand will make sure that sample names are unique and the separator does not introduce confusion when splitting (that is, that the separator is not already used in the contig or sample names).
+Using the `concatenate_fasta` subcommand will make sure that sample names are unique and the separator does not introduce confusion when splitting (that is, that the separator is not already used in the contig or sample names).
 Otherwise, you can also prepare the file yourself.
 For example:
 
