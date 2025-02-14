@@ -91,7 +91,7 @@ conda install -c bioconda bedtools hmmer samtools
 Once the dependencies are installed, you can install SemiBin by running:
 
 ```bash
-python setup.py install
+pip install .
 ```
 
 Optional extra dependencies for running SemiBin1:

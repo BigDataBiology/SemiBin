@@ -44,7 +44,7 @@ conda install -c bioconda bedtools hmmer fraggenescan samtools
 Then, installing should be a simple matter of running:
 
 ```bash
-python setup.py install
+pip install .
 ```
 
 ## Alternative ways of running SemiBin

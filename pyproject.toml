@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "SemiBin"
+dynamic = ['version']
+description = "Metagenomic binning with siamese neural networks"
+readme = "README.md"
+requires-python = ">=3.7"
+authors = [
+    { name = "Shaojun Pan" },
+    { name = "Luis Pedro Coelho", email = "luis@luispedro.org" }
+]
+license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "numpy",
+    "tqdm",
+    "pyyaml",
+    "torch",
+    "python-igraph",
+    "pandas",
+    "scikit-learn",
+    "requests",
+    "numexpr",
+]
+urls = { homepage = "https://github.com/BigDataBiology/SemiBin" }
+
+[project.scripts]
+SemiBin = "SemiBin.main:main_no_version"
+SemiBin2 = "SemiBin.main:main2"
+SemiBin1 = "SemiBin.main:main1"
+
+[tool.setuptools]
+packages = ["SemiBin"]
+include-package-data = true
+zip-safe = false
+
+
+[tool.setuptools.package-data]
+SemiBin = ["*.hmm", "models/*.pt"]
+
+[tool.setuptools.dynamic]
+version = {attr = "SemiBin.semibin_version.__version__"}
+
