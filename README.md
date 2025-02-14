@@ -57,7 +57,7 @@ Please find more options and details below and [read the docs](https://semibin.r
 
 ## Advanced Installation
 
-SemiBin runs (and is continuously tested) on Python 3.7-3.12
+SemiBin runs (and is continuously tested) on Python 3.7-3.13
 
 ### Bioconda
 
