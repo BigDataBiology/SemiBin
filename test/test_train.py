@@ -16,11 +16,9 @@ args = argparse.Namespace(
         )
 
 def test_train(tmpdir):
-    contig_dict = {h:seq for h,seq in fasta_iter('test/train_data/input.fasta')}
-
     odir = f'{tmpdir}/output_train'
     os.makedirs(odir)
-    ofile = f'{odir}/model.h5'
+    ofile = f'{odir}/model.pt'
 
     args.training_type = 'semi'
     training(contig_fasta = ['test/train_data/input.fasta'],
@@ -37,7 +35,6 @@ def test_train(tmpdir):
     assert os.path.exists(ofile)
 
 def test_train_self(tmpdir):
-    contig_dict = {h:seq for h,seq in fasta_iter('test/train_data/input.fasta')}
     odir = f'{tmpdir}/output_train_self'
     os.makedirs(odir)
     args.training_type = 'self'
@@ -52,7 +49,7 @@ def test_train_self(tmpdir):
             args = args,
             )
 
-    assert os.path.exists(f'{odir}/model.h5')
+    assert os.path.exists(f'{odir}/model.pt')
 
 
 # https://github.com/BigDataBiology/SemiBin/issues/137
@@ -76,7 +73,8 @@ def test_regression_137_semi(tmpdir):
                        num_process=1,
                        mode='single',
                        )
-    assert os.path.exists(f'{odir}/model.h5')
+    model.save_with_params_to(f'{odir}/model.pt')
+    assert os.path.exists(f'{odir}/model.pt')
 
 
 # https://github.com/BigDataBiology/SemiBin/issues/137
@@ -92,8 +90,7 @@ def test_regression_137_self(tmpdir):
 
     # Training adds len(<split>) * 1000//2 + 40 so that the total data is 40040
     # To trigger the bug, batchsize is set to 40039
-    model = train_self(out = ofile,
-                       logger = logging,
+    model = train_self(logger = logging,
                        datapaths=['test/train_data/data.csv'],
                        data_splits=['test/train_data/data_split.csv'],
                        is_combined=False,
@@ -103,5 +100,6 @@ def test_regression_137_self(tmpdir):
                        num_process=1,
                        mode='single',
                        )
+    model.save_with_params_to(ofile)
     assert os.path.exists(ofile)
 

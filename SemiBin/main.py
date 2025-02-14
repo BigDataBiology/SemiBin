@@ -1114,12 +1114,12 @@ def training(logger, contig_fasta,
                            device,
                            args.num_process,
                            mode)
-    model.save(os.path.join(output, 'model.pt'))
+    model.save_with_params_to(os.path.join(output, 'model.pt'))
 
 
 def binning_preprocess(data, depth_metabat2, model_path, environment, device):
     import pandas as pd
-    import torch
+    from .semi_supervised_model import model_load
     data = pd.read_csv(data, index_col=0)
     data.index = data.index.astype(str)
 
@@ -1147,10 +1147,7 @@ def binning_preprocess(data, depth_metabat2, model_path, environment, device):
             sys.stderr.write(f"Error: provided pretrained model only used in single-sample binning!\n")
             sys.exit(1)
 
-    if device == torch.device('cpu'):
-        model = torch.load(model_path, map_location=torch.device('cpu'))
-    else:
-        model = torch.load(model_path).to(device)
+    model = model_load(model_path, device)
 
     return is_combined, n_sample, data, model
 

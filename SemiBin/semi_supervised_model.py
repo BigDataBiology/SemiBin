@@ -48,6 +48,13 @@ class Semi_encoding_multiple(torch.nn.Module):
     def embedding(self, input):
         return self.encoder1(input)
 
+    def save_with_params_to(self, path):
+        torch.save({
+                    'model_name': 'Semi_encoding_multiple',
+                    'model_state_dict': self.state_dict(),
+                    'params': [self.encoder1[0].in_features],
+                    }, path)
+
 
 class Semi_encoding_single(torch.nn.Module):
     """
@@ -88,6 +95,24 @@ class Semi_encoding_single(torch.nn.Module):
 
     def embedding(self, input):
         return self.encoder1(input)
+
+    def save_with_params_to(self, path):
+        torch.save({
+                    'model_name': 'Semi_encoding_single',
+                    'model_state_dict': self.state_dict(),
+                    'params': [self.encoder1[0].in_features],
+                    }, path)
+
+
+def model_load(path, device):
+    '''Load model from path'''
+    saved = torch.load(path, map_location=device, weights_only=True)
+    if saved['model_name'] == 'Semi_encoding_single':
+        model = Semi_encoding_single(saved['params'][0])
+    elif saved['model_name'] == 'Semi_encoding_multiple':
+        model = Semi_encoding_multiple(saved['params'][0])
+    model.load_state_dict(saved['model_state_dict'])
+    return model.to(device)
 
 
 def loss_function(embedding1, embedding2, label, raw_x_1,

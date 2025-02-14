@@ -14,7 +14,7 @@ subprocess.check_call(
      '-m', '2500',
      '--ratio', '0.05',
      '-p', '1'])
-assert os.path.exists('test-outputs/output_train_fa/model.h5')
+assert os.path.exists('test-outputs/output_train_fa/model.pt')
 
 for cmd in ['SemiBin1', 'SemiBin2']:
     subprocess.check_call(
@@ -27,7 +27,7 @@ for cmd in ['SemiBin1', 'SemiBin2']:
          '--batch-size', '2048',
          '-o', 'test-outputs/output_train_fa_self',
          '-p', '1'])
-    assert os.path.exists('test-outputs/output_train_fa_self/model.h5')
+    assert os.path.exists('test-outputs/output_train_fa_self/model.pt')
 
 ### train from several samples
 subprocess.check_call(
@@ -55,7 +55,7 @@ subprocess.check_call(
          '-m', '2500',
          '--ratio', '0.05',
          '-p', '1'])
-assert os.path.exists('test-outputs/output_train_several/model.h5')
+assert os.path.exists('test-outputs/output_train_several/model.pt')
 
 subprocess.check_call(
         ['SemiBin2', 'train_self',
@@ -72,5 +72,5 @@ subprocess.check_call(
          '--batch-size', '2048',
          '--train-from-many',
          '-p', '1'])
-assert os.path.exists('test-outputs/output_train_several_self/model.h5')
+assert os.path.exists('test-outputs/output_train_several_self/model.pt')
 

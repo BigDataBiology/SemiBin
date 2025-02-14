@@ -3,6 +3,8 @@ Unreleased
 	* SemiBin: always log to file in DEBUG level and log command-line arguments
 	* coverage: Better error messages (#168)
 	* SemiBin: Print version number in logs
+	* SemiBin: Better method to save the model which is more compatible with
+	newer versions of PyTorch
 
 Version 2.1.0 Mar 6 2024 by BigDataBiology
 	* SemiBin: Support running SemiBin with strobealign-aemb

@@ -30,7 +30,7 @@ dependencies = [
     "numpy",
     "tqdm",
     "pyyaml",
-    "torch",
+    "torch>=1.13", # torch.load() only supports the weights_only argument since 1.13
     "python-igraph",
     "pandas",
     "scikit-learn",
