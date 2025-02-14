@@ -1,11 +1,12 @@
 import torch
-from torch.nn import Linear, ReLU, LeakyReLU
+from torch.nn import Linear, LeakyReLU
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 import os
 from .utils import cal_num_bins
 from torch.optim import lr_scheduler
 import sys
+
 
 class Semi_encoding_multiple(torch.nn.Module):
     """
@@ -115,8 +116,8 @@ def loss_function(embedding1, embedding2, label, raw_x_1,
 
 class feature_Dataset(Dataset):
     def __init__(self, embedding1, embedding2, labels):
-        self.embedding1= embedding1
-        self.embedding2= embedding2
+        self.embedding1 = embedding1
+        self.embedding2 = embedding2
         assert len(embedding1) == len(embedding2)
         assert len(embedding1) == len(labels)
         self.labels = labels
@@ -130,8 +131,8 @@ class feature_Dataset(Dataset):
 
 class unsupervised_feature_Dataset(Dataset):
     def __init__(self, embedding1, embedding2):
-        self.embedding1= embedding1
-        self.embedding2= embedding2
+        self.embedding1 = embedding1
+        self.embedding2 = embedding2
         assert len(embedding1) == len(embedding2)
 
     def __getitem__(self, item):
@@ -217,7 +218,6 @@ def train_semi(logger, out, contig_fastas, binned_lengths, datas, data_splits, c
                 train_data_split_input = train_data_must_link
             else:
                 if norm_abundance(train_data):
-                    from sklearn.preprocessing import normalize
                     norm = np.sum(train_data, axis=0)
                     train_data = train_data / norm
                     train_data_must_link = train_data_must_link / norm
@@ -316,6 +316,4 @@ def train_semi(logger, out, contig_fastas, binned_lengths, datas, data_splits, c
         scheduler.step()
 
     logger.info('Training finished.')
-    torch.save(model, os.path.join(out, 'model.h5'))
-
     return model

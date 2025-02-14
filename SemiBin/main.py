@@ -1107,7 +1107,6 @@ def training(logger, contig_fasta,
             orf_finder=args.orf_finder)
     else:
         model = train_self(logger,
-                           path.join(output, 'model.h5'),
                            data,
                            data_split,
                            is_combined,
@@ -1116,6 +1115,7 @@ def training(logger, contig_fasta,
                            device,
                            args.num_process,
                            mode)
+    model.save(os.path.join(output, 'model.pt'))
 
 
 def binning_preprocess(data, depth_metabat2, model_path, environment, device):
@@ -1274,7 +1274,7 @@ def single_easy_binning(logger, args, binned_length,
         'binned_length': binned_length,
         'contig_dict': contig_dict,
         'model_path':
-                os.path.join(args.output, 'model.h5') \
+                os.path.join(args.output, 'model.pt') \
                         if args.environment is None \
                         else None,
         'output': args.output,
@@ -1344,7 +1344,7 @@ def multi_easy_binning(logger, args, device):
             'minfasta': args.minfasta_kb * 1000,
             'binned_length': binned_length,
             'contig_dict': contig_dict,
-            'model_path': os.path.join(args.output, 'samples', sample, 'model.h5'),
+            'model_path': os.path.join(args.output, 'samples', sample, 'model.pt'),
             'output': os.path.join(args.output, 'samples', sample),
             'device': device,
             'environment': None,

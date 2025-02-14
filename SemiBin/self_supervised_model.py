@@ -1,6 +1,5 @@
 import torch
 from torch.utils.data import DataLoader
-import os
 from torch.optim import lr_scheduler
 import sys
 from .semi_supervised_model import Semi_encoding_single, Semi_encoding_multiple, feature_Dataset
@@ -16,7 +15,7 @@ def loss_function(embedding1, embedding2, label):
     return supervised_loss
 
 
-def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
+def train_self(logger, datapaths, data_splits, is_combined=True,
           batchsize=2048, epoches=15, device=None, num_process = 8, mode = 'single'):
     """
     Train model from one sample(mode=single) or several samples(mode=several)
@@ -132,6 +131,4 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
         scheduler.step()
 
     logger.info('Training finished.')
-    torch.save(model, out)
-
     return model
