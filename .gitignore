@@ -6,3 +6,7 @@ __pycache__/
 /test-outputs/
 /test/single_sample_data/input.fasta.fai
 /test/multi_samples_data/input_multi.fasta.fai
+
+# pixi environments
+.pixi
+*.egg-info
