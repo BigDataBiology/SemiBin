@@ -1,7 +1,6 @@
 import argparse
 import logging
 import os
-from os import path
 from multiprocessing.pool import Pool
 import subprocess
 from .atomicwrite import atomic_write
@@ -764,9 +763,9 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
                      ],
                     stdout=None,
                 )
-            except:
+            except Exception as e:
                 sys.stderr.write(
-                    f"Error: Running mmseqs createtsv fail\n")
+                    f"Error: Running mmseqs createtsv fail (error: {e})\n")
                 sys.exit(1)
 
     os.makedirs(os.path.join(output, 'cannot'), exist_ok=True)
@@ -1184,7 +1183,6 @@ def binning_short(logger, data, minfasta,
     model_path: path to the trained model
     """
     from .cluster import cluster
-    import pandas as pd
     logger.info('Start binning.')
 
     is_combined, n_sample, data, model = binning_preprocess(data, getattr(args, 'depth_metabat2', None), model_path, environment, device)
