@@ -1,4 +1,4 @@
-from SemiBin.utils import get_must_link_threshold, get_marker, split_data, n50_l50, extract_bams, norm_abundance
+from SemiBin.utils import get_must_link_threshold, get_marker, split_data, n50_l50, maybe_crams2bams, norm_abundance
 from hypothesis import given, strategies as st
 from io import StringIO
 import numpy as np
@@ -122,18 +122,14 @@ def test_n50_l50(sizes):
 
 def test_extract_bams(tmpdir):
     single_sample_input = 'test/single_sample_data'
-    rs = extract_bams([f'{single_sample_input}/input.cram'],
+    rs = maybe_crams2bams([f'{single_sample_input}/input.cram'],
              f'{single_sample_input}/input.fasta',
              2,
              tmpdir)
     assert len(rs) == 1
     assert rs[0].endswith('.bam')
     assert rs[0].startswith(str(tmpdir))
-    rs = extract_bams(None,
-             f'{single_sample_input}/input.fasta',
-             2,
-             tmpdir)
-    assert rs is None
+
 
 def test_norm_abundance():
     assert not norm_abundance(np.random.randn(10, 136))

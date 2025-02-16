@@ -545,6 +545,8 @@ def process_fasta(fasta_path, ratio):
     binned_short = contig_bp_2500 / whole_contig_bp < ratio
     must_link_threshold = get_must_link_threshold(contig_length_list)
     if not contig_dict:
+        import logging
+        logger = logging.getLogger('SemiBin2')
         logger.warning(f'No contigs in {fasta_path}')
     return binned_short, must_link_threshold, contig_dict
 
@@ -627,11 +629,26 @@ def n50_l50(sizes):
     return n50, l50+1
 
 
-def extract_bams(bams, contig_fasta : str, num_process : int, odir : str): # bams : list[str] is not available on Python 3.7
+def maybe_crams2bams(bams, contig_fasta : str, num_process : int, odir : str): # bams : list[str] is not available on Python 3.7
     '''
-    extract_bams converts CRAM to BAM
+    maybe_crams2bams converts CRAM to BAM
+
+    Parameters
+    ----------
+    bams : list of str
+        List of BAM/CRAM files
+    contig_fasta : str
+        Contig FASTA file
+    num_process : int
+        Number of processes to use
+    odir : str
+        Output directory for extracted BAM files
+
+    Returns
+    -------
+    obams : list of str
+        List of BAM files (extracted if CRAM or original)
     '''
-    if bams is None: return None
     rs = []
     for bam in bams:
         if bam.endswith('.cram'):
@@ -648,6 +665,7 @@ def extract_bams(bams, contig_fasta : str, num_process : int, odir : str): # bam
         else:
             rs.append(bam)
     return rs
+
 
 def compute_min_length(min_length, fafile, ratio):
     if min_length is not None: return min_length

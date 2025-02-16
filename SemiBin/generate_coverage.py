@@ -79,12 +79,12 @@ def calculate_coverage(depth_stream, bam_file, must_link_threshold, edge=75, is_
             }, index=contigs), None
 
 
-def generate_cov(bam_file, bam_index, out, threshold,
+def generate_cov(bam_file: str, bam_index, out, threshold,
                  is_combined, contig_threshold, logger, sep = None):
     """
     Call bedtools and generate coverage file
 
-    bam_file: bam files used
+    bam_file: bam file used
     out: output
     threshold: threshold of contigs that will be binned
     is_combined: if using abundance feature in deep learning. True: use
@@ -126,16 +126,15 @@ def generate_cov(bam_file, bam_index, out, threshold,
         if sep is None:
             abun_scale = (contig_cov.mean() / 100).apply(np.ceil) * 100
             contig_cov = contig_cov.div(abun_scale)
-        with atomic_write(os.path.join(out, '{}_data_cov.csv'.format(bam_name)), overwrite=True) as ofile:
+        with atomic_write(os.path.join(out, f'{bam_name}_data_cov.csv'), overwrite=True) as ofile:
             contig_cov.to_csv(ofile)
 
-    if is_combined:
         must_link_contig_cov = must_link_contig_cov.apply(lambda x: x + 1e-5)
         if sep is None:
             abun_split_scale = (must_link_contig_cov.mean() / 100).apply(np.ceil) * 100
             must_link_contig_cov = must_link_contig_cov.div(abun_split_scale)
 
-        with atomic_write(os.path.join(out, '{}_data_split_cov.csv'.format(bam_name)), overwrite=True) as ofile:
+        with atomic_write(os.path.join(out, f'{bam_name}_data_split_cov.csv'), overwrite=True) as ofile:
             must_link_contig_cov.to_csv(ofile)
 
     return bam_file

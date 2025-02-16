@@ -5,7 +5,6 @@ import shutil
 import tempfile
 
 from .utils import write_bins, cal_num_bins
-from .fasta import fasta_iter
 
 # This is the default in the igraph package
 NR_INFOMAP_TRIALS = 10
@@ -276,7 +275,6 @@ def cluster(logger, model, data, device, is_combined,
     max_node: max percentage of contigs considered in binning
     """
     import pandas as pd
-    import numpy as np
     embedding, contig_labels = run_embed_infomap(logger, model, data,
             device=device, max_edges=args.max_edges, max_node=args.max_node,
             is_combined=is_combined, n_sample=n_sample,

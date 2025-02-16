@@ -1,7 +1,8 @@
 import argparse
 import logging
 import os
-from multiprocessing.pool import Pool
+from os import path
+import multiprocessing as mp
 import subprocess
 from .atomicwrite import atomic_write
 import shutil
@@ -9,11 +10,13 @@ import sys
 from itertools import groupby
 from . import utils
 from .utils import validate_normalize_args, get_must_link_threshold, generate_cannot_link, \
-    set_random_seed, process_fasta, split_data, get_model_path, extract_bams
+    set_random_seed, process_fasta, split_data, get_model_path, maybe_crams2bams
 from .generate_coverage import generate_cov, combine_cov, generate_cov_from_abundances
 from .generate_kmer import generate_kmer_features_from_fasta
 from .fasta import fasta_iter
 from .semibin_version import __version__
+
+Pool = mp.get_context('spawn').Pool
 
 
 def parse_args(args, is_semibin2):
@@ -725,9 +728,9 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
                      os.path.join(tdir, 'contig_DB')],
                     stdout=None,
                 )
-            except:
+            except Exception as e:
                 sys.stderr.write(
-                    f"Error: Running mmseqs createdb fail\n")
+                        f"Error: Running mmseqs createdb failed (error: {e})\n")
                 sys.exit(1)
             if os.path.exists(os.path.join(output, 'mmseqs_contig_annotation')):
                 shutil.rmtree(os.path.join(output, 'mmseqs_contig_annotation'))
@@ -746,9 +749,9 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
                     check=True,
                     stdout=None,
                 )
-            except:
+            except Exception as e:
                 sys.stderr.write(
-                    f"Error: Running mmseqs taxonomy fail\n")
+                        f"Error: Running mmseqs taxonomy failed (error: {e})\n")
                 sys.exit(1)
             taxonomy_results_fname = os.path.join(output,
                                         'mmseqs_contig_annotation',
@@ -785,7 +788,7 @@ def generate_sequence_features_single(logger, contig_fasta,
 
     if bams is None and abundances is None and not only_kmer:
         sys.stderr.write(
-            f"Error: You need to specify input BAM files or abundance files if you want to calculate coverage features.\n")
+            f"Error: You need to specify input BAM files or abundance files to calculate coverage features.\n")
         sys.exit(1)
 
     if (bams is not None or abundances is not None) and only_kmer:
@@ -891,7 +894,7 @@ def generate_sequence_features_multi(logger, args):
 
     # Gererate contig file for every sample
     sample_list = []
-    contig_length_list = []
+    contig_lengths = []
 
     os.makedirs(os.path.join(args.output, 'samples'), exist_ok=True)
 
@@ -904,16 +907,16 @@ def generate_sequence_features_multi(logger, args):
             yield sample_name, contig_name, seq
 
     for sample_name, contigs in groupby(fasta_sample_iter(args.contig_fasta), lambda sn_cn_seq : sn_cn_seq[0]):
-        with open(os.path.join(args.output, 'samples', '{}.fa'.format(sample_name)), 'wt') as out:
+        with utils.possibly_compressed_write(os.path.join(args.output, 'samples', f'{sample_name}.fa')) as out:
             for _, contig_name, seq in contigs:
                 out.write(f'>{contig_name}\n{seq}\n')
-                contig_length_list.append(len(seq))
+                contig_lengths.append(len(seq))
         sample_list.append(sample_name)
     if len(sample_list) != len(set(sample_list)):
         logger.error(f'Concatenated FASTA file {args.contig_fasta} not in expected format. Samples should follow each other.')
         sys.exit(1)
 
-    must_link_threshold = get_must_link_threshold(contig_length_list) if args.ml_threshold is None else args.ml_threshold
+    must_link_threshold = get_must_link_threshold(contig_lengths) if args.ml_threshold is None else args.ml_threshold
     binning_threshold = {}
     for sample in sample_list:
         binning_threshold[sample] = utils.compute_min_length(
@@ -943,16 +946,16 @@ def generate_sequence_features_multi(logger, args):
                 logger.info(f'Processed: {s}')
 
         for bam_index, bam_file in enumerate(args.bams):
-            if not os.path.exists(os.path.join(os.path.join(args.output, 'samples'), '{}_data_cov.csv'.format(
-                    os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
+            if not path.exists(path.join(args.output, 'samples',
+                            f'{path.split(bam_file)[-1]}_{bam_index}_data_cov.csv')):
                 sys.stderr.write(
-                    f"Error: Generating coverage file fail\n")
+                    f"Error: Generating coverage file failed (for BAM file {bam_file})\n")
                 sys.exit(1)
             if is_combined:
-                if not os.path.exists(os.path.join(os.path.join(args.output, 'samples'), '{}_data_split_cov.csv'.format(
-                        os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
+                if not path.exists(path.join(args.output, 'samples',
+                            f'{path.split(bam_file)[-1]}_{bam_index}_data_split_cov.csv')):
                     sys.stderr.write(
-                        f"Error: Generating coverage file fail\n")
+                        f"Error: Generating split coverage file failed (for BAM file {bam_file})\n")
                     sys.exit(1)
 
         # Generate cov features for every sample
@@ -1471,8 +1474,8 @@ def main2(raw_args=None, is_semibin2=True):
         set_random_seed(args.random_seed)
 
     with tempfile.TemporaryDirectory() as tdir:
-        if hasattr(args, 'bams'):
-            args.bams = extract_bams(args.bams, args.contig_fasta, args.num_process, tdir)
+        if hasattr(args, 'bams') and args.bams is not None:
+            args.bams = maybe_crams2bams(args.bams, args.contig_fasta, args.num_process, tdir)
 
         if args.cmd in ['generate_cannot_links', 'generate_sequence_features_single', 'bin','single_easy_bin', 'bin_long']:
             binned_short, must_link_threshold, contig_dict = process_fasta(args.contig_fasta, args.ratio)
