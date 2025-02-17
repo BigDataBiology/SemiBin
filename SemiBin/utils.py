@@ -98,6 +98,9 @@ def validate_normalize_args(logger, args):
         os.environ['NUMEXPR_NUM_THREADS'] = str(args.num_process)
         os.environ['NUMEXPR_MAX_THREADS'] = str(args.num_process)
         os.environ['OMP_NUM_THREADS'] = str(args.num_process)
+        os.environ['OPENBLAS_NUM_THREADS'] = str(args.num_process)
+        os.environ['MKL_NUM_THREADS'] = str(args.num_process)
+        os.environ['VECLIB_MAXIMUM_THREADS'] = str(args.num_process)
 
     if args.cmd in ['train', 'train_semi']:
         args.cmd = 'train_semi'
