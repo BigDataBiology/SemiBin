@@ -10,7 +10,7 @@ import sys
 from itertools import groupby
 from . import utils
 from .utils import validate_normalize_args, get_must_link_threshold, generate_cannot_link, \
-    set_random_seed, process_fasta, split_data, get_model_path, maybe_crams2bams
+    set_random_seed, load_fasta, split_data, get_model_path, maybe_crams2bams
 from .generate_coverage import generate_cov, combine_cov, generate_cov_from_abundances
 from .generate_kmer import generate_kmer_features_from_fasta
 from .fasta import fasta_iter
@@ -919,7 +919,7 @@ def generate_sequence_features_multi(logger, args):
     must_link_threshold = get_must_link_threshold(contig_lengths) if args.ml_threshold is None else args.ml_threshold
     binning_threshold = {}
     for sample in sample_list:
-        binning_threshold[sample] = utils.compute_min_length(
+        binning_threshold[sample] = utils.maybe_compute_min_length(
                                         args.min_len,
                                         os.path.join(args.output, f'samples/{sample}.fa'),
                                         args.ratio)
@@ -1087,7 +1087,7 @@ def training(logger, contig_fasta,
         binned_lengths = []
         for fafile in contig_fasta:
             binned_lengths.append(
-                    utils.compute_min_length(args.min_len, fafile, args.ratio))
+                    utils.maybe_compute_min_length(args.min_len, fafile, args.ratio))
             if mode == 'single':
                 break
 
@@ -1302,12 +1302,9 @@ def multi_easy_binning(logger, args, device):
         sample_data_split = os.path.join(
             args.output, 'samples', sample, 'data_split.csv')
 
-        binned_short, must_link_threshold, contig_dict = process_fasta(sample_fasta, args.ratio)
+        c_min_len, must_link_threshold, contig_dict = load_fasta(sample_fasta, args.ratio)
 
-        if args.min_len is None:
-            binned_length = 1000 if binned_short else 2500
-        else:
-            binned_length = args.min_len
+        binned_length = c_min_len if args.min_len is None else args.min_len
         logger.info('Training model and clustering for {}.'.format(sample))
         if args.training_type == 'semi':
             logger.debug(f'Running taxonomic prediction (semi-supervised mode) for {sample}')
@@ -1478,9 +1475,9 @@ def main2(raw_args=None, is_semibin2=True):
             args.bams = maybe_crams2bams(args.bams, args.contig_fasta, args.num_process, tdir)
 
         if args.cmd in ['generate_cannot_links', 'generate_sequence_features_single', 'bin','single_easy_bin', 'bin_long']:
-            binned_short, must_link_threshold, contig_dict = process_fasta(args.contig_fasta, args.ratio)
+            c_min_len, must_link_threshold, contig_dict = load_fasta(args.contig_fasta, args.ratio)
             if args.min_len is None:
-                binned_length = 1000 if binned_short else 2500
+                binned_length = c_min_len
             else:
                 binned_length = args.min_len
             if not contig_dict:

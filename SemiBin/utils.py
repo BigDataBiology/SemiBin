@@ -522,15 +522,15 @@ def set_random_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
 
-def process_fasta(fasta_path, ratio):
+def load_fasta(fasta_path: str, ratio: float):
     """
     Returns
 
-    binned_short: whether to include short contigs
+    computed_min_length: minimum length of contigs (1000 or 2500, depending on the ratio)
     must_link_threshold: threshold to break up contigs
     contigs: dictionary ID -> contig sequence
     """
-    whole_contig_bp = 0
+    total_bps = 0
     contig_bp_2500 = 0
     contig_length_list = []
     contig_dict = {}
@@ -539,16 +539,19 @@ def process_fasta(fasta_path, ratio):
         if 1000 <= len(seq) <= 2500:
             contig_bp_2500 += len(seq)
         contig_length_list.append(len(seq))
-        whole_contig_bp += len(seq)
+        total_bps += len(seq)
         contig_dict[h] = seq
 
-    binned_short = contig_bp_2500 / whole_contig_bp < ratio
+    computed_min_length = (
+                1000
+                if contig_bp_2500 / total_bps < ratio
+                else 2500)
     must_link_threshold = get_must_link_threshold(contig_length_list)
     if not contig_dict:
         import logging
         logger = logging.getLogger('SemiBin2')
         logger.warning(f'No contigs in {fasta_path}')
-    return binned_short, must_link_threshold, contig_dict
+    return computed_min_length, must_link_threshold, contig_dict
 
 
 def split_data(data, sample, separator, is_combined = True):
@@ -667,12 +670,12 @@ def maybe_crams2bams(bams, contig_fasta : str, num_process : int, odir : str): #
     return rs
 
 
-def compute_min_length(min_length, fafile, ratio):
-    if min_length is not None: return min_length
-    binned_short ,_ ,_ = process_fasta(fafile, ratio)
-    if binned_short:
-        return 1000
-    return 2500
+def maybe_compute_min_length(min_length, fafile, ratio):
+    if min_length is not None:
+        return min_length
+    c_min_len, _, _ = load_fasta(fafile, ratio)
+    return c_min_len
+
 
 def norm_abundance(data):
     import numpy as np

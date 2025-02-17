@@ -1,7 +1,9 @@
 from SemiBin.utils import get_must_link_threshold, get_marker, split_data, n50_l50, maybe_crams2bams, norm_abundance
+from SemiBin import utils
 from hypothesis import given, strategies as st
 from io import StringIO
 import numpy as np
+
 
 def slow_get_must_link_threshold(contig_len):
     """
@@ -143,3 +145,7 @@ def test_norm_abundance():
     assert norm_abundance(       np.random.randn(12, 164) )
     assert norm_abundance(np.abs(np.random.randn(12, 164)))
 
+
+def test_load_fasta():
+    c_min_len, ml_thresh, inputs = utils.load_fasta('test/train_data/input.fasta', .01)
+    assert c_min_len == 1000
