@@ -590,6 +590,7 @@ def get_model_path(env : str) -> str:
             'global',
             ]
     if envn in known_environments:
+        # From Python 3.9, we can use importlib.resources
         return os.path.join(os.path.split(__file__)[0], 'models', f'{envn}_model.pt')
     else:
         sys.stderr.write(
