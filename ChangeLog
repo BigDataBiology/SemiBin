@@ -1,11 +1,12 @@
 Unreleased
-	* logging: use 'SemiBin2' as logger name
-	* SemiBin: always log to file in DEBUG level and log command-line arguments
+	* logging: Use 'SemiBin2' as logger name
+	* SemiBin: Always log to file in DEBUG level and log command-line arguments
 	* coverage: Better error messages (#168)
 	* SemiBin: Print version number in logs
 	* SemiBin: Better method to save the model which is more compatible with
 	newer versions of PyTorch
 	* SemiBin: Respect the number of threads requested better (#140)
+	* SemiBin: Switch to pixi
 
 Version 2.1.0 Mar 6 2024 by BigDataBiology
 	* SemiBin: Support running SemiBin with strobealign-aemb
