@@ -16,13 +16,10 @@ class SetupArgs:
     def __init__(self):
         self.pileup = "test/methylation_data/geobacillus-plasmids.pileup.bed"
         self.contig_fasta = "test/methylation_data/geobacillus-plasmids.assembly.fasta"
-        self.bin_motifs = "test/methylation_data/bin-motifs.tsv"
+        self.motifs_file = "test/methylation_data/bin-motifs.tsv"
         self.data = "test/methylation_data/data.csv"
         self.data_split = "test/methylation_data/data_split.csv"
         self.num_process = 1
-        self.min_motif_observations_bin = 400
-        self.min_motif_obs_contig = 1
-        self.min_motif_methylation = 0.5
         self.min_valid_read_coverage= 1
         self.output = "test/methylation_data/test_output"
 
@@ -30,28 +27,18 @@ class SetupArgs:
 def data():
     args = SetupArgs()
     logger = MagicMock()
-    pileup, data, data_split, bin_consensus = load_data(args, logger)
     
+    data = pl.read_csv(args.data)
+    data = data\
+        .rename({"": "contig"})
+    data_split = pl.read_csv(args.data_split)
+    data_split = data_split\
+        .rename({"": "contig"})
     
     if not os.path.exists(args.output):
         os.makedirs(args.output)
     assembly = read_fasta(args.contig_fasta)
     
-    # Get the unique motifs
-    motifs = bin_consensus\
-        .select(["motif", "mod_position", "mod_type", "n_mod_bin", "n_nomod_bin"])\
-        .with_columns(
-            motif_mod = pl.col("motif") + "_" + pl.col("mod_position").cast(pl.String) + "_" + pl.col("mod_type"),
-            n_motifs = pl.col("n_mod_bin") + pl.col("n_nomod_bin")
-        )\
-        .filter(pl.col("n_motifs") >= args.min_motif_observations_bin)\
-        .unique(["motif_mod"])
-
-    if len(motifs) == 0:
-        logger.error(f"No motifs found")
-        sys.exit(1)
-    
-    motif_list = [(Motif(row[0], row[1]), row[2])for row in motifs.unique(["motif", "mod_position", "mod_type"]).iter_rows()]
     contigs_in_split = data_split.select("contig").to_pandas()
     contigs_in_split = contigs_in_split["contig"].str.rsplit("_",n=1).str[0].unique()
 
@@ -66,11 +53,8 @@ def data():
         "args": args,
         "data_split": data_split,
         "data": data,
-        "pileup": pileup,
-        "bin_consensus": bin_consensus,
         "assembly": assembly,
         "contigs": contigs,
-        "motif_list": motif_list
     }
 
 

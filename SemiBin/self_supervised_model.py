@@ -120,7 +120,6 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
             indices2 %= data_length
 
 
-            print(train_data)
             if epoch == 0:
                 logger.debug(
                     f'Number of must-link pairs: {len(train_data_split)//2}')

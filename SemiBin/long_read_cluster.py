@@ -60,9 +60,7 @@ def cluster_long_read(logger, model, data, device, is_combined,
     
     if not is_combined:
         train_data_input = data.values[:, features_data["kmer"] + features_data["motif"]]
-        print(train_data_input.shape)
         if len(features_data["motif"]) > 0:
-            print("I was here")
             train_data_input, _ = normalize_kmer_motif_features(train_data_input, train_data_input)
             train_data_input = np.concatenate((train_data_input, train_data_motif_present), axis = 1)
     else:

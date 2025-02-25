@@ -338,16 +338,18 @@ def parse_args(args, is_semibin2, with_methylation):
             
         if with_methylation:
             if p in [generate_methylation_features, single_easy_bin, multi_easy_bin]:    
-                m.add_argument("--bin-motifs", help = "Path to the bin-consensus file from nanomotif", required = True)
+                motif_group = p.add_argument_group(title = "Motif Selection", description = "Provide EITHER --motifs-file or --motifs. They are mutally exclusive.")
+               
+                mx_group = motif_group.add_mutually_exclusive_group(required=True)
+                mx_group.add_argument("--motifs-file", help = "Path to the motifs file. Must contain the columns motif|mod_type|mod_position. OBS provide EITHER --motifs or --motifs-file")
+                mx_group.add_argument("--motifs", nargs="+", help="List of motifs specified via command line <motif>_<mod_type>_<mod_position> (e.g., GATC_m_3 RGATCY_a_2). OBS provide EITHER --motifs or --motifs-file")
+
                 m.add_argument("--pileup", help = "Path to the pileup file", required = True)
+                p.add_argument("--min-valid-read-coverage", help="Minimum number of valid read observations for a motif in a contig (Default: 8).", default=8, type=int)
+            if p in [generate_methylation_features]:
                 p.add_argument("--data", help="Path to the data file to append methylation.", required=False)
                 p.add_argument("--data-split", help="Path to the data split file to append methylation.", required=False)
-                p.add_argument("--min-motif-methylation", help="Minimum motif methylation degree (Default: 0.5).", default=0.5, type=float)
-                p.add_argument("--min-valid-read-coverage", help="Minimum number of valid read observations for a motif in a contig (Default: 8).", default=8, type=int)
-                p.add_argument("--min-motif-observations-bin", help="Minimum motif coverage in bin-motifs", default=1000, type=int)
-                p.add_argument("--min-motif-observations-contig", help="Minimum motif observations for a contig methylation", default=5, dest='min_motif_obs_contig', type=int)
 
-                
 
     for p in [single_easy_bin,
                 multi_easy_bin,
