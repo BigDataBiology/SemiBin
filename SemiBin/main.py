@@ -666,12 +666,13 @@ def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
                     if orf_finder != 'fast-naive':
                         sys.stderr.write(
                                 'Error: neither prodigal nor FragGeneScan appear to be available!\n'
-                                'You can use --orf-finder=fast-naive to use the builtin simple ORF finder')
+                                'You can use --orf-finder=fast-naive to use the builtin simple ORF finder\n')
                         missing_deps = True
                 else:
                     if verbose or orf_finder == 'prodigal':
                         sys.stderr.write(
-                            'Warning: prodigal does not appear to be available (although FragGeneScan is). You must use the `--orf-finder=fast-naive` or `--orf-finder=fraggenescan` options.\n')
+                            'Warning: prodigal does not appear to be available (although FragGeneScan is). '
+                            'You must use the `--orf-finder=fast-naive` or `--orf-finder=fraggenescan` options.\n')
                     missing_deps = True
             elif dep == 'FragGeneScan':
                 pass
