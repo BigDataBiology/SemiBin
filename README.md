@@ -24,7 +24,8 @@ well as their benchmarking) are described in
 
 A tutorial of running SemiBin from scrath can be found here [SemiBin tutorial](https://github.com/BigDataBiology/SemiBin_tutorial_from_scratch).
 
-Installation:
+
+Installation with `conda`:
 
 ```bash
 conda create -n SemiBin
@@ -59,20 +60,29 @@ Please find more options and details below and [read the docs](https://semibin.r
 
 SemiBin runs (and is continuously tested) on Python 3.7-3.13
 
-### Bioconda
+### pixi
 
-The simplest mode is shown above.
-However, if you want to use SemiBin with GPU (which is faster if you have one available), you need to install PyTorch with GPU support:
+The current recommended way to install SemiBin with GPU-support is to use [pixi](https://pixi.sh/). Pixi will use the packages from conda-forge and bioconda to install SemiBin and its dependencies. See [the docs](https://semibin.readthedocs.io/en/latest/install/) for more details, but the basic idea is to create a `pixi.toml` file with the following content:
 
-```bash
-conda create -n SemiBin
-conda activate SemiBin
-conda install -c conda-forge -c bioconda semibin
-conda install -c pytorch -c nvidia pytorch pytorch-cuda=11.8
+```toml
+[project]
+authors = ["Luis Pedro Coelho <luis@luispedro.org>"]
+channels = ["conda-forge", "bioconda"]
+name = "semibin_install"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+semibin = ">=2.1.0,<3"
+pytorch-gpu = "*"
+
+[system-requirements]
+cuda = "12.0"
 ```
 
-_MacOS note_: **you can only install the CPU version of PyTorch in MacOS with `conda` and you need to install from source to take advantage of a GPU** (see [#72](https://github.com/BigDataBiology/SemiBin/issues/72)).
-For more information on how to install PyTorch, see [their documentation](https://pytorch.org/get-started/locally/).
+This will install SemiBin with GPU support, but it does require a CUDA-compatible GPU. Alternatively, you can install SemiBin in CPU-only mode by removing the `pytorch-gpu` and `cuda` lines.
 
 ### Source
 
