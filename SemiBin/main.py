@@ -86,6 +86,7 @@ def parse_args(args, is_semibin2):
             required=False,
             help='Do not fail is MMSeqs2 is not found. MMSeqs2 is required for semi-supervised learning, but not self-supervised learning.',
             dest='allow_missing_mmseqs2',
+            default=is_semibin2,
             action='store_true', )
 
     concatenate_fasta = subparsers.add_parser('concatenate_fasta', help = 'concatenate fasta files for multi-sample binning')
@@ -645,7 +646,13 @@ def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
     '''
     import torch
     from shutil import which
-    dependencies = ['bedtools', 'hmmsearch', 'mmseqs', 'FragGeneScan', 'prodigal']
+    dependencies = [
+                'bedtools',
+                'hmmsearch',
+                'FragGeneScan',
+                'prodigal',  # prodigal needs to be checked after FragGeneScan
+                'mmseqs',
+                ]
     has_fgs = False
     missing_deps = False
     if verbose:
@@ -656,10 +663,11 @@ def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
             if dep == 'mmseqs':
                 if not allow_missing_mmseqs2:
                     sys.stderr.write(
-                        f"Error: {dep} does not seem to be installed! This is necessary for semi-supervised learning\n")
+                        f"Error: {dep} does not seem to be installed."
+                        "This is only necessary for semi-supervised learning (which is deprecated)\n")
                     missing_deps = True
                 elif verbose:
-                    print(f'\t{dep} not found. Semi-supervised training will not be possible')
+                    print(f'\t{dep} not found. Semi-supervised training (deprecated) will not be possible')
             elif dep == 'prodigal':
                 if orf_finder == 'fast-naive':
                     pass

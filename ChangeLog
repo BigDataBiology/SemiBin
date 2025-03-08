@@ -8,6 +8,7 @@ Unreleased
 	* SemiBin: Respect the number of threads requested better (#140)
 	* SemiBin: Switch to pixi
 	* check_install: Prints out information on the GPU
+	* check_install: No error if MMseqs2 is not installed
 
 Version 2.1.0 Mar 6 2024 by BigDataBiology
 	* SemiBin: Support running SemiBin with strobealign-aemb
