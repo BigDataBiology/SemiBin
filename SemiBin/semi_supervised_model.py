@@ -1,4 +1,5 @@
 import torch
+import pickle
 from torch.nn import Linear, LeakyReLU
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
@@ -104,9 +105,36 @@ class Semi_encoding_single(torch.nn.Module):
                     }, path)
 
 
-def model_load(path, device):
+def model_load(path, device, warn_on_old_format=True):
     '''Load model from path'''
-    saved = torch.load(path, map_location=device, weights_only=True)
+    try:
+        saved = torch.load(path, map_location=device, weights_only=True)
+    except pickle.UnpicklingError:
+        import logging
+        from time import sleep
+        logger = logging.getLogger("SemiBin2")
+        if warn_on_old_format:
+            logger.warning('There was an error loading the model.')
+            logger.warning('This happens if the model was saved by and older version of SemiBin2 as that approach is not compatible with newer versions of PyTorch.')
+            logger.warning('We will retry loading the model with the older method, but this may cause errors.')
+            new_path = (path.replace('.h5', '.pt') if path.endswith('.h5') else path + '.pt')
+            logger.warning('If the model does load, you can resave it in the new format using the following command:\n'
+                            f'\n\tSemiBin2 update_model --model {path} --output {new_path}'
+                           '\n')
+            logger.warning('Then, you can use the new model file in future runs with no warnings (and future-proof).')
+        logger.warning('Alright, let\'s try loading the model now using the older approach...')
+        sleep(.5)
+        try:
+            if device == torch.device('cpu'):
+                model = torch.load(path, map_location=torch.device('cpu'))
+            else:
+                model = torch.load(path).to(device)
+        except Exception as e:
+            logger.error(f'Error loading model: {e}')
+            logger.error('Your model file is likely incompatible with the current version of PyTorch.')
+            logger.error('Please retrain your model or use an older version of PyTorch to convert it.')
+            sys.exit(1)
+        return model
     if saved['model_name'] == 'Semi_encoding_single':
         model = Semi_encoding_single(saved['params'][0])
     elif saved['model_name'] == 'Semi_encoding_multiple':

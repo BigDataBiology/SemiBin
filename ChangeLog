@@ -5,6 +5,7 @@ Unreleased
 	* SemiBin: Print version number in logs
 	* SemiBin: Better method to save the model which is more compatible with
 	newer versions of PyTorch
+	* update_model: Add subcommand to convert old models to new format
 	* SemiBin: Respect the number of threads requested better (#140)
 	* SemiBin: Switch to pixi
 	* check_install: Prints out information on the GPU

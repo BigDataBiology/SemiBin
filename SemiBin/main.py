@@ -122,6 +122,20 @@ def parse_args(args, is_semibin2):
                         default=None
                         )
 
+    update_model = subparsers.add_parser('update_model',)
+    update_model.add_argument('-m', '--model',
+                        required=True,
+                        help='Path to the trained deep learning model.',
+                        dest='model_path',
+                        default=None,
+                        )
+    update_model.add_argument('-o', '--output',
+                        required=True,
+                        help='Output file',
+                        dest='output',
+                        default=None,
+                        )
+
     for p in [concatenate_fasta, split_contigs]:
         p.add_argument('-m', '--min-len',
                         required=False,
@@ -1428,6 +1442,14 @@ def main2(raw_args=None, is_semibin2=True):
         sh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
         sh.setLevel(loglevel)
         logger.addHandler(sh)
+
+    if args.cmd == 'update_model':
+        import torch
+        from .semi_supervised_model import model_load
+        model = model_load(args.model_path, torch.device('cpu'), warn_on_old_format=False)
+        model.save_with_params_to(args.output)
+        return 0
+
 
     if args.cmd not in ['citation', 'download_GTDB', 'check_install']:
         os.makedirs(args.output, exist_ok=True)
