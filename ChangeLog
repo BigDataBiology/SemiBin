@@ -10,6 +10,8 @@ Unreleased
 	* SemiBin: Switch to pixi
 	* check_install: Prints out information on the GPU
 	* check_install: No error if MMseqs2 is not installed
+	* SemiBin: Remove `SemiBin` command. Only `SemiBin1` and `SemiBin2` are
+	available (and `SemiBin1` is deprecated)
 
 Version 2.1.0 Mar 6 2024 by BigDataBiology
 	* SemiBin: Support running SemiBin with strobealign-aemb

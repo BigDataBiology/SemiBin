@@ -43,7 +43,6 @@ urls = { homepage = "https://github.com/BigDataBiology/SemiBin" }
 dev = ['pytest', 'hypothesis<=6.112.1']
 
 [project.scripts]
-SemiBin = "SemiBin.main:main_no_version"
 SemiBin2 = "SemiBin.main:main2"
 SemiBin1 = "SemiBin.main:main1"
 
