@@ -12,7 +12,7 @@ nav:
         - 'SemiBin': index.md
         - 'Install': install.md
         - 'Usage examples': usage.md
-        - 'SemiBin2': semibin2.md
+        - 'SemiBin2 compared to SemiBin1': semibin2.md
         - 'Generating inputs to SemiBin': generate.md
         - 'Output': output.md
         - 'Running AEMB': aemb.md
@@ -20,4 +20,5 @@ nav:
         - "What's New": whatsnew.md
         - "Training SemiBin models": training.md
         - "FAQ": faq.md
+        - "Using semi-supervised binning": semi-supervised.md
 
