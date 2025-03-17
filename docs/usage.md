@@ -223,7 +223,6 @@ Note that we use the `generate_sequence_features_single` mode because co-assembl
 (2) Train
 ```bash
 SemiBin2 train_self \
-    -i contig.fa \
     --data contig_output/data.csv \
     --data-split contig_output/data_split.csv \
     -o contig_output
