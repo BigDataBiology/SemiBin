@@ -1,4 +1,4 @@
-Unreleased
+Version 2.2.0 (unreleased)
 	* logging: Use 'SemiBin2' as logger name
 	* SemiBin: Always log to file in DEBUG level and log command-line arguments
 	* coverage: Better error messages (#168)
