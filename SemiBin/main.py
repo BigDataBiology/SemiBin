@@ -1416,6 +1416,13 @@ def split_contigs(logger, contig_fasta, *, output, min_length):
     return oname
 
 
+def log_subprocess(event, *args, **kwargs):
+    if event == 'subprocess.Popen':
+        (executable, args, _cwd, _env) = args[0]
+        logger = logging.getLogger('SemiBin2')
+        logger.debug(f'Running command: {executable} (full command line: `{" ".join(args)}`)')
+
+
 def main2(raw_args=None, is_semibin2=True):
     import tempfile
 
@@ -1442,6 +1449,8 @@ def main2(raw_args=None, is_semibin2=True):
         sh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
         sh.setLevel(loglevel)
         logger.addHandler(sh)
+
+    sys.addaudithook(log_subprocess)
 
     if args.cmd == 'update_model':
         import torch

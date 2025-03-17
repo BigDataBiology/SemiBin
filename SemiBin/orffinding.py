@@ -9,6 +9,8 @@ from .naive_orffinder import run_naiveorf
 
 def run_prodigal(fasta_path, num_process, output):
     from .fasta import fasta_iter
+    logger = logging.getLogger('SemiBin2')
+    logger.info('Running prodigal')
 
     contigs = {}
     for h, seq in fasta_iter(fasta_path):
@@ -35,6 +37,7 @@ def run_prodigal(fasta_path, num_process, output):
 
     try:
         process = []
+        logger.debug(f'Running prodigal on {next_ix} FASTA files')
         for index in range(next_ix):
             with open(os.path.join(output, f'contig_{index}_log.txt') + '.out', 'w') as prodigal_out_log:
                 p = subprocess.Popen(
@@ -51,10 +54,13 @@ def run_prodigal(fasta_path, num_process, output):
         for p in process:
             p.wait()
 
-    except:
+    except subprocess.CalledProcessError as e:
         sys.stderr.write(
-            f"Error: Running prodigal fail\n")
+            f"Error: Running prodigal fail: {e}\n")
         sys.exit(1)
+
+    else:
+        logger.debug('All prodigal processes finished successfully')
 
     contig_output = os.path.join(output, 'contigs.faa')
     with open(contig_output, 'w') as f:
