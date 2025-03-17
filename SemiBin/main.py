@@ -1648,7 +1648,7 @@ def main2(raw_args=None, is_semibin2=True):
             logger.info(f'Split contigs written to {oname}')
 
         else:
-            logger.error(f'Could not handle subcommand {arg.cmd}')
+            logger.error(f'Could not handle subcommand {args.cmd}')
             sys.exit(1)
 
         print('''If you find SemiBin useful, please cite:
