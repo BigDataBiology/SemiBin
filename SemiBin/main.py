@@ -708,14 +708,15 @@ def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
                 has_fgs = True
             if verbose:
                 print(f'\t{dep:16}: {p}')
-    if not torch.cuda.is_available():
-        print('CUDA is not available, SemiBin will run on CPU')
-        print('If you expected a GPU to have been detected, please check your CUDA/Pytorch installation')
-        print('For more information: https://semibin.readthedocs.io/en/latest/install/')
-    else:
-        print('CUDA available, SemiBin can run on GPU')
-        print(f'\tCurrent device: {torch.cuda.current_device()}')
-        print(f'\tDevice name: {torch.cuda.get_device_name(torch.cuda.current_device())}')
+    if verbose:
+        if not torch.cuda.is_available():
+            print('CUDA is not available, SemiBin will run on CPU')
+            print('If you expected a GPU to have been detected, please check your CUDA/Pytorch installation')
+            print('For more information: https://semibin.readthedocs.io/en/latest/install/')
+        else:
+            print('CUDA available, SemiBin can run on GPU')
+            print(f'\tCurrent device: {torch.cuda.current_device()}')
+            print(f'\tDevice name: {torch.cuda.get_device_name(torch.cuda.current_device())}')
     if missing_deps:
         print('Missing dependencies')
         sys.exit(1)
