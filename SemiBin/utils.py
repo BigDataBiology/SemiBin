@@ -118,6 +118,7 @@ def validate_normalize_args(logger, args):
             logger.warning('Using FragGeneScan (--orf-finder=fraggenescan) as an ORF finder is considered deprecated and will be removed in a future version of SemiBin. Please use fast-naive or prodigal instead.')
         expect_file(args.prodigal_output_faa)
         if args.prodigal_output_faa is not None:
+            logger.warning('Using --prodigal-output-faa is deprecated and will be removed in a future version of SemiBin')
             args.orf_finder = 'prodigal'
 
     if hasattr(args, 'engine'):

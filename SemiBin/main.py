@@ -370,7 +370,7 @@ def parse_args(args, is_semibin2):
         p.add_argument('--prodigal-output-faa',
                        required=False,
                        type=str,
-                       help='Bypasses ORF calling and uses the provided .faa file instead (must be in same format as prodigal output).',
+                       help='[deprecated] Bypasses ORF calling and uses the provided .faa file instead (must be in same format as prodigal output).',
                        dest='prodigal_output_faa')
 
     for p in [single_easy_bin, binning, binning_long]:
