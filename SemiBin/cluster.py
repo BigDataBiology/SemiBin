@@ -4,7 +4,8 @@ import math
 import shutil
 import tempfile
 
-from .utils import write_bins, cal_num_bins
+from .utils import write_bins
+from .markers import estimate_seeds
 
 # This is the default in the igraph package
 NR_INFOMAP_TRIALS = 10
@@ -221,7 +222,7 @@ def recluster_bins(logger, data, *, n_sample, embedding, is_combined, contig_lab
                 concat_out.write(f'>bin{bin_ix:06}.{h}\n')
                 concat_out.write(contig_dict[data.index[ix]] + '\n')
 
-        seeds = cal_num_bins(
+        seeds = estimate_seeds(
             cfasta,
             binned_length,
             num_process,

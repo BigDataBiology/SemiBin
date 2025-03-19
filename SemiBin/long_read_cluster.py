@@ -1,7 +1,8 @@
 import os
 import torch
 import numpy as np
-from .utils import cal_num_bins, get_marker, write_bins
+from .utils import write_bins
+from .markers import estimate_seeds, get_marker
 from sklearn.cluster import DBSCAN
 from sklearn.neighbors import kneighbors_graph
 from collections import defaultdict
@@ -84,7 +85,8 @@ def cluster_long_read(logger, model, data, device, is_combined,
         with open(cfasta, 'wt') as concat_out:
             for h in contig_list:
                 concat_out.write(f'>{h}\n{contig_dict[h]}\n')
-            seeds = cal_num_bins(
+            #  This is needed to create the markers.hmmout file
+            estimate_seeds(
                 cfasta,
                 binned_length,
                 args.num_process,

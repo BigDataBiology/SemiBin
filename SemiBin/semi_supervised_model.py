@@ -4,7 +4,7 @@ from torch.nn import Linear, LeakyReLU
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 import os
-from .utils import cal_num_bins
+from .markers import estimate_seeds
 from torch.optim import lr_scheduler
 import sys
 
@@ -228,7 +228,7 @@ def train_semi(logger, out, contig_fastas, binned_lengths, datas, data_splits, c
 
     for epoch in tqdm(range(epoches)):
         for data_index in range(len(contig_fastas)):
-            seed = cal_num_bins(
+            seed = estimate_seeds(
                 contig_fastas[data_index],
                 binned_length=binned_lengths[data_index],
                 num_process=num_process,
