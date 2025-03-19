@@ -122,11 +122,11 @@ def estimate_seeds(fasta_path,
                      ],
                     stdout=hmm_out_log,
                 )
-        except:
+        except Exception as e:
             if os.path.exists(hmm_output):
                 os.remove(hmm_output)
             sys.stderr.write(
-                f"Error: Running hmmsearch fail\n")
+                    f"Error: Running hmmsearch failed: {e}\n")
             sys.exit(1)
 
         return get_marker(hmm_output, fasta_path, binned_length, multi_mode, orf_finder=orf_finder)
