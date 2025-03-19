@@ -84,6 +84,12 @@ def train_self(logger, datapaths, data_splits, is_combined=True,
 
 
             data_length = len(train_data)
+            if data_length == 0:
+                logger.error(f'No data for sample {datapath}')
+                raise ValueError(f'No data for sample {datapath}')
+            elif data_length == 1:
+                logger.error(f'Only one data point for sample {datapath} (binning would fail)')
+                raise ValueError(f'Only one data point for sample {datapath} (binning would fail)')
             # cannot link data is sampled randomly
             n_cannot_link = min(n_must_link * 1000 // 2, 4_000_000)
             indices1 = np.random.choice(data_length, size=n_cannot_link)
