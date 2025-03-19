@@ -47,7 +47,7 @@ def calculate_coverage(depth_stream, bam_file, must_link_threshold, edge=75, is_
             except ValueError:
                 raise ValueError(f"Error parsing contig name '{contig_name}' in file {bam_file} (trying to split by {sep} separator)")
             except KeyError:
-                raise KeyError(f"Error: {sample} not found (parsing {bam_file}")
+                raise KeyError(f"Error: {sample} not found (parsing {bam_file}, the original contig name was {contig_name} and using {sep} as separator)")
         if len(depth_value) < cov_threshold:
             continue
         depth_value_ = depth_value[edge:-edge]
