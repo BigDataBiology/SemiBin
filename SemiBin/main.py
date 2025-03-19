@@ -1330,7 +1330,7 @@ def multi_easy_binning(logger, args, device):
 
     for sample_index, sample in enumerate(sample_list):
         sample_fasta = os.path.join(
-            args.output, 'samples', '{}.fa'.format(sample))
+            args.output, 'samples', f'{sample}.fa')
         sample_data = os.path.join(args.output, 'samples', sample, 'data.csv')
         sample_data_split = os.path.join(
             args.output, 'samples', sample, 'data_split.csv')
@@ -1338,7 +1338,7 @@ def multi_easy_binning(logger, args, device):
         c_min_len, must_link_threshold, contig_dict = load_fasta(sample_fasta, args.ratio)
 
         binned_length = c_min_len if args.min_len is None else args.min_len
-        logger.info('Training model and clustering for {}.'.format(sample))
+        logger.info(f'Training model and clustering for sample "{sample}"')
         if args.training_type == 'semi':
             logger.debug(f'Running taxonomic prediction (semi-supervised mode) for {sample}')
             predict_taxonomy(
