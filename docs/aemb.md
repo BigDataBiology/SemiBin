@@ -37,6 +37,8 @@ Run SemiBin2 for this sample using the `single_easy_bin` subcommand:
 SemiBin2 single_easy_bin -i contig.fa -a sample1_*.tsv -o aemb_output/sample1
 ```
 
+⚠️: You should be binning the original contigs, **not** the split contigs.
+
 This will generate the bins in the `aemb_output/sample1` directory.
 
 Note that—from SemiBin2's point-of-view—this is still single sample binning even if the abundance information is generated from multiple samples as the assembly is from a single sample.
