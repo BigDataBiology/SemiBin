@@ -3,7 +3,7 @@ import subprocess
 
 ### train from one sample
 subprocess.check_call(
-    ['SemiBin1', 'train',
+    ['SemiBin2', 'train_semi',
      '--data', 'test/train_data/data.csv',
      '--data-split', 'test/train_data/data_split.csv',
      '-c', 'test/train_data/cannot.txt',
@@ -16,18 +16,17 @@ subprocess.check_call(
      '-p', '1'])
 assert os.path.exists('test-outputs/output_train_fa/model.pt')
 
-for cmd in ['SemiBin1', 'SemiBin2']:
-    subprocess.check_call(
-        [cmd, 'train_self',
-         '--data', 'test/train_data/data.csv',
-         '--data-split', 'test/train_data/data_split.csv',
-         '--epoches', '1',
-         '--batch-size', '2048',
-         '--epochs', '1',
-         '--batch-size', '2048',
-         '-o', 'test-outputs/output_train_fa_self',
-         '-p', '1'])
-    assert os.path.exists('test-outputs/output_train_fa_self/model.pt')
+subprocess.check_call(
+    ['SemiBin2', 'train_self',
+     '--data', 'test/train_data/data.csv',
+     '--data-split', 'test/train_data/data_split.csv',
+     '--epoches', '1',
+     '--batch-size', '2048',
+     '--epochs', '1',
+     '--batch-size', '2048',
+     '-o', 'test-outputs/output_train_fa_self',
+     '-p', '1'])
+assert os.path.exists('test-outputs/output_train_fa_self/model.pt')
 
 ### train from several samples
 subprocess.check_call(
