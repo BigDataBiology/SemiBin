@@ -13,6 +13,7 @@ Version 2.2.0 (unreleased)
 	* SemiBin: Remove `SemiBin` command. Only `SemiBin1` and `SemiBin2` are
 	available (and `SemiBin1` is deprecated)
 	* SemiBin: Deprecate `--prodigal-output-faa` argument
+	* SemiBin: Do not fail if no bins are produced (#170 & #173)
 
 Version 2.1.0 Mar 6 2024 by BigDataBiology
 	* SemiBin: Support running SemiBin with strobealign-aemb

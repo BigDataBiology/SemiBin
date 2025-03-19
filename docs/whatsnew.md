@@ -19,6 +19,7 @@ This is a maintenance release with many small improvement rather than a single b
 - SemiBin: Better method to save the model which is more compatible with newer versions of PyTorch. Added a subcommand to update old models to the new format (`update_model`)
 - SemiBin: Switch to pixi for testing (and recommend it in the README/[installation](install) instructions)
 - Convert to `pyproject.toml` instead of `setup.py`
+- Do not fail if no bins are produced (#170 & #173)
 
 ## Version 2.1.0
 
