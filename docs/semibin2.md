@@ -10,7 +10,7 @@ As of version 2.0, the older `SemiBin` command is _not recommended_ (except for 
 
 In version 2.1 (released March 2024), we deprecated the `SemiBin` command and introduced a more explicit `SemiBin1` subcommand for backwards compatibility.
 
-In version 2.2, `SemiBin` not be installed and `SemiBin1` will be deprecated.
+In version 2.2 (released March 2025), `SemiBin` is not installed and `SemiBin1` was deprecated (still available, but prints a warning and adds a delay).
 
 In version 2.3, `SemiBin1` will not be installed by default.
 

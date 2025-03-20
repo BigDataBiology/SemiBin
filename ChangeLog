@@ -1,4 +1,4 @@
-Version 2.2.0 (unreleased)
+Version 2.2.0 Mar 20 2025 by BigDataBiology
 	* logging: Use 'SemiBin2' as logger name
 	* SemiBin: Always log to file in DEBUG level and log command-line arguments
 	* coverage: Better error messages (#168)
