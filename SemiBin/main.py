@@ -1659,19 +1659,6 @@ def main2(raw_args=None, is_semibin2=True):
 ''')
 
 
-def main1(args=None):
-    from time import sleep
-    print("""Using `SemiBin1` is deprecated. Please upgrade to `SemiBin2`
-
-Note that all the same functionality is available in `SemiBin2`, and the command-line interface is almost identical.
-
-See https://semibin.readthedocs.io/en/latest/semibin2/
-
-""")
-    for i in range(10):
-        print(f"Will continue as SemiBin1 in {10-i} seconds...")
-        sleep(1)
-    main2(args, is_semibin2=False)
 
 if __name__ == '__main__':
     main2()
