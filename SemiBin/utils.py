@@ -67,7 +67,7 @@ def validate_normalize_args(logger, args):
         nonlocal exit_with_error
         if f is not None:
             if not os.path.exists(f):
-                sys.stderr.write(
+                logger.error(
                     f"Error: Expected file '{f}' does not exist\n")
                 exit_with_error = True
 
@@ -99,7 +99,7 @@ def validate_normalize_args(logger, args):
 
     if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train_semi', 'bin']:
         if args.orf_finder not in ['prodigal', 'fraggenescan', 'fast-naive']:
-            sys.stderr.write(
+            logger.error(
                 f"Error: SemiBin only supports 'prodigal'/'fraggenescan'/'fast-naive' as the ORF finder (--orf-finder option).\n")
             exit_with_error = True
         if args.orf_finder == 'fraggenescan':
@@ -118,7 +118,7 @@ def validate_normalize_args(logger, args):
     if hasattr(args, 'engine'):
         args.engine = args.engine.lower()
         if args.engine not in ['auto', 'gpu', 'cpu']:
-            sys.stderr.write(
+            logger.error(
                 f"Error: Argument '--engine' needs to be one of auto[default]/gpu/cpu.\n")
             exit_with_error = True
 
@@ -130,7 +130,7 @@ def validate_normalize_args(logger, args):
 
     if args.cmd in ['generate_sequence_features_single', 'generate_sequence_features_multi', 'single_easy_bin', 'multi_easy_bin']:
         if args.bams and args.abundances:
-            sys.stderr.write(
+            logger.error(
                 f"Error: can not use BAM files and abundance files at the same time.\n")
             exit_with_error = True
 
@@ -151,22 +151,22 @@ def validate_normalize_args(logger, args):
     if args.cmd in ['train_semi', 'train_self']:
         if not args.train_from_many:
             if len(args.data) > 1:
-                sys.stderr.write(
+                logger.error(
                     f"Error: Expected one data.csv file with single mode.\n")
                 exit_with_error = True
 
             if len(args.data_split) > 1:
-                sys.stderr.write(
+                logger.error(
                     f"Error: Expected one data_split.csv file with single mode.\n")
                 exit_with_error = True
             if args.cmd == 'train_semi':
                 if len(args.contig_fasta) > 1:
-                    sys.stderr.write(
+                    logger.error(
                         f"Error: Expected one fasta file with single mode.\n")
                     exit_with_error = True
 
                 if len(args.cannot_link) > 1:
-                    sys.stderr.write(
+                    logger_error(
                         f"Error: Expected one cannot.txt file with single mode.\n")
                     exit_with_error = True
                 expect_file(args.cannot_link[0])
@@ -192,28 +192,31 @@ def validate_normalize_args(logger, args):
         elif args.sequencing_type.lower() in ['long', 'long-read', 'long_reads', 'long-reads', 'long_read']:
             args.sequencing_type = 'long_read'
         else:
-            sys.stderr.write(
+            logger.error(
                 f"Error: Did not understand sequencing_type argument '{args.sequencing_type}' (should be short_reads or long_reads).\n")
             exit_with_error = True
         logger.info(f'Binning for {args.sequencing_type}')
 
     if args.cmd == 'bin':
         if args.environment is None and args.model_path is None:
-            sys.stderr.write(
+            logger.error(
                 f"Error: Please choose input a model path or use our built-in model for [human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/chicken_caecum/global].\n")
             exit_with_error = True
         if args.environment is not None and args.model_path is not None:
-            sys.stderr.write(
-                f"Error: Please choose input a model path or use our built-in model for [human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/chicken_caecum/global].\n")
+            logger.error(
+                f"Error: You cannot use both an explicit model path and an environment.\n")
             exit_with_error = True
-        if args.environment is not None:
-            # This triggers checking that the environment is valid
-            get_model_path(args.environment)
         if args.model_path is not None:
             expect_file(args.model_path)
         expect_file(args.contig_fasta)
         expect_file(args.data)
 
+    if getattr(args, 'environment', None) is not None:
+        try:
+            get_model_path(args.environment)
+        except KeyError as e:
+            logger.error(e.args[0])
+            exit_with_error = True
     if args.cmd == 'single_easy_bin':
         if args.GTDB_reference is not None:
             expect_file(args.GTDB_reference)
@@ -223,9 +226,6 @@ def validate_normalize_args(logger, args):
         if args.abundances:
             expect_file_list(args.abundances)
 
-        if args.environment is not None:
-            # This triggers checking that the environment is valid
-            get_model_path(args.environment)
         else:
             check_training_type(logger, args)
 
@@ -240,7 +240,7 @@ def validate_normalize_args(logger, args):
             expect_file_list(args.abundances)
 
         if args.training_type not in ['semi', 'self']:
-            sys.stderr.write(
+            logger.error(
                 f"Error: You need to specify the training algorithm in semi/self.\n")
             exit_with_error = True
 
@@ -250,9 +250,10 @@ def validate_normalize_args(logger, args):
         for contig in args.contig_fasta:
             contig_name.append(os.path.basename(contig).split('.')[0])
         if len(set(contig_name)) != len(contig_name):
-            sys.stderr.write(
+            logger.error(
                 f"Error: Make sure that every contig file have different names.\n")
             exit_with_error = True
+
 
     if getattr(args, 'train_from_many', False):
         args.mode = 'several'
@@ -261,7 +262,7 @@ def validate_normalize_args(logger, args):
 
     if getattr(args, 'write_pre_reclustering_bins', False) and \
             not getattr(args, 'recluster', True):
-        sys.stderr.write(
+        logger.error(
             f"Error: Cannot use --write-pre-reclustering-bins with --no-recluster.\n")
         exit_with_error = True
 
@@ -355,7 +356,7 @@ def maybe_uncompress(fafile, tdir):
         oname = f'{tdir}/expanded.fa'
         with open(oname, 'wt') as out:
             for header, seq in fasta_iter(fafile):
-                    out.write(f'>{header}\n{seq}\n')
+                out.write(f'>{header}\n{seq}\n')
         return oname
     return fafile
 
@@ -480,9 +481,8 @@ def get_model_path(env : str) -> str:
         # From Python 3.9, we can use importlib.resources
         return os.path.join(os.path.split(__file__)[0], 'models', f'{envn}_model.pt')
     else:
-        sys.stderr.write(
-            f"Error: Expected environment '{env}' does not exist (known ones are {', '.join(known_environments)})\n")
-        sys.exit(1)
+        raise KeyError(
+                f"Error: Unknown environment '{env}' does not exist (known ones are {', '.join(known_environments)})")
 
 def concatenate_fasta(fasta_files, min_length, output, separator, output_compression='none'):
     """
