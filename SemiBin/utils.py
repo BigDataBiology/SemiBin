@@ -1,7 +1,6 @@
 import os
 import subprocess
 import multiprocessing
-import tempfile
 import sys
 import random
 import contextlib
@@ -34,8 +33,7 @@ def possibly_compressed_write(filename):
             g.close()
 
 def check_training_type(logger, args):
-    if args.is_semibin2:
-        args.training_type = 'auto'
+    args.training_type = 'auto'
 
     if args.training_type == 'semi' and args.self_supervised:
         logger.error('Both --training-type=semi and --self-supervised arguments used')
@@ -46,24 +44,14 @@ def check_training_type(logger, args):
         sys.exit(1)
 
     if not args.self_supervised and not args.semi_supervised:
-        if args.training_type == 'self' or args.is_semibin2:
-            logger.info(
-                f"SemiBin will run in self supervised mode")
-            args.training_type = 'self'
-        else:
-            logger.info(
-                f"SemiBin will run in semi supervised mode")
-            args.training_type = 'semi'
+        logger.debug(
+            f"SemiBin will run in self supervised mode")
+        args.training_type = 'self'
 
     elif args.self_supervised and args.semi_supervised:
-        if args.is_semibin2:
-            logger.warning(
-                f'You chose both semi-supervised and self-supervised learning! SemiBin will use self-supervised learning')
-            args.training_type = 'self'
-        else:
-            logger.warning(
-                f'You chose both semi-supervised and self-supervised learning! SemiBin will use semi-supervised learning (this may change in the future)')
-            args.training_type = 'semi'
+        logger.warning(
+            f'You chose both semi-supervised and self-supervised learning! SemiBin will use self-supervised learning')
+        args.training_type = 'self'
 
     elif args.self_supervised:
         args.training_type = 'self'

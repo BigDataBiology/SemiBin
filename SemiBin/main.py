@@ -19,11 +19,10 @@ from .semibin_version import __version__
 Pool = mp.get_context('spawn').Pool
 
 
-def parse_args(args, is_semibin2):
+def parse_args(args):
     # BooleanOptionalAction is available in Python 3.9; before that, we fall back on the default
     BooleanOptionalAction = getattr(argparse, 'BooleanOptionalAction', 'store_true')
 
-    deprecated_if2_text = '[deprecated] ' if is_semibin2 else ''
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                     description='Neural network-based binning of metagenomic contigs',
                                     epilog='For more information, see https://semibin.readthedocs.io/en/latest/subcommands/')
@@ -86,7 +85,7 @@ def parse_args(args, is_semibin2):
             required=False,
             help='Do not fail is MMSeqs2 is not found. MMSeqs2 is required for semi-supervised learning, but not self-supervised learning.',
             dest='allow_missing_mmseqs2',
-            default=is_semibin2,
+            default=True,
             action='store_true', )
 
     concatenate_fasta = subparsers.add_parser('concatenate_fasta', help = 'concatenate fasta files for multi-sample binning')
@@ -156,16 +155,16 @@ def parse_args(args, is_semibin2):
 
 
     # Add the deprecated arguments last so they show up at the bottom of the help text
-    train_semi = subparsers.add_parser(('train_semi' if is_semibin2 else 'train'),
-                                    help=deprecated_if2_text + 'Train the model.')
+    train_semi = subparsers.add_parser('train_semi',
+                                    help='[deprecated] Train the model using semi-supervised learning.')
 
     generate_cannot_links = subparsers.add_parser('generate_cannot_links', aliases=['predict_taxonomy',],
-                                             help=deprecated_if2_text + 'Run the contig annotation using mmseqs '
+                                             help='[deprecated] Run the contig annotation using mmseqs '
                                                   'with GTDB reference genome and generate '
                                                   'cannot-link file used in the semi-supervised deep learning model training. '
                                                   'This will download the GTDB database if not downloaded before.')
     download_GTDB = subparsers.add_parser('download_GTDB',
-                help=deprecated_if2_text + 'Download GTDB reference genomes.')
+                help='[deprecated] Download GTDB reference genomes.')
 
     download_GTDB.add_argument('-f', '--force',
                             required=False,
@@ -239,16 +238,6 @@ def parse_args(args, is_semibin2):
                               help='Batch size used in the training process (Default: 2048).',
                               dest='batchsize',
                               default=2048, )
-
-        if not is_semibin2:
-            p.add_argument('--mode',
-                              required=False,
-                              type=str,
-                              help='[DEPRECATED: use --train-from-many]. [single/several] Train models from one (single) or more samples (several). '
-                                   'In `several` mode, you must provide data, data_split, cannot, and fasta files for corresponding samples in the same order. '
-                                   'Note: You can only use `several` mode when performing single-sample binning. Training from several samples with multi-sample binning is not supported.',
-                              dest='mode',
-                              default='single')
 
         p.add_argument('--train-from-many',
                            required=False,
@@ -332,7 +321,7 @@ def parse_args(args, is_semibin2):
                 required=False,
                 type=str,
                 dest='output_tag',
-                default=('SemiBin' if is_semibin2 else None),
+                default='SemiBin',
                 help='Tag to add to output file names')
 
     for p in [single_easy_bin,
@@ -345,11 +334,9 @@ def parse_args(args, is_semibin2):
         p.add_argument('--compression',
                 required=False,
                 type=str,
-                help=('Compression type for the output files (accepted values: ' +
-                    ('none [default]/gz/xz/bz2).' if not is_semibin2 else
-                    ' gz [default]/xz/bz2/none).')),
+                help='Compression type for the output files (accepted values: gz [default]/xz/bz2/none).',
                 dest='output_compression',
-                default=('gz' if is_semibin2 else 'none'))
+                default='gz')
 
     for p in [binning, binning_long]:
         p.add_argument('--model',
@@ -366,7 +353,7 @@ def parse_args(args, is_semibin2):
                        type=str,
                        help='ORF finder used to estimate the number of bins (fast-naive/prodigal/fraggenescan)',
                        dest='orf_finder',
-                       default=('fast-naive' if is_semibin2 else 'prodigal'))
+                       default='fast-naive')
         p.add_argument('--prodigal-output-faa',
                        required=False,
                        type=str,
@@ -546,12 +533,6 @@ def parse_args(args, is_semibin2):
                            dest='no_recluster',
                            action='store_true', )
 
-        if not is_semibin2:
-            g.add_argument('--recluster',
-                           required=False,
-                           help='[Deprecated] Does nothing (current default is to perform clustering)',
-                           dest='recluster',
-                           action='store_true', )
 
 
     for p in [multi_easy_bin, generate_sequence_features_multi, concatenate_fasta]:
@@ -601,13 +582,6 @@ def parse_args(args, is_semibin2):
                            dest='self_supervised',
                            action='store_true', )
 
-        if not is_semibin2:
-            p.add_argument('--training-type',
-                       required=False,
-                       type=str,
-                       help='Training algorithm used to train the model (semi [default]/self)\n'
-                            'DEPRECATED: use --self-supervised/--semi-supervised',
-                       dest='training_type')
 
         p.add_argument('--sequencing-type',
                required=False,
@@ -621,7 +595,6 @@ def parse_args(args, is_semibin2):
         parser.print_help(sys.stderr)
         sys.exit()
     args = parser.parse_args(args)
-    args.is_semibin2 = is_semibin2
     if hasattr(args, 'no_recluster'):
         args.recluster = not args.no_recluster
 
@@ -630,10 +603,8 @@ def parse_args(args, is_semibin2):
         if not hasattr(argparse, 'BooleanOptionalAction'):
             if args.no_write_pre_reclustering_bins:
                 args.write_pre_reclustering_bins = False
-            elif not args.no_write_pre_reclustering_bins and not is_semibin2:
-                args.write_pre_reclustering_bins = True
         if args.write_pre_reclustering_bins is None:
-            args.write_pre_reclustering_bins = not is_semibin2
+            args.write_pre_reclustering_bins = False
 
     # Keep the verbose1/quiet1 hack contained in this function
     for hacked in ['verbose', 'quiet']:
@@ -1386,8 +1357,7 @@ def multi_easy_binning(logger, args, device):
     os.makedirs(os.path.join(args.output, 'bins'), exist_ok=True)
     for sample in sample_list:
         if args.sequencing_type != 'short_read' or \
-            (not args.is_semibin2 and not args.recluster) or \
-            (args.is_semibin2 and args.recluster and not args.write_pre_reclustering_bins):
+            (args.recluster and not args.write_pre_reclustering_bins):
             bin_dir_name = 'output_bins'
         else:
             bin_dir_name = 'output_recluster_bins' if args.recluster else 'output_prerecluster_bins'
@@ -1425,11 +1395,13 @@ def log_subprocess(event, *args, **kwargs):
 
 
 def main2(raw_args=None, is_semibin2=True):
+    if not is_semibin2:
+        raise NotImplementedError(f'SemiBin 1 is no longer supported in SemiBin v{__version__}.')
     import tempfile
 
     if raw_args is None:
         raw_args = sys.argv[1:]
-    args = parse_args(raw_args, is_semibin2)
+    args = parse_args(raw_args)
 
     logger = logging.getLogger('SemiBin2')
 
@@ -1473,19 +1445,16 @@ def main2(raw_args=None, is_semibin2=True):
     if args.verbose and args.quiet:
         logger.warning('Both verbose and quiet are set, output will be verbose')
 
-    if sys.version_info.major < 3 or sys.version_info.minor < 7:
-        logger.warning(f'You are using Python {sys.version_info.major}.{sys.version_info.minor} ({sys.version}), but SemiBin requires Python 3.7 or higher. Please upgrade your Python version.')
-        logger.warning(f'If you are using conda, you can run `conda install python=3.7` to upgrade your Python version.')
+    if sys.version_info.major < 3 or sys.version_info.minor < 8:
+        logger.warning(f'You are using Python {sys.version_info.major}.{sys.version_info.minor} ({sys.version}), but SemiBin requires Python 3.8 or higher. Please upgrade your Python version.')
+        logger.warning(f'If you are using conda, you can run `conda install python=3.8` to upgrade your Python version.')
         logger.warning(f'SemiBin will keep going, but it may not work properly.')
 
     validate_normalize_args(logger, args)
 
-    if is_semibin2 and getattr(args, 'training_type', None) == 'semi':
+    if getattr(args, 'training_type', None) == 'semi':
         logger.info('Currently using semi-supervised mode. This is generally only useful for backwards compability.')
 
-    if not is_semibin2 and getattr(args, 'abundances', None) is not None:
-        logger.error(f'--abundances cannot be used in SemiBin1.')
-        sys.exit(1)
 
     if args.cmd == 'citation':
         from . import citation
@@ -1642,8 +1611,6 @@ def main2(raw_args=None, is_semibin2=True):
             ofname = concatenate_fasta(args.contig_fasta, args.min_len, args.output, args.separator, args.output_compression)
             logger.info(f'Concatenated contigs written to {ofname}')
         elif args.cmd == 'split_contigs':
-            if not is_semibin2:
-                logger.error('Command `split_contigs` is not available in SemiBin1. Please upgrade to SemiBin2.')
             oname = split_contigs(logger, args.contig_fasta, output=args.output, min_length=args.min_len)
             logger.info(f'Split contigs written to {oname}')
 
