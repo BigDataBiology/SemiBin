@@ -21,7 +21,7 @@ version = "0.1.0"
 [tasks]
 
 [dependencies]
-semibin = ">=2.1.0,<3"
+semibin = ">=2.2.0,<3"
 ```
 
 Then, run `pixi install` in the same directory as the `pixi.toml` file to download and install SemiBin2.
@@ -42,7 +42,7 @@ version = "0.1.0"
 [tasks]
 
 [dependencies]
-semibin = ">=2.1.0,<3"
+semibin = ">=2.2.0,<3"
 pytorch-gpu = "*"
 
 [system-requirements]
