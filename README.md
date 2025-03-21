@@ -104,11 +104,10 @@ Once the dependencies are installed, you can install SemiBin by running:
 pip install .
 ```
 
-Optional extra dependencies for running SemiBin1:
+Optional extra dependencies:
 
 - [MMseqs2](https://github.com/soedinglab/MMseqs2)
 - [Prodigal](https://github.com/hyattpd/Prodigal)
-- [FragGeneScan](https://sourceforge.net/projects/fraggenescan/)
 
 ## Examples of binning
 

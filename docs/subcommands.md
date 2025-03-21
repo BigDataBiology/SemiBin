@@ -53,7 +53,7 @@ Starting in version 1.3, self-supervised learning is also supported, which shoul
 #### Optional arguments to set internal parameters
 
 * `--random-seed`: Random seed to reproduce results.
-* `--orf-finder` : gene predictor used to estimate the number of bins. Must be one of `prodigal` (default since `v0.7`), `fast-naive` (available since `v1.5`, this is a very fast internal implementation, default if using `SemiBin2`), or `fraggenescan` (which is faster than `prodigal`, but cannot be installed in all platforms and is still not as fast as the `fast-naive` method).
+* `--orf-finder` : gene predictor used to estimate the number of bins. Must be one of `prodigal` (default since `v0.7`), `fast-naive` (available since `v1.5`, this is a very fast internal implementation, default since version 2), or `fraggenescan` (which is faster than `prodigal`, but cannot be installed in all platforms and is still not as fast as the `fast-naive` method).
 
 
 #### Optional arguments to bypass internal steps
