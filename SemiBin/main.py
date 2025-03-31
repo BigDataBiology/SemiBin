@@ -884,19 +884,19 @@ def generate_sequence_features_multi(logger, args):
     import pandas as pd
 
     if not args.bams and not args.abundances:
-        sys.stderr.write(
+        logger.error(
             f"Error: You need to specify input BAM files or abundance files.\n")
         sys.exit(1)
 
     n_sample = len(args.bams) if args.bams else len(args.abundances)
     if args.abundances and n_sample < 5:
-        sys.stderr.write(
-            f"Error: abundances from strobealign-aemb can only be used when samples used above or equal to 5.\n")
+        logger.error(
+            f"Error: abundances from strobealign-aemb can only be used when at least 5 samples are used.\n")
         sys.exit(1)
 
     is_combined = n_sample >= 5
 
-    # Gererate contig file for every sample
+    # Generate contig file for every sample
     sample_list = []
     contig_lengths = []
 
