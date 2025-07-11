@@ -37,11 +37,7 @@ All our prebuilt models are trained from several samples.
 In the [original manuscript describing SemiBin1](https://doi.org/10.1038/s41467-022-29843-y), we presented a semi-supervised approach (and SemiBin is even named after it).
 Briefly, contigs are annotated taxonomically (where possible) and then these taxonomic labels are used to learn the model.
 
-Starting with version 1.3, SemiBin also supports _self-supervised_ learning.
-With this approach, taxonomic annotation (which was the most time consuming step) is not required.
-This approach also appears to not require several samples to learn a good model.
-We expect that in version 2, self-supervised learning will become the default mode (any [feedback](mailto:luispedro@big-data-biology.org) or [bug report](https://github.com/BigDataBiology/SemiBin/issues) is welcome).
-
-As of December 2022, a new manuscript describing the self-supervised mode (and other improvements) is under preparation (but we are happy to share a pre-preprint to whomever wants to look at a rough draft and see the data, just [email us](mailto:luispedro@big-data-biology.org)).
-
+Starting with version 1.3, SemiBin supports _self-supervised_ learning and this is the preferred approach.
+This was described in the [SemiBin2 manuscript](https://doi.org/10.1093/bioinformatics/btad209).
+Using semi-supervised learning is still possible, **but not recommended** and we expect to remove it in the future.
 

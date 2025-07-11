@@ -180,11 +180,11 @@ You can train the model from 3 samples.
 
 ```bash
 SemiBin2 train \
+    --train-from-many \
     -i S1.fa S2.fa S3.fa \
     --data S1/data.csv S2/data.csv S3/data.csv \
     --data-split S1/data_split.csv S2/data_split.csv S3/data_split.csv \
     -c S1/cannot.txt s2/cannot.txt S3/cannot.txt \
-    --mode several \
     -o S1_output
 ```
 

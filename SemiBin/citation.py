@@ -115,7 +115,7 @@ ER  -
 
 
 CHICAGO = '''\
-Pan, Shaojun, Chengkai Zhu, Xing-Ming Zhao, and Luis Pedro Coelho. 2022. "A Deep Siamese Neural Network Improves Metagenome-Assembled Genomes in Microbiome Datasets across Different Environments." Nature Communications 13 (1): 2326. https://doi.org/10.1093/bioinformatics/btad209
+Pan, Shaojun, Chengkai Zhu, Xing-Ming Zhao, and Luis Pedro Coelho. 2022. "A Deep Siamese Neural Network Improves Metagenome-Assembled Genomes in Microbiome Datasets across Different Environments." Nature Communications 13 (1): 2326. https://doi.org/10.1038/s41467-022-29843-y
 
-Pan, Shaojun, Xing-Ming Zhao, and Luis Pedro Coelho. 2023. "SemiBin2: Self-Supervised Contrastive Learning Leads to Better MAGs for Short- and Long-Read Sequencing." Bioinformatics  39 (39 Suppl 1): i21–29. https://doi.org/10.1038/s41467-022-29843-y
+Pan, Shaojun, Xing-Ming Zhao, and Luis Pedro Coelho. 2023. "SemiBin2: Self-Supervised Contrastive Learning Leads to Better MAGs for Short- and Long-Read Sequencing." Bioinformatics  39 (39 Suppl 1): i21–29. https://doi.org/10.1093/bioinformatics/btad209
 '''

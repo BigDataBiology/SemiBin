@@ -87,7 +87,7 @@ def find_or_download_gtdb(logger, GTDB_reference_dir, force):
                 for i in range(5):
                     print(f'{5-i}...')
                     sleep(1)
-            os.unlink(GTDB_reference)
+            shutil.rmtree(GTDB_reference, ignore_errors=True)
         else:
             logger.info(f'Found GTDB directory: `{GTDB_reference_dir}`.')
     if not path.exists(GTDB_reference):

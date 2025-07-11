@@ -8,7 +8,7 @@ While the original version of SemiBin could be applied to long-read data, it was
 Starting with version 1.4, SemiBin supports an alternative clustering procedure which gives much better results when applied to long-reads assemblies (including hybrid assemblies).
 Use the flag `--sequencing-data=long_reads` when binning.
 
-See the [SemiBin2 preprint](https://doi.org/10.1101/2023.01.09.523201) for a description and benchmarking of the long-read algorithm.
+See the [SemiBin2 manuscript](https://doi.org/10.1093/bioinformatics/btad209) for a description and benchmarking of the long-read algorithm.
 
 ## What should I do if I have hybrid data (short- and long-reads)?
 

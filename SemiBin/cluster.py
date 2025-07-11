@@ -239,7 +239,7 @@ def recluster_bins(logger, data, *,
             multi_mode=True,
             orf_finder=orf_finder)
             # we cannot bypass the orf_finder here, because of the renaming of the contigs
-        if seeds == []:
+        if not seeds:
             logger.warning('No bins found in the concatenated fasta file.')
             return contig_labels
 

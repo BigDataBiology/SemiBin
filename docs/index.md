@@ -27,15 +27,14 @@ https://github.com/BigDataBiology/SemiBin_tutorial
 
 ## Install
 
-The simplest way to install is to use [conda](https://conda.io/).
+The current recommended way to install SemiBin is to use [pixi](https://pixi.sh/). Pixi will use the packages from conda-forge and bioconda to install SemiBin and its dependencies.
 
 ```bash
-conda create -n SemiBin
-conda activate SemiBin
-conda install -c conda-forge -c bioconda semibin
+pixi init
+pixi add bioconda::semibin
 ```
 
-See [Install](install) for how to install from source or how to enable GPU usage.
+See [Install](install) for details and how to install from source or how to enable GPU usage.
 
 ## SemiBin Examples
 

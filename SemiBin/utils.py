@@ -166,7 +166,7 @@ def validate_normalize_args(logger, args):
                     exit_with_error = True
 
                 if len(args.cannot_link) > 1:
-                    logger_error(
+                    logger.error(
                         f"Error: Expected one cannot.txt file with single mode.\n")
                     exit_with_error = True
                 expect_file(args.cannot_link[0])

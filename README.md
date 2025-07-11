@@ -22,7 +22,7 @@ well as their benchmarking) are described in
 
 ## Basic usage of SemiBin
 
-A tutorial of running SemiBin from scrath can be found here [SemiBin tutorial](https://github.com/BigDataBiology/SemiBin_tutorial_from_scratch).
+A tutorial of running SemiBin from scratch can be found here [SemiBin tutorial](https://github.com/BigDataBiology/SemiBin_tutorial_from_scratch).
 
 
 Installation with `conda`:
@@ -33,7 +33,7 @@ conda activate SemiBin
 conda install -c conda-forge -c bioconda semibin
 ```
 
-This will install both the `SemiBin2` command as well (for backwards compatibility), the old `SemiBin` command. For new projects, it is recommended that you exclusively use `SemiBin2`: both commands [do the same thing, but `SemiBin2` has a slightly nicer interface](https://semibin.readthedocs.io/en/latest/semibin2/).
+This will install the `SemiBin2` command in your environment.
 
 **The inputs** to the SemiBin are contigs (assembled from the reads) and BAM files (reads mapping to the contigs). In [the docs](https://semibin.readthedocs.io/en/latest/generate/) you can see how to generate the inputs starting with a metagenome.
 
@@ -58,7 +58,7 @@ Please find more options and details below and [read the docs](https://semibin.r
 
 ## Advanced Installation
 
-SemiBin runs (and is continuously tested) on Python 3.7-3.13
+SemiBin runs (and is continuously tested) on Python 3.8-3.13
 
 ### pixi
 
