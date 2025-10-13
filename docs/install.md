@@ -1,50 +1,96 @@
 # Install
 
-SemiBin can run on Python 3.7-3.12.
+SemiBin can run on Python 3.7-3.13.
 
-## Install from bioconda
+## Install with pixi
+
+The current recommended way to install SemiBin is to use [pixi](https://pixi.sh/). Pixi will use the packages from conda-forge and bioconda to install SemiBin and its dependencies.
+
+### CPU-only mode
+
+Create a `pixi.toml` file with the following content.
+
+```toml
+[project]
+authors = ["Luis Pedro Coelho <luis@luispedro.org>"]
+channels = ["conda-forge", "bioconda"]
+name = "semibin_install"
+platforms = ["linux-64", "osx-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+semibin = ">=2.2.0,<3"
+```
+
+Then, run `pixi install` in the same directory as the `pixi.toml` file to download and install SemiBin2.
+
+
+### With GPU support
+
+If you want to use SemiBin with GPU, you need to install Pytorch with GPU support as well. Starting with the example above, you need to add `pytorch-gpu` to the `dependencies` section and `cuda` to the `system-requirements` section.
+
+```toml
+[project]
+authors = ["Luis Pedro Coelho <luis@luispedro.org>"]
+channels = ["conda-forge", "bioconda"]
+name = "semibin_install"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+semibin = ">=2.2.0,<3"
+pytorch-gpu = "*"
+
+[system-requirements]
+cuda = "12.0"
+```
+
+## Install with conda
+
+Pixi is now the recommended way to install SemiBin. However, if you prefer to use conda, you can install SemiBin with it
 
 ### Simple Mode
 
-The simplest way to install is to use [conda](https://conda.io/).
-
 ```bash
 conda create -n SemiBin
 conda activate SemiBin
 conda install -c conda-forge -c bioconda semibin
 ```
 
-### GPU mode from conda
+### With GPU support
 
-If you want to use SemiBin with GPU, you need to install Pytorch with GPU support.
+To get GPU support, you need to install Pytorch with GPU support as well, following the instructions on the [Pytorch website](https://pytorch.org/get-started/locally/). As of March 2025, it appears that you need to mix `conda` and `pip` and the following commands should work:
 
 ```bash
-conda create -n SemiBin
+conda create -n SemiBin python pip
 conda activate SemiBin
+pip install torch torchvision torchaudio
 conda install -c conda-forge -c bioconda semibin
-conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch-lts
 ```
+
+This will install SemiBin and all its dependencies. Pixi is—however—the recommended way to install SemiBin with GPU support.
 
 ## Install from source
 
 You will need the following dependencies:
-- [MMseqs2](https://github.com/soedinglab/MMseqs2)
 - [Bedtools](http://bedtools.readthedocs.org/]), [Hmmer](http://hmmer.org/)
 - [Prodigal](https://github.com/hyattpd/Prodigal)
-- (optionally) [Fraggenescan](https://sourceforge.net/projects/fraggenescan/)
 
 
 You can obtain them from conda with the following commands
 
 ```bash
-conda install -c conda-forge -c bioconda mmseqs2=13.45111
-conda install -c bioconda bedtools hmmer fraggenescan samtools
+conda install -c bioconda bedtools hmmer samtools
 ```
 
 Then, installing should be a simple matter of running:
 
 ```bash
-python setup.py install
+pip install .
 ```
 
 ## Alternative ways of running SemiBin

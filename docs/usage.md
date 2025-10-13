@@ -4,7 +4,7 @@
 
 SemiBin2 supports three different binning modes, with different tradeoffs.
 
-### Single sample binning
+### Single-sample binning
 
 Single sample binning means that each sample is assembled and binned independently.
 
@@ -86,20 +86,7 @@ It will take a bit of time, but may produce better results:
 
 ```bash
 SemiBin2 single_easy_bin \
-        --training-type self \
-        -i S1.fa \
-        -b S1.sorted.bam \
-        -o output
-```
-
-**2a. Learn a new model (semi-supervised mode; generally discouraged).**
-An alternative, which was the default in SemiBin1 is to use semi-supervised learning.
-The main disadvantage is that this approach will take a lot more time and use a lot more memory.
-With this approach, training a new model may take several hours and use 40GB of RAM.
-
-```bash
-SemiBin2 single_easy_bin \
-        --training-type semi \
+        --self-supervised \
         -i S1.fa \
         -b S1.sorted.bam \
         -o output
@@ -122,12 +109,12 @@ You can run the individual steps by yourself, which can enable using compute clu
 In particular, `single_easy_bin` includes the following steps:
 
 1. `generate_data_single`
-2. `train` (if needed)
+2. `train_self`
 3. `bin_short` or `bin_long`
 
 `multi_easy_bin` includes
 1. `generate_data_multi`
-2. `train` (if needed)
+2. `train_self` (if needed)
 3. `bin_short` or `bin_long`
 
 (1)  Generate features (`data.csv/data_split.csv` files)
@@ -138,13 +125,10 @@ SemiBin2 generate_sequence_features_single -i S1.fa -b S1.sorted.bam -o S1_outpu
 (3) Train a model (if desired)
 
 ```bash
-SemiBin2 train \
-    -i S1.fa \
+SemiBin2 train_self \
     --data S1_output/data.csv \
     --data-split S1_output/data_split.csv \
-    -c S1_output/cannot/cannot.txt \
     -o S1_output
-    --mode single
 ```
 
 This step heavily benefits from having access to a GPU.
@@ -156,7 +140,7 @@ This step can be skipped if you want to use a pretrained model.
 ```bash
 SemiBin2 bin_short \
     -i S1.fa \
-    --model S1_output/model.h5 \
+    --model S1_output/model.pt \
     --data S1_output/data.csv \
     -o S1_output
 ```
@@ -164,7 +148,7 @@ or
 ```bash
 SemiBin2 bin_long \
     -i S1.fa \
-    --model S1_output/model.h5 \
+    --model S1_output/model.pt \
     --data S1_output/data.csv \
     -o S1_output
 ```
@@ -239,7 +223,6 @@ Note that we use the `generate_sequence_features_single` mode because co-assembl
 (2) Train
 ```bash
 SemiBin2 train_self \
-    -i contig.fa \
     --data contig_output/data.csv \
     --data-split contig_output/data_split.csv \
     -o contig_output
@@ -253,7 +236,7 @@ Having access to a GPU can speed up this mode.
 ```bash
 SemiBin2 bin_short \
     -i contig.fa \
-    --model contig_output/model.h5 \
+    --model contig_output/model.pt \
     --data contig_output/data.csv \
     -o output
 ```
@@ -361,7 +344,7 @@ There are two subcommands, depending on whether you want to use the binning mode
 for sample in S1 S2 S3 S4 S5 ; do
     SemiBin2 bin_short \
         -i ${sample}.fa \
-        --model ${sample}_output/model.h5 \
+        --model ${sample}_output/model.pt \
         --data multi_output/samples/${sample}/data.csv \
         -o output
 done
@@ -371,7 +354,7 @@ or
 for sample in S1 S2 S3 S4 S5 ; do
     SemiBin2 bin_long \
         -i ${sample}.fa \
-        --model ${sample}_output/model.h5 \
+        --model ${sample}_output/model.pt \
         --data multi_output/samples/${sample}/data.csv \
         -o output
 done
@@ -381,69 +364,12 @@ Each sample is binned independently.
 This step is relatively fast.
 
 
-### Generating links for semi-supervised learning
+## Running SemiBin in semi-supervised mode
 
-:::{warning}
-This is generally not needed as semi-supervised mode is not recommended anymore! This information is provided for backwards compability reasons.
+**Note⚠️**: This is generally not needed as semi-supervised mode is not recommended anymore!
 
-See the [SemiBin2 manuscript](https://academic.oup.com/bioinformatics/article/39/Supplement_1/i21/7210480) for details.
-:::
-
-### Generate cannot-link file (single or co-assembly modes)
-```bash
-SemiBin2 generate_cannot_links -i S1.fa -o S1_output
-```
-
-Be warned that this will run `mmseqs2`, which takes a lot of time.
-If you are running `mmseqs2` against the GTDB taxonomy as part of of your pipeline already, you can make SemiBin2 skip this step by passing it the results using the `--taxonomy-annotation-table` argument.
-
-### Generate cannot-link file (multi-sample mode)
-
-You need to call `generate_cannot_links` for all the input FASTA files, independently:
-
-```bash
-for sample in S1 S2 S3 S4 S5; do
-    SemiBin2 generate_cannot_links -i ${sample}.fa -o ${sample}_output
-done
-```
-
-We used a bash for loop above, but it is equivalent to running the following:
-
-```bash
-SemiBin2 generate_cannot_links -i S1.fa -o S1_output
-SemiBin2 generate_cannot_links -i S2.fa -o S2_output
-SemiBin2 generate_cannot_links -i S3.fa -o S3_output
-SemiBin2 generate_cannot_links -i S4.fa -o S4_output
-SemiBin2 generate_cannot_links -i S5.fa -o S5_output
-```
-
-See the comment above about how you can bypass most of the computation if you have run `mmseqs2` to annotate your contigs against GTDB already.
-
+See the [semi-supervised mode](semi-supervised) page for more information.
 
 ## Running SemiBin with strobealign-aemb
 
-Strobealign-aemb is a fast abundance estimation method for metagenomic binning. 
-As strobealign-aemb can not provide the mapping information for every position of the contig, so we can not run SemiBin2 with strobealign-aemb in binning modes where samples used smaller 5 and need to split the contigs to generate the must-link constratints. 
-
-
-1. Split the fasta files using the `split_contigs` subcommand:
-```bash
-SemiBin2 split_contigs -i contig.fa -o output
-```
-2. Map reads using [strobealign-aemb](https://github.com/ksahlin/strobealign) to generate the abundance information. Note that version 0.13 (or newer) is required
-```bash
-strobealign --aemb output/split_contigs.fna.gz read1_1.fq read1_2.fq -R 6 > sample1.tsv
-strobealign --aemb output/split_contigs.fna.gz read2_1.fq read2_2.fq -R 6 > sample2.tsv
-strobealign --aemb output/split_contigs.fna.gz read3_1.fq read3_2.fq -R 6 > sample3.tsv
-strobealign --aemb output/split_contigs.fna.gz read4_1.fq read4_2.fq -R 6 > sample4.tsv
-strobealign --aemb output/split_contigs.fna.gz read5_1.fq read5_2.fq -R 6 > sample5.tsv
-```
-3. Run SemiBin2 (same as running SemiBin with BAM files, except using `-a` to pass in the abundance files instead of `-b` to pass in BAM/SAM):
-
-```bash
-SemiBin2 generate_sequence_features_single -i contig.fa -a *.tsv -o output
-SemiBin2 generate_sequence_features_multi -i contig.fa -a *.tsv -s : -o output
-SemiBin2 single_easy_bin -i contig.fa -a *.tsv -o output
-SemiBin2 multi_easy_bin i contig.fa -a *.tsv -s : -o output
-```
-
+This has its own [dedicated page](aemb).

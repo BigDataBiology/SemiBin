@@ -1,5 +1,28 @@
 # What's New
 
+## Version 2.2.0
+
+*Released Mar 20, 2025*
+
+This is a maintenance release with many small improvement rather than a single big new feature. Upgrading is recommended, but not crucial.
+
+### User-visible changes
+- Remove `SemiBin` command. Only `SemiBin1` and `SemiBin2` are available (and `SemiBin1` is deprecated). The only reason to use `SemiBin1` is if you have old scripts that use it. It will be removed in the next release.
+- Better logging: Always log to file in DEBUG level and log command-line arguments. Print version number in logs.
+- Better error messages in several instances
+- check_install: Prints out information on the GPU
+
+### Deprecations
+- SemiBin: Deprecate `--prodigal-output-faa` argument
+- No longer check for `mmseqs` in `check_install` (it is not a hard requirement)
+
+### Internal improvements and bugfixes
+- Respect the number of threads requested better ([#140](https://github.com/BigDataBiology/SemiBin/issues/140))
+- SemiBin: Better method to save the model which is more compatible with newer versions of PyTorch. Added a subcommand to update old models to the new format (`update_model`)
+- SemiBin: Switch to pixi for testing (and recommend it in the README/[installation](install) instructions)
+- Convert to `pyproject.toml` instead of `setup.py`
+- Do not fail if no bins are produced ([#170](https://github.com/BigDataBiology/SemiBin/issues/170) &amp; [#173](https://github.com/BigDataBiology/SemiBin/issues/173))
+
 ## Version 2.1.0
 
 *Released Mar 6, 2024*

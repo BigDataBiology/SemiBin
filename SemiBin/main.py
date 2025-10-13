@@ -2,7 +2,7 @@ import argparse
 import logging
 import os
 from os import path
-from multiprocessing.pool import Pool
+import multiprocessing as mp
 import subprocess
 from .atomicwrite import atomic_write
 import shutil
@@ -10,19 +10,21 @@ import sys
 from itertools import groupby
 from . import utils
 from .utils import validate_normalize_args, get_must_link_threshold, generate_cannot_link, \
-    set_random_seed, process_fasta, split_data, get_model_path, extract_bams, get_features
+    set_random_seed, load_fasta, split_data, get_model_path, maybe_crams2bams, get_features 
 from .generate_coverage import generate_cov, combine_cov, generate_cov_from_abundances
 from .generate_kmer import generate_kmer_features_from_fasta
 from .fasta import fasta_iter
 from .generate_methylation import generate_methylation_features, generate_methylation_features_multi
+from .semibin_version import __version__
+
+Pool = mp.get_context('spawn').Pool
 
 
-def parse_args(args, is_semibin2, with_methylation):
+def parse_args(args, with_methylation):
     from .semibin_version import __version__
     # BooleanOptionalAction is available in Python 3.9; before that, we fall back on the default
     BooleanOptionalAction = getattr(argparse, 'BooleanOptionalAction', 'store_true')
 
-    deprecated_if2_text = '[deprecated] ' if is_semibin2 else ''
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                     description='Neural network-based binning of metagenomic contigs',
                                     epilog='For more information, see https://semibin.readthedocs.io/en/latest/subcommands/')
@@ -64,7 +66,14 @@ def parse_args(args, is_semibin2, with_methylation):
                                                   ' This will produce the data.csv and data_split.csv files.'
                                                   )
 
-    
+    generate_sequence_features_single.add_argument('--kmer',
+                                                   required=False,
+                                                   help='Just output data.csv with k-mer features.',
+                                                   dest='kmer',
+                                                   action='store_true',)
+
+
+
     generate_sequence_features_multi = subparsers.add_parser('generate_sequence_features_multi', aliases=['generate_sequence_features_multi'],
                                             help='Generate sequence features (kmer and abundance) as training data'
                                                   ' for (semi/self)-supervised deep learning model training (multi-sample mode).'
@@ -94,6 +103,7 @@ def parse_args(args, is_semibin2, with_methylation):
             required=False,
             help='Do not fail is MMSeqs2 is not found. MMSeqs2 is required for semi-supervised learning, but not self-supervised learning.',
             dest='allow_missing_mmseqs2',
+            default=True,
             action='store_true', )
 
     concatenate_fasta = subparsers.add_parser('concatenate_fasta', help = 'concatenate fasta files for multi-sample binning')
@@ -112,12 +122,6 @@ def parse_args(args, is_semibin2, with_methylation):
                         default=None
                         )
 
-    concatenate_fasta.add_argument('-m', '--min-len',
-                        required=False,
-                        type=int,
-                        help='Discard sequences below this length (default:0)',
-                        default=0,
-                        dest='min_length')
 
     split_contigs = subparsers.add_parser('split_contigs',
                                           help = 'Split contigs to generate data (only for strobealign-aemb pipeline)')
@@ -135,21 +139,29 @@ def parse_args(args, is_semibin2, with_methylation):
                         default=None
                         )
 
-    split_contigs.add_argument('-m', '--min-len',
+    update_model = subparsers.add_parser('update_model',)
+    update_model.add_argument('-m', '--model',
+                        required=True,
+                        help='Path to the trained deep learning model.',
+                        dest='model_path',
+                        default=None,
+                        )
+    update_model.add_argument('-o', '--output',
+                        required=True,
+                        help='Output file',
+                        dest='output',
+                        default=None,
+                        )
+
+    for p in [concatenate_fasta, split_contigs]:
+        p.add_argument('-m', '--min-len',
                         required=False,
                         type=int,
                         help='Discard sequences below this length (default:0)',
                         default=0,
-                        dest='min_length')
+                        dest='min_len')
 
-    generate_sequence_features_single.add_argument('--kmer',
-                                                   required=False,
-                                                   help='Just output data.csv with k-mer features.',
-                                                   dest='kmer',
-                                                   action='store_true',)
-    
-    
-    
+
     training_self = subparsers.add_parser('train_self',
                                           help = 'Train the model with self-supervised learning')
 
@@ -161,16 +173,16 @@ def parse_args(args, is_semibin2, with_methylation):
 
 
     # Add the deprecated arguments last so they show up at the bottom of the help text
-    train_semi = subparsers.add_parser(('train_semi' if is_semibin2 else 'train'),
-                                    help=deprecated_if2_text + 'Train the model.')
+    train_semi = subparsers.add_parser('train_semi',
+                                    help='[deprecated] Train the model using semi-supervised learning.')
 
     generate_cannot_links = subparsers.add_parser('generate_cannot_links', aliases=['predict_taxonomy',],
-                                             help=deprecated_if2_text + 'Run the contig annotation using mmseqs '
+                                             help='[deprecated] Run the contig annotation using mmseqs '
                                                   'with GTDB reference genome and generate '
                                                   'cannot-link file used in the semi-supervised deep learning model training. '
                                                   'This will download the GTDB database if not downloaded before.')
     download_GTDB = subparsers.add_parser('download_GTDB',
-                help=deprecated_if2_text + 'Download GTDB reference genomes.')
+                help='[deprecated] Download GTDB reference genomes.')
 
     download_GTDB.add_argument('-f', '--force',
                             required=False,
@@ -245,16 +257,6 @@ def parse_args(args, is_semibin2, with_methylation):
                               dest='batchsize',
                               default=2048, )
 
-        if not is_semibin2:
-            p.add_argument('--mode',
-                              required=False,
-                              type=str,
-                              help='[DEPRECATED: use --train-from-many]. [single/several] Train models from one (single) or more samples (several). '
-                                   'In `several` mode, you must provide data, data_split, cannot, and fasta files for corresponding samples in the same order. '
-                                   'Note: You can only use `several` mode when performing single-sample binning. Training from several samples with multi-sample binning is not supported.',
-                              dest='mode',
-                              default='single')
-
         p.add_argument('--train-from-many',
                            required=False,
                            help='Train the model with several samples.\n'
@@ -307,9 +309,8 @@ def parse_args(args, is_semibin2, with_methylation):
                              help='Path to the input data.csv file.',
                              dest='data',
                              default=None,)
-            
         if p in [multi_easy_bin, generate_sequence_features_multi]:
-            m.add_argument('-b', '--input-bam',
+            p.add_argument('-b', '--input-bam',
                               required=False,
                               nargs='*',
                               help='Path to the input BAM(.bam)/CRAM(.cram) file(s). '
@@ -337,12 +338,12 @@ def parse_args(args, is_semibin2, with_methylation):
                         dest='no_write_pre_reclustering_bins',
                         action='store_true')
 
-            p.add_argument('--tag-output',
-                    required=False,
-                    type=str,
-                    dest='output_tag',
-                    default=('SemiBin' if is_semibin2 else None),
-                    help='Tag to add to output file names')
+        p.add_argument('--tag-output',
+                required=False,
+                type=str,
+                dest='output_tag',
+                default='MethylBin' if with_methylation else 'SemiBin',
+                help='Tag to add to output file names')
             
         if with_methylation:
             if p in [generate_methylation_features_single, generate_methylation_features_multi, single_easy_bin, multi_easy_bin]:    
@@ -361,7 +362,6 @@ def parse_args(args, is_semibin2, with_methylation):
                 p.add_argument("--data-split", help="Path to the data split file to append methylation.", required=False)
             if p in [generate_methylation_features_multi, multi_easy_bin]:
                 m.add_argument("--pileups", nargs='*', help = "Path to the pileup files. Should be named according to sample name <sample>.bed such that it matches '--input-bams'", required = True)
-                
 
     for p in [single_easy_bin,
                 multi_easy_bin,
@@ -373,11 +373,9 @@ def parse_args(args, is_semibin2, with_methylation):
         p.add_argument('--compression',
                 required=False,
                 type=str,
-                help=('Compression type for the output files (accepted values: ' +
-                    ('none [default]/gz/xz/bz2).' if not is_semibin2 else
-                    ' gz [default]/xz/bz2/none).')),
+                help='Compression type for the output files (accepted values: gz [default]/xz/bz2/none).',
                 dest='output_compression',
-                default=('gz' if is_semibin2 else 'none'))
+                default='gz')
 
     for p in [binning, binning_long]:
         p.add_argument('--model',
@@ -394,11 +392,11 @@ def parse_args(args, is_semibin2, with_methylation):
                        type=str,
                        help='ORF finder used to estimate the number of bins (fast-naive/prodigal/fraggenescan)',
                        dest='orf_finder',
-                       default=('fast-naive' if is_semibin2 else 'prodigal'))
+                       default='fast-naive')
         p.add_argument('--prodigal-output-faa',
                        required=False,
                        type=str,
-                       help='Bypasses ORF calling and uses the provided .faa file instead (must be in same format as prodigal output).',
+                       help='[deprecated] Bypasses ORF calling and uses the provided .faa file instead (must be in same format as prodigal output).',
                        dest='prodigal_output_faa')
 
     for p in [single_easy_bin, binning, binning_long]:
@@ -579,12 +577,6 @@ def parse_args(args, is_semibin2, with_methylation):
                            dest='no_recluster',
                            action='store_true', )
 
-        if not is_semibin2:
-            g.add_argument('--recluster',
-                           required=False,
-                           help='[Deprecated] Does nothing (current default is to perform clustering)',
-                           dest='recluster',
-                           action='store_true', )
 
 
     for p in [multi_easy_bin, generate_sequence_features_multi, concatenate_fasta]:
@@ -635,13 +627,6 @@ def parse_args(args, is_semibin2, with_methylation):
                             dest='self_supervised',
                             action='store_true', )
 
-        if not is_semibin2:
-            p.add_argument('--training-type',
-                       required=False,
-                       type=str,
-                       help='Training algorithm used to train the model (semi [default]/self)\n'
-                            'DEPRECATED: use --self-supervised/--semi-supervised',
-                       dest='training_type')
 
         if not with_methylation:
             p.add_argument('--sequencing-type',
@@ -656,7 +641,6 @@ def parse_args(args, is_semibin2, with_methylation):
         parser.print_help(sys.stderr)
         sys.exit()
     args = parser.parse_args(args)
-    args.is_semibin2 = is_semibin2
     if hasattr(args, 'no_recluster'):
         args.recluster = not args.no_recluster
 
@@ -665,10 +649,8 @@ def parse_args(args, is_semibin2, with_methylation):
         if not hasattr(argparse, 'BooleanOptionalAction'):
             if args.no_write_pre_reclustering_bins:
                 args.write_pre_reclustering_bins = False
-            elif not args.no_write_pre_reclustering_bins and not is_semibin2:
-                args.write_pre_reclustering_bins = True
         if args.write_pre_reclustering_bins is None:
-            args.write_pre_reclustering_bins = not is_semibin2
+            args.write_pre_reclustering_bins = False
 
     # Keep the verbose1/quiet1 hack contained in this function
     for hacked in ['verbose', 'quiet']:
@@ -693,8 +675,15 @@ def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
     allow_missing_mmseqs2 : boolean, optional
         If true, then checks for mmseqs2
     '''
+    import torch
     from shutil import which
-    dependencies = ['bedtools', 'hmmsearch', 'mmseqs', 'FragGeneScan', 'prodigal']
+    dependencies = [
+                'bedtools',
+                'hmmsearch',
+                'FragGeneScan',
+                'prodigal',  # prodigal needs to be checked after FragGeneScan
+                'mmseqs',
+                ]
     has_fgs = False
     missing_deps = False
     if verbose:
@@ -705,10 +694,11 @@ def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
             if dep == 'mmseqs':
                 if not allow_missing_mmseqs2:
                     sys.stderr.write(
-                        f"Error: {dep} does not seem to be installed! This is necessary for semi-supervised learning\n")
+                        f"Error: {dep} does not seem to be installed."
+                        "This is only necessary for semi-supervised learning (which is deprecated)\n")
                     missing_deps = True
                 elif verbose:
-                    print(f'\t{dep} not found. Semi-supervised training will not be possible')
+                    print(f'\t{dep} not found. Semi-supervised training (deprecated) will not be possible')
             elif dep == 'prodigal':
                 if orf_finder == 'fast-naive':
                     pass
@@ -716,12 +706,13 @@ def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
                     if orf_finder != 'fast-naive':
                         sys.stderr.write(
                                 'Error: neither prodigal nor FragGeneScan appear to be available!\n'
-                                'You can use --orf-finder=fast-naive to use the builtin simple ORF finder')
+                                'You can use --orf-finder=fast-naive to use the builtin simple ORF finder\n')
                         missing_deps = True
                 else:
                     if verbose or orf_finder == 'prodigal':
                         sys.stderr.write(
-                            'Warning: prodigal does not appear to be available (although FragGeneScan is). You must use the `--orf-finder=fast-naive` or `--orf-finder=fraggenescan` options.\n')
+                            'Warning: prodigal does not appear to be available (although FragGeneScan is). '
+                            'You must use the `--orf-finder=fast-naive` or `--orf-finder=fraggenescan` options.\n')
                     missing_deps = True
             elif dep == 'FragGeneScan':
                 pass
@@ -734,6 +725,15 @@ def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
                 has_fgs = True
             if verbose:
                 print(f'\t{dep:16}: {p}')
+    if verbose:
+        if not torch.cuda.is_available():
+            print('CUDA is not available, SemiBin will run on CPU')
+            print('If you expected a GPU to have been detected, please check your CUDA/Pytorch installation')
+            print('For more information: https://semibin.readthedocs.io/en/latest/install/')
+        else:
+            print('CUDA available, SemiBin can run on GPU')
+            print(f'\tCurrent device: {torch.cuda.current_device()}')
+            print(f'\tDevice name: {torch.cuda.get_device_name(torch.cuda.current_device())}')
     if missing_deps:
         print('Missing dependencies')
         sys.exit(1)
@@ -778,9 +778,9 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
                      os.path.join(tdir, 'contig_DB')],
                     stdout=None,
                 )
-            except:
+            except Exception as e:
                 sys.stderr.write(
-                    f"Error: Running mmseqs createdb fail\n")
+                        f"Error: Running mmseqs createdb failed (error: {e})\n")
                 sys.exit(1)
             if os.path.exists(os.path.join(output, 'mmseqs_contig_annotation')):
                 shutil.rmtree(os.path.join(output, 'mmseqs_contig_annotation'))
@@ -799,9 +799,9 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
                     check=True,
                     stdout=None,
                 )
-            except:
+            except Exception as e:
                 sys.stderr.write(
-                    f"Error: Running mmseqs taxonomy fail\n")
+                        f"Error: Running mmseqs taxonomy failed (error: {e})\n")
                 sys.exit(1)
             taxonomy_results_fname = os.path.join(output,
                                         'mmseqs_contig_annotation',
@@ -816,9 +816,9 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
                      ],
                     stdout=None,
                 )
-            except:
+            except Exception as e:
                 sys.stderr.write(
-                    f"Error: Running mmseqs createtsv fail\n")
+                    f"Error: Running mmseqs createtsv fail (error: {e})\n")
                 sys.exit(1)
 
     os.makedirs(os.path.join(output, 'cannot'), exist_ok=True)
@@ -838,105 +838,87 @@ def generate_sequence_features_single(logger, contig_fasta,
 
     if bams is None and abundances is None and not only_kmer:
         sys.stderr.write(
-            f"Error: You need to specify input BAM files or abundance files if you want to calculate coverage features.\n")
+            f"Error: You need to specify input BAM files or abundance files to calculate coverage features.\n")
         sys.exit(1)
 
     if (bams is not None or abundances is not None) and only_kmer:
         logger.info('We will only calculate k-mer features.')
 
-    if not only_kmer:
-
-        logger.debug('Start generating kmer features from fasta file.')
-        kmer_whole = generate_kmer_features_from_fasta(
-            contig_fasta, binned_length, 4)
-        kmer_split = generate_kmer_features_from_fasta(
-            contig_fasta, 1000, 4, split=True, split_threshold=must_link_threshold)
-
-        if bams:
-            n_sample = len(bams)
-            is_combined = n_sample >= 5
-            bam_list = bams
-            logger.info('Calculating coverage for every sample.')
-
-            with Pool(min(num_process, len(bams))) as pool:
-                results = [
-                    pool.apply_async(
-                        generate_cov,
-                        args=(
-                            bam_file,
-                            bam_index,
-                            output,
-                            must_link_threshold,
-                            is_combined,
-                            binned_length,
-                            logger,
-                            None
-                        ))
-                    for bam_index, bam_file in enumerate(bams)]
-                for r in results:
-                    s = r.get()
-                    logger.info(f'Processed: {s}')
-
-            for bam_index, bam_file in enumerate(bams):
-                if not os.path.exists(os.path.join(output, '{}_data_cov.csv'.format(
-                        os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
-                    sys.stderr.write(
-                        f"Error: Generating coverage file fail\n")
-                    sys.exit(1)
-                if is_combined:
-                    if not os.path.exists(os.path.join(output, '{}_data_split_cov.csv'.format(
-                            os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
-                        sys.stderr.write(
-                            f"Error: Generating coverage file fail\n")
-                        sys.exit(1)
-
-            data = kmer_whole
-            data_split = kmer_split
-            data.index = data.index.astype(str)
-
-            data_cov, data_split_cov = combine_cov(output, bam_list, is_combined)
-            if is_combined:
-                data_split = pd.merge(data_split, data_split_cov, how='inner', on=None,
-                                          left_index=True, right_index=True, sort=False, copy=True)
-
-            data = pd.merge(data, data_cov, how='inner', on=None,
-                                          left_index=True, right_index=True, sort=False, copy=True)
-
-            with atomic_write(os.path.join(output, 'data.csv'), overwrite=True) as ofile:
-                data.to_csv(ofile)
-
-            with atomic_write(os.path.join(output, 'data_split.csv'), overwrite=True) as ofile:
-                data_split.to_csv(ofile)
-
-        if abundances:
-            if len(abundances) < 5:
-                sys.stderr.write(
-                    f"Error: abundances from strobealign-aemb can only be used when samples used above or equal to 5.\n")
-                sys.exit(1)
-            logger.info('Reading abundance information from abundance files.')
-            abun, abun_split = generate_cov_from_abundances(abundances, output, contig_fasta, binned_length)
-
-            data = kmer_whole
-            data.index = data.index.astype(str)
-            data = pd.merge(data, abun, how='inner', on=None,
-                                          left_index=True, right_index=True, sort=False, copy=True)
-
-            data_split = kmer_split
-            data_split = pd.merge(data_split, abun_split, how='inner', on=None,
-                                          left_index=True, right_index=True, sort=False, copy=True)
-
-            with atomic_write(os.path.join(output, 'data.csv'), overwrite=True) as ofile:
-                data.to_csv(ofile)
-
-            with atomic_write(os.path.join(output, 'data_split.csv'), overwrite=True) as ofile:
-                data_split.to_csv(ofile)
-
-    else:
-        logger.info('Only generating kmer features from fasta file.')
-        kmer_whole = generate_kmer_features_from_fasta(
-            contig_fasta, binned_length, 4)
+    logger.debug('Start generating kmer features from fasta file.')
+    kmer_whole = generate_kmer_features_from_fasta(
+        contig_fasta, binned_length, 4)
+    if only_kmer:
         with atomic_write(os.path.join(output, 'data.csv'), overwrite=True) as ofile:
             kmer_whole.to_csv(ofile)
+        return
+
+    kmer_split = generate_kmer_features_from_fasta(
+        contig_fasta, 1000, 4, split=True, split_threshold=must_link_threshold)
+
+    if bams:
+        is_combined = len(bams) >= 5
+        logger.info('Calculating coverage for every sample.')
+
+        with Pool(min(num_process, len(bams))) as pool:
+            results = [
+                pool.apply_async(
+                    generate_cov,
+                    args=(
+                        bam_file,
+                        bam_index,
+                        output,
+                        must_link_threshold,
+                        is_combined,
+                        binned_length,
+                        logger,
+                        None
+                    ))
+                for bam_index, bam_file in enumerate(bams)]
+            for r in results:
+                s = r.get()
+                logger.info(f'Processed: {s}')
+
+        for bam_index, bam_file in enumerate(bams):
+            if not os.path.exists(
+                    os.path.join(output,
+                                 f'{os.path.split(bam_file)[-1]}_{bam_index}_data_cov.csv')):
+                sys.stderr.write(
+                    f"Error: Generating coverage file failed\n")
+                sys.exit(1)
+            if is_combined:
+                if not os.path.exists(
+                    os.path.join(output,
+                                 f'{os.path.split(bam_file)[-1]}_{bam_index}_data_split_cov.csv')):
+                    sys.stderr.write(
+                        f"Error: Generating coverage file failed\n")
+                    sys.exit(1)
+
+        data_cov, data_split_cov = combine_cov(output, bams, is_combined)
+
+    if abundances:
+        if len(abundances) < 5:
+            sys.stderr.write(
+                f"Error: abundances from strobealign-aemb can only be used with at least 5 samples.\n")
+            sys.exit(1)
+        logger.info('Reading abundance information from abundance files.')
+        data_cov, data_split_cov = generate_cov_from_abundances(abundances, output, contig_fasta, binned_length)
+        is_combined = True
+
+    if is_combined:
+        data_split = pd.merge(kmer_split, data_split_cov, how='inner', on=None,
+                                  left_index=True, right_index=True, sort=False, copy=True)
+    else:
+        data_split = kmer_split
+
+    kmer_whole.index = kmer_whole.index.astype(str)
+    data = pd.merge(kmer_whole, data_cov, how='inner', on=None,
+                                  left_index=True, right_index=True, sort=False, copy=True)
+
+    with atomic_write(os.path.join(output, 'data.csv'), overwrite=True) as ofile:
+        data.to_csv(ofile)
+
+    with atomic_write(os.path.join(output, 'data_split.csv'), overwrite=True) as ofile:
+        data_split.to_csv(ofile)
 
 
 def generate_sequence_features_multi(logger, args):
@@ -962,7 +944,7 @@ def generate_sequence_features_multi(logger, args):
 
     # Gererate contig file for every sample
     sample_list = []
-    contig_length_list = []
+    contig_lengths = []
 
     os.makedirs(os.path.join(args.output, 'samples'), exist_ok=True)
 
@@ -975,19 +957,19 @@ def generate_sequence_features_multi(logger, args):
             yield sample_name, contig_name, seq
 
     for sample_name, contigs in groupby(fasta_sample_iter(args.contig_fasta), lambda sn_cn_seq : sn_cn_seq[0]):
-        with open(os.path.join(args.output, 'samples', '{}.fa'.format(sample_name)), 'wt') as out:
+        with utils.possibly_compressed_write(os.path.join(args.output, 'samples', f'{sample_name}.fa')) as out:
             for _, contig_name, seq in contigs:
                 out.write(f'>{contig_name}\n{seq}\n')
-                contig_length_list.append(len(seq))
+                contig_lengths.append(len(seq))
         sample_list.append(sample_name)
     if len(sample_list) != len(set(sample_list)):
         logger.error(f'Concatenated FASTA file {args.contig_fasta} not in expected format. Samples should follow each other.')
         sys.exit(1)
 
-    must_link_threshold = get_must_link_threshold(contig_length_list) if args.ml_threshold is None else args.ml_threshold
+    must_link_threshold = get_must_link_threshold(contig_lengths) if args.ml_threshold is None else args.ml_threshold
     binning_threshold = {}
     for sample in sample_list:
-        binning_threshold[sample] = utils.compute_min_length(
+        binning_threshold[sample] = utils.maybe_compute_min_length(
                                         args.min_len,
                                         os.path.join(args.output, f'samples/{sample}.fa'),
                                         args.ratio)
@@ -1014,16 +996,16 @@ def generate_sequence_features_multi(logger, args):
                 logger.info(f'Processed: {s}')
 
         for bam_index, bam_file in enumerate(args.bams):
-            if not os.path.exists(os.path.join(os.path.join(args.output, 'samples'), '{}_data_cov.csv'.format(
-                    os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
+            if not path.exists(path.join(args.output, 'samples',
+                            f'{path.split(bam_file)[-1]}_{bam_index}_data_cov.csv')):
                 sys.stderr.write(
-                    f"Error: Generating coverage file fail\n")
+                    f"Error: Generating coverage file failed (for BAM file {bam_file})\n")
                 sys.exit(1)
             if is_combined:
-                if not os.path.exists(os.path.join(os.path.join(args.output, 'samples'), '{}_data_split_cov.csv'.format(
-                        os.path.split(bam_file)[-1] + '_{}'.format(bam_index)))):
+                if not path.exists(path.join(args.output, 'samples',
+                            f'{path.split(bam_file)[-1]}_{bam_index}_data_split_cov.csv')):
                     sys.stderr.write(
-                        f"Error: Generating coverage file fail\n")
+                        f"Error: Generating split coverage file failed (for BAM file {bam_file})\n")
                     sys.exit(1)
 
         # Generate cov features for every sample
@@ -1079,7 +1061,11 @@ def generate_sequence_features_multi(logger, args):
 
     if args.abundances:
         logger.info('Reading abundance information from abundance files.')
-        abun_split = generate_cov_from_abundances(args.abundances, os.path.join(args.output, 'samples'), args.contig_fasta, sep=args.separator, contig_threshold_dict=binning_threshold)
+        abun_split = generate_cov_from_abundances(args.abundances,
+                                                  os.path.join(args.output, 'samples'),
+                                                  contig_path=args.contig_fasta,
+                                                  sep=args.separator,
+                                                  sample_contig_threshold=binning_threshold)
         abun_split = abun_split.reset_index()
         columns_list = list(abun_split.columns)
         columns_list[0] = 'contig_name'
@@ -1124,19 +1110,18 @@ def generate_sequence_features_multi(logger, args):
     return sample_list
 
 
-def training(logger, contig_fasta, num_process,
-             data, data_split, cannot_link, batchsize,
-             epoches,  output, device, ratio, min_length, *, mode,
-             orf_finder=None, prodigal_output_faa=None, training_type='semi'):
+def training(logger, contig_fasta,
+             data, data_split, cannot_link,
+             *, output, device, mode,
+             args):
     """
     Training the model
 
     model: [single/several]
     """
-    from .semi_supervised_model import train
+    from .semi_supervised_model import train_semi
     from .self_supervised_model import train_self
     import pandas as pd
-    binned_lengths = []
 
     if mode == 'single':
         logger.info('Start training from a single sample.')
@@ -1150,14 +1135,15 @@ def training(logger, contig_fasta, num_process,
         logger.info('Start training from multiple samples.')
         is_combined = False
 
-    if training_type == 'semi':
+    if args.training_type == 'semi':
+        binned_lengths = []
         for fafile in contig_fasta:
             binned_lengths.append(
-                    utils.compute_min_length(min_length, fafile, ratio))
+                    utils.maybe_compute_min_length(args.min_len, fafile, args.ratio))
             if mode == 'single':
                 break
 
-        model = train(
+        model = train_semi(
             logger,
             output,
             contig_fasta,
@@ -1166,30 +1152,29 @@ def training(logger, contig_fasta, num_process,
             data_split,
             cannot_link,
             is_combined=is_combined,
-            batchsize=batchsize,
-            epoches=epoches,
+            batchsize=args.batchsize,
+            epoches=args.epoches,
             device=device,
-            num_process=num_process,
+            num_process=args.num_process,
             mode=mode,
-            prodigal_output_faa=prodigal_output_faa,
-            orf_finder=orf_finder)
+            prodigal_output_faa=args.prodigal_output_faa,
+            orf_finder=args.orf_finder)
     else:
         model = train_self(logger,
-                           path.join(output, 'model.h5'),
                            data,
                            data_split,
                            is_combined,
-                           batchsize,
-                           epoches,
+                           args.batchsize,
+                           args.epoches,
                            device,
-                           num_process,
+                           args.num_process,
                            mode)
+    model.save_with_params_to(os.path.join(output, 'model.pt'))
 
 
 def binning_preprocess(data, depth_metabat2, model_path, environment, device):
     import pandas as pd
-    import torch
-    
+    from .semi_supervised_model import model_load
     data = pd.read_csv(data, index_col=0)
     features_data = get_features(data)
     data.index = data.index.astype(str)
@@ -1218,10 +1203,7 @@ def binning_preprocess(data, depth_metabat2, model_path, environment, device):
             sys.stderr.write(f"Error: provided pretrained model only used in single-sample binning!\n")
             sys.exit(1)
 
-    if device == torch.device('cpu'):
-        model = torch.load(model_path, map_location=torch.device('cpu'))
-    else:
-        model = torch.load(model_path).to(device)
+    model = model_load(model_path, device)
 
     return is_combined, n_sample, data, model, features_data
 
@@ -1334,18 +1316,20 @@ def single_easy_binning(logger, args, binned_length,
                 must_link_threshold,
                 args.output)
             logger.info('Training model and clustering.')
-            training(logger, [args.contig_fasta],
-                     args.num_process, [data_path], [data_split_path],
-                     [os.path.join(args.output, 'cannot', 'cannot.txt')],
-                     args.batchsize, args.epoches, args.output, device,
-                     args.ratio, args.min_len,  mode='single',
-                     orf_finder=args.orf_finder, prodigal_output_faa=args.prodigal_output_faa,
-                     training_type='semi')
+            fasta = [args.contig_fasta]
+            cannot_link = [os.path.join(args.output, 'cannot', 'cannot.txt')]
+
+
         else:
-            training(logger, None,
-                     args.num_process, [data_path], [data_split_path],
-                     None, args.batchsize, args.epoches, args.output, device, None, None,
-                     mode='single', orf_finder=None, prodigal_output_faa=args.prodigal_output_faa, training_type='self')
+            fasta = None
+            cannot_link = None
+        training(logger, fasta,
+                 [data_path], [data_split_path],
+                 cannot_link=cannot_link,
+                 output=args.output,
+                 device=device,
+                 mode='single',
+                 args=args)
 
     binning_kwargs = {
         'logger': logger,
@@ -1355,7 +1339,7 @@ def single_easy_binning(logger, args, binned_length,
         'binned_length': binned_length,
         'contig_dict': contig_dict,
         'model_path':
-                os.path.join(args.output, 'model.h5') \
+                os.path.join(args.output, 'model.pt') \
                         if args.environment is None \
                         else None,
         'output': args.output,
@@ -1387,18 +1371,15 @@ def multi_easy_binning(logger, args, device, with_methylation=False):
         )
     for sample_index, sample in enumerate(sample_list):
         sample_fasta = os.path.join(
-            args.output, 'samples', '{}.fa'.format(sample))
+            args.output, 'samples', f'{sample}.fa')
         sample_data = os.path.join(args.output, 'samples', sample, 'data.csv')
         sample_data_split = os.path.join(
             args.output, 'samples', sample, 'data_split.csv')
 
-        binned_short, must_link_threshold, contig_dict = process_fasta(sample_fasta, args.ratio)
+        c_min_len, must_link_threshold, contig_dict = load_fasta(sample_fasta, args.ratio)
 
-        if args.min_len is None:
-            binned_length = 1000 if binned_short else 2500
-        else:
-            binned_length = args.min_len
-        logger.info('Training model and clustering for {}.'.format(sample))
+        binned_length = c_min_len if args.min_len is None else args.min_len
+        logger.info(f'Training model and clustering for sample "{sample}"')
         if args.training_type == 'semi':
             logger.debug(f'Running taxonomic prediction (semi-supervised mode) for {sample}')
             predict_taxonomy(
@@ -1412,17 +1393,18 @@ def multi_easy_binning(logger, args, device, with_methylation=False):
                 must_link_threshold if args.ml_threshold is None else args.ml_threshold,
                 os.path.join(args.output, 'samples', sample))
 
-            sample_cannot = os.path.join(
-                args.output, 'samples', sample, 'cannot/{}.txt'.format(sample))
-            training(logger, [sample_fasta], args.num_process,
-                     [sample_data], [sample_data_split], [sample_cannot],
-                     args.batchsize, args.epoches, os.path.join(args.output, 'samples', sample),
-                     device, args.ratio, args.min_len, mode='single', orf_finder=args.orf_finder, prodigal_output_faa=args.prodigal_output_faa, training_type='semi')
+            sample_fasta = [sample_fasta]
+            sample_cannot = [os.path.join(
+                args.output, 'samples', sample, 'cannot', f'{sample}.txt')]
         else:
-            training(logger, None, args.num_process,
-                     [sample_data], [sample_data_split], None,
-                     args.batchsize, args.epoches, os.path.join(args.output, 'samples', sample),
-                     device, None, None, mode='single', orf_finder=None, prodigal_output_faa=args.prodigal_output_faa, training_type='self')
+            sample_fasta = None
+            sample_cannot = None
+        training(logger, sample_fasta,
+                 [sample_data], [sample_data_split], sample_cannot,
+                 output=os.path.join(args.output, 'samples', sample),
+                 device=device,
+                 mode='single',
+                 args=args)
 
         binning_kwargs = {
             'logger': logger,
@@ -1431,7 +1413,7 @@ def multi_easy_binning(logger, args, device, with_methylation=False):
             'minfasta': args.minfasta_kb * 1000,
             'binned_length': binned_length,
             'contig_dict': contig_dict,
-            'model_path': os.path.join(args.output, 'samples', sample, 'model.h5'),
+            'model_path': os.path.join(args.output, 'samples', sample, 'model.pt'),
             'output': os.path.join(args.output, 'samples', sample),
             'device': device,
             'environment': None,
@@ -1445,8 +1427,7 @@ def multi_easy_binning(logger, args, device, with_methylation=False):
     os.makedirs(os.path.join(args.output, 'bins'), exist_ok=True)
     for sample in sample_list:
         if args.sequencing_type != 'short_read' or \
-            (not args.is_semibin2 and not args.recluster) or \
-            (args.is_semibin2 and args.recluster and not args.write_pre_reclustering_bins):
+            (args.recluster and not args.write_pre_reclustering_bins):
             bin_dir_name = 'output_bins'
         else:
             bin_dir_name = 'output_recluster_bins' if args.recluster else 'output_prerecluster_bins'
@@ -1476,56 +1457,78 @@ def split_contigs(logger, contig_fasta, *, output, min_length):
     return oname
 
 
+def log_subprocess(event, *args, **kwargs):
+    if event == 'subprocess.Popen':
+        (executable, args, _cwd, _env) = args[0]
+        logger = logging.getLogger('SemiBin2')
+        logger.debug(f'Running command: {executable} (full command line: `{" ".join(args)}`)')
+
 def main2(args=None, is_semibin2=True, with_methylation=False):
+    if not is_semibin2:
+        raise NotImplementedError(f'SemiBin 1 is no longer supported in SemiBin v{__version__}.')
     import tempfile
 
-    if args is None:
-        args = sys.argv[1:]
-    args = parse_args(args, is_semibin2, with_methylation)
+    if raw_args is None:
+        raw_args = sys.argv[1:]
+    args = parse_args(raw_args, with_methylation)
 
     if with_methylation and args.cmd in ["single_easy_bin", "multi_easy_bin"]:
         args.sequencing_type = 'long_read'
         args.self_supervised = True
         args.semi_supervised = False
     
-    logger = logging.getLogger('SemiBin')
+    logger = logging.getLogger('SemiBin2')
+
+    # We will always log to the log file with DEBUG level and set the console
+    # log level based on the arguments
+    logger.setLevel(logging.DEBUG)
     if args.verbose:
         loglevel = logging.DEBUG
     elif args.quiet:
         loglevel = logging.ERROR
     else:
         loglevel = logging.INFO
-    logger.setLevel(loglevel)
     try:
         import coloredlogs
         coloredlogs.install(level=loglevel, logger=logger)
     except ImportError:
         sh = logging.StreamHandler()
         sh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
+        sh.setLevel(loglevel)
         logger.addHandler(sh)
+
+    sys.addaudithook(log_subprocess)
+
+    if args.cmd == 'update_model':
+        import torch
+        from .semi_supervised_model import model_load
+        model = model_load(args.model_path, torch.device('cpu'), warn_on_old_format=False)
+        model.save_with_params_to(args.output)
+        return 0
+
 
     if args.cmd not in ['citation', 'download_GTDB', 'check_install']:
         os.makedirs(args.output, exist_ok=True)
         fh = logging.FileHandler(os.path.join(args.output, "SemiBinRun.log"))
         fh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
         logger.addHandler(fh)
+    logger.info(f'Running SemiBin2 version {__version__}')
+    logger.debug(f'Starting SemiBin2 with arguments: {raw_args}')
+    logger.debug(f'Parsed arguments as: {args}')
 
     if args.verbose and args.quiet:
         logger.warning('Both verbose and quiet are set, output will be verbose')
 
-    if sys.version_info.major < 3 or sys.version_info.minor < 7:
-        logger.warning(f'You are using Python {sys.version_info.major}.{sys.version_info.minor} ({sys.version}), but SemiBin requires Python 3.7 or higher. Please upgrade your Python version.')
-        logger.warning(f'If you are using conda, you can run `conda install python=3.7` to upgrade your Python version.')
+    if sys.version_info.major < 3 or sys.version_info.minor < 8:
+        logger.warning(f'You are using Python {sys.version_info.major}.{sys.version_info.minor} ({sys.version}), but SemiBin requires Python 3.8 or higher. Please upgrade your Python version.')
+        logger.warning(f'If you are using conda, you can run `conda install python=3.8` to upgrade your Python version.')
         logger.warning(f'SemiBin will keep going, but it may not work properly.')
 
     validate_normalize_args(logger, args)
 
-    if is_semibin2 and getattr(args, 'training_type', None) == 'semi':
+    if getattr(args, 'training_type', None) == 'semi':
         logger.info('Currently using semi-supervised mode. This is generally only useful for backwards compability.')
 
-    if not is_semibin2 and getattr(args, 'abundances', None) is not None:
-        logger.error(f'--abundances cannot be used in SemiBin1.')
-        sys.exit(1)
 
     if args.cmd == 'citation':
         from . import citation
@@ -1539,7 +1542,7 @@ def main2(args=None, is_semibin2=True, with_methylation=False):
             print(citation.CHICAGO)
             print(f'\nUse `SemiBin2 citation --help` to see all available citation formats')
         sys.exit(0)
-    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'train_semi', 'bin', 'train_self', 'bin_long']:
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train_semi', 'bin', 'train_self', 'bin_long']:
         import torch
         if args.engine == 'cpu':
             device = torch.device("cpu")
@@ -1551,7 +1554,7 @@ def main2(args=None, is_semibin2=True, with_methylation=False):
                 logger.info('Running with GPU.')
             else:
                 device = torch.device("cpu")
-                logger.info('Did not detect GPU, using CPU.')
+                logger.warning('Did not detect GPU or CUDA was not installed/supported, using CPU.')
 
     if getattr(args, 'tmpdir', None) is not None:
         os.environ['TMPDIR'] = args.tmpdir
@@ -1561,13 +1564,13 @@ def main2(args=None, is_semibin2=True, with_methylation=False):
         set_random_seed(args.random_seed)
 
     with tempfile.TemporaryDirectory() as tdir:
-        if hasattr(args, 'bams'):
-            args.bams = extract_bams(args.bams, args.contig_fasta, args.num_process, tdir)
+        if hasattr(args, 'bams') and args.bams is not None:
+            args.bams = maybe_crams2bams(args.bams, args.contig_fasta, args.num_process, tdir)
 
         if args.cmd in ['generate_cannot_links', 'generate_sequence_features_single', 'bin','single_easy_bin', 'bin_long']:
-            binned_short, must_link_threshold, contig_dict = process_fasta(args.contig_fasta, args.ratio)
+            c_min_len, must_link_threshold, contig_dict = load_fasta(args.contig_fasta, args.ratio)
             if args.min_len is None:
-                binned_length = 1000 if binned_short else 2500
+                binned_length = c_min_len
             else:
                 binned_length = args.min_len
             if not contig_dict:
@@ -1636,40 +1639,27 @@ def main2(args=None, is_semibin2=True, with_methylation=False):
                 sample_list = None
             )
 
-        elif args.cmd in ['train', 'train_semi']:
+        elif args.cmd == 'train_semi':
             training(logger,
                     contig_fasta=args.contig_fasta,
-                    num_process=args.num_process,
                     data=args.data,
                     data_split=args.data_split,
                     cannot_link=args.cannot_link,
-                    batchsize=args.batchsize,
-                    epoches=args.epoches,
                     output=args.output,
                     device=device,
-                    ratio=args.ratio,
-                    min_length=args.min_len,
                     mode=args.mode,
-                    orf_finder=args.orf_finder,
-                    training_type='semi')
+                    args=args)
 
         elif args.cmd == 'train_self':
             training(logger,
                     contig_fasta=None,
-                    num_process=args.num_process,
                     data=args.data,
                     data_split=args.data_split,
                     cannot_link=None,
-                    batchsize=args.batchsize,
-                    epoches=args.epoches,
                     output=args.output,
                     device=device,
-                    ratio=None,
-                    min_length=None,
                     mode=args.mode,
-                    orf_finder=None,
-                    prodigal_output_faa=None,
-                    training_type='self')
+                    args=args)
 
 
         elif args.cmd == 'bin':
@@ -1712,16 +1702,14 @@ def main2(args=None, is_semibin2=True, with_methylation=False):
 
         elif args.cmd == 'concatenate_fasta':
             from .utils import concatenate_fasta
-            ofname = concatenate_fasta(args.contig_fasta, args.min_length, args.output, args.separator, args.output_compression)
+            ofname = concatenate_fasta(args.contig_fasta, args.min_len, args.output, args.separator, args.output_compression)
             logger.info(f'Concatenated contigs written to {ofname}')
         elif args.cmd == 'split_contigs':
-            if not is_semibin2:
-                logger.error('Command `split_contigs` is not available in SemiBin1. Please upgrade to SemiBin2.')
-            oname = split_contigs(logger, args.contig_fasta, output=args.output, min_length=args.min_length)
+            oname = split_contigs(logger, args.contig_fasta, output=args.output, min_length=args.min_len)
             logger.info(f'Split contigs written to {oname}')
 
         else:
-            logger.error(f'Could not handle subcommand {arg.cmd}')
+            logger.error(f'Could not handle subcommand {args.cmd}')
             sys.exit(1)
 
         print('''If you find SemiBin useful, please cite:
@@ -1732,17 +1720,6 @@ def main2(args=None, is_semibin2=True, with_methylation=False):
 ''')
 
 
-def main1(args=None):
-    main2(args, is_semibin2=False)
-
-def main_no_version(args=None):
-    from time import sleep
-    print("Using `SemiBin` is deprecated. Please upgrade to `SemiBin2` or explicitly call `SemiBin1` if you want the older version")
-    print("See https://semibin.readthedocs.io/en/latest/semibin2/")
-    for i in range(5):
-        print(f"Will continue as SemiBin1 in {5-i} seconds...")
-        sleep(1)
-    main1(args)
 
 def main3():
     main2(with_methylation=True)

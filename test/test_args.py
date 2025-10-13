@@ -12,7 +12,7 @@ def test_parse_args():
             is_semibin2=False, with_methylation=False
             )
     validate_normalize_args(logging, args)
-    assert args.training_type == 'semi'
+    assert args.training_type == 'self'
     assert args.sequencing_type == 'short_read'
 
 def test_sequencing_type():
@@ -25,7 +25,7 @@ def test_sequencing_type():
             is_semibin2=False, with_methylation=False
             )
     validate_normalize_args(logging, args)
-    assert args.training_type == 'semi'
+    assert args.training_type == 'self'
     assert args.sequencing_type == 'long_read'
 
 def test_parse_args_backcompat():
@@ -69,7 +69,7 @@ def test_parse_args_backcompat():
         assert args.mode == 'several'
 
     args = parse_args(
-        ['train', '--mode=single',
+        ['train_semi', '--train-from-many',
              '--data', 'test/train_data/data.csv',
              '--data-split', 'test/train_data/data_split.csv',
              '-c', 'test/train_data/cannot.txt',
@@ -78,10 +78,10 @@ def test_parse_args_backcompat():
              '-p', '1'],
         is_semibin2=False, with_methylation=False)
     validate_normalize_args(logging, args)
-    assert args.mode == 'single'
+    assert args.mode == 'several'
 
     args = parse_args(
-        ['train',
+        ['train_semi',
              '--data', 'test/train_data/data.csv',
              '--data-split', 'test/train_data/data_split.csv',
              '-c', 'test/train_data/cannot.txt',
@@ -130,6 +130,7 @@ def test_quiet_before_or_after():
             '-b', './test/single_sample_data/input.sorted.bam',
             '-o', 'output'],
             is_semibin2=False, with_methylation=False)
+            '-o', 'output'])
     assert args_after.quiet
     assert args == args_after
 
@@ -221,7 +222,6 @@ def test_write_prerecluster():
                 is_semibin2=is_semibin2, with_methylation=False)
         validate_normalize_args(logging, args)
         assert not args.write_pre_reclustering_bins
-
         args = parse_args(
                 ['multi_easy_bin',
                     '--semi-supervised',

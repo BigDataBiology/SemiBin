@@ -1,11 +1,13 @@
 import torch
-from torch.nn import Linear, ReLU, LeakyReLU
+import pickle
+from torch.nn import Linear, LeakyReLU
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 import os
-from .utils import cal_num_bins
+from .markers import estimate_seeds
 from torch.optim import lr_scheduler
 import sys
+
 
 class Semi_encoding_multiple(torch.nn.Module):
     """
@@ -46,6 +48,13 @@ class Semi_encoding_multiple(torch.nn.Module):
 
     def embedding(self, input):
         return self.encoder1(input)
+
+    def save_with_params_to(self, path):
+        torch.save({
+                    'model_name': 'Semi_encoding_multiple',
+                    'model_state_dict': self.state_dict(),
+                    'params': [self.encoder1[0].in_features],
+                    }, path)
 
 
 class Semi_encoding_single(torch.nn.Module):
@@ -88,6 +97,51 @@ class Semi_encoding_single(torch.nn.Module):
     def embedding(self, input):
         return self.encoder1(input)
 
+    def save_with_params_to(self, path):
+        torch.save({
+                    'model_name': 'Semi_encoding_single',
+                    'model_state_dict': self.state_dict(),
+                    'params': [self.encoder1[0].in_features],
+                    }, path)
+
+
+def model_load(path, device, warn_on_old_format=True):
+    '''Load model from path'''
+    try:
+        saved = torch.load(path, map_location=device, weights_only=True)
+    except pickle.UnpicklingError:
+        import logging
+        from time import sleep
+        logger = logging.getLogger("SemiBin2")
+        if warn_on_old_format:
+            logger.warning('There was an error loading the model.')
+            logger.warning('This happens if the model was saved by and older version of SemiBin2 as that approach is not compatible with newer versions of PyTorch.')
+            logger.warning('We will retry loading the model with the older method, but this may cause errors.')
+            new_path = (path.replace('.h5', '.pt') if path.endswith('.h5') else path + '.pt')
+            logger.warning('If the model does load, you can resave it in the new format using the following command:\n'
+                            f'\n\tSemiBin2 update_model --model {path} --output {new_path}'
+                           '\n')
+            logger.warning('Then, you can use the new model file in future runs with no warnings (and future-proof).')
+        logger.warning('Alright, let\'s try loading the model now using the older approach...')
+        sleep(.5)
+        try:
+            if device == torch.device('cpu'):
+                model = torch.load(path, map_location=torch.device('cpu'))
+            else:
+                model = torch.load(path).to(device)
+        except Exception as e:
+            logger.error(f'Error loading model: {e}')
+            logger.error('Your model file is likely incompatible with the current version of PyTorch.')
+            logger.error('Please retrain your model or use an older version of PyTorch to convert it.')
+            sys.exit(1)
+        return model
+    if saved['model_name'] == 'Semi_encoding_single':
+        model = Semi_encoding_single(saved['params'][0])
+    elif saved['model_name'] == 'Semi_encoding_multiple':
+        model = Semi_encoding_multiple(saved['params'][0])
+    model.load_state_dict(saved['model_state_dict'])
+    return model.to(device)
+
 
 def loss_function(embedding1, embedding2, label, raw_x_1,
                   raw_x_2, decoder_x_1, decoder_x_2, is_label=True):
@@ -115,8 +169,8 @@ def loss_function(embedding1, embedding2, label, raw_x_1,
 
 class feature_Dataset(Dataset):
     def __init__(self, embedding1, embedding2, labels):
-        self.embedding1= embedding1
-        self.embedding2= embedding2
+        self.embedding1 = embedding1
+        self.embedding2 = embedding2
         assert len(embedding1) == len(embedding2)
         assert len(embedding1) == len(labels)
         self.labels = labels
@@ -130,8 +184,8 @@ class feature_Dataset(Dataset):
 
 class unsupervised_feature_Dataset(Dataset):
     def __init__(self, embedding1, embedding2):
-        self.embedding1= embedding1
-        self.embedding2= embedding2
+        self.embedding1 = embedding1
+        self.embedding2 = embedding2
         assert len(embedding1) == len(embedding2)
 
     def __getitem__(self, item):
@@ -141,7 +195,7 @@ class unsupervised_feature_Dataset(Dataset):
         return len(self.embedding1)
 
 
-def train(logger, out, contig_fastas, binned_lengths, datas, data_splits, cannot_links, is_combined=True,
+def train_semi(logger, out, contig_fastas, binned_lengths, datas, data_splits, cannot_links, is_combined=True,
           batchsize=2048, epoches=20, device=None, num_process = 8, mode = 'single', orf_finder = 'prodigal',
           prodigal_output_faa=None):
     """
@@ -177,7 +231,7 @@ def train(logger, out, contig_fastas, binned_lengths, datas, data_splits, cannot
 
     for epoch in tqdm(range(epoches)):
         for data_index in range(len(contig_fastas)):
-            seed = cal_num_bins(
+            seed = estimate_seeds(
                 contig_fastas[data_index],
                 binned_length=binned_lengths[data_index],
                 num_process=num_process,
@@ -219,16 +273,13 @@ def train(logger, out, contig_fastas, binned_lengths, datas, data_splits, cannot
                 train_data_input = train_data[:, 0:136]
                 train_data_split_input = train_data_must_link
             else:
-                if norm_abundance(train_data, features_data):
-                    train_data_kmer  = train_data[:, :136]
-                    train_data_depth = train_data[:, 136:]
-                    train_data_depth = normalize(train_data_depth, axis=1, norm='l1')
-                    train_data_input = np.concatenate((train_data_kmer, train_data_depth), axis=1)
+                if norm_abundance(train_data):
+                    norm = np.sum(train_data, axis=0)
+                    train_data = train_data / norm
+                    train_data_must_link = train_data_must_link / norm
+                    train_data_input = normalize(train_data, axis=1, norm='l1')
+                    train_data_split_input = normalize(train_data_must_link, axis=1, norm='l1')
 
-                    train_data_split_kmer = train_data_must_link[:, :136]
-                    train_data_split_depth = train_data_must_link[:, 136:]
-                    train_data_split_depth = normalize(train_data_split_depth, axis=1, norm='l1')
-                    train_data_split_input = np.concatenate((train_data_split_kmer, train_data_split_depth), axis = 1)
                 else:
                     train_data_input = train_data
                     train_data_split_input = train_data_must_link
@@ -317,9 +368,8 @@ def train(logger, out, contig_fastas, binned_lengths, datas, data_splits, cannot
                                      decoder2.double(), is_label=False).to(device)
                 loss.backward()
                 optimizer.step()
+
         scheduler.step()
 
     logger.info('Training finished.')
-    torch.save(model, os.path.join(out, 'model.h5'))
-
     return model

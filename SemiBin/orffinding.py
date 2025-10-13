@@ -4,11 +4,12 @@ import contextlib
 import sys
 import shutil
 import logging
-from .naive_orffinder import run_naiveorf
 
 
 def run_prodigal(fasta_path, num_process, output):
     from .fasta import fasta_iter
+    logger = logging.getLogger('SemiBin2')
+    logger.info('Running prodigal')
 
     contigs = {}
     for h, seq in fasta_iter(fasta_path):
@@ -35,6 +36,7 @@ def run_prodigal(fasta_path, num_process, output):
 
     try:
         process = []
+        logger.debug(f'Running prodigal on {next_ix} FASTA files')
         for index in range(next_ix):
             with open(os.path.join(output, f'contig_{index}_log.txt') + '.out', 'w') as prodigal_out_log:
                 p = subprocess.Popen(
@@ -51,10 +53,13 @@ def run_prodigal(fasta_path, num_process, output):
         for p in process:
             p.wait()
 
-    except:
+    except subprocess.CalledProcessError as e:
         sys.stderr.write(
-            f"Error: Running prodigal fail\n")
+            f"Error: Running prodigal fail: {e}\n")
         sys.exit(1)
+
+    else:
+        logger.debug('All prodigal processes finished successfully')
 
     contig_output = os.path.join(output, 'contigs.faa')
     with open(contig_output, 'w') as f:
@@ -80,11 +85,12 @@ def run_fraggenescan(fasta_path, num_process, output):
                  ],
                 stdout=frag_out_log,
             )
-    except:
+    except Exception as e:
         sys.stderr.write(
-            f"Error: Running fraggenescan failed\n")
+                f"Error: Running fraggenescan failed (error: {e})\n")
         sys.exit(1)
     return contig_output + '.faa'
+
 
 def run_orffinder(fasta_path, num_process, tdir, orf_finder, prodigal_output_faa):
     '''Run ORF finder (depending on the value or the orf_finder argument'''
@@ -95,7 +101,13 @@ def run_orffinder(fasta_path, num_process, tdir, orf_finder, prodigal_output_faa
     elif orf_finder == 'prodigal':
         return run_prodigal(fasta_path, num_process, tdir)
     elif orf_finder == 'fast-naive':
-        logger = logging.getLogger('SemiBin')
+        from .naive_orffinder import run_naiveorf
+        logger = logging.getLogger('SemiBin2')
         logger.info('Running naive ORF finder')
         return run_naiveorf(fasta_path, num_process, tdir)
-    return run_fraggenescan(fasta_path, num_process, tdir)
+    elif orf_finder == 'fraggenescan':
+        return run_fraggenescan(fasta_path, num_process, tdir)
+    else:
+        sys.stderr.write(
+            f"Error: Unknown ORF finder {orf_finder}\n")
+        sys.exit(1)

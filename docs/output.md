@@ -4,7 +4,7 @@
 
 * `output_recluster_bins`: directory of all reconstructed bins after reclustering.
 * `output_bins`: directory of all reconstructed bins before reclustering.
-* `model.h5`: saved semi-supervised deep learning model. 
+* `model.pt`: saved semi-supervised deep learning model.
 * `data.csv/data_split.csv`: data used in the training of deep learning model.
 * `*_data_cov.csv/*_data_split_cov.csv`: coverage data generated from depth file.
 * `cannot/cannot.txt`: cannot-link file used in the training.

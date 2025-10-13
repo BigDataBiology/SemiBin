@@ -9,6 +9,3 @@ def test_CAT_script():
     assert len(cannot_link_species) == 1
     assert len(cannot_link_genus) == 257
 
-if __name__ == '__main__':
-    test_CAT_script()
-

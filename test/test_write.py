@@ -34,8 +34,21 @@ def test_possibly_compressed_write(tmp_path):
             assert gzip.open(path, 'rt').read() == file_content
         elif compression == "bz2":
             assert bz2.open(path, 'rt').read() == file_content
-        elif compression == "xz":
-            assert lzma.open(path, 'rt').read() == file_content
         else:
-            raise ValueError(f"Unknown compression: {compression}")
+            assert compression == "xz"
+            assert lzma.open(path, 'rt').read() == file_content
 
+def test_atomic_write(tmp_path):
+    from SemiBin.atomicwrite import atomic_write
+    path = tmp_path / "test.txt"
+    with atomic_write(str(path), mode='wt') as f:
+        f.write("Hello World!")
+    assert path.read_text() == "Hello World!"
+
+    try:
+        with atomic_write(str(path), mode='wt', overwrite=True) as f:
+            f.write("Hello World!")
+            raise NotImplementedError
+    except NotImplementedError:
+        pass
+    assert path.read_text() == "Hello World!"

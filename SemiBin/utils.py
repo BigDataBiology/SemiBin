@@ -1,7 +1,6 @@
 import os
 import subprocess
 import multiprocessing
-import tempfile
 import sys
 import random
 import contextlib
@@ -34,8 +33,7 @@ def possibly_compressed_write(filename):
             g.close()
 
 def check_training_type(logger, args):
-    if args.is_semibin2:
-        args.training_type = 'auto'
+    args.training_type = 'auto'
 
     if args.training_type == 'semi' and args.self_supervised:
         logger.error('Both --training-type=semi and --self-supervised arguments used')
@@ -46,24 +44,14 @@ def check_training_type(logger, args):
         sys.exit(1)
 
     if not args.self_supervised and not args.semi_supervised:
-        if args.training_type == 'self' or args.is_semibin2:
-            logger.info(
-                f"SemiBin will run in self supervised mode")
-            args.training_type = 'self'
-        else:
-            logger.info(
-                f"SemiBin will run in semi supervised mode")
-            args.training_type = 'semi'
+        logger.debug(
+            f"SemiBin will run in self supervised mode")
+        args.training_type = 'self'
 
     elif args.self_supervised and args.semi_supervised:
-        if args.is_semibin2:
-            logger.warning(
-                f'You chose both semi-supervised and self-supervised learning! SemiBin will use self-supervised learning')
-            args.training_type = 'self'
-        else:
-            logger.warning(
-                f'You chose both semi-supervised and self-supervised learning! SemiBin will use semi-supervised learning (this may change in the future)')
-            args.training_type = 'semi'
+        logger.warning(
+            f'You chose both semi-supervised and self-supervised learning! SemiBin will use self-supervised learning')
+        args.training_type = 'self'
 
     elif args.self_supervised:
         args.training_type = 'self'
@@ -79,7 +67,7 @@ def validate_normalize_args(logger, args):
         nonlocal exit_with_error
         if f is not None:
             if not os.path.exists(f):
-                sys.stderr.write(
+                logger.error(
                     f"Error: Expected file '{f}' does not exist\n")
                 exit_with_error = True
 
@@ -98,23 +86,39 @@ def validate_normalize_args(logger, args):
         os.environ['NUMEXPR_NUM_THREADS'] = str(args.num_process)
         os.environ['NUMEXPR_MAX_THREADS'] = str(args.num_process)
         os.environ['OMP_NUM_THREADS'] = str(args.num_process)
+        os.environ['OPENBLAS_NUM_THREADS'] = str(args.num_process)
+        os.environ['MKL_NUM_THREADS'] = str(args.num_process)
+        os.environ['VECLIB_MAXIMUM_THREADS'] = str(args.num_process)
 
+    if args.cmd in ['train', 'train_semi']:
+        args.cmd = 'train_semi'
+        args.training_type = 'semi'
 
-    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train', 'bin']:
+    if args.cmd == 'train_self':
+        args.training_type = 'self'
+
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train_semi', 'bin']:
         if args.orf_finder not in ['prodigal', 'fraggenescan', 'fast-naive']:
-            sys.stderr.write(
+            logger.error(
                 f"Error: SemiBin only supports 'prodigal'/'fraggenescan'/'fast-naive' as the ORF finder (--orf-finder option).\n")
             exit_with_error = True
         if args.orf_finder == 'fraggenescan':
-            logger.warning('Using FragGeneScan (--orf-finder=fraggenescan) as an ORF finder is considered deprecated and will be removed in a future version of SemiBin. Please use fast-naive or prodigal instead.')
+            from time import sleep
+            logger.warning('Using FragGeneScan (--orf-finder=fraggenescan) as an ORF finder is deprecated and will be removed in the next version of SemiBin. '
+                        'Please use fast-naive (the default) or prodigal instead.')
+            if sys.stdout.isatty():
+                for i in range(5, 0, -1):
+                    print(f'SemiBin will continue in {i} seconds...', end='\r')
+                    sleep(1)
         expect_file(args.prodigal_output_faa)
         if args.prodigal_output_faa is not None:
+            logger.warning('Using --prodigal-output-faa is deprecated and will be removed in a future version of SemiBin')
             args.orf_finder = 'prodigal'
 
     if hasattr(args, 'engine'):
         args.engine = args.engine.lower()
         if args.engine not in ['auto', 'gpu', 'cpu']:
-            sys.stderr.write(
+            logger.error(
                 f"Error: Argument '--engine' needs to be one of auto[default]/gpu/cpu.\n")
             exit_with_error = True
 
@@ -126,7 +130,7 @@ def validate_normalize_args(logger, args):
 
     if args.cmd in ['generate_sequence_features_single', 'generate_sequence_features_multi', 'single_easy_bin', 'multi_easy_bin']:
         if args.bams and args.abundances:
-            sys.stderr.write(
+            logger.error(
                 f"Error: can not use BAM files and abundance files at the same time.\n")
             exit_with_error = True
 
@@ -144,25 +148,25 @@ def validate_normalize_args(logger, args):
         if args.abundances:
             expect_file_list(args.abundances)
 
-    if args.cmd in ['train', 'train_semi', 'train_self']:
+    if args.cmd in ['train_semi', 'train_self']:
         if not args.train_from_many:
             if len(args.data) > 1:
-                sys.stderr.write(
+                logger.error(
                     f"Error: Expected one data.csv file with single mode.\n")
                 exit_with_error = True
 
             if len(args.data_split) > 1:
-                sys.stderr.write(
+                logger.error(
                     f"Error: Expected one data_split.csv file with single mode.\n")
                 exit_with_error = True
-            if args.cmd in ['train_semi', 'train']:
+            if args.cmd == 'train_semi':
                 if len(args.contig_fasta) > 1:
-                    sys.stderr.write(
+                    logger.error(
                         f"Error: Expected one fasta file with single mode.\n")
                     exit_with_error = True
 
                 if len(args.cannot_link) > 1:
-                    sys.stderr.write(
+                    logger_error(
                         f"Error: Expected one cannot.txt file with single mode.\n")
                     exit_with_error = True
                 expect_file(args.cannot_link[0])
@@ -172,7 +176,7 @@ def validate_normalize_args(logger, args):
             expect_file(args.data_split[0])
 
         else:
-            if args.cmd in ['train_semi', 'train']:
+            if args.cmd == 'train_semi':
                 assert len(args.contig_fasta) == len(args.data) == len(args.data_split) == len(args.cannot_link), 'Must input same number of fasta, data, data_split, cannot files!'
                 expect_file_list(args.cannot_link)
                 expect_file_list(args.contig_fasta)
@@ -188,28 +192,31 @@ def validate_normalize_args(logger, args):
         elif args.sequencing_type.lower() in ['long', 'long-read', 'long_reads', 'long-reads', 'long_read']:
             args.sequencing_type = 'long_read'
         else:
-            sys.stderr.write(
+            logger.error(
                 f"Error: Did not understand sequencing_type argument '{args.sequencing_type}' (should be short_reads or long_reads).\n")
             exit_with_error = True
         logger.info(f'Binning for {args.sequencing_type}')
 
     if args.cmd == 'bin':
         if args.environment is None and args.model_path is None:
-            sys.stderr.write(
+            logger.error(
                 f"Error: Please choose input a model path or use our built-in model for [human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/chicken_caecum/global].\n")
             exit_with_error = True
         if args.environment is not None and args.model_path is not None:
-            sys.stderr.write(
-                f"Error: Please choose input a model path or use our built-in model for [human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/chicken_caecum/global].\n")
+            logger.error(
+                f"Error: You cannot use both an explicit model path and an environment.\n")
             exit_with_error = True
-        if args.environment is not None:
-            # This triggers checking that the environment is valid
-            get_model_path(args.environment)
         if args.model_path is not None:
             expect_file(args.model_path)
         expect_file(args.contig_fasta)
         expect_file(args.data)
 
+    if getattr(args, 'environment', None) is not None:
+        try:
+            get_model_path(args.environment)
+        except KeyError as e:
+            logger.error(e.args[0])
+            exit_with_error = True
     if args.cmd == 'single_easy_bin':
         if args.GTDB_reference is not None:
             expect_file(args.GTDB_reference)
@@ -219,9 +226,6 @@ def validate_normalize_args(logger, args):
         if args.abundances:
             expect_file_list(args.abundances)
 
-        if args.environment is not None:
-            # This triggers checking that the environment is valid
-            get_model_path(args.environment)
         else:
             check_training_type(logger, args)
 
@@ -236,7 +240,7 @@ def validate_normalize_args(logger, args):
             expect_file_list(args.abundances)
 
         if args.training_type not in ['semi', 'self']:
-            sys.stderr.write(
+            logger.error(
                 f"Error: You need to specify the training algorithm in semi/self.\n")
             exit_with_error = True
 
@@ -246,18 +250,19 @@ def validate_normalize_args(logger, args):
         for contig in args.contig_fasta:
             contig_name.append(os.path.basename(contig).split('.')[0])
         if len(set(contig_name)) != len(contig_name):
-            sys.stderr.write(
+            logger.error(
                 f"Error: Make sure that every contig file have different names.\n")
             exit_with_error = True
 
+
     if getattr(args, 'train_from_many', False):
         args.mode = 'several'
-    elif args.cmd in ['train', 'train_semi', 'train_self'] and not hasattr(args, 'mode'):
+    elif args.cmd in ['train_semi', 'train_self'] and not hasattr(args, 'mode'):
         args.mode = 'single'
 
     if getattr(args, 'write_pre_reclustering_bins', False) and \
             not getattr(args, 'recluster', True):
-        sys.stderr.write(
+        logger.error(
             f"Error: Cannot use --write-pre-reclustering-bins with --no-recluster.\n")
         exit_with_error = True
 
@@ -343,71 +348,6 @@ def generate_cannot_link(mmseqs_path, namelist, num_threshold, output,sample):
             out_cannot_link.write(f'{cannot[0]},{cannot[1]}\n')
 
 
-normalize_marker_trans__dict = {
-    'TIGR00388': 'TIGR00389',
-    'TIGR00471': 'TIGR00472',
-    'TIGR00408': 'TIGR00409',
-    'TIGR02386': 'TIGR02387',
-}
-
-def get_marker(hmmout, fasta_path=None, min_contig_len=None, multi_mode=False, orf_finder = None, contig_to_marker = False):
-    '''Parse HMM output file and return markers
-    '''
-    import pandas as pd
-    data = pd.read_table(hmmout, sep=r'\s+',  comment='#', header=None,
-                         usecols=(0,3,5,15,16), names=['orf', 'gene', 'qlen', 'qstart', 'qend'])
-    if not len(data):
-        return []
-    data['gene'] = data['gene'].map(lambda m: normalize_marker_trans__dict.get(m , m))
-    qlen = data[['gene','qlen']].drop_duplicates().set_index('gene')['qlen']
-
-    def contig_name(ell):
-        if orf_finder in ['prodigal', 'fast-naive']:
-            contig,_ = ell.rsplit( '_', 1)
-        else:
-            contig,_,_,_ = ell.rsplit( '_', 3)
-        return contig
-
-    data = data.query('(qend - qstart) / qlen > 0.4').copy()
-    data['contig'] = data['orf'].map(contig_name)
-    if min_contig_len is not None:
-        contig_len = {h:len(seq) for h,seq in fasta_iter(fasta_path)}
-        data = data[data['contig'].map(lambda c: contig_len[c] >= min_contig_len)]
-    data = data.drop_duplicates(['gene', 'contig'])
-
-    if contig_to_marker:
-        from collections import defaultdict
-        marker = data['gene'].values
-        contig = data['contig'].values
-        sequence2markers = defaultdict(list)
-        for m, c in zip(marker, contig):
-            sequence2markers[c].append(m)
-        return sequence2markers
-    else:
-        def extract_seeds(vs, sel):
-            vs = vs.sort_values()
-            median = vs.iloc[len(vs) //2]
-
-            # the original version broke ties by picking the shortest query, so we
-            # replicate that here:
-            candidates = vs.index[vs == median]
-            c = qlen.loc[candidates].idxmin()
-            r = list(sel.query('gene == @c')['contig'])
-            r.sort()
-            return r
-
-
-        if multi_mode:
-            data['bin'] = data['orf'].str.split(pat='.', n=0, expand=True)[0]
-            counts = data.groupby(['bin', 'gene'])['orf'].count()
-            res = {}
-            for b,vs in counts.groupby(level=0):
-                cs = extract_seeds(vs.droplevel(0), data.query('bin == @b', local_dict={'b':b}))
-                res[b] = [c.split('.',1)[1] for c in cs]
-            return res
-        else:
-            counts = data.groupby('gene')['orf'].count()
-            return extract_seeds(counts, data)
 
 def maybe_uncompress(fafile, tdir):
     if fafile.endswith('.gz') or \
@@ -416,56 +356,10 @@ def maybe_uncompress(fafile, tdir):
         oname = f'{tdir}/expanded.fa'
         with open(oname, 'wt') as out:
             for header, seq in fasta_iter(fafile):
-                    out.write(f'>{header}\n{seq}\n')
+                out.write(f'>{header}\n{seq}\n')
         return oname
     return fafile
 
-
-def cal_num_bins(fasta_path, binned_length, num_process, multi_mode=False, output = None, orf_finder = 'prodigal', prodigal_output_faa=None):
-    '''Estimate number of bins from a FASTA file
-
-    Parameters
-    fasta_path: path
-    binned_length: int (minimal contig length)
-    num_process: int (number of CPUs to use)
-    multi_mode: bool, optional (if True, treat input as resulting from concatenating multiple files)
-    '''
-    from .orffinding import run_orffinder
-    with tempfile.TemporaryDirectory() as tdir:
-        fasta_path = maybe_uncompress(fasta_path, tdir)
-        if output is not None:
-            if os.path.exists(os.path.join(output, 'markers.hmmout')):
-                return get_marker(os.path.join(output, 'markers.hmmout'), fasta_path, binned_length, multi_mode, orf_finder=orf_finder)
-            else:
-                os.makedirs(output, exist_ok=True)
-                target_dir = output
-        else:
-            target_dir = tdir
-
-        contig_output = run_orffinder(fasta_path, num_process, tdir, orf_finder, prodigal_output_faa=prodigal_output_faa)
-
-        hmm_output = os.path.join(target_dir, 'markers.hmmout')
-        try:
-            with open(os.path.join(tdir, 'markers.hmmout.out'), 'w') as hmm_out_log:
-                subprocess.check_call(
-                    ['hmmsearch',
-                     '--domtblout',
-                     hmm_output,
-                     '--cut_tc',
-                     '--cpu', str(num_process),
-                     os.path.split(__file__)[0] + '/marker.hmm',
-                     contig_output,
-                     ],
-                    stdout=hmm_out_log,
-                )
-        except:
-            if os.path.exists(hmm_output):
-                os.remove(hmm_output)
-            sys.stderr.write(
-                f"Error: Running hmmsearch fail\n")
-            sys.exit(1)
-
-        return get_marker(hmm_output, fasta_path, binned_length, multi_mode, orf_finder=orf_finder)
 
 
 def write_bins(namelist, contig_labels, output, contig_seqs,
@@ -516,15 +410,15 @@ def set_random_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
 
-def process_fasta(fasta_path, ratio):
+def load_fasta(fasta_path: str, ratio: float):
     """
     Returns
 
-    binned_short: whether to include short contigs
+    computed_min_length: minimum length of contigs (1000 or 2500, depending on the ratio)
     must_link_threshold: threshold to break up contigs
     contigs: dictionary ID -> contig sequence
     """
-    whole_contig_bp = 0
+    total_bps = 0
     contig_bp_2500 = 0
     contig_length_list = []
     contig_dict = {}
@@ -533,14 +427,19 @@ def process_fasta(fasta_path, ratio):
         if 1000 <= len(seq) <= 2500:
             contig_bp_2500 += len(seq)
         contig_length_list.append(len(seq))
-        whole_contig_bp += len(seq)
+        total_bps += len(seq)
         contig_dict[h] = seq
 
-    binned_short = contig_bp_2500 / whole_contig_bp < ratio
+    computed_min_length = (
+                1000
+                if contig_bp_2500 / total_bps < ratio
+                else 2500)
     must_link_threshold = get_must_link_threshold(contig_length_list)
     if not contig_dict:
+        import logging
+        logger = logging.getLogger('SemiBin2')
         logger.warning(f'No contigs in {fasta_path}')
-    return binned_short, must_link_threshold, contig_dict
+    return computed_min_length, must_link_threshold, contig_dict
 
 
 def split_data(data, sample, separator, is_combined = True):
@@ -579,11 +478,11 @@ def get_model_path(env : str) -> str:
             'global',
             ]
     if envn in known_environments:
+        # From Python 3.9, we can use importlib.resources
         return os.path.join(os.path.split(__file__)[0], 'models', f'{envn}_model.pt')
     else:
-        sys.stderr.write(
-            f"Error: Expected environment '{env}' does not exist (known ones are {', '.join(known_environments)})\n")
-        sys.exit(1)
+        raise KeyError(
+                f"Error: Unknown environment '{env}' does not exist (known ones are {', '.join(known_environments)})")
 
 def concatenate_fasta(fasta_files, min_length, output, separator, output_compression='none'):
     """
@@ -621,11 +520,26 @@ def n50_l50(sizes):
     return n50, l50+1
 
 
-def extract_bams(bams, contig_fasta : str, num_process : int, odir : str): # bams : list[str] is not available on Python 3.7
+def maybe_crams2bams(bams, contig_fasta : str, num_process : int, odir : str): # bams : list[str] is not available on Python 3.7
     '''
-    extract_bams converts CRAM to BAM
+    maybe_crams2bams converts CRAM to BAM
+
+    Parameters
+    ----------
+    bams : list of str
+        List of BAM/CRAM files
+    contig_fasta : str
+        Contig FASTA file
+    num_process : int
+        Number of processes to use
+    odir : str
+        Output directory for extracted BAM files
+
+    Returns
+    -------
+    obams : list of str
+        List of BAM files (extracted if CRAM or original)
     '''
-    if bams is None: return None
     rs = []
     for bam in bams:
         if bam.endswith('.cram'):
@@ -643,12 +557,13 @@ def extract_bams(bams, contig_fasta : str, num_process : int, odir : str): # bam
             rs.append(bam)
     return rs
 
-def compute_min_length(min_length, fafile, ratio):
-    if min_length is not None: return min_length
-    binned_short ,_ ,_ = process_fasta(fafile, ratio)
-    if binned_short:
-        return 1000
-    return 2500
+
+def maybe_compute_min_length(min_length, fafile, ratio):
+    if min_length is not None:
+        return min_length
+    c_min_len, _, _ = load_fasta(fafile, ratio)
+    return c_min_len
+
 
 def norm_abundance(data, features):
     import numpy as np

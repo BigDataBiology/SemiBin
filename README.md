@@ -24,7 +24,8 @@ well as their benchmarking) are described in
 
 A tutorial of running SemiBin from scrath can be found here [SemiBin tutorial](https://github.com/BigDataBiology/SemiBin_tutorial_from_scratch).
 
-Installation:
+
+Installation with `conda`:
 
 ```bash
 conda create -n SemiBin
@@ -57,22 +58,31 @@ Please find more options and details below and [read the docs](https://semibin.r
 
 ## Advanced Installation
 
-SemiBin runs (and is continuously tested) on Python 3.7-3.12
+SemiBin runs (and is continuously tested) on Python 3.7-3.13
 
-### Bioconda
+### pixi
 
-The simplest mode is shown above.
-However, if you want to use SemiBin with GPU (which is faster if you have one available), you need to install PyTorch with GPU support:
+The current recommended way to install SemiBin with GPU-support is to use [pixi](https://pixi.sh/). Pixi will use the packages from conda-forge and bioconda to install SemiBin and its dependencies. See [the docs](https://semibin.readthedocs.io/en/latest/install/) for more details, but the basic idea is to create a `pixi.toml` file with the following content:
 
-```bash
-conda create -n SemiBin
-conda activate SemiBin
-conda install -c conda-forge -c bioconda semibin
-conda install -c pytorch -c nvidia pytorch pytorch-cuda=11.8
+```toml
+[project]
+authors = ["Luis Pedro Coelho <luis@luispedro.org>"]
+channels = ["conda-forge", "bioconda"]
+name = "semibin_install"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+semibin = ">=2.2.0,<3"
+pytorch-gpu = "*"
+
+[system-requirements]
+cuda = "12.0"
 ```
 
-_MacOS note_: **you can only install the CPU version of PyTorch in MacOS with `conda` and you need to install from source to take advantage of a GPU** (see [#72](https://github.com/BigDataBiology/SemiBin/issues/72)).
-For more information on how to install PyTorch, see [their documentation](https://pytorch.org/get-started/locally/).
+This will install SemiBin with GPU support, but it does require a CUDA-compatible GPU. Alternatively, you can install SemiBin in CPU-only mode by removing the `pytorch-gpu` and `cuda` lines.
 
 ### Source
 
@@ -91,14 +101,13 @@ conda install -c bioconda bedtools hmmer samtools
 Once the dependencies are installed, you can install SemiBin by running:
 
 ```bash
-python setup.py install
+pip install .
 ```
 
-Optional extra dependencies for running SemiBin1:
+Optional extra dependencies:
 
 - [MMseqs2](https://github.com/soedinglab/MMseqs2)
 - [Prodigal](https://github.com/hyattpd/Prodigal)
-- [FragGeneScan](https://sourceforge.net/projects/fraggenescan/)
 
 ## Examples of binning
 
@@ -110,12 +119,6 @@ For the details and examples of every SemiBin subcommand, please [read the docs]
 
 Since version 1.4, SemiBin proposes new algorithm (ensemble based DBSCAN algorithm) for binning assemblies from long reads. 
 To use it, you can used the subcommands `bin_long` or pass the option  `--sequencing-type=long_read` to the `single_easy_bin` or `multi_easy_bin` subcommands.
-
-## Self-supervised mode
-
-Since version 1.3, SemiBin supports completely self-supervised learning, which bypasses the need to annotate contigs with MMSeqs2.
-In benchmarks, self-supervised learning is both faster (4x faster; using only 11% of RAM at peak) and generates 8.3-21.5% more high-quality bins compared to the version tested in the [manuscript](https://www.nature.com/articles/s41467-022-29843-y)
-To use it, pass the option `--training-mode=self` to the `single_easy_bin` or `multi_easy_bin` subcommands.
 
 
 ## Easy single/co-assembly binning mode
@@ -184,7 +187,7 @@ For every contig, format of the name is `<sample_name>:<contig_name>`, where
 argument). _NOTE_: Make sure the sample names are unique and  the separator
 does not introduce confusion when splitting. For example:
 
-```bash
+```
 >S1:Contig_1
 AGATAATAAAGATAATAATA
 >S1:Contig_2
@@ -223,7 +226,7 @@ Strobealign-aemb is a fast abundance estimation method for metagenomic binning.
 As strobealign-aemb can not provide the mapping information for every position of the contig, so we can not run SemiBin2 with strobealign-aemb in binning modes where samples used smaller 5 and need to split the contigs to generate the must-link constratints. 
 
 
-1. split the fasta files 
+1. split the FASTA files to generate the must-link constraints
 ```bash
 python script/generate_split.py -c contig.fa -o output
 ```
@@ -241,7 +244,7 @@ SemiBin2 generate_sequence_features_single -i contig.fa -a *.txt -o output
 SemiBin2 generate_sequence_features_multi -i contig.fa -a *.txt -s : -o output
 SemiBin2 single_easy_bin -i contig.fa -a *.txt -o output
 SemiBin2 multi_easy_bin i contig.fa -a *.txt -s : -o output
-``` 
+```
 
 ## Output
 
@@ -253,7 +256,7 @@ The output folder will contain:
 4. Table with basic information about each bin
 5. Some intermediate files
 
-By default, reconstructed bins are in `output_recluster_bins` directory.
+By default, bins are in `output_bins` directory.
 
 For more details about the output, [read the
 docs](https://semibin.readthedocs.io/en/latest/output/).

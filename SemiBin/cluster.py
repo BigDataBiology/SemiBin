@@ -4,8 +4,8 @@ import math
 import shutil
 import tempfile
 
-from .utils import write_bins, cal_num_bins
-from .fasta import fasta_iter
+from .utils import write_bins
+from .markers import estimate_seeds
 
 # This is the default in the igraph package
 NR_INFOMAP_TRIALS = 10
@@ -106,8 +106,9 @@ def run_embed_infomap(logger, model, data, * ,
             train_data_kmer = train_data_input[:, 0:136]
             train_data_depth = train_data_input[:, 136:len(data.values[0])]
             from sklearn.preprocessing import normalize
-            train_data_depth = normalize(train_data_depth, axis=1, norm='l1')
-            train_data_input = np.concatenate((train_data_kmer, train_data_depth), axis=1)
+            norm = np.sum(train_data_input, axis=0)
+            train_data_input = train_data_input / norm
+            train_data_input = normalize(train_data_input, axis=1, norm='l1')
 
     depth = data.values[:, 136:len(data.values[0])].astype(np.float32)
     num_contigs = train_data_input.shape[0]
@@ -192,7 +193,17 @@ def run_embed_infomap(logger, model, data, * ,
     return embedding, contig_labels
 
 
-def recluster_bins(logger, data, *, n_sample, embedding, is_combined, contig_labels, minfasta, contig_dict, binned_length, orf_finder, num_process, random_seed):
+def recluster_bins(logger, data, *,
+                   n_sample,
+                   embedding,
+                   is_combined: bool,
+                   contig_labels,
+                   minfasta,
+                   contig_dict,
+                   binned_length,
+                   orf_finder,
+                   num_process,
+                   random_seed):
     from sklearn.cluster import KMeans
     import numpy as np
     from collections import defaultdict
@@ -224,7 +235,7 @@ def recluster_bins(logger, data, *, n_sample, embedding, is_combined, contig_lab
                 concat_out.write(f'>bin{bin_ix:06}.{h}\n')
                 concat_out.write(contig_dict[data.index[ix]] + '\n')
 
-        seeds = cal_num_bins(
+        seeds = estimate_seeds(
             cfasta,
             binned_length,
             num_process,
@@ -278,7 +289,6 @@ def cluster(logger, model, data, device, is_combined,
     max_node: max percentage of contigs considered in binning
     """
     import pandas as pd
-    import numpy as np
     embedding, contig_labels = run_embed_infomap(logger, model, data,
             device=device, max_edges=args.max_edges, max_node=args.max_node,
             is_combined=is_combined, n_sample=n_sample,
@@ -322,7 +332,12 @@ def cluster(logger, model, data, device, is_combined,
         logger.info(f'Number of bins prior to reclustering: {n_pre_bins}')
         logger.debug('Reclustering...')
 
-        contig_labels_reclustered = recluster_bins(logger,
+        if n_pre_bins == 0:
+            import numpy as np
+            logger.warning('No bins were created. Please check your input data.')
+            contig_labels_reclustered = np.full(len(data.index), fill_value=-1, dtype=int)
+        else:
+            contig_labels_reclustered = recluster_bins(logger,
                                                 data,
                                                 n_sample=n_sample,
                                                 embedding=embedding,
@@ -354,5 +369,4 @@ def cluster(logger, model, data, device, is_combined,
         pd.DataFrame({'contig': data.index, 'bin': contig_labels_reclustered}).to_csv(
             os.path.join(out, 'contig_bins.tsv'), index=False, sep='\t')
     logger.info('Binning finished')
-
 

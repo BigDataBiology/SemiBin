@@ -1,3 +1,23 @@
+Unreleased
+	* SemiBin1: removed
+
+Version 2.2.0 Mar 20 2025 by BigDataBiology
+	* logging: Use 'SemiBin2' as logger name
+	* SemiBin: Always log to file in DEBUG level and log command-line arguments
+	* coverage: Better error messages (#168)
+	* SemiBin: Print version number in logs
+	* SemiBin: Better method to save the model which is more compatible with
+	newer versions of PyTorch
+	* update_model: Add subcommand to convert old models to new format
+	* SemiBin: Respect the number of threads requested better (#140)
+	* SemiBin: Switch to pixi
+	* check_install: Prints out information on the GPU
+	* check_install: No error if MMseqs2 is not installed
+	* SemiBin: Remove `SemiBin` command. Only `SemiBin1` and `SemiBin2` are
+	available (and `SemiBin1` is deprecated)
+	* SemiBin: Deprecate `--prodigal-output-faa` argument
+	* SemiBin: Do not fail if no bins are produced (#170 & #173)
+
 Version 2.1.0 Mar 6 2024 by BigDataBiology
 	* SemiBin: Support running SemiBin with strobealign-aemb
 	(--abundance/-a)

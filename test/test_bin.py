@@ -35,7 +35,7 @@ def test_bin(tmpdir):
             output=odir,
             binned_length=1000,
             contig_dict=contig_dict,
-            model_path='test/bin_data/model.h5',
+            model_path='test/bin_data/model.pt',
             )
 
     assert len(os.listdir(f'{odir}/output_prerecluster_bins')) > 0
@@ -60,7 +60,7 @@ def test_bin(tmpdir):
             binned_length=1000,
             contig_dict=contig_dict,
             device='cpu',
-            model_path='test/bin_data/model.h5',
+            model_path='test/bin_data/model.pt',
             )
 
     assert len(os.listdir(f'{odir}/output_bins')) > 0
