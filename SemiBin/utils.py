@@ -653,7 +653,7 @@ def compute_min_length(min_length, fafile, ratio):
 def norm_abundance(data, features):
     import numpy as np
     n = data.shape[1] - len(features["kmer"]) - len(features["motif"])
-    assert n == features["depth"], "Depth should equal all_features - motifs - kmer!"
+    assert n == len(features["depth"]), "Depth should equal all_features - motifs - kmer!"
     print("features in norm_abundance: ", n)
     flag = False
 
@@ -661,7 +661,7 @@ def norm_abundance(data, features):
         flag = True
     else:
         if n >= 5:
-            if np.mean(np.sum(data[:, features["depth"]], axis=1)) > 2:
+            if np.mean(np.sum(data[features["depth"]].values, axis=1)) > 2:
                 flag = True
     return flag
 
@@ -728,7 +728,7 @@ def get_features(df):
         features_dict (dict): The dictionary to populate with feature indices.
     """
     features_dict = {
-        'kmer': list(range(136)),
+        'kmer': [str(i) for i in range(136)],
         'depth': [],
         'motif': [],
         'motif_present': []
@@ -736,12 +736,12 @@ def get_features(df):
     
     columns = df.columns
     # Populate 'depth' with indices of columns ending with 'bam_mean' or 'bam_var'
-    features_dict['depth'] = [i for i, column in enumerate(columns) if column.endswith('mean') or column.endswith('var')]
+    features_dict['depth'] = [column for i, column in enumerate(columns) if column.endswith('mean') or column.endswith('var')]
     
     # Populate 'motif' with indices of columns
-    features_dict['motif'] = [i for i, column in enumerate(columns) if column.startswith("median") and check_motif(column)]
+    features_dict['motif'] = [column for i, column in enumerate(columns) if column.startswith("median") and check_motif(column)]
     
-    features_dict['motif_present'] = [i for i, column in enumerate(columns) if column.startswith("motif_present") and check_motif(column)]
+    features_dict['motif_present'] = [column for i, column in enumerate(columns) if column.startswith("motif_present") and check_motif(column)]
     assert len(features_dict['depth'] + features_dict['motif'] + features_dict['motif_present']) == len(set(features_dict['depth'] + features_dict['motif'] + features_dict['motif_present']) )
     return features_dict
 

@@ -36,12 +36,12 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
     
     train_data = pd.read_csv(datapaths[0], index_col=0)
     features_data = get_features(train_data)
-    train_data = train_data.values
     
     features_data_split = get_features(pd.read_csv(data_splits[0], index_col=0))
     
     if not is_combined:
-        train_data = train_data[:, features_data['kmer'] + features_data['motif'] + features_data['motif_present']]
+        train_data = train_data[features_data['kmer'] + features_data['motif'] + features_data['motif_present']].values
+
 
     torch.set_num_threads(num_process)
 
@@ -75,39 +75,44 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
                         f"Error: training mode with several only used in single-sample binning!\n")
                     sys.exit(1)
 
-            train_data = data.values
-            train_data_motif_is_present_matrix = train_data[:, features_data["motif_present"]]
-            
-            train_data_split = data_split.values
-            train_data_split_motif_is_present_matrix = train_data_split[:, features_data_split["motif_present"]]
+
+            if features_data["motif"]:
+                train_data_motif_is_present_matrix = data[features_data["motif_present"]].values
+                train_data_split_motif_is_present_matrix = data_split[features_data_split["motif_present"]].values
 
             if not is_combined:
-                train_data = train_data[:, features_data['kmer'] + features_data['motif']]
-                train_data_split = train_data_split[:, features_data_split['kmer'] + features_data_split['motif']]
-                
-                if len(features_data["motif"]) > 0:
+                if not features_data["motif"]:
+                    train_data = data[features_data['kmer']].values
+                    train_data_split = data_split[features_data_split['kmer']].values
+                else:
+                    train_data = data[features_data['kmer'] + features_data["motif"]].values
+                    train_data_split = data_split[features_data_split['kmer'] + features_data["motif"]].values
                     train_data, train_data_split = normalize_kmer_motif_features(train_data, train_data_split)
+
                     train_data = np.concatenate((train_data, train_data_motif_is_present_matrix), axis = 1)
                     train_data_split = np.concatenate((train_data_split, train_data_split_motif_is_present_matrix), axis = 1)
                     
                 
             else:
                 if norm_abundance(train_data, features_data):
-                    train_data_kmer  = train_data[:, features_data['kmer'] + features_data['motif']]
-                    train_data_split_kmer  = train_data_split[:, features_data_split['kmer'] + features_data_split['motif']]
-                    
-                    if len(features_data["motif"]) > 0:
-                        train_data_kmer, train_data_split_kmer = normalize_kmer_motif_features(train_data_kmer, train_data_split_kmer)
-                        train_data_kmer = np.concatenate((train_data_kmer, train_data_motif_is_present_matrix), axis = 1)
-                        train_data_split_kmer = np.concatenate((train_data_split_kmer, train_data_split_motif_is_present_matrix), axis = 1)
-                    
-                    train_data_depth = train_data[:, features_data['depth']]
-                    train_data_depth = normalize(train_data_depth, axis=1, norm='l1')
-                    train_data = np.concatenate((train_data_kmer, train_data_depth), axis=1)
+                    if not features_data["motif"]:
+                        train_data_seq = data[features_data['kmer']].values
+                        train_data_split_seq = data_split[features_data_split['kmer']].values
+                    else:
+                        train_data_seq = data[features_data['kmer'] + features_data["motif"]].values
+                        train_data_split_seq = data_split[features_data_split['kmer'] + features_data["motif"]].values
+                        train_data_seq, train_data_split_seq = normalize_seq_motif_features(train_data_seq, train_data_split_seq)
 
-                    train_data_split_depth = train_data_split[:, features_data_split['depth']]
+                        train_data_seq = np.concatenate((train_data_seq, train_data_motif_is_present_matrix), axis = 1)
+                        train_data_split_seq = np.concatenate((train_data_split_seq, train_data_split_motif_is_present_matrix), axis = 1)
+                    
+                    train_data_depth = train_data[features_data['depth']].values
+                    train_data_depth = normalize(train_data_depth, axis=1, norm='l1')
+                    train_data = np.concatenate((train_data_seq, train_data_depth), axis=1)
+
+                    train_data_split_depth = train_data_split[features_data_split['depth']].values
                     train_data_split_depth = normalize(train_data_split_depth, axis=1, norm='l1')
-                    train_data_split = np.concatenate((train_data_split_kmer, train_data_split_depth), axis = 1)
+                    train_data_split = np.concatenate((train_data_split_seq, train_data_split_depth), axis = 1)
 
             
             data_length = len(train_data)
@@ -132,6 +137,7 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
             train_input_2 = np.concatenate(
                                     (train_data[indices2],
                                     train_data_split[1::2]))
+            # logger.info(f"train_input_1: {train_input_1.shape} | train_input_2: {train_input_2.shape}")
             
             train_labels = np.zeros(len(train_input_1), dtype=np.float32)
             train_labels[len(indices1):] = 1
@@ -143,6 +149,8 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
                 num_workers=0,
                 drop_last=True)
 
+            epoch_loss = 0
+            num_batches = 0
             for train_input1, train_input2, train_label in train_loader:
                 model.train()
                 train_input1 = train_input1.to(device=device, dtype=torch.float32)
@@ -156,6 +164,12 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
                 supervised_loss = supervised_loss.to(device)
                 supervised_loss.backward()
                 optimizer.step()
+
+                epoch_loss += supervised_loss.item()
+                num_batches += 1
+
+            avg_loss = epoch_loss / num_batches
+            logger.info(f"Epoch {epoch+1}, Data Index {data_index}: Average Loss = {avg_loss:.4f}")
         scheduler.step()
 
     logger.info('Training finished.')

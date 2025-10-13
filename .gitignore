@@ -1,3 +1,7 @@
+CLAUDE.md
+.micromamba
+.direnv
+.envrc
 /build/
 /dist/
 /SemiBin.egg-info/

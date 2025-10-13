@@ -96,12 +96,13 @@ def run_embed_infomap(logger, model, data, * ,
     from scipy import sparse
     import torch
     import numpy as np
-    from .utils import norm_abundance
+    from .utils import norm_abundance, get_features
 
+    features_data = get_features(data)
     train_data_input = data.values[:, 0:136] if not is_combined else data.values
 
     if is_combined:
-        if norm_abundance(train_data_input):
+        if norm_abundance(data, features_data):
             train_data_kmer = train_data_input[:, 0:136]
             train_data_depth = train_data_input[:, 136:len(data.values[0])]
             from sklearn.preprocessing import normalize

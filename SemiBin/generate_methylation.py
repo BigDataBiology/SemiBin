@@ -3,7 +3,8 @@
 import numpy as np
 from multiprocessing import get_context
 import multiprocessing
-from pymethylation_utils.utils import run_epimetheus
+# from pymethylation_utils.utils import run_epimetheus
+from epymetheus import epymetheus
 import os
 import sys
 import gzip
@@ -11,11 +12,61 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import re
-
-
-# os.environ['POLARS_MAX_THREADS'] = str(args.num_process)
 import polars as pl
 
+# BUG: Removes abundance columns!
+# def filter_motifs_by_prevalence(
+#     data: pl.DataFrame,
+#     data_split: pl.DataFrame,
+#     threshold: float = 0.85,
+#     present_prefix: str = "motif_present_",
+#     median_prefix: str = "median_",
+# ) -> tuple[pl.DataFrame, pl.DataFrame]:
+#     """
+#     Remove motifs that are not present in at least `threshold` proportion
+#     of contigs (measured on *data*) and drop the matching columns in both
+#     data frames, keeping them perfectly in sync.
+#     """
+#     # 1 ─────────────────────────────────────────────────────────────────────
+#     present_cols = [c for c in data.columns if c.startswith(present_prefix)]
+#     if not present_cols:
+#         raise ValueError("No motif_present_* columns found in ‘data’.")
+
+#     n_contigs = data.height
+#     motifs_to_drop = [
+#         c[len(present_prefix):]
+#         for c in present_cols
+#         if (data[c].sum() / n_contigs) < threshold
+#     ]
+#     if not motifs_to_drop:
+#         return data, data_split    # nothing to do
+
+#     # 2 ─────────────────────────────────────────────────────────────────────
+#     # build the raw candidate list only once
+#     candidate_cols = set()
+#     for m in motifs_to_drop:
+#         candidate_cols.update(
+#             {f"{present_prefix}{m}", f"{median_prefix}{m}"}
+#         )
+
+#     # columns that actually exist in each frame
+#     drop_in_data        = [c for c in candidate_cols if c in data.columns]
+#     drop_in_data_split  = [c for c in candidate_cols if c in data_split.columns]
+
+#     data_f       = data.drop(drop_in_data)
+#     data_split_f = data_split.drop(drop_in_data_split)
+
+#     # 3 ─────────────────────────────────────────────────────────────────────
+#     common_cols = [c for c in data.columns if c in data_split.columns and c not in candidate_cols]
+#     # (the comprehension preserves the original order)
+
+#     data_f       = data_f.select(common_cols)
+#     data_split_f = data_split_f.select(common_cols)
+
+#     # final guard
+#     assert data_f.columns == data_split_f.columns
+
+#     return data_f, data_split_f
 
 def read_fasta(path):
     # Check if the file exists
@@ -152,7 +203,7 @@ def create_split_pileup(
             ]
             f_out.write("\t".join(out_cols) + "\n")
         
-def check_files_exist(paths=[], directories=[]):
+def check_files_exist(paths=[]):
     """
     Checks if the given files and directories exist.
     
@@ -166,10 +217,6 @@ def check_files_exist(paths=[], directories=[]):
     for f in paths:
         if not os.path.exists(f):
             raise FileNotFoundError(f"The file {f} does not exist.")
-    
-    for d in directories:
-        if not os.path.exists(d):
-            raise FileNotFoundError(f"The directory {d} does not exist.")
 
 
 def sort_columns(cols):
@@ -216,31 +263,28 @@ def create_methylation_matrix(methylation_features):
 
 
 
-def check_data_file_args(logger, args):
-    if args.data and args.data_split:
+def check_data_file_args(logger, data, data_split, args):
+    if data and data_split:
         logger.info("Using provided data and data_split files.")
-    elif args.data or args.data_split:
+    elif data or data_split:
         logger.error("Missing data or data_split path. Either both should be provided or none.")
         sys.exit(1)
     else:
-        logger.info("Using default data and data_split files. Checking output directory.")
-        args.data = os.path.join(args.output, "data.csv")
-        args.data_split = os.path.join(args.output, "data_split.csv")
-    return args
+        logger.info("Using default data and data_split files. Checking output directory...")
+        data = os.path.join(args.output, "data.csv")
+        data_split = os.path.join(args.output, "data_split.csv")
+    return data, data_split
         
 
-def generate_methylation_features(logger, args):
-    logger.info("Adding Methylation Features")    
+def generate_methylation_features(logger, contig_fasta_path, pileup_path, args, data_path = None, data_split_path = None):
+    logger.info("Adding Methylation Features")
     logger.info("Loading data...")
     
     # Check for the data and data_split file
-    args = check_data_file_args(logger, args)
+    data_path, data_split_path = check_data_file_args(logger, data_path, data_split_path, args)
         
-        
-    paths = [args.pileup, args.data, args.data_split, args.contig_fasta]
-    directories = []
-
-    check_files_exist(paths, directories)
+    paths = [pileup_path, data_path, data_split_path, contig_fasta_path]
+    check_files_exist(paths)
     
     # check if output directory exists
     if not os.path.exists(args.output):
@@ -268,16 +312,16 @@ def generate_methylation_features(logger, args):
         sys.exit(1)
         
     # Load the data
-    data = pl.read_csv(args.data)
+    data = pl.read_csv(data_path)
     data = data\
         .rename({"": "contig"})
-    data_split = pl.read_csv(args.data_split)
+    data_split = pl.read_csv(data_split_path)
     data_split = data_split\
         .rename({"": "contig"})
     
     
     # Load the assembly file
-    assembly = read_fasta(args.contig_fasta)
+    assembly = read_fasta(contig_fasta_path)
 
     # create splitted assembly
     contigs_to_split = data_split.select("contig").to_pandas()
@@ -290,36 +334,37 @@ def generate_methylation_features(logger, args):
     )
 
     logger.info("Splitting pileup")
-    create_split_pileup(args.pileup, contig_lengths_for_splitting, os.path.join(args.output, "pileup_split.bed"))
+    create_split_pileup(pileup_path, contig_lengths_for_splitting, os.path.join(args.output, "pileup_split.bed"))
 
     number_of_motifs = len(motifs)
     logger.info(f"Motifs found (#{number_of_motifs}): {motifs}")
 
     # Run methylation utils
-    code = run_epimetheus(
-        args.pileup,
-        args.contig_fasta,
-        motifs,
-        args.num_process,
-        args.min_valid_read_coverage,
-        os.path.join(args.output,"contig_methylation.tsv")
+    logger.info("Running epimetheus for whole contigs")
+    epymetheus.methylation_pattern(
+        pileup = pileup_path,
+        assembly = contig_fasta_path,
+        output = os.path.join(args.output,"contig_methylation.tsv"),
+        motifs = motifs,
+        threads = args.num_process,
+        min_valid_read_coverage = args.min_valid_read_coverage,
+        batch_size = 1000,
+        min_valid_cov_to_diff_fraction = 0.80,
+        allow_assembly_pilup_mismatch = False,
     )
-    if code != 0:
-        logger.error("Error running methylation_utils for all contigs")
-        sys.exit(1)
-
     
-    code = run_epimetheus(
-        os.path.join(args.output, "pileup_split.bed"),
-        os.path.join(args.output, "contig_split.fasta"),
-        motifs,
-        args.num_process,
-        args.min_valid_read_coverage,
-        os.path.join(args.output,"contig_split_methylation.tsv")
+    logger.info("Running epimetheus for split contigs")
+    epymetheus.methylation_pattern(
+        pileup = os.path.join(args.output, "pileup_split.bed"),
+        assembly = os.path.join(args.output, "contig_split.fasta"),
+        output = os.path.join(args.output,"contig_split_methylation.tsv"),
+        motifs = motifs,
+        threads = args.num_process,
+        min_valid_read_coverage = args.min_valid_read_coverage,
+        batch_size = 1000,
+        min_valid_cov_to_diff_fraction = 0.80,
+        allow_assembly_pilup_mismatch = False,
     )
-    if code != 0:
-        logger.error("Error running methylation_utils for split contigs")
-        sys.exit(1)
 
     schema = {
         'contig': pl.String(),
@@ -342,8 +387,10 @@ def generate_methylation_features(logger, args):
     
 
     # Methylation number is median of mean methylation. Filtering is applied for too few motif observations.
-    contig_methylation = contig_methylation.filter((pl.col("N_motif_obs") * pl.col("mean_read_cov")) >= 40)
-    contig_split_methylation = contig_split_methylation.filter((pl.col("N_motif_obs") * pl.col("mean_read_cov")) >= 40)
+    # contig_methylation = contig_methylation.filter((pl.col("N_motif_obs") * pl.col("mean_read_cov")) >= 16)
+    # contig_split_methylation = contig_split_methylation.filter((pl.col("N_motif_obs") * pl.col("mean_read_cov")) >= 16)
+    contig_methylation = contig_methylation.filter((pl.col("N_motif_obs") >= args.min_motif_observations) & (pl.col("mean_read_cov") >= args.min_valid_read_coverage))
+    contig_split_methylation = contig_split_methylation.filter((pl.col("N_motif_obs") >= args.min_motif_observations) & (pl.col("mean_read_cov") >= args.min_valid_read_coverage))
     
     data_split_methylation_matrix = create_methylation_matrix(
         methylation_features = contig_split_methylation
@@ -375,12 +422,11 @@ def generate_methylation_features(logger, args):
  
     assert data_split_methylation_matrix.columns == data_methylation_matrix.columns, "methylation columns does not match between data_split_methylation_matrix and data_methylation_matrix"
 
-    data_split_cols = data_split.columns
-    data_cols = data.columns
-
-    data_cols_filtered = [col for col in data_cols if not "mean" in col]
-    data_cols_filtered = [col for col in data_cols_filtered if not "var" in col]
-    assert data_split_cols == data_cols_filtered, "data.csv and data_split.csv columns does not match after methylation addition"
+    # data, data_split = filter_motifs_by_prevalence(
+    #     data,
+    #     data_split,
+    #     threshold = 0.85
+    # )
     
     try:
         logger.info("Writing to data and data_split files...")
@@ -391,4 +437,47 @@ def generate_methylation_features(logger, args):
         sys.exit(1)
     
     
+def generate_methylation_features_multi(
+    logger,
+    pileup_paths,
+    args,
+    sample_list = None,
+):
     
+    # Check if sample names and pileup name match.
+    import copy
+    pileup_dict = {}
+
+    for p in pileup_paths:
+        if not isinstance(p, str) or not os.path.isfile(p):
+            raise ValueError(f"Invalid file: {p}")
+
+        base_name = os.path.basename(p).rsplit(".", 1)[0]
+
+        if base_name in pileup_dict:
+            logger.error(f"Duplicate entry detected ({base_name}). Exiting")
+            sys.exit(1)
+
+        pileup_dict[base_name] = p
+
+    if not sample_list:
+        samples_dir = os.path.join(args.output, "samples")
+        sample_list = [d for d in os.listdir(samples_dir) if os.path.isdir(os.path.join(samples_dir, d))]
+
+    missing_samples = set(sample_list) - set(pileup_dict.keys())
+    if missing_samples:
+        raise ValueError(f"Missing pileup files for samples: {', '.join(missing_samples)}")
+
+    for sample in sample_list:
+        logger.info(f"Finding methylation pattern of: {sample}")
+        run_args = copy.copy(args)
+        run_args.output = os.path.join(args.output, "samples", sample)
+        generate_methylation_features(
+            logger = logger,
+            contig_fasta_path = os.path.join(args.output, "samples", f"{sample}.fa"),
+            pileup_path = pileup_dict[sample],
+            args = run_args,
+            data_path = os.path.join(run_args.output, "data.csv"),
+            data_split_path = os.path.join(run_args.output, "data_split.csv")
+        )
+

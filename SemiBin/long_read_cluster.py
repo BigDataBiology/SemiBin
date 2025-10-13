@@ -55,26 +55,29 @@ def cluster_long_read(logger, model, data, device, is_combined,
     from .utils import norm_abundance
     contig_list = data.index.tolist()
 
-    if len(features_data['motif_present']) > 0:
-        train_data_motif_present = data.values[:, features_data['motif_present']]
+    if features_data['motif']:
+        train_data_motif_present = data[features_data['motif_present']].values
     
     if not is_combined:
-        train_data_input = data.values[:, features_data["kmer"] + features_data["motif"]]
-        if len(features_data["motif"]) > 0:
+        if not features_data["motif"]:
+            train_data_input = data[features_data["kmer"]].values
+
+        else:
+            train_data_input = data[features_data["kmer"] + features_data["motif"]].values
             train_data_input, _ = normalize_kmer_motif_features(train_data_input, train_data_input)
             train_data_input = np.concatenate((train_data_input, train_data_motif_present), axis = 1)
     else:
-        train_data_input = data.values
+        train_data_input = data
         if norm_abundance(train_data_input, features_data):
-            train_data_kmer = train_data_input[:, features_data["kmer"] + features_data["motif"]]
-            if len(features_data["motif"]) > 0:
-                train_data_kmer, _ = normalize_kmer_motif_features(train_data_kmer, train_data_kmer)
-                train_data_kmer = np.concatenate((train_data_kmer, train_data_motif_present), axis = 1)
+            train_data_seq = train_data_input[features_data["kmer"] + features_data["motif"]].values
+            if features_data["motif"]:
+                train_data_seq, _ = normalize_kmer_motif_features(train_data_seq, train_data_seq)
+                train_data_seq = np.concatenate((train_data_seq, train_data_motif_present), axis = 1)
             
-            train_data_depth = train_data_input[:, features_data["depth"]]
+            train_data_depth = train_data_input[features_data["depth"]].values
             from sklearn.preprocessing import normalize
             train_data_depth = normalize(train_data_depth, axis=1, norm='l1')
-            train_data_input = np.concatenate((train_data_kmer, train_data_depth), axis=1)
+            train_data_input = np.concatenate((train_data_seq, train_data_depth), axis=1)
 
     with torch.no_grad():
         model.eval()
@@ -88,7 +91,7 @@ def cluster_long_read(logger, model, data, device, is_combined,
         length_weight = np.log10(length_weight)
         
     if not is_combined:
-        depth = data.values[:, features_data["depth"]].astype(np.float32)
+        depth = data[features_data["depth"]].values.astype(np.float32)
         mean_index = [2 * temp for temp in range(n_sample)]
         depth = depth[:, mean_index]
         embedding_new = np.concatenate((embedding, np.log(depth)), axis=1)

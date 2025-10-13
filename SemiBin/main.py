@@ -14,7 +14,7 @@ from .utils import validate_normalize_args, get_must_link_threshold, generate_ca
 from .generate_coverage import generate_cov, combine_cov, generate_cov_from_abundances
 from .generate_kmer import generate_kmer_features_from_fasta
 from .fasta import fasta_iter
-from .generate_methylation import generate_methylation_features
+from .generate_methylation import generate_methylation_features, generate_methylation_features_multi
 
 
 def parse_args(args, is_semibin2, with_methylation):
@@ -73,10 +73,16 @@ def parse_args(args, is_semibin2, with_methylation):
 
     if with_methylation:
         # Methylation
-        generate_methylation_features = subparsers.add_parser(
-            'generate_methylation_features',
+        generate_methylation_features_single = subparsers.add_parser(
+            'generate_methylation_features_single',
             help='Generate methylation features as training data'
-                ' for (semi/self)-supervised deep learning model training.'
+                ' for self-supervised deep learning model training.'
+                ' This will modify the data.csv and data_split.csv files.'
+        )
+        generate_methylation_features_multi = subparsers.add_parser(
+            'generate_methylation_features_multi',
+            help='Generate methylation features as training data'
+                ' for self-supervised deep learning model training.'
                 ' This will modify the data.csv and data_split.csv files.'
         )
     
@@ -277,16 +283,18 @@ def parse_args(args, is_semibin2, with_methylation):
 
     parsers = [single_easy_bin, multi_easy_bin, generate_cannot_links, generate_sequence_features_single, generate_sequence_features_multi, binning, binning_long]
     if with_methylation:
-        parsers.append(generate_methylation_features)
+        parsers.append(generate_methylation_features_single)
+        parsers.append(generate_methylation_features_multi)
         
     for p in parsers:
         m = p.add_argument_group('Mandatory arguments')
 
-        m.add_argument('-i', '--input-fasta',
-                                required=True,
-                                help='Path to the input fasta file.',
-                                dest='contig_fasta',
-                                default=None,)
+        if "generate_methylation_features_multi" not in p.prog:
+            m.add_argument('-i', '--input-fasta',
+                                    required=True,
+                                    help='Path to the input fasta file.',
+                                    dest='contig_fasta',
+                                    default=None,)
         m.add_argument('-o', '--output',
                             required=True,
                             help='Output directory (will be created if non-existent)',
@@ -316,7 +324,7 @@ def parse_args(args, is_semibin2, with_methylation):
                            dest='abundances',
                            default=None,
                            )
-        if "generate_methylation_features" not in p.prog:
+        if ("generate_methylation_features_single" not in p.prog and "generate_methylation_features_multi" not in p.prog):
             p.add_argument('--write-pre-reclustering-bins',
                     required=False,
                     help='Write pre-reclustering bins to disk.',
@@ -337,19 +345,23 @@ def parse_args(args, is_semibin2, with_methylation):
                     help='Tag to add to output file names')
             
         if with_methylation:
-            if p in [generate_methylation_features, single_easy_bin, multi_easy_bin]:    
+            if p in [generate_methylation_features_single, generate_methylation_features_multi, single_easy_bin, multi_easy_bin]:    
                 motif_group = p.add_argument_group(title = "Motif Selection", description = "Provide EITHER --motifs-file or --motifs. They are mutally exclusive.")
                
                 mx_group = motif_group.add_mutually_exclusive_group(required=True)
                 mx_group.add_argument("--motifs-file", help = "Path to the motifs file. Must contain the columns motif|mod_type|mod_position. OBS provide EITHER --motifs or --motifs-file")
                 mx_group.add_argument("--motifs", nargs="+", help="List of motifs specified via command line <motif>_<mod_type>_<mod_position> (e.g., GATC_m_3 RGATCY_a_2). OBS provide EITHER --motifs or --motifs-file")
 
-                m.add_argument("--pileup", help = "Path to the pileup file", required = True)
                 p.add_argument("--min-valid-read-coverage", help="Minimum number of valid read observations for a motif in a contig (Default: 8).", default=8, type=int)
-            if p in [generate_methylation_features]:
+                p.add_argument("--min-motif-observations", help="Minimum number of motif observations on a contig (Default: 4).", default=4, type=int)
+
+            if p in [generate_methylation_features_single, single_easy_bin]:
+                m.add_argument("--pileup", help = "Path to the pileup file", required = True)
                 p.add_argument("--data", help="Path to the data file to append methylation.", required=False)
                 p.add_argument("--data-split", help="Path to the data split file to append methylation.", required=False)
-
+            if p in [generate_methylation_features_multi, multi_easy_bin]:
+                m.add_argument("--pileups", nargs='*', help = "Path to the pileup files. Should be named according to sample name <sample>.bed such that it matches '--input-bams'", required = True)
+                
 
     for p in [single_easy_bin,
                 multi_easy_bin,
@@ -409,7 +421,8 @@ def parse_args(args, is_semibin2, with_methylation):
 
     parsers = [train_semi, generate_cannot_links, binning, single_easy_bin, multi_easy_bin, generate_sequence_features_single, generate_sequence_features_multi, training_self, binning_long]
     if with_methylation:
-        parsers.append(generate_methylation_features)
+        parsers.append(generate_methylation_features_single)
+        parsers.append(generate_methylation_features_multi)
         
         
     for p in parsers:
@@ -1130,7 +1143,7 @@ def training(logger, contig_fasta, num_process,
         data_ = pd.read_csv(data[0], index_col=0)
         feature_data = get_features(data_)
         
-        col_name = data_.columns[feature_data["depth"][-1]].split('_')[-1]
+        col_name = feature_data["depth"][-1].split('_')[-1]
         is_combined = col_name != 'var'
 
     else:
@@ -1182,7 +1195,7 @@ def binning_preprocess(data, depth_metabat2, model_path, environment, device):
     data.index = data.index.astype(str)
 
     if depth_metabat2 is None:
-        col_name = data.columns[features_data["depth"][-1]].split('_')[-1]
+        col_name = features_data["depth"][-1].split('_')[-1]
         is_combined = col_name != 'var'
         n_sample = (len(features_data["depth"])) // 2 if not is_combined else (len(features_data["depth"]))
     else:
@@ -1293,7 +1306,15 @@ def single_easy_binning(logger, args, binned_length,
         only_kmer=args.depth_metabat2)
     
     if with_methylation:
-        generate_methylation_features(logger, args)
+        generate_methylation_features(
+            logger,
+            contig_fasta_path = args.contig_fasta,
+            pileup_path = args.pileup,
+            args = args,
+            data_path = args.data,
+            data_split_path = args.data_split
+            
+        )
 
     data_path = os.path.join(args.output, 'data.csv')
     if not args.depth_metabat2:
@@ -1358,8 +1379,12 @@ def multi_easy_binning(logger, args, device, with_methylation=False):
     sample_list = generate_sequence_features_multi(logger, args)
     
     if with_methylation:
-        generate_methylation_features(logger, args)
-
+        generate_methylation_features_multi(
+            logger = logger,
+            sample_list = sample_list,
+            pileup_paths = args.pileups,
+            args = args
+        )
     for sample_index, sample in enumerate(sample_list):
         sample_fasta = os.path.join(
             args.output, 'samples', '{}.fa'.format(sample))
@@ -1593,8 +1618,23 @@ def main2(args=None, is_semibin2=True, with_methylation=False):
         elif args.cmd == 'generate_sequence_features_multi':
             generate_sequence_features_multi(logger, args)
             
-        elif args.cmd == 'generate_methylation_features':
-            generate_methylation_features(logger, args)
+        elif args.cmd == 'generate_methylation_features_single':
+            generate_methylation_features(
+                logger,
+                contig_fasta_path = args.contig_fasta,
+                pileup_path = args.pileup,
+                args = args,
+                data_path = args.data,
+                data_split_path = args.data_split
+            )
+
+        elif args.cmd == 'generate_methylation_features_multi':
+            generate_methylation_features_multi(
+                logger = logger,
+                pileup_paths = args.pileups,
+                args = args,
+                sample_list = None
+            )
 
         elif args.cmd in ['train', 'train_semi']:
             training(logger,
