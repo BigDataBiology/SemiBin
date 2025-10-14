@@ -134,16 +134,27 @@ def test_normalize_kmer_motif_features():
     assert np.allclose(df_split_norm, expected_df_split_norm), f"Expected {expected_df_split_norm}, but got {df_split_norm}"
 
 def test_norm_abundance():
-    assert not norm_abundance(np.random.randn(10, 136))
-    assert not norm_abundance(np.random.randn(12, 137))
-    assert not norm_abundance(np.random.randn(12, 140))
-    assert not norm_abundance(np.abs(np.random.randn(12, 138))*2)
-    assert not norm_abundance(np.abs(np.random.randn(12, 138))*4)
+    features = {}
+    features["kmer"] = range(136)
+    features["motif"] = []
+    features["motif_present"] = []
+    features["depth"] = []
+    assert not norm_abundance(np.random.randn(10, 136), features)
+    features["depth"] = [137]
+    assert not norm_abundance(np.random.randn(12, 137), features)
+    features["depth"] = range(137, 141)
+    assert not norm_abundance(np.random.randn(12, 140), features)
+    features["depth"] = [137, 138]
+    assert not norm_abundance(np.abs(np.random.randn(12, 138))*2, features)
+    assert not norm_abundance(np.abs(np.random.randn(12, 138))*4, features)
 
-    assert norm_abundance(np.abs(np.random.randn(12, 148)))
-    assert norm_abundance(       np.random.randn(12, 156) )
-    assert norm_abundance(       np.random.randn(12, 164) )
-    assert norm_abundance(np.abs(np.random.randn(12, 164)))
+    features["depth"] = range(136, 148)
+    assert norm_abundance(np.abs(np.random.randn(12, 148)), features)
+    features["depth"] = range(136, 156)
+    assert norm_abundance(       np.random.randn(12, 156) , features)
+    features["depth"] = range(136, 164)
+    assert norm_abundance(       np.random.randn(12, 164) , features)
+    assert norm_abundance(np.abs(np.random.randn(12, 164)), features)
 
 
 def test_load_fasta():

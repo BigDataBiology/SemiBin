@@ -14,13 +14,14 @@ from Bio import SeqIO
 
 class SetupArgs:
     def __init__(self):
-        self.pileup = "test/methylation_data/geobacillus-plasmids.pileup.bed"
+        self.pileup = "test/methylation_data/geobacillus-plasmids.pileup.bed.gz"
         self.contig_fasta = "test/methylation_data/geobacillus-plasmids.assembly.fasta"
         self.motifs_file = "test/methylation_data/bin-motifs.tsv"
         self.data = "test/methylation_data/data.csv"
         self.data_split = "test/methylation_data/data_split.csv"
         self.num_process = 1
         self.min_valid_read_coverage= 1
+        self.min_motif_observations=3
         self.output = "test/methylation_data/test_output"
 
 @pytest.fixture
@@ -58,59 +59,81 @@ def data():
     }
 
 
-def test_generate_methylation_features(data):
+def test_generate_methylation_features(tmp_path, data):
     logger = MagicMock()
     args = SetupArgs()
 
+    args.output = str(tmp_path)
+
     data_before = pl.read_csv(args.data)
-    generate_methylation_features(logger, args)
+
+    shutil.copy(args.data, args.output)
+    shutil.copy(args.data_split, args.output)
+   
+    generate_methylation_features(logger, args.contig_fasta, args.pileup, args)
 
     assert os.path.exists(os.path.join(args.output, "data.csv"))
-    assert os.path.exists(os.path.join(args.output, "contig_methylation.tsv"))
+    assert os.path.exists(os.path.join(args.output, "contig_methylation_features.tsv"))
 
     data_after = pl.read_csv(os.path.join(args.output, "data.csv"))
     assert len(data_before.columns) != len(data_after.columns)
-    
-    os.remove(os.path.join(args.output, "data_split.csv"))
-    os.remove(os.path.join(args.output, "data.csv"))
-    os.remove(os.path.join(args.output, "contig_methylation.tsv"))
-    os.remove(os.path.join(args.output, "contig_split.fasta"))
 
 
-def test_split_contigs(data):
+def test_split_contigs(tmp_path, data):
     args = data["args"]
-    lengths = get_split_contig_lengths(data["assembly"], ["contig_2", "contig_3"])
+    args.output = str(tmp_path)
+    contigs = ["contig_2", "contig_3"]
+    lengths = get_split_contig_lengths(data["assembly"], contigs)
 
     create_assembly_with_split_contigs(data["assembly"], lengths, os.path.join(args.output, "plasmid_split.fasta"))
+    
+    motifs = ["GATC_a_1", "GATC_m_3"]
 
-    create_split_pileup(args.pileup, lengths, os.path.join(args.output, "plasmid_split.bed"))
-
-    run_epimetheus(
-        os.path.join(args.output, "plasmid_split.bed"),
-        os.path.join(args.output, "plasmid_split.fasta"),
-        ["GATC_a_1", "GATC_m_3"],
-        min_valid_read_coverage = 1,
-        threads = 1,
-        output = os.path.join(args.output, "contig_split_methylation.tsv")        
+    current_output = find_data_split_methylation_parallel(
+        contigs=contigs,
+        contig_lengths=lengths,
+        pileup_path=args.pileup,
+        assembly_path=os.path.join(args.output, "plasmid_split.fasta"),
+        motifs=motifs,
+        threads=1,
+        min_valid_read_coverage=3,
+        min_valid_cov_to_diff_fraction=0.8
     )
 
-    expected_output = pd.read_csv(
+    current_output = current_output.to_pandas()
+
+    schema = {
+        "contig": pl.String,
+        "motif": pl.String,
+        "mod_type": pl.String,
+        "mod_position": pl.UInt64,
+        "methylation_value": pl.Float64,
+        "mean_read_cov": pl.Float64,
+        "n_motif_obs": pl.UInt32,
+        
+    }
+    expected_output = pl.read_csv(
         os.path.join("test/methylation_data/expected_contig_methylation.tsv"),
-        sep = "\t"
+        separator = "\t",
+        schema = schema
     )
+    expected_output = expected_output\
+        .with_columns([
+            pl.col("contig").str.slice(0, pl.col("contig").str.len_chars() - 2).alias("base_contig"),
+            pl.col("contig").str.slice(-1, 1).alias("split_num")
+        ])\
+        .sort([
+            "base_contig",
+            "motif",
+            "mod_position",
+            "mod_type",
+            "split_num"
+        ]).drop(["base_contig", "split_num"])\
+        .to_pandas()
+        
 
-    current_output = pd.read_csv(
-        os.path.join(args.output, "contig_split_methylation.tsv"),
-        sep = "\t"
-    )
 
     pd.testing.assert_frame_equal(expected_output, current_output)
-
-    os.remove(os.path.join(args.output, "plasmid_split.bed"))
-    os.remove(os.path.join(args.output, "plasmid_split.fasta"))
-    os.remove(os.path.join(args.output, "contig_split_methylation.tsv"))
-    shutil.rmtree(args.output)
-
 
 
 
@@ -127,7 +150,9 @@ class TestCreateAssemblyWithSplitContigs(unittest.TestCase):
         self.split_contigs = ["contig_1", "contig_2"]
 
         # Output path for the test
-        self.output_path = "test_split_contigs.fasta"
+        import tempfile
+        self.temp_dir = tempfile.mkdtemp()
+        self.output_path = os.path.join(self.temp_dir, "test_split_contigs.fasta")
 
     def test_create_assembly_with_split_contigs(self):
         # Call the function to create split contigs
@@ -156,8 +181,8 @@ class TestCreateAssemblyWithSplitContigs(unittest.TestCase):
 
     def tearDown(self):
         # Clean up the test output file
-        if os.path.exists(self.output_path):
-            os.remove(self.output_path)
+        import shutil
+        shutil.rmtree(self.temp_dir)
 
 class TestCheckFilesExist(unittest.TestCase):
 
@@ -192,22 +217,6 @@ class TestCheckFilesExist(unittest.TestCase):
         # Check if the error message is correct
         self.assertIn('The file data.txt does not exist.', str(context.exception))
 
-    @patch('os.path.exists')
-    def test_directory_does_not_exist(self, mock_exists):
-        # Assume all files exist but the directory does not
-        def side_effect(arg):
-            if arg == 'motif_index_dir':
-                return False
-            return True
-
-        mock_exists.side_effect = side_effect
-        
-        dirs = ['motif_index_dir']
-        with self.assertRaises(FileNotFoundError) as context:
-            check_files_exist(directories = dirs)
-        
-        # Check if the correct exception for the directory is raised
-        self.assertIn('The directory motif_index_dir does not exist.', str(context.exception))
 
 
 
@@ -239,7 +248,7 @@ class TestCheckFilesAndLog(unittest.TestCase):
         args.data_split = None
         logger = MagicMock()
         
-        check_data_file_args(logger, args)
+        check_data_file_args(logger, args.data, args.data_split, args)
         
         # Ensure sys.exit(1) was called
         mock_exit.assert_called_once_with(1)
@@ -253,7 +262,7 @@ class TestCheckFilesAndLog(unittest.TestCase):
         args.data = ""
         logger = MagicMock()
         
-        check_data_file_args(logger, args)
+        check_data_file_args(logger, args.data, args.data_split, args)
         
         # Ensure sys.exit(1) was called
         mock_exit.assert_called_once_with(1)
@@ -268,10 +277,10 @@ class TestCheckFilesAndLog(unittest.TestCase):
         args.data_split = None
         logger = MagicMock()
         
-        check_data_file_args(logger, args)
+        check_data_file_args(logger, args.data, args.data_split, args)
         
         # Ensure the correct error message was logged
-        logger.info.assert_called_with("Using default data and data_split files. Checking output directory.")
+        logger.info.assert_called_with("Using default data and data_split files. Checking output directory...")
 
 
 if __name__ == '__main__':

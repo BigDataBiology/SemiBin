@@ -76,7 +76,7 @@ def test_bin(tmpdir):
 
 def test_cluster():
     contig_dict = {h:seq for h,seq in fasta_iter('test/bin_data/input.fasta')}
-    is_combined, n_sample, data, model, _ = binning_preprocess(data='test/bin_data/data.csv', depth_metabat2=None, model_path='test/bin_data/model.h5', environment=None, device='cpu')
+    is_combined, n_sample, data, model, _ = binning_preprocess(data='test/bin_data/data.csv', depth_metabat2=None, model_path='test/bin_data/model.pt', environment=None, device='cpu')
 
     _, res = run_embed_infomap(
             logger=logging,

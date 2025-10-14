@@ -137,7 +137,8 @@ def cluster_long_read(logger, model, data, device, is_combined,
     save_npz(os.path.join(out, "dist_matrix.npz"), dist_matrix)
     
     dbscan_results = []
-    for eps_value in [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55]:
+    eps_values = [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55]
+    for eps_value in eps_values:
         _, labels = dbscan(dist_matrix,
                 eps=eps_value, min_samples=5, n_jobs=args.num_process, metric='precomputed',
                 sample_weight=length_weight)
@@ -148,8 +149,8 @@ def cluster_long_read(logger, model, data, device, is_combined,
     results_df = pd.DataFrame({'Contig': contig_list})
 
     # Add cluster labels for each eps value to the DataFrame
-    for eps_value in eps_values:
-        results_df[f'Cluster_Label_eps_{eps_value}'] = DBSCAN_results_dict[eps_value]
+    for i, eps_value in enumerate(eps_values):
+        results_df[f'Cluster_Label_eps_{eps_value}'] = dbscan_results[i]
 
     # Save results to CSV
     results_df.to_csv(os.path.join(out,'dbscan_results_multiple_eps.csv'), index=False)
@@ -158,8 +159,6 @@ def cluster_long_read(logger, model, data, device, is_combined,
     logger.debug('Integrating results.')
 
     extracted = []
-    initial_cluster_dict = {k: v for k, v in DBSCAN_results_dict.items() if 0.01 <= k <= 0.55}
-    # while the sum of contigs is higher than the smallest bin allowed continue to find bins
     while sum(len(contig_dict[contig]) for contig in contig_list) >= minfasta:
         # If there is only one contig left, add it to the extracted list
         if len(contig_list) == 1:

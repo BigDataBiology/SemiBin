@@ -15,16 +15,13 @@ def loss_function(embedding1, embedding2, label):
     return supervised_loss
 
 
-def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
+def train_self(logger, datapaths, data_splits, is_combined=True,
           batchsize=2048, epoches=15, device=None, num_process = 8, mode = 'single'):
     """
     Train model from one sample(mode=single) or several samples(mode=several)
 
-    Saves model to disk and returns it
+    returns model
 
-    Parameters
-    ----------
-    out : filename to write model to
     """
     from tqdm import tqdm
     import pandas as pd
@@ -113,6 +110,7 @@ def train_self(logger, out : str, datapaths, data_splits, is_combined=True,
                     train_data_split_depth = normalize(train_data_split_depth, axis=1, norm='l1')
                     train_data_split = np.concatenate((train_data_split_seq, train_data_split_depth), axis = 1)
             
+            n_must_link = len(train_data_split)
             data_length = len(train_data)
             if data_length == 0:
                 logger.error(f'No data for sample {datapath}')

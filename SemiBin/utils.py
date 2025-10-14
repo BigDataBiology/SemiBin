@@ -567,7 +567,7 @@ def maybe_compute_min_length(min_length, fafile, ratio):
 
 def norm_abundance(data, features):
     import numpy as np
-    n = data.shape[1] - len(features["kmer"]) - len(features["motif"])
+    n = data.shape[1] - len(features["kmer"]) - len(features["motif"]) - len(features["motif_present"])
     assert n == len(features["depth"]), "Depth should equal all_features - motifs - kmer!"
     print("features in norm_abundance: ", n)
     flag = False
@@ -575,9 +575,8 @@ def norm_abundance(data, features):
     if n >= 20:
         flag = True
     else:
-        if n >= 5:
-            if np.mean(np.sum(data[features["depth"]].values, axis=1)) > 2:
-                flag = True
+        flag = (n >= 5 and np.mean(np.sum(data[:, features["depth"]], axis=1)) > 2)
+
     return flag
 
 
@@ -654,7 +653,7 @@ def get_features(df):
     features_dict['depth'] = [column for i, column in enumerate(columns) if column.endswith('mean') or column.endswith('var')]
     
     # Populate 'motif' with indices of columns
-    features_dict['motif'] = [column for i, column in enumerate(columns) if column.startswith("median") and check_motif(column)]
+    features_dict['motif'] = [column for i, column in enumerate(columns) if column.startswith("methylation_value") and check_motif(column)]
     
     features_dict['motif_present'] = [column for i, column in enumerate(columns) if column.startswith("motif_present") and check_motif(column)]
     assert len(features_dict['depth'] + features_dict['motif'] + features_dict['motif_present']) == len(set(features_dict['depth'] + features_dict['motif'] + features_dict['motif_present']) )
