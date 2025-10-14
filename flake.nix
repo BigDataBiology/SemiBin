@@ -29,15 +29,30 @@
             python311.pkgs.setuptools
             python311.pkgs.wheel
 
-            micromamba
+            cargo
+            rustc
+            linuxKernel.packages.linux_zen.perf
+            cargo-cross
+            cargo-release
+
+            # For building
+            openssl
+            clang
+            pkg-config
+            libGL
+            stdenv.cc.cc.lib
+            glib
 
             bedtools
+            prodigal
             hmmer
             samtools
           ];
 
           shellHook = ''
             export PYTHONPATH="$PWD:$PYTHONPATH"
+
+            export LD_LIBRARY_PATH="${pkgs.libGL}/lib/:${pkgs.stdenv.cc.cc.lib}/lib/:${pkgs.glib.out}/lib/:$LD_LIBRARY_PATH"
 
             export MAMBA_ROOT_PREFIX="$PWD/.micromamba";
             if [ "$SHELL" = "/usr/bin/fish" ] || "$(basename "$SHELL" = "fish")"; then
@@ -46,6 +61,20 @@
               eval "$(micromamba shell hook --shell bash)"
             fi
           '';
+        };
+        packages.default = pkgs.buildRustPackage {
+          src = ./.;
+          cargoLock = {
+            lockFile = ./Cargo.lock;
+          };
+          buildInputs = [
+            pkgs.openssl
+            pkgs.pkg-config
+          ];
+          nativeBuildInputs = [
+            pkgs.openssl_3_3
+            pkgs.pkg-config
+          ];
         };
       }
     );
