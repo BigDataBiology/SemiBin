@@ -36,6 +36,9 @@ dependencies = [
     "scikit-learn",
     "requests",
     "numexpr",
+    "epimetheus-py",
+    "polars",
+    "Bio",
 ]
 urls = { homepage = "https://github.com/BigDataBiology/SemiBin" }
 
