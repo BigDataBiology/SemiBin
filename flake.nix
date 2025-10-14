@@ -29,6 +29,8 @@
             python311.pkgs.setuptools
             python311.pkgs.wheel
 
+            pixi
+
             cargo
             rustc
             linuxKernel.packages.linux_zen.perf
