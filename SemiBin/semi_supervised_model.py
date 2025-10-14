@@ -256,6 +256,7 @@ def train_semi(logger, out, contig_fastas, binned_lengths, datas, data_splits, c
             cannot_link = pd.read_csv(cannot_links[data_index], sep=',',
                                       header=None).values
             data = pd.read_csv(datas[data_index], index_col=0)
+            features = get_features(data)
             data.index = data.index.astype(str)
             data_split = pd.read_csv(data_splits[data_index], index_col=0)
 
@@ -273,7 +274,7 @@ def train_semi(logger, out, contig_fastas, binned_lengths, datas, data_splits, c
                 train_data_input = train_data[:, 0:136]
                 train_data_split_input = train_data_must_link
             else:
-                if norm_abundance(train_data):
+                if norm_abundance(data, features):
                     norm = np.sum(train_data, axis=0)
                     train_data = train_data / norm
                     train_data_must_link = train_data_must_link / norm

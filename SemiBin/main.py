@@ -1463,7 +1463,7 @@ def log_subprocess(event, *args, **kwargs):
         logger = logging.getLogger('SemiBin2')
         logger.debug(f'Running command: {executable} (full command line: `{" ".join(args)}`)')
 
-def main2(args=None, is_semibin2=True, with_methylation=False):
+def main2(raw_args=None, is_semibin2=True, with_methylation=False):
     if not is_semibin2:
         raise NotImplementedError(f'SemiBin 1 is no longer supported in SemiBin v{__version__}.')
     import tempfile

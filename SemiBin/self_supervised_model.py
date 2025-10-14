@@ -73,6 +73,10 @@ def train_self(logger, datapaths, data_splits, is_combined=True,
                         f"Error: training mode with several only used in single-sample binning!\n")
                     sys.exit(1)
 
+            train_data = data.values
+            train_data_split = data_split.values
+            n_must_link = len(train_data_split)
+
             if features_data["motif"]:
                 train_data_motif_is_present_matrix = data[features_data["motif_present"]].values
                 train_data_split_motif_is_present_matrix = data_split[features_data_split["motif_present"]].values
@@ -90,7 +94,7 @@ def train_self(logger, datapaths, data_splits, is_combined=True,
                     
                 
             else:
-                if norm_abundance(train_data, features_data):
+                if norm_abundance(data, features_data):
                     if not features_data["motif"]:
                         train_data_seq = data[features_data['kmer']].values
                         train_data_split_seq = data_split[features_data_split['kmer']].values
