@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import numpy as np
-from multiprocessing import get_context
 import multiprocessing
 # from pymethylation_utils.utils import run_epimetheus
 from epymetheus import epymetheus
@@ -13,60 +12,6 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import re
 import polars as pl
-
-# BUG: Removes abundance columns!
-# def filter_motifs_by_prevalence(
-#     data: pl.DataFrame,
-#     data_split: pl.DataFrame,
-#     threshold: float = 0.85,
-#     present_prefix: str = "motif_present_",
-#     median_prefix: str = "median_",
-# ) -> tuple[pl.DataFrame, pl.DataFrame]:
-#     """
-#     Remove motifs that are not present in at least `threshold` proportion
-#     of contigs (measured on *data*) and drop the matching columns in both
-#     data frames, keeping them perfectly in sync.
-#     """
-#     # 1 ─────────────────────────────────────────────────────────────────────
-#     present_cols = [c for c in data.columns if c.startswith(present_prefix)]
-#     if not present_cols:
-#         raise ValueError("No motif_present_* columns found in ‘data’.")
-
-#     n_contigs = data.height
-#     motifs_to_drop = [
-#         c[len(present_prefix):]
-#         for c in present_cols
-#         if (data[c].sum() / n_contigs) < threshold
-#     ]
-#     if not motifs_to_drop:
-#         return data, data_split    # nothing to do
-
-#     # 2 ─────────────────────────────────────────────────────────────────────
-#     # build the raw candidate list only once
-#     candidate_cols = set()
-#     for m in motifs_to_drop:
-#         candidate_cols.update(
-#             {f"{present_prefix}{m}", f"{median_prefix}{m}"}
-#         )
-
-#     # columns that actually exist in each frame
-#     drop_in_data        = [c for c in candidate_cols if c in data.columns]
-#     drop_in_data_split  = [c for c in candidate_cols if c in data_split.columns]
-
-#     data_f       = data.drop(drop_in_data)
-#     data_split_f = data_split.drop(drop_in_data_split)
-
-#     # 3 ─────────────────────────────────────────────────────────────────────
-#     common_cols = [c for c in data.columns if c in data_split.columns and c not in candidate_cols]
-#     # (the comprehension preserves the original order)
-
-#     data_f       = data_f.select(common_cols)
-#     data_split_f = data_split_f.select(common_cols)
-
-#     # final guard
-#     assert data_f.columns == data_split_f.columns
-
-#     return data_f, data_split_f
 
 def read_fasta(path):
     # Check if the file exists
@@ -99,11 +44,93 @@ def get_split_contig_lengths(assembly, split_contigs):
     return contig_lengths
     
 
+def process_contig_split_methylation(
+    contig_name,
+    contig_length,
+    pileup_path,
+    assembly_path,
+    motifs,
+    min_valid_read_coverage,
+    min_valid_cov_to_diff_fraction,
+):
+    try:
+        pileup_df = epymetheus.query_pileup_records(
+            pileup_path=pileup_path,
+            contigs=[contig_name],
+        )
+    except Exception as e:
+        return None
+
+    contig_half = contig_length // 2
+    pileup_split_df = pileup_df\
+        .with_columns(
+            pl.when(pl.col("start") < contig_half).then(pl.col("contig").cast(pl.String) + "_1").otherwise(pl.col("contig").cast(pl.String) + "_2").alias("contig")
+        )\
+        .with_columns(
+            pl.when(pl.col("start") < contig_half).then(pl.col("start")).otherwise(pl.col("start") - contig_half).alias("start")
+        )
+
+    contig_meth_features = epymetheus.methylation_pattern_from_dataframe(
+        pileup_df=pileup_split_df,
+        assembly=assembly_path,
+        motifs = motifs,
+        output_type=epymetheus.MethylationOutput.Median,
+        threads=1,
+        min_valid_read_coverage=min_valid_read_coverage,
+        min_valid_cov_to_diff_fraction=min_valid_cov_to_diff_fraction
+    )
+
+    return contig_meth_features
+
+
+def find_data_split_methylation_parallel(
+    contigs,
+    contig_lengths,
+    pileup_path,
+    assembly_path,
+    motifs,
+    threads,
+    min_valid_read_coverage,
+    min_valid_cov_to_diff_fraction,
+):
+    ctx = multiprocessing.get_context("spawn")
+    with ctx.Pool(threads) as pool:
+        results = pool.starmap(
+            process_contig_split_methylation,
+            [(
+                contig,
+                contig_lengths[contig],
+                pileup_path,
+                assembly_path,
+                motifs,
+                min_valid_read_coverage,
+                min_valid_cov_to_diff_fraction
+            ) for contig in contigs]
+        )
+
+    valid_results = [df for df in results if df is not None and not df.is_empty()]
+    if not valid_results:
+        return pl.DataFrame()
+
+    combined_df = pl.concat(valid_results, how = "vertical")\
+        .with_columns([
+            pl.col("contig").str.slice(0, pl.col("contig").str.len_chars() - 2).alias("base_contig"),
+            pl.col("contig").str.slice(-1, 1).alias("split_num")
+        ])\
+        .sort([
+            "base_contig",
+            "motif",
+            "mod_position",
+            "mod_type",
+            "split_num"
+        ]).drop(["base_contig", "split_num"])
+    return combined_df
+    
+
 def create_assembly_with_split_contigs(assembly, contig_lengths, output):
     split_records = []
     for c in contig_lengths.keys():
         contig = assembly[c]
-
         contig_half = contig_lengths[c] // 2
 
         s1 = contig.seq[:contig_half]
@@ -125,83 +152,6 @@ def create_assembly_with_split_contigs(assembly, contig_lengths, output):
     with open(output, "w") as output_handle:
         SeqIO.write(split_records, output_handle, "fasta")
 
-def create_split_pileup(
-    pileup_path: str,
-    contig_lengths: dict[str, int],
-    output_path: str
-):
-    """
-    Reads a large TSV/CSV file line by line, splitting contigs in half
-    and adjusting 'start' positions accordingly, then writes out the result.
-
-    :param pileup_path: Path to the pileup file (tab-delimited).
-    :param contig_lengths: Dictionary {contig_name: length}.
-    :param output_path: Path to write the processed file.
-    """
-
-    with open(pileup_path, "r") as f_in, open(output_path, "w") as f_out:
-        for line in f_in:
-            # Split into the 18 expected columns (assuming no header).
-            (
-                contig,
-                start,
-                end,
-                mod_type,
-                score,
-                strand,
-                start2,
-                end2,
-                color,
-                N_valid_cov,
-                percent_modified,
-                N_modified,
-                N_canonical,
-                N_other_mod,
-                N_delete,
-                N_fail,
-                N_diff,
-                N_nocall,
-            ) = line.strip().split("\t")
-
-            # Filter for relevant contigs.
-            if contig not in contig_lengths:
-                continue
-
-            c_len = contig_lengths[contig]
-
-            # Convert start to an integer before comparisons.
-            start_val = int(start)
-            half_length = c_len // 2
-
-            # Decide if row belongs to the first half or the second half.
-            if start_val < half_length:
-                contig = f"{contig}_1"
-            else:
-                contig = f"{contig}_2"
-                start_val -= half_length
-
-            # Write out the updated line.
-            out_cols = [
-                contig,
-                str(start_val),
-                end,
-                mod_type,
-                score,
-                strand,
-                start2,
-                end2,
-                color,
-                N_valid_cov,
-                percent_modified,
-                N_modified,
-                N_canonical,
-                N_other_mod,
-                N_delete,
-                N_fail,
-                N_diff,
-                N_nocall,
-            ]
-            f_out.write("\t".join(out_cols) + "\n")
         
 def check_files_exist(paths=[]):
     """
@@ -220,7 +170,7 @@ def check_files_exist(paths=[]):
 
 
 def sort_columns(cols):
-    mod_columns = sorted([col for col in cols if "median" in col], key=lambda x: x.split("_")[-2:])
+    mod_columns = sorted([col for col in cols if "methylation_value" in col], key=lambda x: x.split("_")[-2:])
     nomod_columns = sorted([col for col in cols if "motif_present" in col], key=lambda x: x.split("_")[-2:])
     # Interleave the mod and nomod columns
     sorted_columns = [val for pair in zip(mod_columns, nomod_columns) for val in pair]
@@ -231,7 +181,7 @@ def create_methylation_matrix(methylation_features):
     Creates a feature matrix with methylation from motifs-scored or methylation features.
     """
     # check if the methylation features have the required columns
-    required_columns = ["contig", "motif", "mod_type",  "mod_position", "median", "motif_present"]
+    required_columns = ["contig", "motif", "mod_type",  "mod_position", "methylation_value", "motif_present"]
     if not all(col in methylation_features.columns for col in required_columns):
         raise ValueError(f"Missing required columns in methylation features. Required columns: {', '.join(required_columns)}")
     
@@ -242,11 +192,11 @@ def create_methylation_matrix(methylation_features):
         )
     
     
-    matrix = matrix.select(["contig", "motif_mod", "median", "motif_present"])\
+    matrix = matrix.select(["contig", "motif_mod", "methylation_value", "motif_present"])\
         .pivot(
             index = "contig",
             on = "motif_mod",
-            values = ["median", "motif_present"],
+            values = ["methylation_value", "motif_present"],
             aggregate_function = None,
             maintain_order = True
         )\
@@ -333,64 +283,70 @@ def generate_methylation_features(logger, contig_fasta_path, pileup_path, args, 
         assembly, contig_lengths_for_splitting , os.path.join(args.output, "contig_split.fasta")
     )
 
-    logger.info("Splitting pileup")
-    create_split_pileup(pileup_path, contig_lengths_for_splitting, os.path.join(args.output, "pileup_split.bed"))
-
     number_of_motifs = len(motifs)
     logger.info(f"Motifs found (#{number_of_motifs}): {motifs}")
 
     # Run methylation utils
     logger.info("Running epimetheus for whole contigs")
-    epymetheus.methylation_pattern(
+    contig_methylation = epymetheus.methylation_pattern(
         pileup = pileup_path,
         assembly = contig_fasta_path,
         output = os.path.join(args.output,"contig_methylation.tsv"),
         motifs = motifs,
         threads = args.num_process,
         min_valid_read_coverage = args.min_valid_read_coverage,
-        batch_size = 1000,
+        # batch_size = 1000,
         min_valid_cov_to_diff_fraction = 0.80,
-        allow_assembly_pilup_mismatch = False,
+        allow_assembly_pileup_mismatch = False,
+        output_type=epymetheus.MethylationOutput.Median
+    )
+
+    contig_methylation.write_csv(
+        os.path.join(args.output, "contig_methylation_features.tsv"),
+        separator = "\t"
     )
     
     logger.info("Running epimetheus for split contigs")
-    epymetheus.methylation_pattern(
-        pileup = os.path.join(args.output, "pileup_split.bed"),
-        assembly = os.path.join(args.output, "contig_split.fasta"),
-        output = os.path.join(args.output,"contig_split_methylation.tsv"),
-        motifs = motifs,
-        threads = args.num_process,
-        min_valid_read_coverage = args.min_valid_read_coverage,
-        batch_size = 1000,
-        min_valid_cov_to_diff_fraction = 0.80,
-        allow_assembly_pilup_mismatch = False,
+    contig_split_methylation = find_data_split_methylation_parallel(
+        contigs = contigs_to_split,
+        contig_lengths=contig_lengths_for_splitting,
+        pileup_path=pileup_path,
+        assembly_path=os.path.join(args.output, "contig_split.fasta"),
+        motifs =motifs,
+        min_valid_read_coverage=args.min_valid_read_coverage,
+        min_valid_cov_to_diff_fraction=0.80,
+        threads=args.num_process
     )
 
-    schema = {
-        'contig': pl.String(),
-        'motif': pl.String(),
-        'mod_type': pl.String(),
-        'mod_position': pl.Int8(),
-        'median': pl.Float64(),
-        'mean_read_cov': pl.Float64(),
-        'N_motif_obs': pl.Int32(),
-        'motif_occurences_total': pl.Int32(),
-    }
-    contig_methylation = pl.read_csv(os.path.join(args.output, "contig_methylation.tsv"), separator = "\t", schema = schema)\
+    if contig_split_methylation.is_empty():
+        logger.error("Failed to generate split contig methylation features. No valid results returned.")
+        raise RuntimeError("No valid methylation features generated for split contigs")
+
+    
+    contig_split_methylation.write_csv(
+        os.path.join(args.output, "contig_split_methylation_features.tsv"),
+        separator = "\t"
+    )
+
+
+    contig_methylation = contig_methylation\
         .with_columns(
-            pl.when(pl.col("N_motif_obs") > 0).then(1).otherwise(0).alias("motif_present")
+            pl.when(pl.col("n_motif_obs") > 0).then(1).otherwise(0).alias("motif_present")
         )
-    contig_split_methylation = pl.read_csv(os.path.join(args.output, "contig_split_methylation.tsv"), separator = "\t", schema = schema)\
+
+    contig_split_methylation = contig_split_methylation\
         .with_columns(
-            pl.when(pl.col("N_motif_obs") > 0).then(1).otherwise(0).alias("motif_present")
+            pl.when(pl.col("n_motif_obs") > 0).then(1).otherwise(0).alias("motif_present")
         )
     
-
     # Methylation number is median of mean methylation. Filtering is applied for too few motif observations.
     # contig_methylation = contig_methylation.filter((pl.col("N_motif_obs") * pl.col("mean_read_cov")) >= 16)
     # contig_split_methylation = contig_split_methylation.filter((pl.col("N_motif_obs") * pl.col("mean_read_cov")) >= 16)
-    contig_methylation = contig_methylation.filter((pl.col("N_motif_obs") >= args.min_motif_observations) & (pl.col("mean_read_cov") >= args.min_valid_read_coverage))
-    contig_split_methylation = contig_split_methylation.filter((pl.col("N_motif_obs") >= args.min_motif_observations) & (pl.col("mean_read_cov") >= args.min_valid_read_coverage))
+    contig_methylation = contig_methylation.filter((pl.col("n_motif_obs") >= args.min_motif_observations) & (pl.col("mean_read_cov") >= args.min_valid_read_coverage))
+    contig_split_methylation = contig_split_methylation.filter((pl.col("n_motif_obs") >= args.min_motif_observations) & (pl.col("mean_read_cov") >= args.min_valid_read_coverage))
+
+    print(contig_split_methylation)
+    print(contig_methylation)
     
     data_split_methylation_matrix = create_methylation_matrix(
         methylation_features = contig_split_methylation
@@ -409,6 +365,7 @@ def generate_methylation_features(logger, contig_fasta_path, pileup_path, args, 
     data_methylation_matrix = create_methylation_matrix(
         methylation_features=contig_methylation
     ).select(data_split_methylation_matrix.columns)
+    print(data_methylation_matrix)
     
     data = data\
         .join(
@@ -422,14 +379,10 @@ def generate_methylation_features(logger, contig_fasta_path, pileup_path, args, 
  
     assert data_split_methylation_matrix.columns == data_methylation_matrix.columns, "methylation columns does not match between data_split_methylation_matrix and data_methylation_matrix"
 
-    # data, data_split = filter_motifs_by_prevalence(
-    #     data,
-    #     data_split,
-    #     threshold = 0.85
-    # )
-    
     try:
         logger.info("Writing to data and data_split files...")
+        print(data.columns)
+        print("Saving new data files")
         data_split.write_csv(os.path.join(args.output, "data_split.csv"), separator=",", quote_style='never') 
         data.write_csv(os.path.join(args.output, "data.csv"), separator=",", quote_style='never')
     except Exception as e:
