@@ -574,7 +574,7 @@ def norm_abundance(data, features):
     if n >= 20:
         flag = True
     else:
-        flag = (n >= 5 and np.mean(np.sum(data[features["depth"]], axis=1)) > 2)
+        flag = (n >= 5 and np.mean(np.sum(data[:, features["depth"]], axis=1)) > 2)
 
     return flag
 
