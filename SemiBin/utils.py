@@ -569,13 +569,12 @@ def norm_abundance(data, features):
     import numpy as np
     n = data.shape[1] - len(features["kmer"]) - len(features["motif"]) - len(features["motif_present"])
     assert n == len(features["depth"]), "Depth should equal all_features - motifs - kmer!"
-    print("features in norm_abundance: ", n)
     flag = False
 
     if n >= 20:
         flag = True
     else:
-        flag = (n >= 5 and np.mean(np.sum(data[:, features["depth"]], axis=1)) > 2)
+        flag = (n >= 5 and np.mean(np.sum(data[features["depth"]], axis=1)) > 2)
 
     return flag
 
@@ -650,7 +649,7 @@ def get_features(df):
     
     columns = df.columns
     # Populate 'depth' with indices of columns ending with 'bam_mean' or 'bam_var'
-    features_dict['depth'] = [column for i, column in enumerate(columns) if column.endswith('mean') or column.endswith('var')]
+    features_dict['depth'] = [column for i, column in enumerate(columns) if column.endswith('mean') or column.endswith('var') or column.endswith('bam_cov') or column.endswith(".txt")]
     
     # Populate 'motif' with indices of columns
     features_dict['motif'] = [column for i, column in enumerate(columns) if column.startswith("methylation_value") and check_motif(column)]
