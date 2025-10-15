@@ -135,26 +135,46 @@ def test_normalize_kmer_motif_features():
 
 def test_norm_abundance():
     features = {}
-    features["kmer"] = range(136)
+    features["kmer"] = [str(i) for i in range(136)]
     features["motif"] = []
     features["motif_present"] = []
     features["depth"] = []
-    assert not norm_abundance(np.random.randn(10, 136), features)
-    features["depth"] = [137]
-    assert not norm_abundance(np.random.randn(12, 137), features)
-    features["depth"] = range(137, 141)
-    assert not norm_abundance(np.random.randn(12, 140), features)
-    features["depth"] = [137, 138]
-    assert not norm_abundance(np.abs(np.random.randn(12, 138))*2, features)
-    assert not norm_abundance(np.abs(np.random.randn(12, 138))*4, features)
+    
+    kmer_cols = [str(i) for i in range(136)]
 
-    features["depth"] = range(136, 148)
-    assert norm_abundance(np.abs(np.random.randn(12, 148)), features)
-    features["depth"] = range(136, 156)
-    assert norm_abundance(       np.random.randn(12, 156) , features)
-    features["depth"] = range(136, 164)
-    assert norm_abundance(       np.random.randn(12, 164) , features)
-    assert norm_abundance(np.abs(np.random.randn(12, 164)), features)
+    df = pd.DataFrame(np.random.randn(10, 136), columns=kmer_cols)
+    assert not norm_abundance(df, features)
+
+    features["depth"] = ["depth_1"]
+    df = pd.DataFrame(np.random.randn(12, 137), columns=kmer_cols + features["depth"])
+    assert not norm_abundance(df, features)
+
+    features["depth"] = ["depth_1", "depth_2", "depth_3", "depth_4"]
+    df = pd.DataFrame(np.random.randn(12, 140), columns=kmer_cols + features["depth"])
+    assert not norm_abundance(df, features)
+
+    features["depth"] = ["depth_1", "depth_2"]
+    df = pd.DataFrame(np.abs(np.random.randn(12, 138))*2, columns=kmer_cols + features["depth"])
+    assert not norm_abundance(df, features)
+
+    features["depth"] = ["depth_1", "depth_2"]
+    df = pd.DataFrame(np.abs(np.random.randn(12, 138))*4, columns=kmer_cols + features["depth"])
+    assert not norm_abundance(df, features)
+
+    features["depth"] = [f"depth_{i}" for i in range(12)]
+    df = pd.DataFrame(np.abs(np.random.randn(12, 148)), columns=kmer_cols + features["depth"])
+    assert norm_abundance(df, features)
+
+    features["depth"] = [f"depth_{i}" for i in range(20)]
+    df = pd.DataFrame(       np.random.randn(12, 156) , columns=kmer_cols + features["depth"])
+    assert norm_abundance(df, features)
+
+    features["depth"] = [f"depth_{i}" for i in range(28)]
+    df = pd.DataFrame(       np.random.randn(12, 164) , columns=kmer_cols + features["depth"])
+    assert norm_abundance(df, features)
+
+    df = pd.DataFrame(np.abs(np.random.randn(12, 164)), columns=kmer_cols + features["depth"])
+    assert norm_abundance(df, features)
 
 
 def test_load_fasta():
