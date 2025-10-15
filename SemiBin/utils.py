@@ -566,7 +566,9 @@ def maybe_compute_min_length(min_length, fafile, ratio):
 
 
 def norm_abundance(data, features):
+    import pandas as pd
     import numpy as np
+    assert isinstance(data, pd.DataFrame), "norm_abundance did not receive a pandas dataframe"
     n = data.shape[1] - len(features["kmer"]) - len(features["motif"]) - len(features["motif_present"])
     assert n == len(features["depth"]), "Depth should equal all_features - motifs - kmer!"
     flag = False
@@ -574,7 +576,7 @@ def norm_abundance(data, features):
     if n >= 20:
         flag = True
     else:
-        flag = (n >= 5 and np.mean(np.sum(data[:, features["depth"]], axis=1)) > 2)
+        flag = (n >= 5 and np.mean(np.sum(data[features["depth"]], axis=1)) > 2)
 
     return flag
 
