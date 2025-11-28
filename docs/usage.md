@@ -64,6 +64,8 @@ SemiBin2 single_easy_bin \
         -o output
 ```
 
+📝 For hybrid assemblies (both short and long reads), treat them as long-read assemblies and use the `--sequencing-type long_read` flag.
+
 Supported habitats are (names should be self-explanatory, except `global` which is a generic model):
 
 1.  `human_gut`
@@ -307,6 +309,8 @@ SemiBin2 multi_easy_bin \
         -b S1.sorted.bam S2.sorted.bam S3.sorted.bam S4.sorted.bam S5.sorted.bam \
         -o multi_output
 ```
+
+📝 For hybrid assemblies (both short and long reads), treat them as long-read assemblies and use the `--sequencing-type long_read` flag.
 
 ### Advanced multi-sample binning workflows workflows
 
