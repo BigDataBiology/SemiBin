@@ -1,3 +1,7 @@
+Unreleased
+	* SemiBin1: removed
+	* SemiBin: Add support for `SEMIBIN_DEBUG` environment variable
+
 Version 2.2.0 Mar 20 2025 by BigDataBiology
 	* logging: Use 'SemiBin2' as logger name
 	* SemiBin: Always log to file in DEBUG level and log command-line arguments
