@@ -1414,6 +1414,13 @@ def main2(raw_args=None, is_semibin2=True):
         loglevel = logging.ERROR
     else:
         loglevel = logging.INFO
+    if lvl := os.environ.get('SEMIBIN_DEBUG'):
+        try:
+            lvl = int(lvl)
+        except ValueError:
+            raise ValueError('SEMIBIN_DEBUG environment variable must be an integer')
+        if lvl > 0:
+            loglevel = logging.DEBUG
     try:
         import coloredlogs
         coloredlogs.install(level=loglevel, logger=logger)

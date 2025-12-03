@@ -1,5 +1,11 @@
 # What's New
 
+## Unreleased changes
+
+### User-visible changes
+
+- Add support for `SEMIBIN_DEBUG` environment variable to enable debug logging (overrides command line flags)
+
 ## Version 2.2.0
 
 *Released Mar 20, 2025*
