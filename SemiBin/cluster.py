@@ -10,28 +10,6 @@ from .markers import estimate_seeds
 # This is the default in the igraph package
 NR_INFOMAP_TRIALS = 10
 
-def run_infomap1(g, edge_weights, vertex_weights, trials):
-    return g.community_infomap(edge_weights=edge_weights, vertex_weights=vertex_weights, trials=trials)
-
-def run_infomap(g, edge_weights, vertex_weights, num_process):
-    '''Run infomap, using multiple processors (if available)'''
-    if num_process == 1:
-        return g.community_infomap(edge_weights=edge_weights, vertex_weights=vertex_weights, trials=NR_INFOMAP_TRIALS)
-    import multiprocessing as mp
-    with mp.Pool(min(num_process, NR_INFOMAP_TRIALS)) as p:
-        rs = [p.apply_async(run_infomap1, (g, edge_weights, vertex_weights, 1))
-                for _ in range(NR_INFOMAP_TRIALS)]
-        p.close()
-        p.join()
-    rs = [r.get() for r in rs]
-    best = rs[0]
-    for r in rs[1:]:
-        if r.codelength < best.codelength:
-            best = r
-    return best
-
-
-
 def cal_kl(m, v, use_ne='auto'):
     # A naive implementation creates a lot of copies of what can
     # become large matrices
@@ -179,10 +157,10 @@ def run_embed_infomap(logger, model, data, * ,
     g.add_edges(edges)
     length_weight = np.array([len(contig_dict[name]) for name in data.index])
     logger.debug(f'Running infomap with {num_process} processes...')
-    result = run_infomap(g,
+    result = g.community_infomap(
                 edge_weights=edge_weights,
                 vertex_weights=length_weight,
-                num_process=num_process)
+                trials=NR_INFOMAP_TRIALS)
     contig_labels = np.zeros(shape=num_contigs, dtype=int)
 
     for i, r in enumerate(result):

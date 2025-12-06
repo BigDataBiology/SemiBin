@@ -6,6 +6,10 @@
 
 - Add support for `SEMIBIN_DEBUG` environment variable to enable debug logging (overrides command line flags)
 
+### Bugfixes
+
+- Fix for newer version of igraph ([#208](https://github.com/BigDataBiology/SemiBin/issues/208))
+
 ## Version 2.2.0
 
 *Released Mar 20, 2025*
