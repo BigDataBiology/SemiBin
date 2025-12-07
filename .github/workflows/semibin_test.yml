@@ -15,6 +15,7 @@ jobs:
           - "test-py311"
           - "test-py312"
           - "test-py313"
+          - "test-py314"
     steps:
     - name: Checking out code
       uses: actions/checkout@v3
