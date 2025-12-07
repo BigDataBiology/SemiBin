@@ -1,6 +1,8 @@
 # What's New
 
-## Unreleased changes
+## Version 2.2.1
+
+*Released Dec 7, 2025*
 
 ### User-visible changes
 
