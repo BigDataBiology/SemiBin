@@ -22,7 +22,7 @@ def run_prodigal(fasta_path, num_process, output):
     next_ix = 0
     out = None
     with contextlib.ExitStack() as stack:
-        for h,seq in contigs.items():
+        for h, seq in contigs.items():
             if cur > split_len and next_ix < num_process:
                 if out is not None:
                     out.close()
@@ -67,7 +67,8 @@ def run_prodigal(fasta_path, num_process, output):
             f.write(open(os.path.join(output, 'contig_{}.faa'.format(index)), 'r').read())
     return contig_output
 
-def run_fraggenescan(fasta_path, num_process, output):
+
+def run_fraggenescan(fasta_path: str, num_process: int, output: str):
     try:
         contig_output = os.path.join(output, 'contigs.faa')
         with open(contig_output + '.out', 'w') as frag_out_log:
@@ -75,8 +76,11 @@ def run_fraggenescan(fasta_path, num_process, output):
             # Perl wrapper does not handle filepaths correctly if they contain spaces
             # This binary does not handle return codes correctly, though, so we
             # cannot use `check_call`:
+            fgs_path = shutil.which('FragGeneScan')
+            if fgs_path is None:
+                raise SystemError("Error: FragGeneScan binary not found in PATH\n")
             subprocess.call(
-                [shutil.which('FragGeneScan'),
+                [fgs_path,
                  '-s', fasta_path,
                  '-o', contig_output,
                  '-w', str(0),
