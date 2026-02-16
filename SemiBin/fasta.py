@@ -1,4 +1,10 @@
-def fasta_iter(fname, full_header=False):
+from typing import Iterator, Tuple, Union, TextIO
+
+
+def fasta_iter(
+        fname: Union[str, TextIO],
+        full_header: bool = False,
+        ) -> Iterator[Tuple[str, str]]:
     '''Iterate over a (possibly gzipped) FASTA file
 
     Parameters
@@ -19,7 +25,7 @@ def fasta_iter(fname, full_header=False):
     header = None
     chunks = []
     if hasattr(fname, 'readline'):
-        op = lambda f,_ : f
+        op = lambda f, _ : f
     elif fname.endswith('.gz'):
         import gzip
         op = gzip.open

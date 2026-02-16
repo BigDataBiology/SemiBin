@@ -12,13 +12,14 @@ from os import fspath
 
 try:
     import fcntl
-except ImportError: # pragma: no cover
+except ImportError:  # pragma: no cover
     fcntl = None
 
 DEFAULT_MODE = "wb"
 
-def _path_to_unicode(x): # pragma: no cover
-    if not isinstance(x, text_type):
+
+def _path_to_unicode(x):  # pragma: no cover
+    if not isinstance(x, str):
         return x.decode(sys.getfilesystemencoding())
     return x
 
@@ -27,7 +28,7 @@ _proper_fsync = os.fsync
 
 
 if sys.platform != 'win32':
-    if hasattr(fcntl, 'F_FULLFSYNC'):
+    if fcntl and hasattr(fcntl, 'F_FULLFSYNC'):
         def _proper_fsync(fd):
             # https://lists.apple.com/archives/darwin-dev/2005/Feb/msg00072.html
             # https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man2/fsync.2.html
@@ -60,7 +61,7 @@ if sys.platform != 'win32':
         _sync_directory(dst_dir)
         if src_dir != dst_dir:
             _sync_directory(src_dir)
-else: # pragma: no cover
+else:  # pragma: no cover
     from ctypes import windll, WinError
 
     _MOVEFILE_REPLACE_EXISTING = 0x1
