@@ -27,12 +27,11 @@ def parse_args(args):
                                     description='Neural network-based binning of metagenomic contigs',
                                     epilog='For more information, see https://semibin.readthedocs.io/en/latest/subcommands/')
 
-    parser.version = __version__
-
     parser.add_argument('-v',
                         '-V',
                         '--version',
                         action='version',
+                        version=__version__,
                         help='Print the version number')
 
     verbosity = parser.add_mutually_exclusive_group()
