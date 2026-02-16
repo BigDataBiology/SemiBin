@@ -110,12 +110,12 @@ You can run the individual steps by yourself, which can enable using compute clu
 
 In particular, `single_easy_bin` includes the following steps:
 
-1. `generate_data_single`
+1. `generate_sequence_features_single`
 2. `train_self`
 3. `bin_short` or `bin_long`
 
 `multi_easy_bin` includes
-1. `generate_data_multi`
+1. `generate_sequence_features_multi`
 2. `train_self` (if needed)
 3. `bin_short` or `bin_long`
 
@@ -177,16 +177,15 @@ SemiBin2 bin_long \
 
 Another suggestion is that you can pre-train a model from part of your dataset, which can provide a balance as it is faster than training for each sample while achieving better results than a pre-trained model from another dataset (see the [SemiBin1 manuscript](https://www.nature.com/articles/s41467-022-29843-y) for more information).
 
-If you have `S1.fa`, `S1/data.csv`, `S1/data_split.csv`, `S1/cannot/cannot.txt`; `S2.fa`, `S2/data.csv`, `S2/data_split.csv`, `S2/cannot/cannot.txt`; `S3.fa`, `S3/data.csv`, `S3/data_split.csv`, `S3/cannot/cannot.txt`.
+If you have `S1.fa`, `S1/data.csv`, `S1/data_split.csv`; `S2.fa`, `S2/data.csv`, `S2/data_split.csv`; `S3.fa`, `S3/data.csv`, `S3/data_split.csv`.
 You can train the model from 3 samples.
 
 ```bash
-SemiBin2 train \
+SemiBin2 train_self \
     --train-from-many \
     -i S1.fa S2.fa S3.fa \
     --data S1/data.csv S2/data.csv S3/data.csv \
     --data-split S1/data_split.csv S2/data_split.csv S3/data_split.csv \
-    -c S1/cannot.txt s2/cannot.txt S3/cannot.txt \
     -o S1_output
 ```
 
