@@ -7,6 +7,7 @@
 ### User-visible changes
 
 - Add support for `SEMIBIN_DEBUG` environment variable to enable debug logging (overrides command line flags)
+- Accept `hybrid` as a synonym for `long_reads` in `--sequencing-type` ([#216](https://github.com/BigDataBiology/SemiBin/issues/216))
 
 ### Internal improvements and bugfixes
 

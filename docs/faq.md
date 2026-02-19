@@ -12,7 +12,7 @@ See the [SemiBin2 manuscript](https://doi.org/10.1093/bioinformatics/btad209) fo
 
 ## What should I do if I have hybrid data (short- and long-reads)?
 
-From SemiBin's point-of-view, you should generally use the long-reads pipeline (`--sequencing-type=long_read`).
+From SemiBin's point-of-view, you should generally use the long-reads pipeline (`--sequencing-type=long_read`). For convenience, `hybrid` is also accepted as a synonym for `long_read` in the `--sequencing-type` argument.
 
 
 ## Does SemiBin work for eukaryotic genomes?

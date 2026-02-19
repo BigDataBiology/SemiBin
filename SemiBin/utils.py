@@ -189,7 +189,7 @@ def validate_normalize_args(logger, args):
     if args.cmd in ['single_easy_bin', 'multi_easy_bin']:
         if args.sequencing_type.lower() in ['short', 'short-read', 'short_reads', 'short-reads', 'short_read']:
             args.sequencing_type = 'short_read'
-        elif args.sequencing_type.lower() in ['long', 'long-read', 'long_reads', 'long-reads', 'long_read']:
+        elif args.sequencing_type.lower() in ['long', 'long-read', 'long_reads', 'long-reads', 'long_read', 'hybrid']:
             args.sequencing_type = 'long_read'
         else:
             logger.error(

@@ -585,7 +585,7 @@ def parse_args(args):
         p.add_argument('--sequencing-type',
                required=False,
                type=str,
-               help='sequencing type in [short_read/long_read], Default: short_read.',
+               help='sequencing type in [short_read/long_read/hybrid], Default: short_read. Note: hybrid is treated as long_read.',
                dest='sequencing_type',
                default='short_read',)
 
