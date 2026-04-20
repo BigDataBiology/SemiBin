@@ -62,7 +62,6 @@ The main disadvantage is that this approach will take longer:
 
 ```bash
 SemiBin2 single_easy_bin \
-        --environment human_gut \
         -i S1.fa \
         -b S1.sorted.bam \
         -o output
