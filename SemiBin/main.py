@@ -1209,7 +1209,10 @@ def single_easy_binning(logger, args, binned_length,
     """
     contain `generate_cannot_links`, `generate_sequence_features_single`, `train`, `bin` in one command for single-sample and co-assembly binning
     """
-    logger.info('Generating training data...')
+    if args.environment is None:
+        logger.info('Generating training data...')
+    else:
+        logger.info('Generating features for pretrained model...')
     if args.depth_metabat2 is None and args.bams is None and args.abundances is None:
         sys.stderr.write(
             f"Error: You need to input bam files if you want to calculate coverage features.\n")
