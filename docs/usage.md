@@ -142,7 +142,7 @@ This step can be skipped if you want to use a pretrained model.
 ```bash
 SemiBin2 bin_short \
     -i S1.fa \
-    --model S1_output/model.pt \
+    --model S1_output/model.h5 \
     --data S1_output/data.csv \
     -o S1_output
 ```
@@ -150,7 +150,7 @@ or
 ```bash
 SemiBin2 bin_long \
     -i S1.fa \
-    --model S1_output/model.pt \
+    --model S1_output/model.h5 \
     --data S1_output/data.csv \
     -o S1_output
 ```
@@ -237,7 +237,7 @@ Having access to a GPU can speed up this mode.
 ```bash
 SemiBin2 bin_short \
     -i contig.fa \
-    --model contig_output/model.pt \
+    --model contig_output/model.h5 \
     --data contig_output/data.csv \
     -o output
 ```
@@ -347,7 +347,7 @@ There are two subcommands, depending on whether you want to use the binning mode
 for sample in S1 S2 S3 S4 S5 ; do
     SemiBin2 bin_short \
         -i ${sample}.fa \
-        --model ${sample}_output/model.pt \
+        --model ${sample}_output/model.h5 \
         --data multi_output/samples/${sample}/data.csv \
         -o output
 done
@@ -357,7 +357,7 @@ or
 for sample in S1 S2 S3 S4 S5 ; do
     SemiBin2 bin_long \
         -i ${sample}.fa \
-        --model ${sample}_output/model.pt \
+        --model ${sample}_output/model.h5 \
         --data multi_output/samples/${sample}/data.csv \
         -o output
 done
