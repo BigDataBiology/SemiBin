@@ -59,7 +59,7 @@ Please find more options and details below and [read the docs](https://semibin.r
 
 ## Advanced Installation
 
-SemiBin runs (and is continuously tested) on Python 3.8-3.14
+SemiBin runs (and is continuously tested) on Python 3.9-3.14
 
 ### pixi
 

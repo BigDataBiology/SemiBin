@@ -1,5 +1,9 @@
 # What's New
 
+## Unreleased
+
+- Drop support for Python 3.8. The minimum supported Python version is now 3.9.
+
 ## Version 2.3.0
 
 *Released May 26, 2026*

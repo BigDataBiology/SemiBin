@@ -1,6 +1,6 @@
 # Install
 
-SemiBin can run on Python 3.8-3.14.
+SemiBin can run on Python 3.9-3.14.
 
 ## Install with pixi
 

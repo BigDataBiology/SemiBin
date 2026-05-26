@@ -20,9 +20,6 @@ Pool = mp.get_context('spawn').Pool
 
 
 def parse_args(args):
-    # BooleanOptionalAction is available in Python 3.9; before that, we fall back on the default
-    BooleanOptionalAction = getattr(argparse, 'BooleanOptionalAction', 'store_true')
-
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                     description='Neural network-based binning of metagenomic contigs',
                                     epilog='For more information, see https://semibin.readthedocs.io/en/latest/subcommands/')
@@ -244,7 +241,7 @@ def parse_args(args):
                                    'You must provide data, data_split, cannot, and fasta files for corresponding samples in the same order. '
                                    'Note: You can only use `--train-from-many` mode when performing single-sample binning. Training from many samples with multi-sample binning is not supported.',
                            dest='train_from_many',
-                           action=BooleanOptionalAction)
+                           action=argparse.BooleanOptionalAction)
 
 
 
@@ -308,13 +305,7 @@ def parse_args(args):
                 required=False,
                 help='Write pre-reclustering bins to disk.',
                 dest='write_pre_reclustering_bins',
-                action=BooleanOptionalAction)
-        if not hasattr(argparse, 'BooleanOptionalAction'):
-            p.add_argument('--no-write-pre-reclustering-bins',
-                    required=False,
-                    help='Do not write pre-reclustering bins to disk.',
-                    dest='no_write_pre_reclustering_bins',
-                    action='store_true')
+                action=argparse.BooleanOptionalAction)
 
         p.add_argument('--tag-output',
                 required=False,
@@ -598,10 +589,6 @@ def parse_args(args):
         args.recluster = not args.no_recluster
 
     if hasattr(args, 'write_pre_reclustering_bins'):
-        # backwards compat for Python 3.8 and earlier
-        if not hasattr(argparse, 'BooleanOptionalAction'):
-            if args.no_write_pre_reclustering_bins:
-                args.write_pre_reclustering_bins = False
         if args.write_pre_reclustering_bins is None:
             args.write_pre_reclustering_bins = False
 
@@ -1458,11 +1445,6 @@ def main2(raw_args=None, is_semibin2=True):
 
     if args.verbose and args.quiet:
         logger.warning('Both verbose and quiet are set, output will be verbose')
-
-    if sys.version_info.major < 3 or sys.version_info.minor < 8:
-        logger.warning(f'You are using Python {sys.version_info.major}.{sys.version_info.minor} ({sys.version}), but SemiBin requires Python 3.8 or higher. Please upgrade your Python version.')
-        logger.warning(f'If you are using conda, you can run `conda install python=3.8` to upgrade your Python version.')
-        logger.warning(f'SemiBin will keep going, but it may not work properly.')
 
     validate_normalize_args(logger, args)
 

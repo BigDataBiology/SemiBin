@@ -1,4 +1,5 @@
 Unreleased
+	* SemiBin: Drop support for Python 3.8 (minimum is now Python 3.9)
 
 Version 2.3.0 May 26 2026 by BigDataBiology
 	* SemiBin1: removed
