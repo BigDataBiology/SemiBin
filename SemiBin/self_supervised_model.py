@@ -39,7 +39,7 @@ def train_self(logger, datapaths, data_splits, is_combined=True,
     # cannot-link count). The epoch loop below only resamples cannot-link
     # indices and runs the gradient updates.
     prepared = []
-    for data_index, (datapath, data_split_path) in enumerate(zip(datapaths, data_splits)):
+    for data_index, (datapath, data_split_path) in enumerate(zip(datapaths, data_splits, strict=True)):
         logger.debug(f'Reading training data for index {data_index}...')
         data = pd.read_csv(datapath, index_col=0)
         data.index = data.index.astype(str)

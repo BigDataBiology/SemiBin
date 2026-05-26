@@ -20,7 +20,7 @@ def get_best_bin(results, contig_to_marker, namelist, contig_dict, minfasta):
 
         for res_labels in results:
             res = defaultdict(list)
-            for label, name in zip(res_labels, namelist):
+            for label, name in zip(res_labels, namelist, strict=True):
                 if label != -1:
                     res[label].append(name)
             for bin_contig in res.values():

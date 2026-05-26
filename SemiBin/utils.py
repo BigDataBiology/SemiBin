@@ -361,7 +361,7 @@ def write_bins(namelist, contig_labels, output, contig_seqs,
     import pandas as pd
 
     res = defaultdict(list)
-    for label, name in zip(contig_labels, namelist):
+    for label, name in zip(contig_labels, namelist, strict=True):
         if label != -1:
             res[label].append(name)
 

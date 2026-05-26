@@ -75,6 +75,6 @@ For new features and bugfixes, update both:
 - `docs/whatsnew.md` — add a bullet under the current unreleased version section
 
 ## Key details
-- Python 3.9+ compatibility required
+- Python 3.10+ compatibility required
 - Uses `mp.get_context('spawn').Pool` for multiprocessing (not fork)
 - `hypothesis` pinned to `<=6.112.1` in test dependencies

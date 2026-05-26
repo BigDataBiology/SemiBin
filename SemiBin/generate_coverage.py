@@ -34,7 +34,7 @@ def calculate_coverage(depth_stream, bam_file, must_link_threshold, edge=75, is_
             values.append(value)
         depth_value = np.zeros(sum(lengths), dtype=int)
         s = 0
-        for ell,v in zip(lengths, values):
+        for ell,v in zip(lengths, values, strict=True):
             depth_value[s:s+ell] = v
             s += ell
 

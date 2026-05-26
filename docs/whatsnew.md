@@ -3,6 +3,8 @@
 ## Unreleased
 
 - Drop support for Python 3.8. The minimum supported Python version is now 3.9.
+- Drop support for Python 3.9. The minimum supported Python version is now 3.10.
+- Use `zip(..., strict=True)` for paired-array iterations across clustering, marker handling, and feature generation so that silent length-mismatch bugs raise immediately.
 
 ## Version 2.3.0
 

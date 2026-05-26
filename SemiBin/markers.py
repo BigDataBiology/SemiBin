@@ -67,7 +67,7 @@ def get_marker(hmmout,
         marker = data['gene'].values
         contig = data['contig'].values
         sequence2markers = defaultdict(list)
-        for m, c in zip(marker, contig):
+        for m, c in zip(marker, contig, strict=True):
             sequence2markers[c].append(m)
         return sequence2markers
     else:

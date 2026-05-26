@@ -147,7 +147,7 @@ def run_embed_infomap(logger, model, data, * ,
     X = X[above_diag]
     Y = Y[above_diag]
 
-    edges = [(x,y) for x,y in zip(X, Y)]
+    edges = [(x,y) for x,y in zip(X, Y, strict=True)]
     edge_weights = V[above_diag]
 
     logger.debug(f'Number of edges in clustering graph: {len(edges)}')
@@ -236,7 +236,7 @@ def recluster_bins(logger, data, *,
             seed_index = [name2ix[s] for s in seed]
             length_weight = np.array(
                 [len(contig_dict[name])
-                    for name,ell in zip(data.index, contig_labels)
+                    for name,ell in zip(data.index, contig_labels, strict=True)
                         if ell == bin_ix])
             seeds_embedding = embedding_new[seed_index]
             kmeans = KMeans(
