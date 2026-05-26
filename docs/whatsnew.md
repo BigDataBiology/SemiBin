@@ -1,38 +1,65 @@
 # What's New
 
-## Unreleased
+## Version 2.3.0
+
+*Released May 26, 2026*
+
+This release bundles a large number of bug fixes (several of which fix silent
+correctness issues in training and clustering), removes the deprecated
+`SemiBin1` command, and includes many documentation improvements.
+
+### User-visible changes
+
+- Remove `SemiBin1`. Only `SemiBin2` is shipped now; if you have old scripts that still call `SemiBin1`, they will need to be updated.
+- Accept `hybrid` as a synonym for `long_read` in `--sequencing-type` ([#216](https://github.com/BigDataBiology/SemiBin/issues/216))
+- Remove `--environment` parameter when learning a new model ([#218](https://github.com/BigDataBiology/SemiBin/issues/218))
+- `check_install`: now also looks for `samtools` and reports it (in verbose mode) when missing. This is a soft check: missing `samtools` does not cause `check_install` to fail, since `samtools` is only required for CRAM input.
+- `--allow-missing-mmseqs2` is now marked as deprecated in the help text (the option is already a no-op since `mmseqs2` is no longer required by `check_install`).
+- Data-generation log message now distinguishes between generating training data and generating features for inference with a pretrained model ([#219](https://github.com/BigDataBiology/SemiBin/pull/219))
+- Add Python 3.14 to the supported/tested Python versions (SemiBin now runs on Python 3.8–3.14)
+- Add the missing `COPYING.MIT` license file ([#214](https://github.com/BigDataBiology/SemiBin/issues/214))
 
 ### Bug fixes
 
 - `single_easy_bin`: fix `AttributeError: 'Namespace' object has no attribute 'training_type'` when running with abundance files (`-a`) instead of BAM files. `set_training_type()` was only invoked on the BAM path, so the abundance-based single-sample workflow crashed before doing any work.
+- Semi-supervised training: fix wrong input in the unlabeled contrastive-learning branch. The second argument to `model.forward()` was `unlabeled_train_input1` instead of `unlabeled_train_input2`, meaning both branches received identical data and the unlabeled-pair contrastive signal was being silently discarded.
+- Long-read clustering: clip zero depth values before `np.log`. Zero depth (no reads mapped) was producing `-inf` values, silently corrupting the embedding used for DBSCAN clustering.
+- Multi-sample binning: fix `split_data` matching sample names that are prefixes of others (e.g., `S1` matching `S10:contig`). Now uses `str.startswith()` rather than `str.contains()`.
 - Marker calling: validate the cached `markers.hmmout` against an input fingerprint (FASTA size/mtime, `binned_length`, ORF finder) before reusing it. Previously, reruns into an existing output directory could silently reuse stale marker calls from a different input or different parameters. On mismatch a warning is logged and markers are recomputed.
-- Long-read binning: remove stale output bins from previous runs before writing new results (previously, rerunning into the same output directory with fewer bins left old FASTA files behind)
-- Empty FASTA inputs now fail cleanly with `Input file ... is empty. Please check inputs.` instead of crashing with `ZeroDivisionError` (single-sample paths) or `ValueError: attempt to get argmax of an empty sequence` (multi-sample paths)
-
-### User-visible changes
-
-- Accept `hybrid` as a synonym for `long_reads` in `--sequencing-type` ([#216](https://github.com/BigDataBiology/SemiBin/issues/216))
-- Remove `--environment` parameter in command that learns a new model ([#218](https://github.com/BigDataBiology/SemiBin/issues/218))
-- Remove SemiBin1
-- `check_install`: now also looks for `samtools` and reports it (in verbose mode) when missing. This is a soft check: missing `samtools` does not cause `check_install` to fail, since `samtools` is only required for CRAM input.
+- Long-read binning: remove stale output bins from previous runs before writing new results (previously, rerunning into the same output directory with fewer bins left old FASTA files behind).
+- Empty FASTA inputs now fail cleanly with `Input file ... is empty. Please check inputs.` instead of crashing with `ZeroDivisionError` (single-sample paths) or `ValueError: attempt to get argmax of an empty sequence` (multi-sample paths).
+- ORF finding: fix prodigal errors being silently ignored.
+- `model_load`: raise a clear `ValueError` for unknown model names instead of an `UnboundLocalError`.
+- `check_install`: fix incorrect logic when checking for `prodigal`.
+- Several minor error-message and validation improvements in `utils.py` and `main.py`.
 
 ### Documentation fixes
 
-- Fix outdated output descriptions in `docs/output.md` (default model type, missing `bins_info.tsv`/`contig_bins.tsv`, clarify `output_bins` is final output)
+- Fix outdated output descriptions in `docs/output.md` (default model type, missing `bins_info.tsv`/`contig_bins.tsv`, clarify `output_bins` is the final output)
 - Fix wrong `split_contigs` output filename in README strobealign-aemb example (`split.fa` → `split_contigs.fna.gz`)
-- Fix `docs/aemb.md` description of `split_contigs.fna.gz` contents (only split halves, not originals) and undefined variable in helper script
+- Fix `docs/aemb.md` description of `split_contigs.fna.gz` contents (only split halves, not originals) and an undefined variable in the helper script
 - Remove references to `--mode` and `--training-type` flags no longer accepted by SemiBin2 in `docs/subcommands.md`
 - Update `docs/semibin2.md` and `docs/index.md` to reflect that only `SemiBin2` is installed since v2.2
 - Clarify `-b`/`-a` are alternatives (not both required) in `docs/subcommands.md` for `single_easy_bin`, `generate_sequence_features_single`, and `generate_sequence_features_multi`
 - Fix `docs/generate.md` path from `scripts/` to `script/`
-- Clarify Prodigal is optional in `docs/install.md`
+- Clarify Prodigal is optional in `docs/install.md`; add `samtools` to the source-install dependency list
 - Fix step numbering in `docs/usage.md` (steps went 1, 3, 4 → now 1, 2, 3)
+- Make it more prominent in the FAQ and usage docs how to handle hybrid (long+short) data
+- Fix Python version ranges in README and install docs
+- Fix truncated help text for `--random-seed`
+- Fix wrong DOI for SemiBin2 in `CITATION.md`
+- Remove incorrect `--depth-metabat2` mention from `generate_sequence_features_single` docs
+- Remove duplicate HMMER entry and fix malformed Bedtools URL in README
+- Many other smaller documentation corrections (typos, grammar, broken links, incorrect option names)
 
-### Internal improvements and bugfixes
+### Internal improvements
 
-- Fix prodigal errors being silently ignored (non-zero exit codes are now detected and reported)
-- Fix wrong input in semi-supervised unlabeled contrastive learning
-- Self-supervised training reads each input CSV once instead of every epoch (previously, single-sample mode reparsed the same file 15 times)
+- Self-supervised training reads each input CSV once instead of every epoch.
+- Fix unclosed file handle in `run_prodigal`.
+- Remove unused `pyyaml` dependency.
+- Avoid naked `except:` clauses (better error reporting and easier debugging).
+- Write validation errors to the log file (not just to stderr).
+- Various small refactors and additional type annotations.
 
 ## Version 2.2.1
 

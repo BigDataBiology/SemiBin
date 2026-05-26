@@ -1,24 +1,44 @@
 Unreleased
+
+Version 2.3.0 May 26 2026 by BigDataBiology
+	* SemiBin1: removed
+	* SemiBin: Accept 'hybrid' as a synonym for 'long_read' in --sequencing-type (#216)
+	* SemiBin: Remove '--environment' parameter in command that learns a new model (#218)
 	* single_easy_bin: Fix AttributeError on 'training_type' when running
 	  with abundance files (-a) instead of BAM files
+	* semi-supervised: Fix wrong input in unlabeled contrastive learning
+	  (both branches received identical data, defeating the unlabeled-pair
+	  contrastive signal)
+	* long-read clustering: Clip zero depth values before np.log
+	  (previously produced -inf values that silently corrupted the embedding)
+	* utils: Fix split_data matching sample names that are prefixes of others
+	  (use str.startswith() instead of str.contains())
 	* markers: Validate cached markers.hmmout against input fingerprint
 	  (FASTA size/mtime, binned_length, ORF finder) to avoid silently
 	  reusing stale marker calls when reruns target an existing output dir
-	* self-supervised: Read training CSVs once instead of every epoch
-	* SemiBin: Empty FASTA inputs now fail cleanly with a user-facing error
-	  instead of crashing with ZeroDivisionError / argmax-on-empty
-	* check_install: Soft-check for samtools (warns when missing in verbose
-	  mode but does not fail; samtools is only required for CRAM input)
 	* long-read binning: Remove stale output bins from previous runs before
 	  writing new results
+	* SemiBin: Empty FASTA inputs now fail cleanly with a user-facing error
+	  instead of crashing with ZeroDivisionError / argmax-on-empty
 	* orffinding: Fix prodigal errors being silently ignored
-	* semi-supervised: Fix wrong input in unlabeled contrastive learning
-	* SemiBin: Remove '--environment' parameter in command that learns a new model (#218)
-	* SemiBin: Accept 'hybrid' as a synonym for 'long_reads' in --sequencing-type (#216)
-	* SemiBin1: removed
-	* docs: Fix multiple documentation issues (outdated output descriptions, wrong
-	  split_contigs output filename, removed CLI option references, inaccurate
-	  required arguments, and installation inconsistencies)
+	* model_load: Raise ValueError for unknown model name (instead of
+	  UnboundLocalError)
+	* check_install: Fix logic when checking for prodigal
+	* check_install: Soft-check for samtools (warns when missing in verbose
+	  mode but does not fail; samtools is only required for CRAM input)
+	* SemiBin: Mark --allow-missing-mmseqs2 as deprecated in help text
+	* SemiBin: Update data-generation log message to distinguish training
+	  from inference with a pretrained model (#219)
+	* self-supervised: Read training CSVs once instead of every epoch
+	* orffinding: Fix unclosed file handle in run_prodigal
+	* pyproject: Remove unused pyyaml dependency
+	* Add Python 3.14 to the tested Python versions
+	* Add missing COPYING.MIT license file (#214)
+	* docs: Fix multiple documentation issues (outdated output descriptions,
+	  wrong split_contigs output filename, removed CLI option references,
+	  inaccurate required arguments, installation inconsistencies, broken
+	  links, Python version ranges, --random-seed help text, CITATION DOI,
+	  --depth-metabat2 mention on subcommand without that option, etc.)
 
 Version 2.2.1 Dec 7 2025 by BigDataBiology
 	* SemiBin: Add support for `SEMIBIN_DEBUG` environment variable
