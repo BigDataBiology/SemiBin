@@ -58,7 +58,7 @@ SemiBin = ["*.hmm", "models/*.pt"]
 version = {attr = "SemiBin.semibin_version.__version__"}
 
 
-[tool.pixi.project]
+[tool.pixi.workspace]
 channels = ["conda-forge", "bioconda"]
 platforms = ["linux-64"]
 
