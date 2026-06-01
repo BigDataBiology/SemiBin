@@ -25,8 +25,17 @@ well as their benchmarking) are described in
 
 A tutorial of running SemiBin from scratch can be found here [SemiBin tutorial](https://github.com/BigDataBiology/SemiBin_tutorial_from_scratch).
 
+Using it without installation with [pixi](https://pixi.sh/):
 
-Installation with `conda`:
+```bash
+pixi exec -c bioconda -c conda-forge -s semibin SemiBin2
+```
+
+See below for more details on how to install SemiBin with pixi, including with GPU support.
+
+#### Installation with `conda`
+
+You can also install SemiBin with `conda`:
 
 ```bash
 conda create -n SemiBin
@@ -35,6 +44,9 @@ conda install -c conda-forge -c bioconda semibin
 ```
 
 This will install the `SemiBin2` command in your environment.
+
+
+### Running SemiBin2
 
 **The inputs** to the SemiBin are contigs (assembled from the reads) and BAM files (reads mapping to the contigs). In [the docs](https://semibin.readthedocs.io/en/latest/generate/) you can see how to generate the inputs starting with a metagenome.
 
@@ -66,7 +78,7 @@ SemiBin runs (and is continuously tested) on Python 3.10-3.14
 The current recommended way to install SemiBin with GPU-support is to use [pixi](https://pixi.sh/). Pixi will use the packages from conda-forge and bioconda to install SemiBin and its dependencies. See [the docs](https://semibin.readthedocs.io/en/latest/install/) for more details, but the basic idea is to create a `pixi.toml` file with the following content:
 
 ```toml
-[project]
+[workspace]
 authors = ["Luis Pedro Coelho <luis@luispedro.org>"]
 channels = ["conda-forge", "bioconda"]
 name = "semibin_install"

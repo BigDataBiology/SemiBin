@@ -11,7 +11,7 @@ The current recommended way to install SemiBin is to use [pixi](https://pixi.sh/
 Create a `pixi.toml` file with the following content.
 
 ```toml
-[project]
+[workspace]
 authors = ["Luis Pedro Coelho <luis@luispedro.org>"]
 channels = ["conda-forge", "bioconda"]
 name = "semibin_install"
@@ -32,7 +32,7 @@ Then, run `pixi install` in the same directory as the `pixi.toml` file to downlo
 If you want to use SemiBin with GPU, you need to install Pytorch with GPU support as well. Starting with the example above, you need to add `pytorch-gpu` to the `dependencies` section and `cuda` to the `system-requirements` section.
 
 ```toml
-[project]
+[workspace]
 authors = ["Luis Pedro Coelho <luis@luispedro.org>"]
 channels = ["conda-forge", "bioconda"]
 name = "semibin_install"
