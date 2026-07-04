@@ -4,10 +4,10 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
         environment:
           - "test-py310"
           - "test-py311"
@@ -17,22 +17,16 @@ jobs:
     steps:
     - name: Checking out code
       uses: actions/checkout@v6
-    - uses: prefix-dev/setup-pixi@v0.9.6
+    - uses: prefix-dev/setup-pixi@v0.10.0
       with:
-        pixi-version: v0.66.0
+        pixi-version: v0.72.0
         activate-environment: true
         environments: ${{ matrix.environment }}
     - name: Test with pytest
-      shell: bash -l {0}
       run: |
         python -m pytest
-    - name: Install into the environment
-      shell: bash -l {0}
-      run: |
-        uv pip install .
     - name: Test with SemiBin command
       run: |
-        uv pip install .
         for t in integration-tests/*.py; do
           echo "Running $t ..."
           python $t
