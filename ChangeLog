@@ -4,6 +4,9 @@ Unreleased
 	* SemiBin: Use zip(..., strict=True) for paired-array iterations
 	  to catch silent length-mismatch bugs in clustering, marker
 	  handling, and feature generation
+	* single_easy_bin: Fix TypeError when combining '--environment'
+	  with abundance files ('-a') instead of BAM files; the
+	  unsupported combination is now rejected cleanly
 
 Version 2.3.0 May 26 2026 by BigDataBiology
 	* SemiBin1: removed

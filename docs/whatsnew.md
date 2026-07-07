@@ -5,6 +5,7 @@
 - Drop support for Python 3.8. The minimum supported Python version is now 3.9.
 - Drop support for Python 3.9. The minimum supported Python version is now 3.10.
 - Use `zip(..., strict=True)` for paired-array iterations across clustering, marker handling, and feature generation so that silent length-mismatch bugs raise immediately.
+- `single_easy_bin`: Fix a `TypeError` crash when using `--environment` together with abundance files (`-a`) instead of BAM files. The unsupported combination is now rejected with a clear error message.
 
 ## Version 2.3.0
 
