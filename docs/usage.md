@@ -320,9 +320,9 @@ They can also be parallelized in a compute cluster, for example.
 
 ```bash
 SemiBin2 generate_sequence_features_multi \
-    -i concatenated.fa.gz \
+    -i concatenated.fa \
     -b S1.sorted.bam S2.sorted.bam S3.sorted.bam S4.sorted.bam S5.sorted.bam \
-    -o output
+    -o multi_output
 ```
 (2) Train
 
