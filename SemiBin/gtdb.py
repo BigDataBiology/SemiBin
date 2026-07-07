@@ -21,8 +21,8 @@ def download_GTDB_to(logger, GTDB_dir):
     # This allows one to bypass the actual downloading for testing (otherwise
     # tests take a few hours!)
     if path.exists('__SemiBin__internal_test_GTDB_v95.tar.gz'):
-        logger.warning(f'Found __SemiBin__internal_test_GTDB_v95.tar.gz')
-        logger.warning(f'Will copy it to {download_path} and use it as GTDB tarball')
+        logger.debug('Found __SemiBin__internal_test_GTDB_v95.tar.gz')
+        logger.debug(f'Will copy it to {download_path} and use it as GTDB tarball')
         shutil.copy2('__SemiBin__internal_test_GTDB_v95.tar.gz', download_path)
         md5_ok = True
     else:
@@ -46,15 +46,14 @@ def download_GTDB_to(logger, GTDB_dir):
                 tar.extract(file_name, GTDB_dir)
             tar.close()
         except Exception as e:
-            sys.stderr.write(
-                f"Error: cannot untar the file: {e}\n")
+            logger.error(f"Cannot untar the file: {e}")
             sys.exit(1)
 
         os.remove(download_path)
     else:
         os.remove(download_path)
-        sys.stderr.write(
-            f"Error: MD5 check failed. Downloading GTDB database failed (Please check the internet connections or storage space), removing '{download_path}'.\n")
+        logger.error(
+            f"MD5 check failed, downloading GTDB database failed (please check the internet connection or storage space); removing '{download_path}'.")
         sys.exit(1)
 
 

@@ -53,13 +53,11 @@ def run_prodigal(fasta_path, num_process, output):
         for p in process:
             rc = p.wait()
             if rc != 0:
-                sys.stderr.write(
-                    f"Error: prodigal exited with return code {rc}\n")
+                logger.error(f"prodigal exited with return code {rc}")
                 sys.exit(1)
 
     except OSError as e:
-        sys.stderr.write(
-            f"Error: Running prodigal failed: {e}\n")
+        logger.error(f"Running prodigal failed: {e}")
         sys.exit(1)
 
     else:
@@ -74,6 +72,7 @@ def run_prodigal(fasta_path, num_process, output):
 
 
 def run_fraggenescan(fasta_path: str, num_process: int, output: str):
+    logger = logging.getLogger('SemiBin2')
     try:
         contig_output = os.path.join(output, 'contigs.faa')
         with open(contig_output + '.out', 'w') as frag_out_log:
@@ -83,7 +82,7 @@ def run_fraggenescan(fasta_path: str, num_process: int, output: str):
             # cannot use `check_call`:
             fgs_path = shutil.which('FragGeneScan')
             if fgs_path is None:
-                raise SystemError("Error: FragGeneScan binary not found in PATH\n")
+                raise SystemError("FragGeneScan binary not found in PATH")
             subprocess.call(
                 [fgs_path,
                  '-s', fasta_path,
@@ -95,8 +94,7 @@ def run_fraggenescan(fasta_path: str, num_process: int, output: str):
                 stdout=frag_out_log,
             )
     except Exception as e:
-        sys.stderr.write(
-                f"Error: Running fraggenescan failed (error: {e})\n")
+        logger.error(f"Running FragGeneScan failed: {e}")
         sys.exit(1)
     return contig_output + '.faa'
 
@@ -117,6 +115,6 @@ def run_orffinder(fasta_path, num_process, tdir, orf_finder, prodigal_output_faa
     elif orf_finder == 'fraggenescan':
         return run_fraggenescan(fasta_path, num_process, tdir)
     else:
-        sys.stderr.write(
-            f"Error: Unknown ORF finder {orf_finder}\n")
+        logger = logging.getLogger('SemiBin2')
+        logger.error(f"Unknown ORF finder {orf_finder}")
         sys.exit(1)

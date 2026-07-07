@@ -170,8 +170,7 @@ def estimate_seeds(fasta_path,
         except Exception as e:
             if os.path.exists(hmm_output):
                 os.remove(hmm_output)
-            sys.stderr.write(
-                    f"Error: Running hmmsearch failed: {e}\n")
+            logger.error(f"Running hmmsearch failed: {e}")
             sys.exit(1)
 
         if output is not None:

@@ -1,12 +1,14 @@
 import os
 import subprocess
 import multiprocessing
+import logging
 import sys
 import random
 import contextlib
 import pathlib
 
 from .fasta import fasta_iter
+
 
 @contextlib.contextmanager
 def possibly_compressed_write(filename):
@@ -90,7 +92,7 @@ def validate_normalize_args(logger, args):
     if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train_semi', 'bin']:
         if args.orf_finder not in ['prodigal', 'fraggenescan', 'fast-naive']:
             logger.error(
-                f"Error: SemiBin only supports 'prodigal'/'fraggenescan'/'fast-naive' as the ORF finder (--orf-finder option).\n")
+                "SemiBin only supports 'prodigal'/'fraggenescan'/'fast-naive' as the ORF finder (--orf-finder option).")
             exit_with_error = True
         if args.orf_finder == 'fraggenescan':
             from time import sleep
@@ -109,7 +111,7 @@ def validate_normalize_args(logger, args):
         args.engine = args.engine.lower()
         if args.engine not in ['auto', 'gpu', 'cpu']:
             logger.error(
-                f"Error: Argument '--engine' needs to be one of auto[default]/gpu/cpu.\n")
+                "Argument '--engine' needs to be one of auto[default]/gpu/cpu.")
             exit_with_error = True
 
     if args.cmd == 'generate_cannot_links':
@@ -121,7 +123,7 @@ def validate_normalize_args(logger, args):
     if args.cmd in ['generate_sequence_features_single', 'generate_sequence_features_multi', 'single_easy_bin', 'multi_easy_bin']:
         if args.bams and args.abundances:
             logger.error(
-                f"Error: can not use BAM files and abundance files at the same time.\n")
+                "Cannot use BAM files and abundance files at the same time.")
             exit_with_error = True
 
     if args.cmd == 'generate_sequence_features_single':
@@ -142,22 +144,22 @@ def validate_normalize_args(logger, args):
         if not args.train_from_many:
             if len(args.data) > 1:
                 logger.error(
-                    f"Error: Expected one data.csv file with single mode.\n")
+                    "Expected one data.csv file with single mode.")
                 exit_with_error = True
 
             if len(args.data_split) > 1:
                 logger.error(
-                    f"Error: Expected one data_split.csv file with single mode.\n")
+                    "Expected one data_split.csv file with single mode.")
                 exit_with_error = True
             if args.cmd == 'train_semi':
                 if len(args.contig_fasta) > 1:
                     logger.error(
-                        f"Error: Expected one fasta file with single mode.\n")
+                        "Expected one fasta file with single mode.")
                     exit_with_error = True
 
                 if len(args.cannot_link) > 1:
                     logger.error(
-                        f"Error: Expected one cannot.txt file with single mode.\n")
+                        "Expected one cannot.txt file with single mode.")
                     exit_with_error = True
                 expect_file(args.cannot_link[0])
                 expect_file(args.contig_fasta[0])
@@ -183,18 +185,18 @@ def validate_normalize_args(logger, args):
             args.sequencing_type = 'long_read'
         else:
             logger.error(
-                f"Error: Did not understand sequencing_type argument '{args.sequencing_type}' (should be short_reads or long_reads).\n")
+                f"Did not understand sequencing_type argument '{args.sequencing_type}' (should be short_reads or long_reads).")
             exit_with_error = True
         logger.info(f'Binning for {args.sequencing_type}')
 
     if args.cmd == 'bin':
         if args.environment is None and args.model_path is None:
             logger.error(
-                f"Error: Please choose input a model path or use our built-in model for [human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/chicken_caecum/global].\n")
+                "Please provide a model path or use one of our built-in models: [human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/chicken_caecum/global].")
             exit_with_error = True
         if args.environment is not None and args.model_path is not None:
             logger.error(
-                f"Error: You cannot use both an explicit model path and an environment.\n")
+                "You cannot use both an explicit model path and an environment.")
             exit_with_error = True
         if args.model_path is not None:
             expect_file(args.model_path)
@@ -229,7 +231,7 @@ def validate_normalize_args(logger, args):
 
         if args.training_type not in ['semi', 'self']:
             logger.error(
-                f"Error: You need to specify the training algorithm in semi/self.\n")
+                "You need to specify the training algorithm as semi/self.")
             exit_with_error = True
 
     if args.cmd == 'concatenate_fasta':
@@ -239,7 +241,7 @@ def validate_normalize_args(logger, args):
             contig_name.append(os.path.basename(contig).split('.')[0])
         if len(set(contig_name)) != len(contig_name):
             logger.error(
-                f"Error: Make sure that every contig file have different names.\n")
+                "Make sure that every contig file has a different name.")
             exit_with_error = True
 
 
@@ -251,7 +253,7 @@ def validate_normalize_args(logger, args):
     if getattr(args, 'write_pre_reclustering_bins', False) and \
             not getattr(args, 'recluster', True):
         logger.error(
-            f"Error: Cannot use --write-pre-reclustering-bins with --no-recluster.\n")
+            "Cannot use --write-pre-reclustering-bins with --no-recluster.")
         exit_with_error = True
 
     if exit_with_error:
@@ -419,7 +421,6 @@ def load_fasta(fasta_path: str, ratio: float):
         contig_dict[h] = seq
 
     if total_bps == 0:
-        import logging
         logger = logging.getLogger('SemiBin2')
         logger.warning(f'No contigs in {fasta_path}')
         # Caller is expected to detect the empty contig_dict and report a
@@ -482,6 +483,7 @@ def concatenate_fasta(fasta_files, min_length, output, separator, output_compres
 
     Returns name of the concatenated file
     """
+    logger = logging.getLogger('SemiBin2')
     ofname = os.path.join(output, 'concatenated.fa')
     if output_compression != 'none':
         ofname += '.' + output_compression
@@ -490,8 +492,8 @@ def concatenate_fasta(fasta_files, min_length, output, separator, output_compres
             sample_name = os.path.basename(fname).split('.')[0]
             for h, seq in fasta_iter(fname):
                 if separator in h:
-                    sys.stderr.write(
-                        f"Error in file {fname}: Contig ID '{h}' contains the separator ('{separator}'), please choose another separator.\n")
+                    logger.error(
+                        f"In file {fname}: contig ID '{h}' contains the separator ('{separator}'), please choose another separator.")
                     sys.exit(1)
                 if len(seq) >= min_length:
                     header = f'{sample_name}{separator}{h}'

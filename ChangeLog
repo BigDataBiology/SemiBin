@@ -14,6 +14,10 @@ Unreleased
 	  space merged two sentences in check_install; the
 	  '--train-from-many' shape-mismatch message was unreadable; the
 	  pretrained-model message now reads 'can only be used for')
+	* SemiBin: Route fatal error messages through the logger instead
+	  of writing directly to stderr, so they are timestamped and
+	  recorded in SemiBinRun.log; also drop the redundant 'Error:'
+	  prefix and trailing newline from logged errors
 
 Version 2.3.0 May 26 2026 by BigDataBiology
 	* SemiBin1: removed

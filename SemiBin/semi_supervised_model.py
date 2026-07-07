@@ -248,8 +248,8 @@ def train_semi(logger, out, contig_fastas, binned_lengths, datas, data_splits, c
             # cannot link
 
             if not os.path.getsize(cannot_links[data_index]):
-                sys.stderr.write(
-                    f"Error: Cannot-link file ({cannot_links[data_index]}) is empty!\n")
+                logger.error(
+                    f"Cannot-link file ({cannot_links[data_index]}) is empty!")
                 sys.exit(1)
 
             cannot_link = pd.read_csv(cannot_links[data_index], sep=',',
@@ -260,9 +260,9 @@ def train_semi(logger, out, contig_fastas, binned_lengths, datas, data_splits, c
 
             if mode == 'several':
                 if data.shape[1] != 138 or data_split.shape[1] != 136:
-                    sys.stderr.write(
-                        f"Error: '--train-from-many' training expects single-sample feature files "
-                        f"(138 and 136 columns), but got {data.shape[1]} and {data_split.shape[1]} columns.\n")
+                    logger.error(
+                        "'--train-from-many' training expects single-sample feature files "
+                        f"(138 and 136 columns), but got {data.shape[1]} and {data_split.shape[1]} columns.")
                     sys.exit(1)
 
             contig2ix = {c:ix for ix,c in enumerate(data.index)}

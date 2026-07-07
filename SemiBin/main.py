@@ -721,8 +721,7 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
                     stdout=None,
                 )
             except Exception as e:
-                sys.stderr.write(
-                        f"Error: Running mmseqs createdb failed (error: {e})\n")
+                logger.error(f"Running mmseqs createdb failed: {e}")
                 sys.exit(1)
             if os.path.exists(os.path.join(output, 'mmseqs_contig_annotation')):
                 shutil.rmtree(os.path.join(output, 'mmseqs_contig_annotation'))
@@ -742,8 +741,7 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
                     stdout=None,
                 )
             except Exception as e:
-                sys.stderr.write(
-                        f"Error: Running mmseqs taxonomy failed (error: {e})\n")
+                logger.error(f"Running mmseqs taxonomy failed: {e}")
                 sys.exit(1)
             taxonomy_results_fname = os.path.join(output,
                                         'mmseqs_contig_annotation',
@@ -759,8 +757,7 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
                     stdout=None,
                 )
             except Exception as e:
-                sys.stderr.write(
-                    f"Error: Running mmseqs createtsv fail (error: {e})\n")
+                logger.error(f"Running mmseqs createtsv failed: {e}")
                 sys.exit(1)
 
     os.makedirs(os.path.join(output, 'cannot'), exist_ok=True)
@@ -779,8 +776,8 @@ def generate_sequence_features_single(logger, contig_fasta,
     import pandas as pd
 
     if bams is None and abundances is None and not only_kmer:
-        sys.stderr.write(
-            f"Error: You need to specify input BAM files or abundance files to calculate coverage features.\n")
+        logger.error(
+            "You need to specify input BAM files or abundance files to calculate coverage features.")
         sys.exit(1)
 
     if (bams is not None or abundances is not None) and only_kmer:
@@ -824,23 +821,23 @@ def generate_sequence_features_single(logger, contig_fasta,
             if not os.path.exists(
                     os.path.join(output,
                                  f'{os.path.split(bam_file)[-1]}_{bam_index}_data_cov.csv')):
-                sys.stderr.write(
-                    f"Error: Generating coverage file failed\n")
+                logger.error(
+                    f"Generating coverage file failed (for BAM file {bam_file})")
                 sys.exit(1)
             if is_combined:
                 if not os.path.exists(
                     os.path.join(output,
                                  f'{os.path.split(bam_file)[-1]}_{bam_index}_data_split_cov.csv')):
-                    sys.stderr.write(
-                        f"Error: Generating coverage file failed\n")
+                    logger.error(
+                        f"Generating split coverage file failed (for BAM file {bam_file})")
                     sys.exit(1)
 
         data_cov, data_split_cov = combine_cov(output, bams, is_combined)
 
     if abundances:
         if len(abundances) < 5:
-            sys.stderr.write(
-                f"Error: abundances from strobealign-aemb can only be used with at least 5 samples.\n")
+            logger.error(
+                "Abundances from strobealign-aemb can only be used with at least 5 samples.")
             sys.exit(1)
         logger.info('Reading abundance information from abundance files.')
         data_cov, data_split_cov = generate_cov_from_abundances(abundances, output, contig_fasta, binned_length)
@@ -873,13 +870,13 @@ def generate_sequence_features_multi(logger, args):
 
     if not args.bams and not args.abundances:
         logger.error(
-            f"Error: You need to specify input BAM files or abundance files.\n")
+            "You need to specify input BAM files or abundance files.")
         sys.exit(1)
 
     n_sample = len(args.bams) if args.bams else len(args.abundances)
     if args.abundances and n_sample < 5:
         logger.error(
-            f"Error: abundances from strobealign-aemb can only be used when at least 5 samples are used.\n")
+            "Abundances from strobealign-aemb can only be used when at least 5 samples are used.")
         sys.exit(1)
 
     is_combined = n_sample >= 5
@@ -943,14 +940,14 @@ def generate_sequence_features_multi(logger, args):
         for bam_index, bam_file in enumerate(args.bams):
             if not path.exists(path.join(args.output, 'samples',
                             f'{path.split(bam_file)[-1]}_{bam_index}_data_cov.csv')):
-                sys.stderr.write(
-                    f"Error: Generating coverage file failed (for BAM file {bam_file})\n")
+                logger.error(
+                    f"Generating coverage file failed (for BAM file {bam_file})")
                 sys.exit(1)
             if is_combined:
                 if not path.exists(path.join(args.output, 'samples',
                             f'{path.split(bam_file)[-1]}_{bam_index}_data_split_cov.csv')):
-                    sys.stderr.write(
-                        f"Error: Generating split coverage file failed (for BAM file {bam_file})\n")
+                    logger.error(
+                        f"Generating split coverage file failed (for BAM file {bam_file})")
                     sys.exit(1)
 
         # Generate cov features for every sample
@@ -1118,6 +1115,7 @@ def training(logger, contig_fasta,
 def binning_preprocess(data, depth_metabat2, model_path, environment, device):
     import pandas as pd
     from .semi_supervised_model import model_load
+    logger = logging.getLogger('SemiBin2')
     data = pd.read_csv(data, index_col=0)
     data.index = data.index.astype(str)
 
@@ -1135,14 +1133,14 @@ def binning_preprocess(data, depth_metabat2, model_path, environment, device):
         data = pd.merge(data, depth_metabat2, how='inner', on=None,
                  left_index=True, right_index=True, sort=False, copy=True)
         if data.shape[1] != 138:
-            sys.stderr.write(
-                f"Error: Depth file from Metabat2 can only be used in single-sample binning!\n")
+            logger.error(
+                "Depth file from Metabat2 can only be used for single-sample binning!")
             sys.exit(1)
 
     model_path = model_path if environment is None else get_model_path(environment)
     if environment is not None:
         if data.shape[1] != 138:
-            sys.stderr.write(f"Error: the provided pretrained model can only be used for single-sample binning!\n")
+            logger.error("The provided pretrained model can only be used for single-sample binning!")
             sys.exit(1)
 
     model = model_load(model_path, device)
@@ -1206,16 +1204,16 @@ def single_easy_binning(logger, args, binned_length,
     else:
         logger.info('Generating features for pretrained model...')
     if args.depth_metabat2 is None and args.bams is None and args.abundances is None:
-        sys.stderr.write(
-            f"Error: You need to input bam files if you want to calculate coverage features.\n")
+        logger.error(
+            "You need to input BAM files if you want to calculate coverage features.")
         sys.exit(1)
 
     if (args.bams is not None or args.abundances is not None) and args.depth_metabat2 is not None:
         logger.info('We will use abundance information from Metabat2.')
 
     if args.depth_metabat2 and args.environment is None:
-        sys.stderr.write(
-            f"Error: You need to use our provided model if you provide depth file from Metabat2.\n")
+        logger.error(
+            "You need to use one of our provided models if you provide a depth file from Metabat2.")
         sys.exit(1)
 
     generate_sequence_features_single(
@@ -1584,8 +1582,8 @@ def main2(raw_args=None, is_semibin2=True):
                 if args.depth_metabat2 is None:
                     n_sample = len(args.bams) if args.bams else len(args.abundances)
                     if n_sample != 1:
-                        sys.stderr.write(
-                            f"Error: the provided pretrained model can only be used for single-sample binning!\n")
+                        logger.error(
+                            "The provided pretrained model can only be used for single-sample binning!")
                         sys.exit(1)
 
             single_easy_binning(

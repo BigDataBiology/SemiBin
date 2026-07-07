@@ -50,9 +50,9 @@ def train_self(logger, datapaths, data_splits, is_combined=True,
 
         if mode == 'several':
             if data.shape[1] != 138 or data_split.shape[1] != 136:
-                sys.stderr.write(
-                    f"Error: '--train-from-many' training expects single-sample feature files "
-                    f"(138 and 136 columns), but got {data.shape[1]} and {data_split.shape[1]} columns.\n")
+                logger.error(
+                    "'--train-from-many' training expects single-sample feature files "
+                    f"(138 and 136 columns), but got {data.shape[1]} and {data_split.shape[1]} columns.")
                 sys.exit(1)
 
         train_data = data.values
