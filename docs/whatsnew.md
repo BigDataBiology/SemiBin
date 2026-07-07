@@ -7,6 +7,7 @@
 - Use `zip(..., strict=True)` for paired-array iterations across clustering, marker handling, and feature generation so that silent length-mismatch bugs raise immediately.
 - `single_easy_bin`: Fix a `TypeError` crash when using `--environment` together with abundance files (`-a`) instead of BAM files. The unsupported combination is now rejected with a clear error message.
 - GTDB download: When extracting the GTDB tarball fails, the underlying error is now included in the message instead of a generic "cannot untar the file", making disk-full/permission errors easier to diagnose.
+- Fix several broken error messages: a missing space that merged two sentences in `check_install`, an unreadable shape-mismatch message for `--train-from-many` training (it now reports the expected and actual column counts), and the pretrained-model error now reads "can only be used for single-sample binning".
 
 ## Version 2.3.0
 

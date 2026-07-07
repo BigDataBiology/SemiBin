@@ -10,6 +10,10 @@ Unreleased
 	* GTDB download: Include the underlying error message when
 	  extracting the GTDB tarball fails, instead of a generic
 	  'cannot untar the file'
+	* SemiBin: Fix several broken/garbled error messages (a missing
+	  space merged two sentences in check_install; the
+	  '--train-from-many' shape-mismatch message was unreadable; the
+	  pretrained-model message now reads 'can only be used for')
 
 Version 2.3.0 May 26 2026 by BigDataBiology
 	* SemiBin1: removed

@@ -635,7 +635,7 @@ def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
             if dep == 'mmseqs':
                 if not allow_missing_mmseqs2:
                     sys.stderr.write(
-                        f"Error: {dep} does not seem to be installed."
+                        f"Error: {dep} does not seem to be installed. "
                         "This is only necessary for semi-supervised learning (which is deprecated)\n")
                     missing_deps = True
                 elif verbose:
@@ -1142,7 +1142,7 @@ def binning_preprocess(data, depth_metabat2, model_path, environment, device):
     model_path = model_path if environment is None else get_model_path(environment)
     if environment is not None:
         if data.shape[1] != 138:
-            sys.stderr.write(f"Error: provided pretrained model only used in single-sample binning!\n")
+            sys.stderr.write(f"Error: the provided pretrained model can only be used for single-sample binning!\n")
             sys.exit(1)
 
     model = model_load(model_path, device)
@@ -1585,7 +1585,7 @@ def main2(raw_args=None, is_semibin2=True):
                     n_sample = len(args.bams) if args.bams else len(args.abundances)
                     if n_sample != 1:
                         sys.stderr.write(
-                            f"Error: provided pretrained model only used in single-sample binning!\n")
+                            f"Error: the provided pretrained model can only be used for single-sample binning!\n")
                         sys.exit(1)
 
             single_easy_binning(

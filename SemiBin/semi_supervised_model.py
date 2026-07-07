@@ -261,7 +261,8 @@ def train_semi(logger, out, contig_fastas, binned_lengths, datas, data_splits, c
             if mode == 'several':
                 if data.shape[1] != 138 or data_split.shape[1] != 136:
                     sys.stderr.write(
-                        f"Error: training mode with several only used in single-sample binning!\n")
+                        f"Error: '--train-from-many' training expects single-sample feature files "
+                        f"(138 and 136 columns), but got {data.shape[1]} and {data_split.shape[1]} columns.\n")
                     sys.exit(1)
 
             contig2ix = {c:ix for ix,c in enumerate(data.index)}
