@@ -9,6 +9,7 @@
 * `cannot/cannot.txt`: cannot-link file used in training (only present when using semi-supervised mode).
 * `bins_info.tsv`: table with basic information on each bin (name, total number of basepairs, number of contigs, N50, and L50; more columns may be added in the future).
 * `contig_bins.tsv`: table mapping each contig to its assigned bin.
+* `SemiBinRun.log`: run log (timestamped messages, including any fatal error that aborted the run). This is the first place to look when troubleshooting.
 
 If `--write-pre-reclustering-bins` is passed, pre-reclustering bins are also written to a separate `output_prerecluster_bins` directory.
 

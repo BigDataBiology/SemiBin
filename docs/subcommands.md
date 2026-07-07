@@ -306,6 +306,19 @@ The separator character cannot occur in any of your samples, so if any sample co
 * `-m`: Discard sequences below this length (default:0).
 * `--compression` (since version `1.6`): whether to compress the output (defaults to `gz` if using `SemiBin2`)
 
+### split_contigs
+
+Split each contig into two halves for use with the `strobealign-aemb` abundance-estimation pipeline (see the [dedicated page](aemb)).
+The output file `split_contigs.fna.gz` contains the split contigs (each contig split into two halves, named with `_1` and `_2` suffixes); contigs shorter than the minimum length are excluded.
+
+#### Required arguments
+
+* `-i`/`--input-fasta` (same as for `single_easy_bin`)
+* `-o`/`--output` (same as for `single_easy_bin`)
+
+#### Optional arguments
+
+* `-m`/`--min-len`: Discard sequences below this length (default: 0).
 
 ### citation
 
@@ -318,3 +331,13 @@ Prints citation
 * `--bibtex`: Use BibTeX format
 * `--ris`: Use RIS format (for Endnote and other tools)
 * `--chicago`: Use Chicago format (default)
+
+### update_model
+
+Utility to convert a model saved in an older format to the current format.
+This is only needed if you have a model file that a newer version of SemiBin fails to load; re-saving it with `update_model` produces a file in the current format.
+
+#### Required arguments
+
+* `-m`/`--model`: Path to the trained model to convert.
+* `-o`/`--output`: Path of the converted model file to write.
