@@ -45,9 +45,9 @@ def download_GTDB_to(logger, GTDB_dir):
             for file_name in file_names:
                 tar.extract(file_name, GTDB_dir)
             tar.close()
-        except Exception:
+        except Exception as e:
             sys.stderr.write(
-                f"Error: cannot untar the file.")
+                f"Error: cannot untar the file: {e}\n")
             sys.exit(1)
 
         os.remove(download_path)

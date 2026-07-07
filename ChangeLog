@@ -7,6 +7,9 @@ Unreleased
 	* single_easy_bin: Fix TypeError when combining '--environment'
 	  with abundance files ('-a') instead of BAM files; the
 	  unsupported combination is now rejected cleanly
+	* GTDB download: Include the underlying error message when
+	  extracting the GTDB tarball fails, instead of a generic
+	  'cannot untar the file'
 
 Version 2.3.0 May 26 2026 by BigDataBiology
 	* SemiBin1: removed
