@@ -3659,7 +3659,7 @@ packages:
   - requests
   - numexpr
   - pytest ; extra == 'dev'
-  - hypothesis<=6.112.1 ; extra == 'dev'
+  - hypothesis ; extra == 'dev'
   requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/01/8e/1e35281b8ab6d5d72ebe9911edcdffa3f36b04ed9d51dec6dd140396e220/scipy-1.17.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
   name: scipy

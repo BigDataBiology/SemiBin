@@ -38,7 +38,7 @@ dependencies = [
 urls = { homepage = "https://github.com/BigDataBiology/SemiBin" }
 
 [project.optional-dependencies]
-dev = ['pytest', 'hypothesis<=6.112.1']
+dev = ['pytest', 'hypothesis']
 
 [project.scripts]
 SemiBin2 = "SemiBin.main:main2"
@@ -72,7 +72,7 @@ prodigal = ">=2.6.3,<3"
 SemiBin = { path = ".", editable = true }
 
 [tool.pixi.feature.test]
-dependencies = { pytest = "*", hypothesis = "<=6.112.1", "uv" = "*" }
+dependencies = { pytest = "*", hypothesis = "*", "uv" = "*" }
 
 [tool.pixi.feature.py310]
 dependencies = { python = "3.10.*" }
