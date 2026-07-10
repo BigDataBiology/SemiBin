@@ -341,3 +341,22 @@ This is only needed if you have a model file that a newer version of SemiBin fai
 
 * `-m`/`--model`: Path to the trained model to convert.
 * `-o`/`--output`: Path of the converted model file to write.
+
+### install-skills
+
+Install the [agent skill](https://docs.claude.com/en/docs/claude-code/skills) that ships with SemiBin.
+The skill teaches coding agents (such as Claude Code) how to invoke SemiBin2 correctly: which subcommand to use for each binning mode, how to validate inputs, where the output bins are written, and how to resolve common errors.
+
+By default the skill is installed into the current project (`./.claude/skills`), so an agent working in that project picks it up automatically.
+
+```bash
+SemiBin2 install-skills            # install into ./.claude/skills (project-local)
+SemiBin2 install-skills --user     # install into $HOME/.claude/skills (user-wide)
+```
+
+#### Optional arguments
+
+* `--user`/`--global`: Install into the user-wide skills directory (`$HOME/.claude/skills`) instead of the current project.
+* `--skills-dir`: Explicit destination directory, overriding both the project-local default and `--user`.
+
+If a skill of the same name already exists at the destination, it is over-written.

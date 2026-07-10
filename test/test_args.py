@@ -229,3 +229,31 @@ def test_bibtex():
     args = parse_args(['citation', '--bibtex'])
     assert args.cmd == 'citation'
     assert args.cite_format == 'bibtex'
+
+
+def test_install_skills_args():
+    args = parse_args(['install-skills'])
+    assert args.cmd == 'install-skills'
+    assert args.install_user is False
+    assert args.skills_dir is None
+
+    assert parse_args(['install-skills', '--user']).install_user is True
+    assert parse_args(['install-skills', '--global']).install_user is True
+    assert parse_args(['install-skills', '--skills-dir', '/tmp/x']).skills_dir == '/tmp/x'
+
+    # the install_skills (underscore) alias normalizes to the canonical name
+    assert parse_args(['install_skills']).cmd == 'install-skills'
+
+
+def test_install_skills_installs(tmp_path):
+    from SemiBin.main import install_skills
+    dest = tmp_path / 'skills'
+    install_skills(logging, to_user=False, skills_dir=str(dest))
+
+    skill = dest / 'semibin' / 'SKILL.md'
+    assert skill.exists()
+    assert 'name: semibin' in skill.read_text()
+
+    # Re-installing over an existing copy succeeds (over-writes in place)
+    install_skills(logging, to_user=False, skills_dir=str(dest))
+    assert skill.exists()

@@ -169,6 +169,22 @@ def parse_args(args):
                             action='store_true',
                             default=None)
 
+    install_skills = subparsers.add_parser('install-skills',
+            aliases=['install_skills'],
+            help='Install the bundled agent skill(s) so coding agents (e.g. Claude Code) can drive SemiBin2 correctly.')
+    install_skills.add_argument('--user', '--global',
+            required=False,
+            help='Install to the user-wide skills directory ($HOME/.claude/skills) '
+                 'instead of the current project (./.claude/skills).',
+            dest='install_user',
+            action='store_true')
+    install_skills.add_argument('--skills-dir',
+            required=False,
+            help='Explicit destination directory for the skills (overrides both the '
+                 'project-local default and --user).',
+            dest='skills_dir',
+            default=None)
+
     citation = subparsers.add_parser('citation',
             help='Print citation information')
     cite_format = citation.add_mutually_exclusive_group()
@@ -601,6 +617,8 @@ def parse_args(args):
 
     if args.cmd == 'bin_short':
         args.cmd = 'bin'
+    if args.cmd == 'install_skills':
+        args.cmd = 'install-skills'
     return args
 
 
@@ -1379,6 +1397,47 @@ def split_contigs(logger, contig_fasta, *, output, min_length):
     return oname
 
 
+def install_skills(logger, *, to_user, skills_dir=None):
+    '''Install the agent skill(s) bundled with SemiBin.
+
+    Parameters
+    ----------
+    to_user : bool
+        If True, install to $HOME/.claude/skills; otherwise install to
+        ./.claude/skills in the current working directory.
+    skills_dir : str, optional
+        Explicit destination directory, overriding both defaults above.
+    '''
+    src_root = os.path.join(os.path.dirname(__file__), 'skills')
+    if not os.path.isdir(src_root):
+        logger.error(f'Bundled skills directory not found at `{src_root}`. This is likely a packaging problem.')
+        sys.exit(1)
+
+    if skills_dir is not None:
+        dest_root = skills_dir
+    elif to_user:
+        dest_root = os.path.join(os.path.expanduser('~'), '.claude', 'skills')
+    else:
+        dest_root = os.path.join(os.getcwd(), '.claude', 'skills')
+
+    skills = sorted(d for d in os.listdir(src_root)
+                        if os.path.isdir(os.path.join(src_root, d)))
+    if not skills:
+        logger.error(f'No skills found to install in `{src_root}`.')
+        sys.exit(1)
+
+    os.makedirs(dest_root, exist_ok=True)
+    for skill in skills:
+        src = os.path.join(src_root, skill)
+        dest = os.path.join(dest_root, skill)
+        if os.path.exists(dest):
+            logger.warning(f'Existing skill at `{dest}` found. Over-writing it.')
+            shutil.rmtree(dest)
+        shutil.copytree(src, dest)
+        logger.info(f'Installed skill `{skill}` to `{dest}`.')
+    logger.info(f'Installed {len(skills)} skill(s) to `{dest_root}`.')
+
+
 def log_subprocess(event, *args, **kwargs):
     if event == 'subprocess.Popen':
         (executable, args, _cwd, _env) = args[0]
@@ -1429,6 +1488,10 @@ def main2(raw_args=None, is_semibin2=True):
         from .semi_supervised_model import model_load
         model = model_load(args.model_path, torch.device('cpu'), warn_on_old_format=False)
         model.save_with_params_to(args.output)
+        return 0
+
+    if args.cmd == 'install-skills':
+        install_skills(logger, to_user=args.install_user, skills_dir=args.skills_dir)
         return 0
 
 

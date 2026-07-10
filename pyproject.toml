@@ -50,7 +50,7 @@ zip-safe = false
 
 
 [tool.setuptools.package-data]
-SemiBin = ["*.hmm", "models/*.pt"]
+SemiBin = ["*.hmm", "models/*.pt", "skills/**/*.md"]
 
 [tool.setuptools.dynamic]
 version = {attr = "SemiBin.semibin_version.__version__"}
