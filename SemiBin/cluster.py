@@ -4,7 +4,7 @@ import math
 import shutil
 import tempfile
 
-from .utils import write_bins
+from .utils import write_bins, log_binning_stats
 from .markers import estimate_seeds
 
 # This is the default in the igraph package
@@ -294,6 +294,7 @@ def cluster(logger, model, data, device, is_combined,
             bin_files.to_csv(os.path.join(out, 'bins_info.tsv'), index=False, sep='\t')
             pd.DataFrame({'contig': data.index, 'bin': contig_labels}).to_csv(
                 os.path.join(out, 'contig_bins.tsv'), index=False, sep='\t')
+            log_binning_stats(logger, bin_files, contig_dict, binned_length)
         n_pre_bins = len(bin_files)
     else:
         from collections import defaultdict
@@ -343,5 +344,6 @@ def cluster(logger, model, data, device, is_combined,
         outputs.to_csv(os.path.join(out, 'recluster_bins_info.tsv'), index=False, sep='\t')
         pd.DataFrame({'contig': data.index, 'bin': contig_labels_reclustered}).to_csv(
             os.path.join(out, 'contig_bins.tsv'), index=False, sep='\t')
+        log_binning_stats(logger, outputs, contig_dict, binned_length)
     logger.info('Binning finished')
 

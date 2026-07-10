@@ -2,7 +2,7 @@ import os
 import shutil
 import torch
 import numpy as np
-from .utils import write_bins
+from .utils import write_bins, log_binning_stats
 from .markers import estimate_seeds, get_marker
 from sklearn.cluster import dbscan
 from sklearn.neighbors import kneighbors_graph
@@ -158,4 +158,5 @@ def cluster_long_read(logger, model, data, device, is_combined,
                    sep='\t')
     pd.DataFrame({'contig': namelist, 'bin': contig_labels}).to_csv(
             os.path.join(out, 'contig_bins.tsv'), index=False, sep='\t')
+    log_binning_stats(logger, written, contig_dict, binned_length)
     logger.info('Finished binning.')

@@ -390,6 +390,74 @@ def write_bins(namelist, contig_labels, output, contig_seqs,
     return pd.DataFrame(written, columns=['filename', 'nbps', 'nr_contigs', 'N50', 'L50'])
 
 
+def log_binning_stats(logger, bins_info, contig_dict, binned_length=None):
+    '''Log summary statistics about the produced bins
+
+    Parameters
+    ----------
+    logger
+        logger to write the summary to
+    bins_info : pd.DataFrame
+        the DataFrame returned by ``write_bins`` (one row per bin, with
+        ``nbps`` and ``nr_contigs`` columns)
+    contig_dict : dict
+        contig-id -> sequence for the whole input assembly
+    binned_length : int, optional
+        minimum contig length considered for binning; when given, contigs
+        shorter than this are reported as a separate "too short" category
+    '''
+    n_bins = len(bins_info)
+    if n_bins == 0:
+        return
+
+    total_contigs = len(contig_dict)
+    total_bp = sum(len(s) for s in contig_dict.values())
+
+    binned_contigs = int(bins_info['nr_contigs'].sum())
+    binned_bp = int(bins_info['nbps'].sum())
+
+    def _pct(part, whole):
+        return 100.0 * part / whole if whole else 0.0
+
+    if binned_length is not None:
+        short_contigs = sum(len(s) < binned_length for s in contig_dict.values())
+        short_bp = sum(len(s) for s in contig_dict.values() if len(s) < binned_length)
+    else:
+        short_contigs = short_bp = 0
+
+    logger.info('Binning summary:')
+    logger.info(f'  Bins produced: {n_bins}')
+    logger.info(
+        f'  Contigs binned: {binned_contigs:,} / {total_contigs:,} '
+        f'({_pct(binned_contigs, total_contigs):.1f}%)')
+    logger.info(
+        f'  Basepairs binned: {binned_bp:,} / {total_bp:,} '
+        f'({_pct(binned_bp, total_bp):.1f}%)')
+    if binned_length is not None:
+        eligible_unbinned = total_contigs - binned_contigs - short_contigs
+        logger.info(
+            f'  Unbinned: {eligible_unbinned:,} contigs '
+            f'({total_bp - binned_bp - short_bp:,} bp) passed the length '
+            f'filter but were not binned; '
+            f'{short_contigs:,} contigs ({short_bp:,} bp) too short '
+            f'(< {binned_length:,} bp)')
+    else:
+        logger.info(
+            f'  Unbinned: {total_contigs - binned_contigs:,} contigs '
+            f'({total_bp - binned_bp:,} bp)')
+    sizes = bins_info['nbps']
+    logger.info(
+        f'  Bin size (bp): mean {binned_bp // n_bins:,}, '
+        f'median {int(sizes.median()):,}, '
+        f'min {int(sizes.min()):,}, max {int(sizes.max()):,}')
+    logger.info(
+        f'  Contigs per bin: mean {binned_contigs / n_bins:.1f}, '
+        f'median {int(bins_info["nr_contigs"].median())}')
+    logger.info(
+        '  Note: these bins are not quality-controlled and should not be '
+        'treated as MAGs without further QC (e.g., checking completeness and '
+        'contamination with CheckM2, and chimerism with GUNC)')
+
 
 def set_random_seed(seed):
     import torch

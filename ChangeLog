@@ -1,4 +1,7 @@
 Unreleased
+	* binning: Log a summary at the end of binning (number of bins,
+	  fraction of contigs and basepairs binned vs unbinned, and mean/
+	  median bin size and contigs-per-bin)
 	* install-skills: Add subcommand to install the bundled agent
 	  skill (which teaches coding agents to drive SemiBin2 correctly)
 	  into a project-local ./.claude/skills (default) or the
