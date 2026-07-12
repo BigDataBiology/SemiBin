@@ -7,6 +7,7 @@
 - Drop support for Python 3.8. The minimum supported Python version is now 3.9.
 - Drop support for Python 3.9. The minimum supported Python version is now 3.10.
 - Use `zip(..., strict=True)` for paired-array iterations across clustering, marker handling, and feature generation so that silent length-mismatch bugs raise immediately.
+- `single_easy_bin`: Fix `--cannot-name` being ignored by the training step. The cannot-link constraint file was written under the user-provided name but read back from a hard-coded `cannot.txt`, so any non-default `--cannot-name` produced a file the trainer never read. The read path is now built from `--cannot-name`.
 - `single_easy_bin`: Fix a `TypeError` crash when using `--environment` together with abundance files (`-a`) instead of BAM files. The unsupported combination is now rejected with a clear error message.
 - GTDB download: When extracting the GTDB tarball fails, the underlying error is now included in the message instead of a generic "cannot untar the file", making disk-full/permission errors easier to diagnose.
 - Fix several broken error messages: a missing space that merged two sentences in `check_install`, an unreadable shape-mismatch message for `--train-from-many` training (it now reports the expected and actual column counts), and the pretrained-model error now reads "can only be used for single-sample binning".

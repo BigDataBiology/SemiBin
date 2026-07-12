@@ -1,4 +1,7 @@
 Unreleased
+	* single_easy_bin: Fix '--cannot-name' being ignored by the
+	  training step (the cannot-link file path was hard-coded to
+	  'cannot.txt' instead of using the user-provided name)
 	* binning: Log a summary at the end of binning (number of bins,
 	  fraction of contigs and basepairs binned vs unbinned, and mean/
 	  median bin size and contigs-per-bin)

@@ -1264,7 +1264,7 @@ def single_easy_binning(logger, args, binned_length,
                 args.output)
             logger.info('Training model and clustering.')
             fasta = [args.contig_fasta]
-            cannot_link = [os.path.join(args.output, 'cannot', 'cannot.txt')]
+            cannot_link = [os.path.join(args.output, 'cannot', f'{args.cannot_name}.txt')]
 
 
         else:
