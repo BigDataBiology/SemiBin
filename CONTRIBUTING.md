@@ -88,6 +88,23 @@ e.g. `BUG+DOC`):
 | `DOC`  | Documentation                    |
 | `RLS`  | Release                          |
 
+## Code of conduct
+
+We want SemiBin to be a welcoming and respectful community for everyone. When
+participating in the project (through pull requests, github issues, or the
+mailing-list)
+
+- Be kind, patient, and considerate towards others.
+- Assume good faith
+- Respect differing viewpoints and experiences.
+- Avoid harassment, discriminatory language, personal attacks, and any other
+  disruptive or unwelcome behaviour.
+
+If you experience or witness unacceptable behaviour, please contact the
+maintainers at luis@luispedro.org. Reports will be handled confidentially, and
+maintainers may take any action they deem appropriate, up to and including
+removing a contributor from project spaces.
+
 ## License
 
 By contributing to SemiBin, you agree that your contributions will be licensed
