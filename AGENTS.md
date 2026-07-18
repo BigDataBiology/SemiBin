@@ -74,6 +74,17 @@ For new features and bugfixes, update both:
 - `ChangeLog` — add a line under `Unreleased` summarising the change (include issue number if applicable)
 - `docs/whatsnew.md` — add a bullet under the current unreleased version section
 
+## Cutting a release
+Version is single-sourced from `SemiBin/semibin_version.py` (`__version__`);
+`pyproject.toml` reads it dynamically. To release version `X.Y.Z`:
+1. Bump `__version__` in `SemiBin/semibin_version.py`.
+2. `ChangeLog`: rename the `Unreleased` header to `Version X.Y.Z <Mon DD YYYY> by BigDataBiology` and add a fresh empty `Unreleased` line at the top.
+3. `docs/whatsnew.md`: rename `## Unreleased` to `## Version X.Y.Z` with a `*Released <Month DD, YYYY>*` line and a short summary paragraph (see the 2.3.0 entry for the format); add a new empty `## Unreleased` section on top. Split the entries into subsections (`### User-visible changes`, `### Bug fixes`, `### Documentation fixes`), ordering them so that user-visible changes come first. Reconcile it against the `ChangeLog` so both list the same changes.
+4. Bump the example version pins in `README.md` and `docs/install.md` (`semibin = ">=X.Y.Z,<3"`).
+5. Commit everything as `RLS Version X.Y.Z` (the commit body is the release summary).
+6. Tag with a signed annotated tag: `git tag -s vX.Y.Z` (message = the release summary).
+7. Publish is manual (no CI does it): build with `python -m build` and upload with `twine upload dist/*`. A bioconda PR follows separately.
+
 ## Key details
 - Python 3.10+ compatibility required
 - Uses `mp.get_context('spawn').Pool` for multiprocessing (not fork)
