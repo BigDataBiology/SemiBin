@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -12,13 +12,13 @@ authors = [
     { name = "Shaojun Pan" },
     { name = "Luis Pedro Coelho", email = "luis@luispedro.org" }
 ]
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["COPYING.MIT"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -44,7 +44,7 @@ dev = ['pytest', 'hypothesis']
 SemiBin2 = "SemiBin.main:main2"
 
 [tool.setuptools]
-packages = ["SemiBin"]
+packages = ["SemiBin", "SemiBin.models", "SemiBin.skills.semibin", "SemiBin.skills.semibin.references"]
 include-package-data = true
 zip-safe = false
 

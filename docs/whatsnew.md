@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Packaging: Fix setuptools build warnings. The `pyproject.toml` now uses an SPDX `license = "MIT"` expression (instead of the deprecated license table and license classifier) and explicitly declares the `SemiBin.models` and `SemiBin.skills` data directories as packages, silencing the "package would be ignored" warnings.
 - At the end of binning, SemiBin now logs a summary of the results: the number of bins produced, how many contigs and basepairs were binned, how much was left unbinned (split into contigs that passed the length filter but were not binned versus contigs too short to be considered), and the mean/median bin size and contigs-per-bin. It also reminds users that these bins are not quality-controlled and should not be treated as MAGs without further QC (e.g., with CheckM2 and GUNC). This is written to both the console and `SemiBinRun.log`.
 - Add the `install-skills` subcommand, which installs the agent skill bundled with SemiBin so that coding agents (such as Claude Code) can drive SemiBin2 correctly. By default it installs into a project-local `./.claude/skills`; pass `--user` (or `--global`) to install into the user-wide `$HOME/.claude/skills`, or `--skills-dir` to choose an explicit destination.
 - Drop support for Python 3.8. The minimum supported Python version is now 3.9.
