@@ -2,17 +2,32 @@
 
 ## Unreleased
 
-- Packaging: Fix setuptools build warnings. The `pyproject.toml` now uses an SPDX `license = "MIT"` expression (instead of the deprecated license table and license classifier) and explicitly declares the `SemiBin.models` and `SemiBin.skills` data directories as packages, silencing the "package would be ignored" warnings.
-- At the end of binning, SemiBin now logs a summary of the results: the number of bins produced, how many contigs and basepairs were binned, how much was left unbinned (split into contigs that passed the length filter but were not binned versus contigs too short to be considered), and the mean/median bin size and contigs-per-bin. It also reminds users that these bins are not quality-controlled and should not be treated as MAGs without further QC (e.g., with CheckM2 and GUNC). This is written to both the console and `SemiBinRun.log`.
+## Version 2.4.0
+
+*Released July 18, 2026*
+
+This release drops support for older Python versions (the minimum is now Python
+3.10), adds the `install-skills` subcommand and an end-of-run binning summary,
+and includes a number of bug fixes and error-message improvements.
+
+### User-visible changes
+
+- Drop support for Python 3.8 and 3.9. The minimum supported Python version is now 3.10.
 - Add the `install-skills` subcommand, which installs the agent skill bundled with SemiBin so that coding agents (such as Claude Code) can drive SemiBin2 correctly. By default it installs into a project-local `./.claude/skills`; pass `--user` (or `--global`) to install into the user-wide `$HOME/.claude/skills`, or `--skills-dir` to choose an explicit destination.
-- Drop support for Python 3.8. The minimum supported Python version is now 3.9.
-- Drop support for Python 3.9. The minimum supported Python version is now 3.10.
-- Use `zip(..., strict=True)` for paired-array iterations across clustering, marker handling, and feature generation so that silent length-mismatch bugs raise immediately.
+- At the end of binning, SemiBin now logs a summary of the results: the number of bins produced, how many contigs and basepairs were binned, how much was left unbinned (split into contigs that passed the length filter but were not binned versus contigs too short to be considered), and the mean/median bin size and contigs-per-bin. It also reminds users that these bins are not quality-controlled and should not be treated as MAGs without further QC (e.g., with CheckM2 and GUNC). This is written to both the console and `SemiBinRun.log`.
+- GTDB download: When extracting the GTDB tarball fails, the underlying error is now included in the message instead of a generic "cannot untar the file", making disk-full/permission errors easier to diagnose.
+
+### Bug fixes
+
 - `single_easy_bin`: Fix `--cannot-name` being ignored by the training step. The cannot-link constraint file was written under the user-provided name but read back from a hard-coded `cannot.txt`, so any non-default `--cannot-name` produced a file the trainer never read. The read path is now built from `--cannot-name`.
 - `single_easy_bin`: Fix a `TypeError` crash when using `--environment` together with abundance files (`-a`) instead of BAM files. The unsupported combination is now rejected with a clear error message.
-- GTDB download: When extracting the GTDB tarball fails, the underlying error is now included in the message instead of a generic "cannot untar the file", making disk-full/permission errors easier to diagnose.
+- Use `zip(..., strict=True)` for paired-array iterations across clustering, marker handling, and feature generation so that silent length-mismatch bugs raise immediately.
 - Fix several broken error messages: a missing space that merged two sentences in `check_install`, an unreadable shape-mismatch message for `--train-from-many` training (it now reports the expected and actual column counts), and the pretrained-model error now reads "can only be used for single-sample binning".
 - Fatal errors are now emitted through the logger instead of being written directly to `stderr`. This means they are timestamped and captured in `SemiBinRun.log` (previously, the reason a run aborted was often missing from the log file). Logged error messages also no longer carry a redundant "Error:" prefix or a trailing blank line.
+
+### Packaging
+
+- Fix setuptools build warnings. The `pyproject.toml` now uses an SPDX `license = "MIT"` expression (instead of the deprecated license table and license classifier) and explicitly declares the `SemiBin.models` and `SemiBin.skills` data directories as packages, silencing the "package would be ignored" warnings.
 
 ## Version 2.3.0
 

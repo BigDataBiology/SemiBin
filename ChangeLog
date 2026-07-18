@@ -1,4 +1,6 @@
 Unreleased
+
+Version 2.4.0 Jul 18 2026 by BigDataBiology
 	* packaging: Fix setuptools build warnings by using an SPDX
 	  license expression and explicitly declaring the models and
 	  skills data subpackages
