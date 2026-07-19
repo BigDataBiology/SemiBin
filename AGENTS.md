@@ -88,4 +88,3 @@ Version is single-sourced from `SemiBin/semibin_version.py` (`__version__`);
 ## Key details
 - Python 3.10+ compatibility required
 - Uses `mp.get_context('spawn').Pool` for multiprocessing (not fork)
-- `hypothesis` pinned to `<=6.112.1` in test dependencies
