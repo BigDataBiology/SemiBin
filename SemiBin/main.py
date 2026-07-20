@@ -1571,6 +1571,12 @@ def main2(raw_args=None, is_semibin2=True):
             if args.ml_threshold is not None:
                 must_link_threshold = args.ml_threshold
 
+        if args.cmd in ['generate_sequence_features_single', 'single_easy_bin']:
+            longest = max(len(c) for c in contig_dict.values())
+            if longest < must_link_threshold:
+                logger.error(f'There are {len(contig_dict)} contigs in input file {args.contig_fasta}, but none contain at least {must_link_threshold} basepairs (the longest is {longest}), so no must-link pairs can be generated.')
+                sys.exit(1)
+
         if args.cmd == 'check_install':
             check_install(True, allow_missing_mmseqs2=args.allow_missing_mmseqs2)
         elif args.cmd == 'download_GTDB':
