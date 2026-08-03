@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## Version 2.4.1
+
+*Released August 04, 2026*
+
+This is a small release which adds an early sanity check on the input contigs so
+that single-sample runs with only short contigs fail immediately with an
+actionable message.
+
+### User-visible changes
+
+- `single_easy_bin` and `generate_sequence_features_single` now check up front whether any input contig is at least as long as the must-link threshold. If none is, the run aborts immediately with a message reporting the number of contigs, the threshold, and the length of the longest contig, instead of failing later with an obscure error.
+
 ## Version 2.4.0
 
 *Released July 18, 2026*

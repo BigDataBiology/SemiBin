@@ -1,5 +1,11 @@
 Unreleased
 
+Version 2.4.1 Aug 04 2026 by BigDataBiology
+	* single_easy_bin/generate_sequence_features_single: Fail early
+	  with a clear message when no contig is long enough to reach the
+	  must-link threshold (previously the run failed later with an
+	  obscure error)
+
 Version 2.4.0 Jul 18 2026 by BigDataBiology
 	* packaging: Fix setuptools build warnings by using an SPDX
 	  license expression and explicitly declaring the models and

@@ -88,7 +88,7 @@ version = "0.1.0"
 [tasks]
 
 [dependencies]
-semibin = ">=2.4.0,<3"
+semibin = ">=2.4.1,<3"
 pytorch-gpu = "*"
 
 [system-requirements]
