@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### User-visible changes
+
+- `utils.concatenate_fasta()` gains a `keep_full_header` argument: when set, the full FASTA header (any text after the contig ID) is preserved on the renamed, sample-prefixed header instead of being dropped.
+
 ## Version 2.4.1
 
 *Released August 04, 2026*

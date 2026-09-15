@@ -109,3 +109,21 @@ def test_norm_abundance():
 def test_load_fasta():
     c_min_len, ml_thresh, inputs = utils.load_fasta('test/train_data/input.fasta', .01)
     assert c_min_len == 1000
+
+
+def test_concatenate_fasta_keep_full_header(tmpdir):
+    from SemiBin.fasta import fasta_iter
+
+    f1 = tmpdir.join('sample1.fasta')
+    f1.write('>contig1 some description here\nACGTACGTAC\n')
+
+    out_default = utils.concatenate_fasta(
+            [str(f1)], 5, str(tmpdir), ':')
+    headers_default = [h for h,_ in fasta_iter(out_default, full_header=True)]
+    assert headers_default == ['sample1:contig1']
+
+    out_full = utils.concatenate_fasta(
+            [str(f1)], 5, str(tmpdir.mkdir('out_full')), ':',
+            keep_full_header=True)
+    headers_full = [h for h,_ in fasta_iter(out_full, full_header=True)]
+    assert headers_full == ['sample1:contig1 some description here']

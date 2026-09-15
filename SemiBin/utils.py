@@ -545,7 +545,13 @@ def get_model_path(env : str) -> str:
         raise KeyError(
                 f"Error: Unknown environment '{env}' does not exist (known ones are {', '.join(known_environments)})")
 
-def concatenate_fasta(fasta_files, min_length, output, separator, output_compression='none'):
+def concatenate_fasta(fasta_files,
+                      min_length,
+                      output,
+                      separator,
+                      output_compression='none',
+                      keep_full_header=False,
+                      ):
     """
     Concatenate multiple FASTA files into one
 
@@ -558,13 +564,16 @@ def concatenate_fasta(fasta_files, min_length, output, separator, output_compres
     with possibly_compressed_write(ofname) as concat_out:
         for fname in fasta_files:
             sample_name = os.path.basename(fname).split('.')[0]
-            for h, seq in fasta_iter(fname):
+            for fh, seq in fasta_iter(fname, full_header=True):
+                h, _, rest = fh.partition(' ')
                 if separator in h:
                     logger.error(
                         f"In file {fname}: contig ID '{h}' contains the separator ('{separator}'), please choose another separator.")
                     sys.exit(1)
                 if len(seq) >= min_length:
                     header = f'{sample_name}{separator}{h}'
+                    if keep_full_header and rest:
+                        header += f' {rest}'
                     concat_out.write(f'>{header}\n{seq}\n')
     return ofname
 
