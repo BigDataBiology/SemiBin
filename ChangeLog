@@ -1,6 +1,7 @@
 Unreleased
 	* SemiBin: Require pandas>=3
 	* SemiBin: Drop support for Python 3.10 (minimum is now Python 3.11)
+	* check_install: Add 'check-install' as a synonym
 
 Version 2.5.0 Sep 15 2026 by BigDataBiology
 	* utils.concatenate_fasta: Add 'keep_full_header' argument to

@@ -245,6 +245,14 @@ def test_install_skills_args():
     assert parse_args(['install_skills']).cmd == 'install-skills'
 
 
+def test_check_install_args():
+    args = parse_args(['check_install'])
+    assert args.cmd == 'check_install'
+
+    # the check-install (hyphen) alias normalizes to the canonical name
+    assert parse_args(['check-install']).cmd == 'check_install'
+
+
 def test_install_skills_installs(tmp_path):
     from SemiBin.main import install_skills
     dest = tmp_path / 'skills'

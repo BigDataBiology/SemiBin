@@ -281,7 +281,7 @@ If you download GTDB to a different directory than the default, you should then 
 
 ### check_install
 
-Checks whether required dependencies are available (useful for trouble-shooting).
+The `check_install` subcommand (`check-install` is accepted as an alias) checks whether required dependencies are available (useful for trouble-shooting).
 
 It also checks for `samtools`, but a missing `samtools` does not cause `check_install` to fail, since `samtools` is only required for CRAM input.
 

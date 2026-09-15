@@ -75,7 +75,7 @@ def parse_args(args):
                                                   )
 
 
-    check_install = subparsers.add_parser('check_install', help = 'Check whether required dependencies are present.')
+    check_install = subparsers.add_parser('check_install', aliases=['check-install'], help = 'Check whether required dependencies are present.')
 
     check_install.add_argument('--allow-missing-mmseqs2',
             required=False,
@@ -619,6 +619,8 @@ def parse_args(args):
         args.cmd = 'bin'
     if args.cmd == 'install_skills':
         args.cmd = 'install-skills'
+    if args.cmd == 'check-install':
+        args.cmd = 'check_install'
     return args
 
 
