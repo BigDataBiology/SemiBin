@@ -1,4 +1,6 @@
 Unreleased
+
+Version 2.5.0 Sep 15 2026 by BigDataBiology
 	* utils.concatenate_fasta: Add 'keep_full_header' argument to
 	  preserve the full FASTA header (beyond the contig ID) when
 	  concatenating files

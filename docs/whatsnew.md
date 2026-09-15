@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## Version 2.5.0
+
+*Released September 15, 2026*
+
+This is a small release which adds an option to preserve full FASTA headers when concatenating files for multi-sample binning.
+
 ### User-visible changes
 
 - `utils.concatenate_fasta()` gains a `keep_full_header` argument: when set, the full FASTA header (any text after the contig ID) is preserved on the renamed, sample-prefixed header instead of being dropped.
