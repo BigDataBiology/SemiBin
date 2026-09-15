@@ -13,6 +13,12 @@ def sglob(pat):
 single_sample_input = 'test/single_sample_data'
 multi_sample_input =  'test/multi_samples_data'
 
+# test/multi_samples_data/input_multi.fasta only contains 3 samples (S1-S3),
+# even though the BAM/abundance fixtures still cover 10 samples (kept to
+# exercise the is_combined/n_sample>=5 code paths). The multi_easy_bin runs
+# below therefore only ever produce output for 3 samples.
+N_MULTI_SAMPLES = 3
+
 single_output = 'test-outputs/single_output_with_taxonomy'
 single_output_ref = 'test-outputs/single_output_with_ref'
 multi_output = 'test-outputs/multi_output_with_taxonomy'
@@ -75,7 +81,7 @@ subprocess.check_call(
      '--semi-supervised'])
 
 assert os.path.exists(f'{multi_output}/bins')
-for i in range(len(multi_sample_input_bams)):
+for i in range(N_MULTI_SAMPLES):
     assert os.path.exists(f'{multi_output}/samples/S{i+1}/output_bins')
 
 
@@ -91,7 +97,7 @@ subprocess.check_call(
      '--epochs', '1',
      '--semi-supervised'])
 assert os.path.exists(f'{multi_output_ref}/bins')
-for i in range(len(multi_sample_input_bams)):
+for i in range(N_MULTI_SAMPLES):
     assert os.path.exists(f'{multi_output_ref}/samples/S{i+1}/output_bins')
 
 # Test .cram format input
@@ -132,7 +138,7 @@ subprocess.check_call(
      '--epochs', '1',
      '--sequencing-type', 'long_read'])
 assert os.path.exists(f'{multi_self_output_long}/bins')
-for i in range(len(multi_sample_input_bams)):
+for i in range(N_MULTI_SAMPLES):
     assert os.path.exists(f'{multi_self_output_long}/samples/S{i+1}/output_bins')
 
 
@@ -171,7 +177,7 @@ subprocess.check_call(
         '--self-supervised'])
 
 assert os.path.exists(f'{multi_self_output}/bins')
-for i in range(len(multi_sample_input_bams)):
+for i in range(N_MULTI_SAMPLES):
     assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_prerecluster_bins')
     assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_recluster_bins')
 
@@ -188,6 +194,6 @@ subprocess.check_call(
         '--self-supervised'])
 
 assert os.path.exists(f'{multi_self_output}/bins')
-for i in range(len(multi_sample_input_bams)):
+for i in range(N_MULTI_SAMPLES):
     assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_prerecluster_bins')
     assert os.path.exists(f'{multi_self_output}/samples/S{i+1}/output_recluster_bins')

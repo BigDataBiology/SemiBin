@@ -30,7 +30,9 @@ def test_generate_seq_feats_multi(tmpdir):
                          abundances = None,
                          ))
 
-    for i in range(10):
+    # test/multi_samples_data/input_multi.fasta only contains 3 samples (S1-S3);
+    # the BAM fixtures above still cover 10 samples to exercise is_combined
+    for i in range(3):
         data = pd.read_csv(f'{tmpdir}/output_multi/samples/S{i+1}/data.csv', index_col=0)
         data_split = pd.read_csv(f'{tmpdir}/output_multi/samples/S{i+1}/data_split.csv', index_col=0)
         assert data.shape == (20,146)
@@ -62,7 +64,9 @@ def test_generate_seq_feats_multi_abun(tmpdir):
                                        ]
                          ))
 
-    for i in range(10):
+    # test/multi_samples_data/input_multi.fasta only contains 3 samples (S1-S3);
+    # the abundance fixtures above still cover 10 samples to exercise is_combined
+    for i in range(3):
         data = pd.read_csv(f'{tmpdir}/output_multi/samples/S{i+1}/data.csv', index_col=0)
         data_split = pd.read_csv(f'{tmpdir}/output_multi/samples/S{i+1}/data_split.csv', index_col=0)
         assert data.shape == (20,146)
