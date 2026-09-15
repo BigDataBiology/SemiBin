@@ -863,13 +863,13 @@ def generate_sequence_features_single(logger, contig_fasta,
 
     if is_combined:
         data_split = pd.merge(kmer_split, data_split_cov, how='inner', on=None,
-                                  left_index=True, right_index=True, sort=False, copy=True)
+                                  left_index=True, right_index=True, sort=False)
     else:
         data_split = kmer_split
 
     kmer_whole.index = kmer_whole.index.astype(str)
     data = pd.merge(kmer_whole, data_cov, how='inner', on=None,
-                                  left_index=True, right_index=True, sort=False, copy=True)
+                                  left_index=True, right_index=True, sort=False)
 
     with atomic_write(os.path.join(output, 'data.csv'), overwrite=True) as ofile:
         data.to_csv(ofile)
@@ -1004,12 +1004,12 @@ def generate_sequence_features_multi(logger, args):
             kmer_whole.index = kmer_whole.index.astype(str)
             sample_cov.index = sample_cov.index.astype(str)
             data = pd.merge(kmer_whole, sample_cov, how='inner', on=None,
-                            left_index=True, right_index=True, sort=False, copy=True)
+                            left_index=True, right_index=True, sort=False)
             if is_combined:
                 sample_cov_split = pd.read_csv(os.path.join(
                     output_path, 'data_split_cov.csv'), index_col=0)
                 data_split = pd.merge(kmer_split, sample_cov_split, how='inner', on=None,
-                                      left_index=True, right_index=True, sort=False, copy=True)
+                                      left_index=True, right_index=True, sort=False)
             else:
                 data_split = kmer_split
 
@@ -1057,9 +1057,9 @@ def generate_sequence_features_multi(logger, args):
             kmer_split = generate_kmer_features_from_fasta(
                 sample_contig_fasta, 1000, 4, split=True, split_threshold=must_link_threshold)
             data = pd.merge(kmer_whole, part_data, how='inner', on=None,
-                            left_index=True, right_index=True, sort=False, copy=True)
+                            left_index=True, right_index=True, sort=False)
             data_split = pd.merge(kmer_split, part_data_split, how='inner', on=None,
-                                  left_index=True, right_index=True, sort=False, copy=True)
+                                  left_index=True, right_index=True, sort=False)
 
             with atomic_write(os.path.join(output_path, 'data.csv'), overwrite=True) as ofile:
                 data.to_csv(ofile)
@@ -1149,7 +1149,7 @@ def binning_preprocess(data, depth_metabat2, model_path, environment, device):
         depth_metabat2.drop(['contigLen', 'totalAvgDepth'], axis=1, inplace=True)
         depth_metabat2.index.name = None
         data = pd.merge(data, depth_metabat2, how='inner', on=None,
-                 left_index=True, right_index=True, sort=False, copy=True)
+                 left_index=True, right_index=True, sort=False)
         if data.shape[1] != 138:
             logger.error(
                 "Depth file from Metabat2 can only be used for single-sample binning!")

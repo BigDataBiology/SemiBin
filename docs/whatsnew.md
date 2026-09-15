@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### User-visible changes
+
+- SemiBin now requires pandas>=3 and drops support for Python 3.10 (the minimum supported Python version is now 3.11). The deprecated `copy` keyword was removed from internal `pandas.merge()` calls, which pandas 3 flagged as deprecated under its Copy-on-Write model.
+
 ## Version 2.5.0
 
 *Released September 15, 2026*

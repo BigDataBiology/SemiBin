@@ -9,7 +9,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         environment:
-          - "test-py310"
           - "test-py311"
           - "test-py312"
           - "test-py313"

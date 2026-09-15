@@ -7,7 +7,7 @@ name = "SemiBin"
 dynamic = ['version']
 description = "Metagenomic binning with siamese neural networks"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [
     { name = "Shaojun Pan" },
     { name = "Luis Pedro Coelho", email = "luis@luispedro.org" }
@@ -19,7 +19,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -30,7 +29,7 @@ dependencies = [
     "tqdm",
     "torch>=1.13", # torch.load() only supports the weights_only argument since 1.13
     "python-igraph",
-    "pandas",
+    "pandas>=3",
     "scikit-learn",
     "requests",
     "numexpr",
@@ -74,9 +73,6 @@ SemiBin = { path = ".", editable = true }
 [tool.pixi.feature.test]
 dependencies = { pytest = "*", hypothesis = "*", "uv" = "*" }
 
-[tool.pixi.feature.py310]
-dependencies = { python = "3.10.*" }
-
 [tool.pixi.feature.py311]
 dependencies = { python = "3.11.*" }
 
@@ -90,7 +86,6 @@ dependencies = { python = "3.13.*" }
 dependencies = { python = "3.14.*" }
 
 [tool.pixi.environments]
-test-py310 = ["py310", "test"]
 test-py311 = ["py311", "test"]
 test-py312 = ["py312", "test"]
 test-py313 = ["py313", "test"]
