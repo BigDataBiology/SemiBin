@@ -7,6 +7,10 @@
 - SemiBin now requires pandas>=3 and drops support for Python 3.10 (the minimum supported Python version is now 3.11). The deprecated `copy` keyword was removed from internal `pandas.merge()` calls, which pandas 3 flagged as deprecated under its Copy-on-Write model.
 - `check-install` is now accepted as a synonym for the `check_install` subcommand.
 
+### Bug fixes
+
+- `multi_easy_bin` and `generate_sequence_features_multi` now check up front whether every sample has at least one contig as long as the must-link threshold. If some do not, the run aborts immediately with a message listing the affected samples (and suggesting to remove them or lower `--ml-threshold`), instead of failing later during training with an obscure error ([#159](https://github.com/BigDataBiology/SemiBin/issues/159), [#164](https://github.com/BigDataBiology/SemiBin/issues/164)). This mirrors the check that `single_easy_bin` has had since 2.4.1.
+
 ## Version 2.5.0
 
 *Released September 15, 2026*

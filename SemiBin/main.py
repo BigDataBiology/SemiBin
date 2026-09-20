@@ -904,6 +904,7 @@ def generate_sequence_features_multi(logger, args):
     # Generate contig file for every sample
     sample_list = []
     contig_lengths = []
+    sample_longest = {}
 
     os.makedirs(os.path.join(args.output, 'samples'), exist_ok=True)
 
@@ -917,9 +918,12 @@ def generate_sequence_features_multi(logger, args):
 
     for sample_name, contigs in groupby(fasta_sample_iter(args.contig_fasta), lambda sn_cn_seq : sn_cn_seq[0]):
         with utils.possibly_compressed_write(os.path.join(args.output, 'samples', f'{sample_name}.fa')) as out:
+            longest = 0
             for _, contig_name, seq in contigs:
                 out.write(f'>{contig_name}\n{seq}\n')
                 contig_lengths.append(len(seq))
+                longest = max(longest, len(seq))
+        sample_longest[sample_name] = longest
         sample_list.append(sample_name)
     if not contig_lengths:
         logger.error(f'Input file {args.contig_fasta} is empty. Please check inputs.')
@@ -929,6 +933,16 @@ def generate_sequence_features_multi(logger, args):
         sys.exit(1)
 
     must_link_threshold = get_must_link_threshold(contig_lengths) if args.ml_threshold is None else args.ml_threshold
+    no_must_link = [sn for sn in sample_list if sample_longest[sn] < must_link_threshold]
+    if no_must_link:
+        shown = ', '.join(no_must_link[:10])
+        if len(no_must_link) > 10:
+            shown += f', ... ({len(no_must_link) - 10} more)'
+        logger.error(
+            f'{len(no_must_link)} of {len(sample_list)} samples have no contigs with at least {must_link_threshold} basepairs '
+            f'(the must-link threshold), so no must-link pairs can be generated for them: {shown}. '
+            'Remove these samples from the concatenated FASTA file or lower --ml-threshold.')
+        sys.exit(1)
     binning_threshold = {}
     for sample in sample_list:
         binning_threshold[sample] = utils.maybe_compute_min_length(

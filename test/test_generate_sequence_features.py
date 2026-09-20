@@ -38,6 +38,25 @@ def test_generate_seq_feats_multi(tmpdir):
         assert data.shape == (20,146)
         assert data_split.shape == (40,146)
 
+def test_generate_seq_feats_multi_no_must_link(tmpdir, caplog):
+    logger = logging.getLogger('SemiBin2')
+
+    os.makedirs(f'{tmpdir}/output_multi',exist_ok=True)
+    with pytest.raises(SystemExit):
+        generate_sequence_features_multi(logger, Namespace(
+                            bams=['test/multi_samples_data/input_multi_sorted1.bam'],
+                            num_process=1,
+                            separator=':',
+                            output=f'{tmpdir}/output_multi',
+                            contig_fasta='test/multi_samples_data/input_multi.fasta.xz',
+                            ratio=0.05,
+                            min_len=None,
+                            ml_threshold=10_000_000,
+                            abundances = None,
+                            ))
+    assert 'no contigs with at least 10000000 basepairs' in caplog.text
+    assert 'S1' in caplog.text
+
 def test_generate_seq_feats_multi_abun(tmpdir):
     logger = logging.getLogger('SemiBin2')
 
