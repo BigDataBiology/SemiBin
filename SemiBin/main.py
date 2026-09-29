@@ -1,3 +1,4 @@
+# PYTHON_ARGCOMPLETE_OK
 import argparse
 import logging
 import os
@@ -596,6 +597,13 @@ def parse_args(args):
                dest='sequencing_type',
                default='short_read',)
 
+
+    try:
+        import argcomplete
+    except ImportError:
+        pass
+    else:
+        argcomplete.autocomplete(parser)
 
     if not args:
         parser.print_help(sys.stderr)

@@ -94,6 +94,16 @@ Then, installing should be a simple matter of running:
 pip install .
 ```
 
+## Shell tab completion
+
+SemiBin supports tab completion of subcommands and options via [argcomplete](https://kislyuk.github.io/argcomplete/). To enable it in bash or zsh, add the following to your shell startup file (e.g., `~/.bashrc`):
+
+```bash
+eval "$(register-python-argcomplete SemiBin2)"
+```
+
+(See the [argcomplete documentation](https://kislyuk.github.io/argcomplete/#global-completion) for other shells and for enabling global completion.)
+
 ## Alternative ways of running SemiBin
 
 If you use one of these pipelines, we ask that you cite both the pipeline author and the [SemiBin manuscript](https://www.nature.com/articles/s41467-022-29843-y) (as well as any other pipeline-embedded tools which contribute to your results).
