@@ -20,7 +20,7 @@ from .semibin_version import __version__
 Pool = mp.get_context('spawn').Pool
 
 
-def parse_args(args):
+def semibin_arg_parser():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                     description='Neural network-based binning of metagenomic contigs',
                                     epilog='For more information, see https://semibin.readthedocs.io/en/latest/subcommands/')
@@ -604,7 +604,10 @@ def parse_args(args):
         pass
     else:
         argcomplete.autocomplete(parser)
+    return parser
 
+def parse_args(args):
+    parser = semibin_arg_parser()
     if not args:
         parser.print_help(sys.stderr)
         sys.exit()

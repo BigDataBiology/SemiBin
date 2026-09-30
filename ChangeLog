@@ -3,6 +3,8 @@ Unreleased
 	* SemiBin: Drop support for Python 3.10 (minimum is now Python 3.11)
 	* check_install: Add 'check-install' as a synonym
 	* SemiBin: Support shell tab completion via argcomplete
+	* SemiBin.main: Add semibin_arg_parser() to build the argument parser
+	  (enables generating static shell completion scripts with shtab)
 	* generate_sequence_features_multi/multi_easy_bin: Fail early with a
 	  clear message (listing the samples) when some samples have no contig
 	  long enough to reach the must-link threshold (previously the run

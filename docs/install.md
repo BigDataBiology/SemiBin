@@ -104,6 +104,58 @@ eval "$(register-python-argcomplete SemiBin2)"
 
 (See the [argcomplete documentation](https://kislyuk.github.io/argcomplete/#global-completion) for other shells and for enabling global completion.)
 
+### Static completion scripts with shtab
+
+Alternatively, you can generate a static completion script with
+[shtab](https://tqdm.github.io/shtab/). Unlike argcomplete, the generated
+script does not call Python each time you press <kbd>Tab</kbd>, so completion
+is faster, and it also supports fish, tcsh, and PowerShell. The downside is
+that the script needs to be regenerated when you upgrade SemiBin (otherwise,
+new subcommands and options will not be completed).
+
+shtab is not a dependency of SemiBin, so install it separately (`pip install
+shtab` or `conda install -c conda-forge shtab`). Then, generate the script for
+your shell with:
+
+```bash
+shtab --shell=bash --prog=SemiBin2 SemiBin.main.semibin_arg_parser > SemiBin2.bash
+```
+
+If you have `pixi` installed, you can also generate the script without
+installing `shtab` in your current environment. SemiBin itself must be
+importable in the temporary environment that `pixi exec` creates, so request it
+with `--with`:
+
+```bash
+pixi exec -c conda-forge -c bioconda --with semibin shtab -u --shell=bash --prog=SemiBin2 SemiBin.main.semibin_arg_parser > SemiBin2.bash
+```
+
+(The `-u` flag makes shtab report an error if `SemiBin.main` cannot be
+imported; without it, shtab silently produces an empty script.) If you are
+working in a source checkout of SemiBin, running `pixi exec shtab -u ...` from
+the top-level directory of the repository also works.
+
+The `--prog=SemiBin2` argument is important: it is the name of the command that
+the script will register completions for. Replace `bash` with `zsh`, `fish`,
+`tcsh`, or `powershell` as appropriate. Then install the script as follows
+(each generated script also has a header with the same instructions):
+
+- **bash**: save it as `~/.local/share/bash_completion/SemiBin2` and add `source ~/.local/share/bash_completion/SemiBin2` to `~/.bashrc`.
+- **zsh**: save it as `_SemiBin2` in a directory in your `fpath` (e.g., `~/.local/share/zsh_completion/_SemiBin2`) and add `fpath=(~/.local/share/zsh_completion $fpath)` to `~/.zshrc` (before `compinit`).
+- **fish**: save it as `~/.config/fish/completions/SemiBin2.fish`.
+
+For example, for zsh:
+
+```bash
+mkdir -p ~/.local/share/zsh_completion
+shtab --shell=zsh --prog=SemiBin2 SemiBin.main.semibin_arg_parser > ~/.local/share/zsh_completion/_SemiBin2
+```
+
+`SemiBin.main.semibin_arg_parser` is a function that builds and returns the
+`argparse.ArgumentParser` for the whole `SemiBin2` command (including all
+subcommands), so it can also be used with shtab's Python API
+(`shtab.complete(parser, shell="bash")`).
+
 ## Alternative ways of running SemiBin
 
 If you use one of these pipelines, we ask that you cite both the pipeline author and the [SemiBin manuscript](https://www.nature.com/articles/s41467-022-29843-y) (as well as any other pipeline-embedded tools which contribute to your results).
