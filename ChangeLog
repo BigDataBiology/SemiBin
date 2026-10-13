@@ -1,4 +1,6 @@
 Unreleased
+
+Version 2.6.0 Oct 14 2026 by BigDataBiology
 	* SemiBin: Require torch>=2.4 (older builds are incompatible with NumPy 2)
 	* SemiBin: Fix loading models saved in the old format with torch>=2.6
 	* SemiBin: Require pandas>=3
@@ -19,6 +21,8 @@ Unreleased
 	* markers.get_marker: Fix crash when no marker hits survive the
 	  alignment-coverage or contig-length filters (and return the correct
 	  empty type in multi-sample/contig-to-marker modes)
+	* check_install: Fix missing dependencies (e.g., bedtools or hmmsearch)
+	  being masked when prodigal was missing but FragGeneScan was present
 	* bin_long: Validate arguments like bin (model/environment, model
 	  file existence, and --orf-finder value)
 	* docs: Replace outdated conda+pip GPU installation instructions with

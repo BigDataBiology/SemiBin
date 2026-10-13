@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## Version 2.6.0
+
+*Released October 14, 2026*
+
+This release updates the minimum requirements (Python 3.11, pandas 3, and
+PyTorch 2.4), adds shell tab completion, and fixes several bugs, mostly
+around failing early with clear error messages (from external tools, from
+`check_install`, and in multi-sample and long-read binning) instead of
+crashing later with obscure errors.
+
 ### User-visible changes
 
 - SemiBin now requires pandas>=3 and drops support for Python 3.10 (the minimum supported Python version is now 3.11). The deprecated `copy` keyword was removed from internal `pandas.merge()` calls, which pandas 3 flagged as deprecated under its Copy-on-Write model.
@@ -16,6 +26,7 @@
 - If one of the parallel `prodigal` processes failed, the others were left running after SemiBin exited. They are now killed (this also applies if SemiBin is interrupted).
 - Errors from external tools are now more informative: SemiBin checks that `bedtools` and `hmmsearch` are installed before calling them (previously, a missing `bedtools` led to a raw Python traceback), and when `prodigal`, `bedtools`, or `hmmsearch` fail, the error message now includes the exit status, the input being processed, and the tool's own error output.
 - Fixed a crash (`IndexError`, or `KeyError` when reclustering bins) in marker-gene seed estimation when HMMER hits were found, but none passed the alignment-coverage or minimum-contig-length filters, which can happen on small or low-quality assemblies. This case is now handled like finding no marker genes at all. Similarly, `bin_long` no longer crashes if no marker genes are found.
+- `check_install` could report success even though `bedtools` or `hmmsearch` was missing if, additionally, `prodigal` was missing but FragGeneScan was available (and a different `--orf-finder` was selected). Missing dependencies are no longer masked in this case.
 - `bin_long` now validates its arguments the same way as `bin`: running it without `--model` or `--environment` (or with both), with a non-existent model file, or with an invalid `--orf-finder` value now fails immediately with a clear error message instead of failing later with an obscure error.
 
 ### Documentation fixes
