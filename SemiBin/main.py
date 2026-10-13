@@ -698,7 +698,7 @@ def check_install(verbose: bool,
                         sys.stderr.write(
                             'Warning: prodigal does not appear to be available (although FragGeneScan is). '
                             'You must use the `--orf-finder=fast-naive` or `--orf-finder=fraggenescan` options.\n')
-                    missing_deps = (orf_finder == 'prodigal')
+                    missing_deps |= (orf_finder == 'prodigal')
             elif dep == 'FragGeneScan':
                 pass
             else:
