@@ -225,6 +225,32 @@ def test_write_prerecluster():
         validate_normalize_args(logging, args)
 
 
+def test_bin_validation():
+    base = ['-i', 'test/bin_data/input.fasta',
+            '--data', 'test/bin_data/data.csv',
+            '-o', 'output']
+    for cmd in ['bin', 'bin_long']:
+        args = parse_args([cmd, '--model', 'test/bin_data/model.pt'] + base)
+        validate_normalize_args(logging, args)
+
+        args = parse_args([cmd, '--environment', 'human_gut'] + base)
+        validate_normalize_args(logging, args)
+
+        for extra in [
+                # neither model nor environment
+                [],
+                # both model and environment
+                ['--model', 'test/bin_data/model.pt', '--environment', 'human_gut'],
+                # model file does not exist
+                ['--model', 'test/bin_data/no-such-model.pt'],
+                # invalid ORF finder
+                ['--model', 'test/bin_data/model.pt', '--orf-finder', 'no-such-finder'],
+                ]:
+            args = parse_args([cmd] + extra + base)
+            with pytest.raises(SystemExit):
+                validate_normalize_args(logging, args)
+
+
 def test_bibtex():
     args = parse_args(['citation', '--bibtex'])
     assert args.cmd == 'citation'

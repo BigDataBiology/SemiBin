@@ -16,6 +16,7 @@
 - If one of the parallel `prodigal` processes failed, the others were left running after SemiBin exited. They are now killed (this also applies if SemiBin is interrupted).
 - Errors from external tools are now more informative: SemiBin checks that `bedtools` and `hmmsearch` are installed before calling them (previously, a missing `bedtools` led to a raw Python traceback), and when `prodigal`, `bedtools`, or `hmmsearch` fail, the error message now includes the exit status, the input being processed, and the tool's own error output.
 - Fixed a crash (`IndexError`, or `KeyError` when reclustering bins) in marker-gene seed estimation when HMMER hits were found, but none passed the alignment-coverage or minimum-contig-length filters, which can happen on small or low-quality assemblies. This case is now handled like finding no marker genes at all. Similarly, `bin_long` no longer crashes if no marker genes are found.
+- `bin_long` now validates its arguments the same way as `bin`: running it without `--model` or `--environment` (or with both), with a non-existent model file, or with an invalid `--orf-finder` value now fails immediately with a clear error message instead of failing later with an obscure error.
 
 ### Documentation fixes
 

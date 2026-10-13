@@ -19,6 +19,8 @@ Unreleased
 	* markers.get_marker: Fix crash when no marker hits survive the
 	  alignment-coverage or contig-length filters (and return the correct
 	  empty type in multi-sample/contig-to-marker modes)
+	* bin_long: Validate arguments like bin (model/environment, model
+	  file existence, and --orf-finder value)
 	* docs: Replace outdated conda+pip GPU installation instructions with
 	  a conda-only command (using pytorch-gpu from conda-forge)
 	* docs: Fix stale Python version and SemiBin1 references

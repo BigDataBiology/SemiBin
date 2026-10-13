@@ -155,7 +155,7 @@ def validate_normalize_args(logger: logging.Logger, args: argparse.Namespace) ->
     if args.cmd == 'train_self':
         args.training_type = 'self'
 
-    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train_semi', 'bin']:
+    if args.cmd in ['single_easy_bin', 'multi_easy_bin', 'train_semi', 'bin', 'bin_long']:
         if args.orf_finder not in ['prodigal', 'fraggenescan', 'fast-naive']:
             logger.error(
                 "SemiBin only supports 'prodigal'/'fraggenescan'/'fast-naive' as the ORF finder (--orf-finder option).")
@@ -255,7 +255,7 @@ def validate_normalize_args(logger: logging.Logger, args: argparse.Namespace) ->
             exit_with_error = True
         logger.info(f'Binning for {args.sequencing_type}')
 
-    if args.cmd == 'bin':
+    if args.cmd in ['bin', 'bin_long']:
         if args.environment is None and args.model_path is None:
             logger.error(
                 "Please provide a model path or use one of our built-in models: [human_gut/dog_gut/ocean/soil/cat_gut/human_oral/mouse_gut/pig_gut/built_environment/wastewater/chicken_caecum/global].")
