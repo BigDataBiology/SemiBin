@@ -27,7 +27,7 @@ classifiers = [
 dependencies = [
     "numpy",
     "tqdm",
-    "torch>=1.13", # torch.load() only supports the weights_only argument since 1.13
+    "torch>=2.4", # older torch builds are incompatible with NumPy 2
     "python-igraph",
     "pandas>=3",
     "scikit-learn",

@@ -5,11 +5,13 @@
 ### User-visible changes
 
 - SemiBin now requires pandas>=3 and drops support for Python 3.10 (the minimum supported Python version is now 3.11). The deprecated `copy` keyword was removed from internal `pandas.merge()` calls, which pandas 3 flagged as deprecated under its Copy-on-Write model.
+- SemiBin now requires PyTorch>=2.4 (previously >=1.13). Older PyTorch builds were compiled against NumPy 1.x and fail with NumPy 2.
 - `check-install` is now accepted as a synonym for the `check_install` subcommand.
 - Shell tab completion of subcommands and options is now supported via [argcomplete](https://kislyuk.github.io/argcomplete/) (see [installation docs](install.md#shell-tab-completion) for how to enable it). The argument parser is now built by `SemiBin.main.semibin_arg_parser()`, which also makes it possible to generate static completion scripts (for bash, zsh, fish, tcsh, and PowerShell) with [shtab](https://tqdm.github.io/shtab/).
 
 ### Bug fixes
 
+- Loading models saved in the old format (SemiBin2 versions before 2.2.0) failed with PyTorch>=2.6 even through the fallback path, as `torch.load()` now defaults to `weights_only=True`. The fallback now passes `weights_only=False` explicitly.
 - `multi_easy_bin` and `generate_sequence_features_multi` now check up front whether every sample has at least one contig as long as the must-link threshold. If some do not, the run aborts immediately with a message listing the affected samples (and suggesting to remove them or lower `--ml-threshold`), instead of failing later during training with an obscure error ([#159](https://github.com/BigDataBiology/SemiBin/issues/159), [#164](https://github.com/BigDataBiology/SemiBin/issues/164)). This mirrors the check that `single_easy_bin` has had since 2.4.1.
 
 ## Version 2.5.0

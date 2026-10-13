@@ -1,4 +1,6 @@
 Unreleased
+	* SemiBin: Require torch>=2.4 (older builds are incompatible with NumPy 2)
+	* SemiBin: Fix loading models saved in the old format with torch>=2.6
 	* SemiBin: Require pandas>=3
 	* SemiBin: Drop support for Python 3.10 (minimum is now Python 3.11)
 	* check_install: Add 'check-install' as a synonym

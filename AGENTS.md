@@ -86,5 +86,5 @@ Version is single-sourced from `SemiBin/semibin_version.py` (`__version__`);
 7. Publish is manual (no CI does it): build with `python -m build` and upload with `twine upload dist/*`. A bioconda PR follows separately.
 
 ## Key details
-- Python 3.10+ compatibility required
+- Python 3.11+ compatibility required
 - Uses `mp.get_context('spawn').Pool` for multiprocessing (not fork)

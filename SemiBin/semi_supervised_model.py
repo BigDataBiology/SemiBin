@@ -126,9 +126,9 @@ def model_load(path, device, warn_on_old_format=True):
         sleep(.5)
         try:
             if device == torch.device('cpu'):
-                model = torch.load(path, map_location=torch.device('cpu'))
+                model = torch.load(path, map_location=torch.device('cpu'), weights_only=False)
             else:
-                model = torch.load(path).to(device)
+                model = torch.load(path, weights_only=False).to(device)
         except Exception as e:
             logger.error(f'Error loading model: {e}')
             logger.error('Your model file is likely incompatible with the current version of PyTorch.')
