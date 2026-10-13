@@ -3637,7 +3637,7 @@ packages:
   requires_dist:
   - numpy
   - tqdm
-  - torch>=1.13
+  - torch>=2.4
   - python-igraph
   - pandas>=3
   - scikit-learn

@@ -66,6 +66,9 @@ uv pip install -e .
 ## External tool dependencies
 Managed via conda/pixi (not pip): samtools, bedtools, hmmer, mmseqs2, prodigal, fraggenescan.
 
+## Keeping pixi.lock in sync
+Whenever `pyproject.toml` changes (dependencies, version constraints, pixi config), check that `pixi.lock` is up to date before committing: run `pixi lock` and commit any resulting changes together with `pyproject.toml`. CI installs with `pixi install --locked`, which fails if the lock file is stale.
+
 ## Commit message conventions
 Prefix commits with: `BUG`, `ENH`, `MIN`, `RFCT`, `TST`, `DOC`, `RLS`. Can be combined (e.g., `BUG+DOC`).
 
