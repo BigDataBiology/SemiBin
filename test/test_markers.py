@@ -3,6 +3,7 @@ import os
 import shutil
 from unittest import mock
 
+from SemiBin import markers
 from SemiBin.markers import get_marker, estimate_seeds
 from io import StringIO
 
@@ -115,3 +116,12 @@ def test_marker_cache_invalidates_on_fasta_change(tmp_path):
                     wraps=__import__('subprocess').check_call) as check_call:
         _run_estimate_seeds(out, fasta_path=str(fasta))
         assert check_call.call_count == 1
+
+
+def test_n_single_copy_markers_matches_hmm():
+    with open(markers.MARKER_HMM_PATH) as f:
+        names = [line.split()[1] for line in f if line.startswith('NAME ')]
+    normalize = markers.__normalize_marker_trans
+    assert set(normalize.keys()) <= set(names)
+    assert set(normalize.values()) <= set(names)
+    assert len({normalize.get(n, n) for n in names}) == markers.N_SINGLE_COPY_MARKERS

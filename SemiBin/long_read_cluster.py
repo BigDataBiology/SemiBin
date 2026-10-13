@@ -3,7 +3,7 @@ import shutil
 import torch
 import numpy as np
 from .utils import write_bins, log_binning_stats
-from .markers import estimate_seeds, get_marker
+from .markers import estimate_seeds, get_marker, N_SINGLE_COPY_MARKERS
 from sklearn.cluster import dbscan
 from sklearn.neighbors import kneighbors_graph
 from collections import defaultdict
@@ -32,7 +32,7 @@ def get_best_bin(results, contig_to_marker, namelist, contig_dict, minfasta):
                     marker_list.extend(contig_to_marker[contig])
                 if len(marker_list) == 0:
                     continue
-                recall = len(set(marker_list)) / 107
+                recall = len(set(marker_list)) / N_SINGLE_COPY_MARKERS
                 contamination = (len(marker_list) - len(set(marker_list))) / len(
                     marker_list)
                 if contamination <= max_contamination:

@@ -33,6 +33,13 @@ __normalize_marker_trans = {
     'TIGR02386': 'TIGR02387',
 }
 
+MARKER_HMM_PATH = os.path.join(os.path.dirname(__file__), 'marker.hmm')
+
+# Number of distinct single-copy marker genes in MARKER_HMM_PATH, after the
+# normalization above merges paired TIGRFAM profiles (111 profiles -> 107 genes).
+# Used as the denominator when estimating bin completeness.
+N_SINGLE_COPY_MARKERS = 107
+
 def get_marker(hmmout,
                fasta_path = None,
                min_contig_len = None,
@@ -172,7 +179,7 @@ def estimate_seeds(fasta_path,
                      hmm_output,
                      '--cut_tc',
                      '--cpu', str(num_process),
-                     os.path.split(__file__)[0] + '/marker.hmm',
+                     MARKER_HMM_PATH,
                      contig_output,
                      ],
                     stdout=hmm_out_log,
