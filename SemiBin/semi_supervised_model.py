@@ -1,3 +1,5 @@
+from __future__ import annotations
+import logging
 import torch
 import pickle
 from torch.nn import Linear, LeakyReLU
@@ -11,12 +13,21 @@ import sys
 
 class Semi_encoding_multiple(torch.nn.Module):
     """
-    Model for combined features
+    Model for combined features (k-mer and coverage)
+
+    The encoder maps the input to a 100-dimensional embedding. The decoder
+    (used only for the reconstruction loss in semi-supervised training) maps
+    it back to the input space.
+
+    Parameters
+    ----------
+    n_features : int
+        Number of input features
     """
-    def __init__(self, num):
+    def __init__(self, n_features: int):
         super(Semi_encoding_multiple, self).__init__()
         self.encoder1 = torch.nn.Sequential(
-            Linear(num, 512),
+            Linear(n_features, 512),
             nn.BatchNorm1d(512),
             LeakyReLU(),
             nn.Dropout(0.2),
@@ -36,20 +47,24 @@ class Semi_encoding_multiple(torch.nn.Module):
             nn.BatchNorm1d(512),
             LeakyReLU(),
             nn.Dropout(0.2),
-            Linear(512, num),
+            Linear(512, n_features),
             nn.Sigmoid(),
         )
 
-    def forward(self, input1, input2):
+    def forward(self, input1: torch.Tensor, input2: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        '''Embed a pair of inputs (siamese network)'''
         return self.encoder1(input1), self.encoder1(input2)
 
-    def decoder(self, input1, input2):
+    def decoder(self, input1: torch.Tensor, input2: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        '''Reconstruct a pair of inputs from their embeddings'''
         return self.decoder1(input1), self.decoder1(input2)
 
-    def embedding(self, input):
-        return self.encoder1(input)
+    def embedding(self, x: torch.Tensor) -> torch.Tensor:
+        '''Embed a batch of inputs'''
+        return self.encoder1(x)
 
-    def save_with_params_to(self, path):
+    def save_with_params_to(self, path: str) -> None:
+        '''Save model weights and constructor parameters (see ``model_load``)'''
         torch.save({
                     'model_name': 'Semi_encoding_multiple',
                     'model_state_dict': self.state_dict(),
@@ -59,12 +74,21 @@ class Semi_encoding_multiple(torch.nn.Module):
 
 class Semi_encoding_single(torch.nn.Module):
     """
-    Model for k-mer features
+    Model for k-mer features (coverage is handled outside the model)
+
+    The encoder maps the input to a 100-dimensional embedding. The decoder
+    (used only for the reconstruction loss in semi-supervised training) maps
+    it back to the input space.
+
+    Parameters
+    ----------
+    n_features : int
+        Number of input features
     """
-    def __init__(self, num):
+    def __init__(self, n_features: int):
         super(Semi_encoding_single, self).__init__()
         self.encoder1 = torch.nn.Sequential(
-            Linear(num, 512),
+            Linear(n_features, 512),
             nn.BatchNorm1d(512),
             LeakyReLU(),
             nn.Dropout(0.2),
@@ -84,20 +108,24 @@ class Semi_encoding_single(torch.nn.Module):
             nn.BatchNorm1d(512),
             LeakyReLU(),
             nn.Dropout(0.2),
-            Linear(512, num),
+            Linear(512, n_features),
             nn.Softmax(dim=1),
         )
 
-    def forward(self, input1, input2):
+    def forward(self, input1: torch.Tensor, input2: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        '''Embed a pair of inputs (siamese network)'''
         return self.encoder1(input1), self.encoder1(input2)
 
-    def decoder(self, input1, input2):
+    def decoder(self, input1: torch.Tensor, input2: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        '''Reconstruct a pair of inputs from their embeddings'''
         return self.decoder1(input1), self.decoder1(input2)
 
-    def embedding(self, input):
-        return self.encoder1(input)
+    def embedding(self, x: torch.Tensor) -> torch.Tensor:
+        '''Embed a batch of inputs'''
+        return self.encoder1(x)
 
-    def save_with_params_to(self, path):
+    def save_with_params_to(self, path: str) -> None:
+        '''Save model weights and constructor parameters (see ``model_load``)'''
         torch.save({
                     'model_name': 'Semi_encoding_single',
                     'model_state_dict': self.state_dict(),
@@ -105,8 +133,30 @@ class Semi_encoding_single(torch.nn.Module):
                     }, path)
 
 
-def model_load(path, device, warn_on_old_format=True):
-    '''Load model from path'''
+def model_load(path: str,
+               device: torch.device,
+               warn_on_old_format: bool = True,
+               ) -> Semi_encoding_single | Semi_encoding_multiple:
+    '''Load model from path
+
+    Models saved with ``save_with_params_to`` are loaded safely (with
+    ``weights_only=True``). Older models (pickled whole) are loaded with the
+    legacy (unsafe) method, logging a warning on how to update them (unless
+    ``warn_on_old_format`` is False). Exits the program if loading fails.
+
+    Parameters
+    ----------
+    path : str
+        Model file
+    device : torch.device
+        Device to load the model to
+    warn_on_old_format : bool, optional
+        Whether to warn if the model is in the old format
+
+    Returns
+    -------
+    model : Semi_encoding_single or Semi_encoding_multiple
+    '''
     try:
         saved = torch.load(path, map_location=device, weights_only=True)
     except pickle.UnpicklingError:
@@ -145,8 +195,28 @@ def model_load(path, device, warn_on_old_format=True):
     return model.to(device)
 
 
-def loss_function(embedding1, embedding2, label, raw_x_1,
-                  raw_x_2, decoder_x_1, decoder_x_2, is_label=True):
+def loss_function(embedding1: torch.Tensor,
+                  embedding2: torch.Tensor,
+                  label: torch.Tensor | None,
+                  raw_x_1: torch.Tensor,
+                  raw_x_2: torch.Tensor,
+                  decoder_x_1: torch.Tensor,
+                  decoder_x_2: torch.Tensor,
+                  is_label: bool = True,
+                  ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor] | torch.Tensor:
+    '''Loss for semi-supervised training
+
+    Combines a contrastive loss on the embeddings (must-link pairs, with
+    ``label == 1``, are pulled together; cannot-link pairs, with
+    ``label == 0``, are pushed at least distance 1 apart) and an autoencoder
+    reconstruction (MSE) loss.
+
+    Returns
+    -------
+    If ``is_label`` is True, the tuple ``(loss, supervised_loss,
+    unsupervised_loss)``. Otherwise (unlabeled data, ``label`` is ignored),
+    only the reconstruction loss.
+    '''
     relu = torch.nn.ReLU()
     mse_loss = torch.nn.MSELoss()
     d = torch.norm(embedding1 - embedding2, p=2, dim=1)
@@ -170,38 +240,100 @@ def loss_function(embedding1, embedding2, label, raw_x_1,
 
 
 class feature_Dataset(Dataset):
-    def __init__(self, embedding1, embedding2, labels):
-        self.embedding1 = embedding1
-        self.embedding2 = embedding2
-        assert len(embedding1) == len(embedding2)
-        assert len(embedding1) == len(labels)
+    '''Dataset of labeled pairs of feature vectors
+
+    Item ``i`` is ``(features1[i], features2[i], labels[i])``, where the label
+    is 1 for must-link pairs and 0 for cannot-link pairs.
+    '''
+    def __init__(self, features1, features2, labels):
+        self.features1 = features1
+        self.features2 = features2
+        assert len(features1) == len(features2)
+        assert len(features1) == len(labels)
         self.labels = labels
 
     def __getitem__(self, item):
-        return self.embedding1[item], self.embedding2[item], self.labels[item]
+        return self.features1[item], self.features2[item], self.labels[item]
 
-    def __len__(self):
-        return len(self.embedding1)
+    def __len__(self) -> int:
+        return len(self.features1)
 
 
 class unsupervised_feature_Dataset(Dataset):
-    def __init__(self, embedding1, embedding2):
-        self.embedding1 = embedding1
-        self.embedding2 = embedding2
-        assert len(embedding1) == len(embedding2)
+    '''Dataset of unlabeled pairs of feature vectors
+
+    Item ``i`` is ``(features1[i], features2[i])``.
+    '''
+    def __init__(self, features1, features2):
+        self.features1 = features1
+        self.features2 = features2
+        assert len(features1) == len(features2)
 
     def __getitem__(self, item):
-        return self.embedding1[item], self.embedding2[item]
+        return self.features1[item], self.features2[item]
 
-    def __len__(self):
-        return len(self.embedding1)
+    def __len__(self) -> int:
+        return len(self.features1)
 
 
-def train_semi(logger, out, contig_fastas, binned_lengths, datas, data_splits, cannot_links, is_combined=True,
-          batchsize=2048, epochs=20, device=None, num_process = 8, mode = 'single', orf_finder = 'prodigal',
-          prodigal_output_faa=None):
+def train_semi(logger: logging.Logger,
+               out: str,
+               contig_fastas: list[str],
+               binned_lengths: list[int],
+               datas: list[str],
+               data_splits: list[str],
+               cannot_links: list[str],
+               is_combined: bool = True,
+               batchsize: int = 2048,
+               epochs: int = 20,
+               device: torch.device | None = None,
+               num_process: int = 8,
+               mode: str = 'single',
+               orf_finder: str = 'prodigal',
+               prodigal_output_faa: str | None = None,
+               ) -> Semi_encoding_single | Semi_encoding_multiple:
     """
     Train model from one sample(--mode single) or several samples(--mode several)
+
+    Semi-supervised training uses three types of constraints: must-link
+    (halves of the same contig), cannot-link from taxonomic annotation, and
+    cannot-link between seed contigs (see ``estimate_seeds``). An autoencoder
+    reconstruction loss is also used on all contigs.
+
+    Parameters
+    ----------
+    logger : logging.Logger
+    out : str
+        Output directory (marker gene results are saved to
+        ``<out>/sample<index>``)
+    contig_fastas : list of str
+        Contig FASTA file of each sample
+    binned_lengths : list of int
+        Minimum contig length of each sample
+    datas : list of str
+        ``data.csv`` file of each sample
+    data_splits : list of str
+        ``data_split.csv`` file of each sample
+    cannot_links : list of str
+        Cannot-link file of each sample
+    is_combined : bool, optional
+        Whether coverage is part of the model input
+    batchsize : int, optional
+    epochs : int, optional
+    device : torch.device, optional
+    num_process : int, optional
+        Number of threads/processes to use
+    mode : str, optional
+        'single' or 'several'
+    orf_finder : str, optional
+        ORF finder to use for marker gene detection
+    prodigal_output_faa : str, optional
+        Pre-computed ORFs
+
+    Returns
+    -------
+    model : Semi_encoding_single or Semi_encoding_multiple
+        The trained model
     """
     from tqdm import tqdm
     import pandas as pd
@@ -230,7 +362,7 @@ def train_semi(logger, out, contig_fastas, binned_lengths, datas, data_splits, c
 
     for epoch in tqdm(range(epochs)):
         for data_index in range(len(contig_fastas)):
-            seed = estimate_seeds(
+            seeds = estimate_seeds(
                 contig_fastas[data_index],
                 binned_length=binned_lengths[data_index],
                 num_process=num_process,
@@ -291,13 +423,13 @@ def train_semi(logger, out, contig_fastas, binned_lengths, datas, data_splits, c
                 train_labels.append(0)
 
             # cannot link from bin seed
-            if seed is not None:
-                for i in range(len(seed)):
-                    for j in range(i + 1, len(seed)):
+            if seeds is not None:
+                for i in range(len(seeds)):
+                    for j in range(i + 1, len(seeds)):
                         train_input_1.append(
-                            train_data_input[contig2ix[str(seed[i])]])
+                            train_data_input[contig2ix[str(seeds[i])]])
                         train_input_2.append(
-                            train_data_input[contig2ix[str(seed[j])]])
+                            train_data_input[contig2ix[str(seeds[j])]])
                         train_labels.append(0)
 
             # must link from breaking up

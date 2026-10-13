@@ -1,5 +1,9 @@
+from __future__ import annotations
+import argparse
+import logging
 import os
 import shutil
+from typing import TYPE_CHECKING
 import torch
 import numpy as np
 from .utils import write_bins, log_binning_stats
@@ -8,8 +12,42 @@ from sklearn.cluster import dbscan
 from sklearn.neighbors import kneighbors_graph
 from collections import defaultdict
 
+if TYPE_CHECKING:
+    import pandas as pd
 
-def get_best_bin(results, contig_to_marker, namelist, contig_dict, minfasta):
+
+def get_best_bin(results: list[list[int]],
+                 contig_to_marker: dict[str, list[str]],
+                 namelist: list[str],
+                 contig_dict: dict[str, str],
+                 minfasta: int) -> list[str] | None:
+    '''Select the best bin across several clustering results
+
+    Bins are scored by an F1-like combination of completeness and
+    contamination, estimated from single-copy marker genes. The contamination
+    limit is progressively relaxed (from 10% up to 100%) until some bin
+    qualifies. Ties are broken in favour of the smaller bin.
+
+    Parameters
+    ----------
+    results : list of list of int
+        Each element is a clustering: one label per contig in ``namelist``
+        (-1 means unclustered)
+    contig_to_marker : dict[str, list[str]]
+        contig name -> marker genes found in it
+    namelist : list of str
+        Contig names
+    contig_dict : dict[str, str]
+        contig name -> sequence
+    minfasta : int
+        Minimum bin size (in basepairs)
+
+    Returns
+    -------
+    best_bin : list of str or None
+        Contigs in the best bin, or None if no bin of at least ``minfasta``
+        basepairs contains any marker genes
+    '''
 
     # There is room for improving the loop below to avoid repeated computation
     # but it runs very fast in any case
@@ -18,12 +56,12 @@ def get_best_bin(results, contig_to_marker, namelist, contig_dict, minfasta):
         weight_of_max = 1e9
         max_bin = None
 
-        for res_labels in results:
-            res = defaultdict(list)
-            for label, name in zip(res_labels, namelist, strict=True):
+        for labels in results:
+            bin_contigs = defaultdict(list)
+            for label, name in zip(labels, namelist, strict=True):
                 if label != -1:
-                    res[label].append(name)
-            for bin_contig in res.values():
+                    bin_contigs[label].append(name)
+            for bin_contig in bin_contigs.values():
                 cur_weight = sum(len(contig_dict[contig]) for contig in bin_contig)
                 if cur_weight < minfasta:
                     continue
@@ -48,9 +86,53 @@ def get_best_bin(results, contig_to_marker, namelist, contig_dict, minfasta):
         if max_F1 > 0: # if there is a bin with F1 > 0
             return max_bin
 
-def cluster_long_read(logger, model, data, device, is_combined,
-            n_sample, out, contig_dict, *, binned_length, args,
-            minfasta):
+def cluster_long_read(logger: logging.Logger,
+                      model: torch.nn.Module,
+                      data: pd.DataFrame,
+                      device: torch.device,
+                      is_combined: bool,
+                      n_sample: int,
+                      out: str,
+                      contig_dict: dict[str, str], *,
+                      binned_length: int,
+                      args: argparse.Namespace,
+                      minfasta: int) -> None:
+    '''Cluster contigs into bins (long-read mode) and write the output
+
+    Contigs are embedded with the model and clustered with DBSCAN using a
+    range of ``eps`` values. Bins are then greedily extracted from this
+    ensemble of clusterings: at each step, the best bin (according to
+    single-copy marker genes, see ``get_best_bin``) is selected and its
+    contigs are removed from consideration.
+
+    Bins are written to ``<out>/output_bins`` along with ``bins_info.tsv`` and
+    ``contig_bins.tsv``.
+
+    Parameters
+    ----------
+    logger : logging.Logger
+    model : torch.nn.Module
+        Trained embedding model
+    data : pd.DataFrame
+        Contig features (indexed by contig name)
+    device : torch.device
+    is_combined : bool
+        Whether coverage is part of the model input. If False, the log of the
+        mean coverage is appended to the embedding
+    n_sample : int
+        Number of samples
+    out : str
+        Output directory
+    contig_dict : dict[str, str]
+        contig name -> sequence
+    binned_length : int
+        Minimum contig length
+    args : argparse.Namespace
+        Command line arguments (for ``num_process``, ``orf_finder``, output
+        options...)
+    minfasta : int
+        Minimum bin size (in basepairs) for a bin to be output
+    '''
     import pandas as pd
     from .utils import norm_abundance
     contig_list = data.index.tolist()
@@ -74,11 +156,11 @@ def cluster_long_read(logger, model, data, device, is_combined,
 
     if not is_combined:
         depth = data.values[:, 136:len(data.values[0])].astype(np.float32)
-        mean_index = [2 * temp for temp in range(n_sample)]
+        mean_index = [2 * sample_ix for sample_ix in range(n_sample)]
         depth = depth[:, mean_index]
-        embedding_new = np.concatenate((embedding, np.log(np.clip(depth, 1e-6, None))), axis=1)
+        embedding_with_depth = np.concatenate((embedding, np.log(np.clip(depth, 1e-6, None))), axis=1)
     else:
-        embedding_new = embedding
+        embedding_with_depth = embedding
 
     import tempfile
     with tempfile.TemporaryDirectory() as tdir:
@@ -106,8 +188,8 @@ def cluster_long_read(logger, model, data, device, is_combined,
 
     logger.debug('Running DBSCAN.')
     dist_matrix = kneighbors_graph(
-        embedding_new,
-        n_neighbors=min(200, embedding_new.shape[0] - 1),
+        embedding_with_depth,
+        n_neighbors=min(200, embedding_with_depth.shape[0] - 1),
         mode='distance',
         p=2,
         n_jobs=args.num_process)
@@ -142,12 +224,12 @@ def cluster_long_read(logger, model, data, device, is_combined,
             for r in dbscan_results:
                 r.pop(ix)
 
-    contig2ix = {}
-    for i, cs in enumerate(extracted):
-        for c in cs:
-            contig2ix[c] = i
+    contig2bin = {}
+    for bin_ix, bin_contigs in enumerate(extracted):
+        for contig in bin_contigs:
+            contig2bin[contig] = bin_ix
     namelist = data.index.tolist()
-    contig_labels = [contig2ix.get(c, -1) for c in namelist]
+    contig_labels = [contig2bin.get(c, -1) for c in namelist]
     written = write_bins(namelist, contig_labels,
                     output_bin_path, contig_dict,
                     minfasta=minfasta,

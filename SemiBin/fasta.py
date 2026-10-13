@@ -1,43 +1,50 @@
-from typing import Iterator, Tuple, Union, TextIO
+from collections.abc import Iterator
+from typing import TextIO
 
 
 def fasta_iter(
-        fname: Union[str, TextIO],
+        fname: str | TextIO,
         full_header: bool = False,
-        ) -> Iterator[Tuple[str, str]]:
-    '''Iterate over a (possibly gzipped) FASTA file
+        ) -> Iterator[tuple[str, str]]:
+    '''Iterate over a (possibly compressed) FASTA file
 
     Parameters
     ----------
-    fname : str
-        Filename.
-            If it ends with .gz, gzip format is assumed
-            If .bz2 then bzip2 format is assumed
-            if .xz, then lzma format is assumerd
-    full_header : boolean (optional)
-        If True, yields the full header. Otherwise (the default), only the
-        first word
+    fname : str or file-like
+        Filename or an already open text file. Compression is inferred from
+        the filename extension:
+
+        - ``.gz``: gzip
+        - ``.bz2``: bzip2
+        - ``.xz``: lzma
+
+        Any other extension is read as plain text.
+    full_header : bool, optional
+        If True, yields the full header line (without the leading ``>``).
+        Otherwise (the default), only the first whitespace-delimited word (the
+        sequence ID) is returned.
 
     Yields
     ------
-    (h,seq): tuple of (str, str)
+    (header, seq) : tuple of (str, str)
+        Sequence lines are concatenated (with whitespace stripped)
     '''
     header = None
     chunks = []
     if hasattr(fname, 'readline'):
-        op = lambda f, _ : f
+        open_fn = lambda f, _ : f
     elif fname.endswith('.gz'):
         import gzip
-        op = gzip.open
+        open_fn = gzip.open
     elif fname.endswith('.bz2'):
         import bz2
-        op = bz2.open
+        open_fn = bz2.open
     elif fname.endswith('.xz'):
         import lzma
-        op = lzma.open
+        open_fn = lzma.open
     else:
-        op = open
-    with op(fname, 'rt') as f:
+        open_fn = open
+    with open_fn(fname, 'rt') as f:
         for line in f:
             if line[0] == '>':
                 if header is not None:

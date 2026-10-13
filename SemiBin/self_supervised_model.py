@@ -1,3 +1,5 @@
+from __future__ import annotations
+import logging
 import torch
 from torch.utils.data import DataLoader
 from torch.optim import lr_scheduler
@@ -5,7 +7,13 @@ import sys
 from .semi_supervised_model import Semi_encoding_single, Semi_encoding_multiple, feature_Dataset
 from .utils import norm_abundance
 
-def loss_function(embedding1, embedding2, label):
+def loss_function(embedding1: torch.Tensor, embedding2: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
+    '''Contrastive loss
+
+    Must-link pairs (``label == 1``) are pulled together (squared distance),
+    while cannot-link pairs (``label == 0``) are pushed at least distance 1
+    apart.
+    '''
     relu = torch.nn.ReLU()
     d = torch.norm(embedding1 - embedding2, p=2, dim=1)
     square_pred = torch.square(d)
@@ -15,16 +23,44 @@ def loss_function(embedding1, embedding2, label):
     return supervised_loss
 
 
-def train_self(logger, datapaths, data_splits, is_combined=True,
-          batchsize=2048, epochs=15, device=None, num_process = 8, mode = 'single'):
+def train_self(logger: logging.Logger,
+               datapaths: list[str],
+               data_splits: list[str],
+               is_combined: bool = True,
+               batchsize: int = 2048,
+               epochs: int = 15,
+               device: torch.device | None = None,
+               num_process: int = 8,
+               mode: str = 'single',
+               ) -> Semi_encoding_single | Semi_encoding_multiple:
     """
     Train model from one sample(mode=single) or several samples(mode=several)
 
-    Saves model to disk and returns it
+    Self-supervised (contrastive) training: must-link pairs are the two halves
+    of long contigs (from ``data_split``), while cannot-link pairs are random
+    pairs of contigs (resampled every epoch).
 
     Parameters
     ----------
-    out : filename to write model to
+    logger : logging.Logger
+    datapaths : list of str
+        ``data.csv`` file of each sample
+    data_splits : list of str
+        ``data_split.csv`` file of each sample
+    is_combined : bool, optional
+        Whether coverage is part of the model input
+    batchsize : int, optional
+    epochs : int, optional
+    device : torch.device, optional
+    num_process : int, optional
+        Number of threads to use
+    mode : str, optional
+        'single' or 'several'
+
+    Returns
+    -------
+    model : Semi_encoding_single or Semi_encoding_multiple
+        The trained model (it is not saved to disk)
     """
     from tqdm import tqdm
     import pandas as pd

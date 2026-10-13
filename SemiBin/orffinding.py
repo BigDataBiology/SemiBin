@@ -8,7 +8,28 @@ import logging
 from .utils import describe_returncode, format_stderr
 
 
-def run_prodigal(fasta_path, num_process, output):
+def run_prodigal(fasta_path: str, num_process: int, output: str) -> str:
+    '''Predict ORFs with prodigal (in metagenome mode)
+
+    The input is split into ``num_process`` chunks of approximately equal size
+    (in basepairs) and a prodigal process is run on each chunk in parallel.
+
+    Exits the program (``sys.exit(1)``) if prodigal is not available or fails.
+
+    Parameters
+    ----------
+    fasta_path : str
+        Input contigs (FASTA)
+    num_process : int
+        Number of prodigal processes to run in parallel
+    output : str
+        Directory for intermediate and output files
+
+    Returns
+    -------
+    faa_path : str
+        Path to the predicted protein sequences (FASTA)
+    '''
     from .fasta import fasta_iter
     logger = logging.getLogger('SemiBin2')
     logger.info('Running prodigal')
@@ -18,23 +39,23 @@ def run_prodigal(fasta_path, num_process, output):
         contigs[h] = seq
 
     total_len = sum(len(s) for s in contigs.values())
-    split_len = total_len // num_process
+    chunk_target_len = total_len // num_process
 
-    cur = split_len + 1
-    next_ix = 0
+    cur_chunk_len = chunk_target_len + 1
+    n_chunks = 0
     out = None
     with contextlib.ExitStack() as stack:
         for h, seq in contigs.items():
-            if cur > split_len and next_ix < num_process:
+            if cur_chunk_len > chunk_target_len and n_chunks < num_process:
                 if out is not None:
                     out.close()
-                out = open(os.path.join(output, 'contig_{}.fa'.format(next_ix)), 'wt')
+                out = open(os.path.join(output, 'contig_{}.fa'.format(n_chunks)), 'wt')
                 out = stack.enter_context(out)
 
-                cur = 0
-                next_ix += 1
+                cur_chunk_len = 0
+                n_chunks += 1
             out.write(f'>{h}\n{seq}\n')
-            cur += len(seq)
+            cur_chunk_len += len(seq)
 
     prodigal_path = shutil.which('prodigal')
     if prodigal_path is None:
@@ -44,8 +65,8 @@ def run_prodigal(fasta_path, num_process, output):
 
     processes = []
     try:
-        logger.debug(f'Running prodigal on {next_ix} FASTA files')
-        for index in range(next_ix):
+        logger.debug(f'Running prodigal on {n_chunks} FASTA files')
+        for index in range(n_chunks):
             with open(os.path.join(output, f'contig_{index}_log.txt') + '.out', 'w') as prodigal_out_log, \
                     open(os.path.join(output, f'contig_{index}_log.txt') + '.err', 'w') as prodigal_err_log:
                 p = subprocess.Popen(
@@ -66,7 +87,7 @@ def run_prodigal(fasta_path, num_process, output):
                 with open(os.path.join(output, f'contig_{index}_log.txt') + '.err') as prodigal_err_log:
                     err = format_stderr(prodigal_err_log.read())
                 logger.error(f'prodigal {describe_returncode(rc)} '
-                             f'(when processing chunk {index + 1} of {next_ix} of `{fasta_path}`).{err}')
+                             f'(when processing chunk {index + 1} of {n_chunks} of `{fasta_path}`).{err}')
                 sys.exit(1)
 
     except OSError as e:
@@ -87,13 +108,32 @@ def run_prodigal(fasta_path, num_process, output):
 
     contig_output = os.path.join(output, 'contigs.faa')
     with open(contig_output, 'w') as f:
-        for index in range(next_ix):
+        for index in range(n_chunks):
             with open(os.path.join(output, 'contig_{}.faa'.format(index)), 'r') as infile:
                 f.write(infile.read())
     return contig_output
 
 
-def run_fraggenescan(fasta_path: str, num_process: int, output: str):
+def run_fraggenescan(fasta_path: str, num_process: int, output: str) -> str:
+    '''Predict ORFs with FragGeneScan
+
+    Exits the program (``sys.exit(1)``) if FragGeneScan is not available or
+    fails.
+
+    Parameters
+    ----------
+    fasta_path : str
+        Input contigs (FASTA)
+    num_process : int
+        Number of threads
+    output : str
+        Directory for output files
+
+    Returns
+    -------
+    faa_path : str
+        Path to the predicted protein sequences (FASTA)
+    '''
     logger = logging.getLogger('SemiBin2')
     try:
         contig_output = os.path.join(output, 'contigs.faa')
@@ -121,8 +161,33 @@ def run_fraggenescan(fasta_path: str, num_process: int, output: str):
     return contig_output + '.faa'
 
 
-def run_orffinder(fasta_path, num_process, tdir, orf_finder, prodigal_output_faa):
-    '''Run ORF finder (depending on the value or the orf_finder argument'''
+def run_orffinder(
+        fasta_path: str,
+        num_process: int,
+        tdir: str,
+        orf_finder: str,
+        prodigal_output_faa: str | None) -> str:
+    '''Run the ORF finder selected by the ``orf_finder`` argument
+
+    Parameters
+    ----------
+    fasta_path : str
+        Input contigs (FASTA)
+    num_process : int
+        Number of processes to use
+    tdir : str
+        Directory for intermediate and output files
+    orf_finder : str
+        One of 'prodigal', 'fast-naive', or 'fraggenescan'
+    prodigal_output_faa : str or None
+        If not None, pre-computed ORFs (protein FASTA) which are used instead
+        of running an ORF finder
+
+    Returns
+    -------
+    faa_path : str
+        Path to the predicted protein sequences (FASTA)
+    '''
     if prodigal_output_faa is not None:
         oname = os.path.join(tdir, 'orfs.faa')
         shutil.copyfile(prodigal_output_faa, oname)

@@ -1,14 +1,21 @@
+import logging
 import os
 from os import path
 import shutil
 import sys
 from time import sleep
 
-def download_GTDB_to(logger, GTDB_dir):
-    """
-    Download GTDB.
-    logger: logger
-    GTDB_dir: where to store the data
+def download_GTDB_to(logger: logging.Logger, GTDB_dir: str) -> None:
+    """Download the GTDB reference database (for mmseqs2) and extract it
+
+    Exits the program (``sys.exit(1)``) if the download fails the MD5 check or
+    the tarball cannot be extracted.
+
+    Parameters
+    ----------
+    logger : logging.Logger
+    GTDB_dir : str
+        Directory where to store the data (created if needed)
     """
     import requests
     import tarfile
@@ -27,17 +34,17 @@ def download_GTDB_to(logger, GTDB_dir):
         md5_ok = True
     else:
         download_url = 'https://zenodo.org/record/4751564/files/GTDB_v95.tar.gz?download=1'
-        with requests.get(download_url, stream=True) as r:
-            m = hashlib.md5()
+        with requests.get(download_url, stream=True) as response:
+            md5 = hashlib.md5()
             with open(download_path, 'wb') as f:
                 while True:
-                    data = r.raw.read(4096)
-                    if not data:
+                    chunk = response.raw.read(4096)
+                    if not chunk:
                         break
-                    f.write(data)
-                    m.update(data)
+                    f.write(chunk)
+                    md5.update(chunk)
         logger.info('Download finished. Checking MD5...')
-        md5_ok = m.hexdigest() == '4a70301c54104e87d5615e3f2383c8b5'
+        md5_ok = md5.hexdigest() == '4a70301c54104e87d5615e3f2383c8b5'
     if md5_ok:
         try:
             tar = tarfile.open(download_path, "r:gz")
@@ -57,14 +64,26 @@ def download_GTDB_to(logger, GTDB_dir):
         sys.exit(1)
 
 
-def find_or_download_gtdb(logger, GTDB_reference_dir, force):
+def find_or_download_gtdb(
+        logger: logging.Logger,
+        GTDB_reference_dir: str | None,
+        force: bool) -> str:
     '''Find or (lazily) download GTDB
 
-    logger: logger
-    GTDB_reference_dir: str
-        where to store the database. Can be None, in which case, the default will be used
-    force: bool
+    Parameters
+    ----------
+    logger : logging.Logger
+    GTDB_reference_dir : str or None
+        Where to store the database. If None, the default location
+        (``$XDG_CACHE_HOME/SemiBin/mmseqs2-GTDB``, falling back to
+        ``~/.cache/SemiBin/mmseqs2-GTDB``) is used.
+    force : bool
         If a database is found and `force` is true, then remove it and redownload it.
+
+    Returns
+    -------
+    GTDB_reference : str
+        Path to the GTDB mmseqs2 database (to be passed to ``mmseqs taxonomy``)
     '''
     using_default_dir = False
     if GTDB_reference_dir is None:

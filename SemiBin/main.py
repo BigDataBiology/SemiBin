@@ -606,7 +606,12 @@ def semibin_arg_parser():
         argcomplete.autocomplete(parser)
     return parser
 
-def parse_args(args):
+def parse_args(args: list[str]) -> argparse.Namespace:
+    '''Parse command line arguments
+
+    Prints the help message and exits if ``args`` is empty. Also normalizes
+    subcommand aliases (e.g., ``bin_short`` -> ``bin``).
+    '''
     parser = semibin_arg_parser()
     if not args:
         parser.print_help(sys.stderr)
@@ -636,15 +641,22 @@ def parse_args(args):
 
 
 
-def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
+def check_install(verbose: bool,
+                  orf_finder: str | None = None,
+                  allow_missing_mmseqs2: bool = False) -> None:
     '''Executes check_install subcommand, which checks for dependencies
+
+    Exits the program (``sys.exit(1)``) if a required dependency is missing.
 
     Parameters
     ----------
-    verbose : boolean. If true, then prints out all the paths
+    verbose : bool
+        If true, then prints out all the paths (and GPU information)
     orf_finder : str, optional
-    allow_missing_mmseqs2 : boolean, optional
-        If true, then checks for mmseqs2
+        ORF finder that will be used (determines whether prodigal is required)
+    allow_missing_mmseqs2 : bool, optional
+        If true, then a missing mmseqs2 is not an error (it is only needed for
+        semi-supervised training)
     '''
     import torch
     from shutil import which
@@ -661,8 +673,8 @@ def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
     if verbose:
         print("Looking for dependencies...")
     for dep in dependencies:
-        p = which(dep)
-        if not p:
+        dep_path = which(dep)
+        if not dep_path:
             if dep == 'mmseqs':
                 if not allow_missing_mmseqs2:
                     sys.stderr.write(
@@ -697,7 +709,7 @@ def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
             if dep == 'FragGeneScan':
                 has_fgs = True
             if verbose:
-                print(f'\t{dep:16}: {p}')
+                print(f'\t{dep:16}: {dep_path}')
     if verbose:
         if not torch.cuda.is_available():
             print('CUDA is not available, SemiBin will run on CPU')
@@ -715,17 +727,40 @@ def check_install(verbose, orf_finder=None, allow_missing_mmseqs2=False):
             print('Installation OK')
 
 
-def predict_taxonomy(logger, contig_fasta, cannot_name,
-                     taxonomy_results_fname, GTDB_reference, num_process,
-                     binned_length, must_link_threshold, output):
+def predict_taxonomy(logger: logging.Logger,
+                     contig_fasta: str,
+                     cannot_name: str,
+                     taxonomy_results_fname: str | None,
+                     GTDB_reference: str | None,
+                     num_process: int,
+                     binned_length: int,
+                     must_link_threshold: int,
+                     output: str) -> None:
     """
     Predict taxonomy using mmseqs and generate cannot-link file
 
-    contig_fasta: contig file used
-    GTDB_reference: GTDB path
-    cannot_name: name for cannot-link constraint
-    binned_short: threshold for contigs used in binning
-    must_link_threshold: threshold of contigs for must-link constraints
+    The cannot-link file is written to ``<output>/cannot/<cannot_name>.txt``.
+
+    Parameters
+    ----------
+    logger : logging.Logger
+    contig_fasta : str
+        Contig file used
+    cannot_name : str
+        Name for cannot-link constraint file
+    taxonomy_results_fname : str or None
+        Pre-computed taxonomy results (``mmseqs createtsv`` format). If None,
+        mmseqs is run against GTDB (downloading it if needed)
+    GTDB_reference : str or None
+        GTDB path (see ``find_or_download_gtdb``)
+    num_process : int
+        Number of threads for mmseqs
+    binned_length : int
+        Threshold for contigs used in binning
+    must_link_threshold : int
+        Threshold of contigs for must-link constraints
+    output : str
+        Output directory
     """
     import tempfile
 
@@ -795,14 +830,42 @@ def predict_taxonomy(logger, contig_fasta, cannot_name,
     generate_cannot_link(taxonomy_results_fname,
         namelist, num_must_link, os.path.join(output, 'cannot'), cannot_name)
 
-def generate_sequence_features_single(logger, contig_fasta,
-                         bams, binned_length,
-                         must_link_threshold, num_process, output, abundances, only_kmer=False):
+def generate_sequence_features_single(logger: logging.Logger,
+                                      contig_fasta: str,
+                                      bams: list[str] | None,
+                                      binned_length: int,
+                                      must_link_threshold: int,
+                                      num_process: int,
+                                      output: str,
+                                      abundances: list[str] | None,
+                                      only_kmer: bool = False) -> None:
     """
     Generate data.csv and data_split.csv for training and clustering of single-sample and co-assembly binning mode.
-    data.csv has the features(kmer and abundance) for original contigs.
-    data_split.csv has the features(kmer and abundace) for contigs that are breaked up as must-link pair.
 
+    - ``data.csv`` has the features (k-mer and abundance) for original contigs.
+    - ``data_split.csv`` has the features (k-mer and abundance) for contigs
+      that are broken up into must-link pairs.
+
+    Parameters
+    ----------
+    logger : logging.Logger
+    contig_fasta : str
+        Contig FASTA file
+    bams : list of str or None
+        BAM files (one per sample)
+    binned_length : int
+        Minimum contig length
+    must_link_threshold : int
+        Contigs at least this long are split into must-link pairs
+    num_process : int
+        Number of processes to use
+    output : str
+        Output directory
+    abundances : list of str or None
+        Abundance files (alternative to ``bams``)
+    only_kmer : bool, optional
+        If True, only k-mer features are computed (and only ``data.csv`` is
+        written)
     """
     import pandas as pd
 
@@ -891,11 +954,22 @@ def generate_sequence_features_single(logger, contig_fasta,
         data_split.to_csv(ofile)
 
 
-def generate_sequence_features_multi(logger, args):
+def generate_sequence_features_multi(logger: logging.Logger, args: argparse.Namespace) -> list[str]:
     """
     Generate data.csv and data_split.csv for every sample of multi-sample binning mode.
-    data.csv has the features(kmer and abundance) for original contigs.
-    data_split.csv has the features(kmer and abundace) for contigs that are breaked up as must-link pair.
+
+    - ``data.csv`` has the features (k-mer and abundance) for original contigs.
+    - ``data_split.csv`` has the features (k-mer and abundance) for contigs
+      that are broken up into must-link pairs.
+
+    The concatenated input FASTA (see ``concatenate_fasta``) is split into
+    one FASTA file per sample (``<output>/samples/<sample>.fa``) and the
+    features are written to ``<output>/samples/<sample>/``.
+
+    Returns
+    -------
+    sample_list : list of str
+        Sample names (in input order)
     """
     import pandas as pd
 
@@ -919,7 +993,8 @@ def generate_sequence_features_multi(logger, args):
 
     os.makedirs(os.path.join(args.output, 'samples'), exist_ok=True)
 
-    def fasta_sample_iter(fn):
+    def fasta_sample_iter(fn: str):
+        '''Yields (sample_name, contig_name, seq) tuples'''
         for h,seq in fasta_iter(fn):
             if args.separator not in h:
                 raise ValueError(
@@ -927,7 +1002,7 @@ def generate_sequence_features_multi(logger, args):
             sample_name, contig_name = h.split(args.separator, 1)
             yield sample_name, contig_name, seq
 
-    for sample_name, contigs in groupby(fasta_sample_iter(args.contig_fasta), lambda sn_cn_seq : sn_cn_seq[0]):
+    for sample_name, contigs in groupby(fasta_sample_iter(args.contig_fasta), lambda sample_contig_seq : sample_contig_seq[0]):
         with utils.possibly_compressed_write(os.path.join(args.output, 'samples', f'{sample_name}.fa')) as out:
             longest = 0
             for _, contig_name, seq in contigs:
@@ -1097,14 +1172,41 @@ def generate_sequence_features_multi(logger, args):
     return sample_list
 
 
-def training(logger, contig_fasta,
-             data, data_split, cannot_link,
-             *, output, device, mode,
-             args):
+def training(logger: logging.Logger,
+             contig_fasta: list[str] | None,
+             data: list[str],
+             data_split: list[str],
+             cannot_link: list[str] | None,
+             *,
+             output: str,
+             device,
+             mode: str,
+             args: argparse.Namespace) -> None:
     """
-    Training the model
+    Train the model and save it to ``<output>/model.pt``
 
-    model: [single/several]
+    Uses semi-supervised or self-supervised training depending on
+    ``args.training_type``.
+
+    Parameters
+    ----------
+    logger : logging.Logger
+    contig_fasta : list of str or None
+        Contig FASTA files (only needed for semi-supervised training)
+    data : list of str
+        ``data.csv`` files (one per sample)
+    data_split : list of str
+        ``data_split.csv`` files (one per sample)
+    cannot_link : list of str or None
+        Cannot-link files (only needed for semi-supervised training)
+    output : str
+        Output directory
+    device : torch.device
+    mode : str
+        'single' (train from a single sample) or 'several' (train from
+        multiple samples)
+    args : argparse.Namespace
+        Command line arguments (for training options)
     """
     from .semi_supervised_model import train_semi
     from .self_supervised_model import train_self
@@ -1112,8 +1214,10 @@ def training(logger, contig_fasta,
 
     if mode == 'single':
         logger.info('Start training from a single sample.')
-        data_ = pd.read_csv(data[0], index_col=0)
-        col_name = data_.columns[-1].split('_')[-1]
+        features = pd.read_csv(data[0], index_col=0)
+        # If there are coverage variance columns (which are named `*_var`),
+        # coverage is not part of the model input
+        col_name = features.columns[-1].split('_')[-1]
         is_combined = col_name != 'var'
 
     else:
@@ -1157,7 +1261,37 @@ def training(logger, contig_fasta,
     model.save_with_params_to(os.path.join(output, 'model.pt'))
 
 
-def binning_preprocess(data, depth_metabat2, model_path, environment, device):
+def binning_preprocess(data: str,
+                       depth_metabat2: str | None,
+                       model_path: str | None,
+                       environment: str | None,
+                       device):
+    '''Load features and model for binning
+
+    Parameters
+    ----------
+    data : str
+        ``data.csv`` features file
+    depth_metabat2 : str or None
+        Depth file from MetaBAT2 (``jgi_summarize_bam_contig_depths``) to use
+        instead of the coverage in ``data``
+    model_path : str or None
+        Trained model (ignored if ``environment`` is given)
+    environment : str or None
+        Use the pretrained model for this environment
+    device : torch.device
+
+    Returns
+    -------
+    is_combined : bool
+        Whether coverage is part of the model input
+    n_sample : int
+        Number of samples
+    data : pd.DataFrame
+        Contig features
+    model : torch.nn.Module
+        The loaded model
+    '''
     import pandas as pd
     from .semi_supervised_model import model_load
     logger = logging.getLogger('SemiBin2')
@@ -1192,8 +1326,21 @@ def binning_preprocess(data, depth_metabat2, model_path, environment, device):
 
     return is_combined, n_sample, data, model
 
-def binning_long(logger, data, minfasta, binned_length, contig_dict,
-        model_path, output, device, environment, *, args):
+def binning_long(logger: logging.Logger,
+                 data: str,
+                 minfasta: int,
+                 binned_length: int,
+                 contig_dict: dict[str, str],
+                 model_path: str | None,
+                 output: str,
+                 device,
+                 environment: str | None, *,
+                 args: argparse.Namespace) -> None:
+    """
+    Cluster the contigs to get the final bins (long-read mode)
+
+    See ``binning_short`` for the meaning of the arguments.
+    """
     from .long_read_cluster import cluster_long_read
     logger.info('Start binning.')
     is_combined, n_sample, data, model = binning_preprocess(data, getattr(args, 'depth_metabat2', None), model_path, environment, device)
@@ -1210,15 +1357,39 @@ def binning_long(logger, data, minfasta, binned_length, contig_dict,
                       args=args,
                       )
 
-def binning_short(logger, data, minfasta,
-            binned_length, contig_dict, model_path,
-            output, device, environment, *, args):
+def binning_short(logger: logging.Logger,
+                  data: str,
+                  minfasta: int,
+                  binned_length: int,
+                  contig_dict: dict[str, str],
+                  model_path: str | None,
+                  output: str,
+                  device,
+                  environment: str | None, *,
+                  args: argparse.Namespace) -> None:
     """
-    Clustering the contigs to get the final bins.
+    Cluster the contigs to get the final bins (short-read mode)
 
-    contig_dict: {contig_id:seq,...}
-    recluster: if reclustering
-    model_path: path to the trained model
+    Parameters
+    ----------
+    logger : logging.Logger
+    data : str
+        ``data.csv`` features file
+    minfasta : int
+        Minimum bin size (in basepairs) for a bin to be output
+    binned_length : int
+        Minimum contig length
+    contig_dict : dict[str, str]
+        contig name -> sequence
+    model_path : str or None
+        Path to the trained model (ignored if ``environment`` is given)
+    output : str
+        Output directory
+    device : torch.device
+    environment : str or None
+        Use the pretrained model for this environment
+    args : argparse.Namespace
+        Command line arguments (for clustering and output options)
     """
     from .cluster import cluster
     logger.info('Start binning.')
@@ -1238,11 +1409,18 @@ def binning_short(logger, data, minfasta,
         minfasta=minfasta)
 
 
-def single_easy_binning(logger, args, binned_length,
-                        must_link_threshold,
-                        contig_dict, device):
+def single_easy_binning(logger: logging.Logger,
+                        args: argparse.Namespace,
+                        binned_length: int,
+                        must_link_threshold: int,
+                        contig_dict: dict[str, str],
+                        device) -> None:
     """
-    contain `generate_cannot_links`, `generate_sequence_features_single`, `train`, `bin` in one command for single-sample and co-assembly binning
+    Run the whole pipeline for single-sample and co-assembly binning
+
+    Combines `generate_cannot_links` (if semi-supervised),
+    `generate_sequence_features_single`, `train` (unless a pretrained model is
+    used), and `bin` in one command.
     """
     if args.environment is None:
         logger.info('Generating training data...')
@@ -1327,9 +1505,14 @@ def single_easy_binning(logger, args, binned_length,
         binning_long(**binning_kwargs)
 
 
-def multi_easy_binning(logger, args, device):
+def multi_easy_binning(logger: logging.Logger, args: argparse.Namespace, device) -> None:
     """
-    contain `generate_cannot_links`, `generate_sequence_features_multi`, `train`, `bin` in one command for multi-sample binning
+    Run the whole pipeline for multi-sample binning
+
+    Combines `generate_cannot_links` (if semi-supervised),
+    `generate_sequence_features_multi`, `train`, and `bin` (for each sample)
+    in one command. The bins of all samples are then copied to
+    ``<output>/bins``.
     """
     logger.info('Performing multi-sample binning')
     logger.info('Generating training data...')
@@ -1398,14 +1581,24 @@ def multi_easy_binning(logger, args, device):
             bin_dir_name = 'output_bins'
         else:
             bin_dir_name = 'output_recluster_bins' if args.recluster else 'output_prerecluster_bins'
-        for bf in os.listdir(os.path.join(args.output, 'samples', sample, bin_dir_name)):
-            original_path = os.path.join(args.output, 'samples', sample, bin_dir_name, bf)
-            new_file = '{0}_{1}'.format(sample, bf)
+        for bin_fname in os.listdir(os.path.join(args.output, 'samples', sample, bin_dir_name)):
+            original_path = os.path.join(args.output, 'samples', sample, bin_dir_name, bin_fname)
+            new_file = '{0}_{1}'.format(sample, bin_fname)
             new_path = os.path.join(args.output, 'bins', new_file)
             shutil.copyfile(original_path, new_path)
 
 
-def split_contigs(logger, contig_fasta, *, output, min_length):
+def split_contigs(logger: logging.Logger, contig_fasta: str, *, output: str, min_length: int) -> str:
+    '''Split each contig into two halves (``<contig>_1`` and ``<contig>_2``)
+
+    Contigs shorter than ``min_length`` are dropped. This is used to generate
+    abundance features for must-link pairs with external tools.
+
+    Returns
+    -------
+    oname : str
+        Output file (``<output>/split_contigs.fna.gz``)
+    '''
     from .utils import possibly_compressed_write
     os.makedirs(output, exist_ok=True)
 
@@ -1424,7 +1617,7 @@ def split_contigs(logger, contig_fasta, *, output, min_length):
     return oname
 
 
-def install_skills(logger, *, to_user, skills_dir=None):
+def install_skills(logger: logging.Logger, *, to_user: bool, skills_dir: str | None = None) -> None:
     '''Install the agent skill(s) bundled with SemiBin.
 
     Parameters
@@ -1465,14 +1658,24 @@ def install_skills(logger, *, to_user, skills_dir=None):
     logger.info(f'Installed {len(skills)} skill(s) to `{dest_root}`.')
 
 
-def log_subprocess(event, *args, **kwargs):
+def log_subprocess(event: str, *args, **kwargs) -> None:
+    '''Audit hook (see ``sys.addaudithook``) that logs subprocess command lines'''
     if event == 'subprocess.Popen':
         (executable, args, _cwd, _env) = args[0]
         logger = logging.getLogger('SemiBin2')
         logger.debug(f'Running command: {executable} (full command line: `{" ".join(args)}`)')
 
 
-def main2(raw_args=None, is_semibin2=True):
+def main2(raw_args: list[str] | None = None, is_semibin2: bool = True) -> int | None:
+    '''Entry point for the ``SemiBin2`` command
+
+    Parameters
+    ----------
+    raw_args : list of str, optional
+        Command line arguments (defaults to ``sys.argv[1:]``)
+    is_semibin2 : bool, optional
+        Must be True (SemiBin1 is no longer supported)
+    '''
     if not is_semibin2:
         raise NotImplementedError(f'SemiBin 1 is no longer supported in SemiBin v{__version__}.')
     import tempfile

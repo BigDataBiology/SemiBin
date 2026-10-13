@@ -1,28 +1,57 @@
+from __future__ import annotations
+import argparse
+import logging
 import os
 from os import path
 import math
 import shutil
 import tempfile
+from typing import TYPE_CHECKING
 
 from .utils import write_bins, log_binning_stats
 from .markers import estimate_seeds
 
+if TYPE_CHECKING:
+    import numpy as np
+    import pandas as pd
+    import torch
+
 # This is the default in the igraph package
 NR_INFOMAP_TRIALS = 10
 
-def cal_kl(m, v, use_ne='auto'):
+def cal_kl(means: np.ndarray, variances: np.ndarray, use_ne: str = 'auto') -> np.ndarray:
+    '''Pairwise KL divergence between contig coverage distributions
+
+    Coverage of each contig is modelled as a normal distribution. Values are
+    clipped to the [1e-6, 1-1e-6] range.
+
+    Parameters
+    ----------
+    means : np.ndarray (1D)
+        Mean coverage of each contig
+    variances : np.ndarray (1D)
+        Variance of the coverage of each contig
+    use_ne : str, optional
+        Whether to use numexpr (which is faster and uses less memory):
+        'auto' (use it if available), 'yes' (fail if not available), or 'no'
+
+    Returns
+    -------
+    kl : np.ndarray (2D)
+        Matrix of size N x N, where N is the number of contigs
+    '''
     # A naive implementation creates a lot of copies of what can
     # become large matrices
     import numpy as np
 
-    m = np.clip(m, 1e-6, None)
-    v = np.clip(v, 1.0, None)
+    means = np.clip(means, 1e-6, None)
+    variances = np.clip(variances, 1.0, None)
 
-    m1 = m.reshape(1, len(m))
-    m2 = m.reshape(len(m), 1)
+    m1 = means.reshape(1, len(means))
+    m2 = means.reshape(len(means), 1)
 
-    v1 = v.reshape(1, len(v))
-    v2 = v.reshape(len(v), 1)
+    v1 = variances.reshape(1, len(variances))
+    v2 = variances.reshape(len(variances), 1)
 
 
     if use_ne != 'no':
@@ -61,13 +90,55 @@ def cal_kl(m, v, use_ne='auto'):
 
 
 
-def run_embed_infomap(logger, model, data, * ,
-            device, max_edges, max_node, is_combined, n_sample, contig_dict,
-            num_process : int, random_seed):
+def run_embed_infomap(logger: logging.Logger,
+                      model: torch.nn.Module,
+                      data: pd.DataFrame, * ,
+                      device: torch.device,
+                      max_edges: int,
+                      max_node: float,
+                      is_combined: bool,
+                      n_sample: int,
+                      contig_dict: dict[str, str],
+                      num_process: int,
+                      random_seed: int | None) -> tuple[np.ndarray, np.ndarray]:
     """
     Cluster contigs into bins
-    max_edges: max edges of one contig considered in binning
-    max_node: max percentage of contigs considered in binning
+
+    Contigs are embedded with the model and a k-nearest-neighbour graph is
+    built (keeping only edges that are also present in the k-NN graph of the
+    input features). If coverage is not part of the model input, edge weights
+    are additionally scaled by coverage similarity. The graph is then clustered
+    with Infomap.
+
+    Parameters
+    ----------
+    logger : logging.Logger
+    model : torch.nn.Module
+        Trained embedding model
+    data : pd.DataFrame
+        Contig features (indexed by contig name)
+    device : torch.device
+    max_edges : int
+        max edges of one contig considered in binning
+    max_node : float
+        max fraction of contigs considered in binning
+    is_combined : bool
+        Whether coverage is part of the model input
+    n_sample : int
+        Number of samples
+    contig_dict : dict[str, str]
+        contig name -> sequence
+    num_process : int
+        Number of processes to use
+    random_seed : int or None
+        Currently unused
+
+    Returns
+    -------
+    embedding : np.ndarray
+        Embedding of each contig
+    contig_labels : np.ndarray
+        Cluster label of each contig
     """
     from igraph import Graph
     from sklearn.neighbors import kneighbors_graph
@@ -163,52 +234,91 @@ def run_embed_infomap(logger, model, data, * ,
                 trials=NR_INFOMAP_TRIALS)
     contig_labels = np.zeros(shape=num_contigs, dtype=int)
 
-    for i, r in enumerate(result):
-        contig_labels[r] = i
+    for cluster_ix, members in enumerate(result):
+        contig_labels[members] = cluster_ix
     return embedding, contig_labels
 
 
-def recluster_bins(logger, data, *,
-                   n_sample,
-                   embedding,
+def recluster_bins(logger: logging.Logger,
+                   data: pd.DataFrame, *,
+                   n_sample: int,
+                   embedding: np.ndarray,
                    is_combined: bool,
-                   contig_labels,
-                   minfasta,
-                   contig_dict,
-                   binned_length,
-                   orf_finder,
-                   num_process,
-                   random_seed):
+                   contig_labels: np.ndarray,
+                   minfasta: int,
+                   contig_dict: dict[str, str],
+                   binned_length: int,
+                   orf_finder: str,
+                   num_process: int,
+                   random_seed: int | None) -> np.ndarray:
+    '''Split bins that appear to contain multiple genomes
+
+    Single-copy marker genes are used to estimate how many genomes each bin
+    contains. Bins with more than one estimated genome are split with
+    (length-weighted) k-means, seeded with the contigs containing the marker
+    genes.
+
+    Parameters
+    ----------
+    logger : logging.Logger
+    data : pd.DataFrame
+        Contig features (indexed by contig name)
+    n_sample : int
+        Number of samples
+    embedding : np.ndarray
+        Embedding of each contig (as returned by ``run_embed_infomap``)
+    is_combined : bool
+        Whether coverage is part of the model input. If False, the mean
+        coverage is appended to the embedding before k-means
+    contig_labels : np.ndarray
+        Initial bin label of each contig
+    minfasta : int
+        Minimum bin size (in basepairs); smaller bins are not reclustered
+    contig_dict : dict[str, str]
+        contig name -> sequence
+    binned_length : int
+        Minimum contig length
+    orf_finder : str
+        ORF finder to use
+    num_process : int
+        Number of processes to use
+    random_seed : int or None
+        Random seed for k-means
+
+    Returns
+    -------
+    contig_labels_reclustered : np.ndarray
+        New bin label of each contig (all labels are non-negative)
+    '''
     from sklearn.cluster import KMeans
     import numpy as np
     from collections import defaultdict
     if not is_combined:
         depth = data.values[:, 136:len(data.values[0])].astype(np.float32)
-        mean_index = [2 * temp for temp in range(n_sample)]
+        mean_index = [2 * sample_ix for sample_ix in range(n_sample)]
         depth_mean = depth[:, mean_index]
         abun_scale = np.ceil(depth_mean.mean(axis = 0) / 100) * 100
         depth_mean = depth_mean / abun_scale
         scaling = np.mean(np.abs(embedding)) / np.mean(depth_mean)
         base = 10
         weight = 2 * base * math.ceil(scaling / base)
-        embedding_new = np.concatenate(
+        embedding_with_depth = np.concatenate(
             (embedding, depth_mean * weight), axis=1)
     else:
-        embedding_new = embedding
+        embedding_with_depth = embedding
 
 
     total_size = defaultdict(int)
-    for i, c in enumerate(contig_labels):
-        total_size[c] += len(contig_dict[data.index[i]])
+    for name, label in zip(data.index, contig_labels, strict=True):
+        total_size[label] += len(contig_dict[name])
     with tempfile.TemporaryDirectory() as tdir:
         cfasta = os.path.join(tdir, 'concatenated.fna')
         with open(cfasta, 'wt') as concat_out:
-            for ix,h in enumerate(data.index):
-                bin_ix = contig_labels[ix]
+            for name, bin_ix in zip(data.index, contig_labels, strict=True):
                 if total_size[bin_ix] < minfasta:
                     continue
-                concat_out.write(f'>bin{bin_ix:06}.{h}\n')
-                concat_out.write(contig_dict[data.index[ix]] + '\n')
+                concat_out.write(f'>bin{bin_ix:06}.{name}\n')
+                concat_out.write(contig_dict[name] + '\n')
 
         seeds = estimate_seeds(
             cfasta,
@@ -226,28 +336,28 @@ def recluster_bins(logger, data, *,
     contig_labels_reclustered.fill(-1)
     next_label = 0
     for bin_ix in range(contig_labels.max() + 1):
-        seed = seeds.get(f'bin{bin_ix:06}', [])
-        num_bin = len(seed)
+        bin_seeds = seeds.get(f'bin{bin_ix:06}', [])
+        n_subbins = len(bin_seeds)
 
-        if num_bin > 1 and total_size[bin_ix] >= minfasta:
+        if n_subbins > 1 and total_size[bin_ix] >= minfasta:
             contig_indices = [i for i,ell in enumerate(contig_labels) if ell == bin_ix]
-            re_bin_features = embedding_new[contig_indices]
+            bin_features = embedding_with_depth[contig_indices]
 
-            seed_index = [name2ix[s] for s in seed]
+            seed_index = [name2ix[s] for s in bin_seeds]
             length_weight = np.array(
                 [len(contig_dict[name])
                     for name,ell in zip(data.index, contig_labels, strict=True)
                         if ell == bin_ix])
-            seeds_embedding = embedding_new[seed_index]
+            seeds_embedding = embedding_with_depth[seed_index]
             kmeans = KMeans(
-                n_clusters=num_bin,
+                n_clusters=n_subbins,
                 init=seeds_embedding,
                 n_init=1,
                 random_state=random_seed)
-            kmeans.fit(re_bin_features, sample_weight=length_weight)
-            for i, label in enumerate(kmeans.labels_):
-                contig_labels_reclustered[contig_indices[i]] = next_label + label
-            next_label += num_bin
+            kmeans.fit(bin_features, sample_weight=length_weight)
+            for contig_ix, label in zip(contig_indices, kmeans.labels_, strict=True):
+                contig_labels_reclustered[contig_ix] = next_label + label
+            next_label += n_subbins
         else:
             contig_labels_reclustered[contig_labels == bin_ix] = next_label
             next_label += 1
@@ -255,13 +365,48 @@ def recluster_bins(logger, data, *,
     return contig_labels_reclustered
 
 
-def cluster(logger, model, data, device, is_combined,
-            n_sample, out, contig_dict, *, args,
-            binned_length, minfasta):
+def cluster(logger: logging.Logger,
+            model: torch.nn.Module,
+            data: pd.DataFrame,
+            device: torch.device,
+            is_combined: bool,
+            n_sample: int,
+            out: str,
+            contig_dict: dict[str, str], *,
+            args: argparse.Namespace,
+            binned_length: int,
+            minfasta: int) -> None:
     """
-    Cluster contigs into bins
-    max_edges: max edges of one contig considered in binning
-    max_node: max percentage of contigs considered in binning
+    Cluster contigs into bins (short-read mode) and write the output
+
+    Runs ``run_embed_infomap`` and then (unless disabled with
+    ``--no-recluster``) ``recluster_bins``. Bins are written to subdirectories
+    of ``out`` along with ``contig_bins.tsv`` and a TSV file with information
+    on the bins.
+
+    Parameters
+    ----------
+    logger : logging.Logger
+    model : torch.nn.Module
+        Trained embedding model
+    data : pd.DataFrame
+        Contig features (indexed by contig name)
+    device : torch.device
+    is_combined : bool
+        Whether coverage is part of the model input
+    n_sample : int
+        Number of samples
+    out : str
+        Output directory
+    contig_dict : dict[str, str]
+        contig name -> sequence
+    args : argparse.Namespace
+        Command line arguments (for ``max_edges``, ``max_node``,
+        ``recluster``, ``write_pre_reclustering_bins``, output options...)
+    binned_length : int
+        Minimum contig length
+    minfasta : int
+        Minimum bin size (in basepairs) for a bin to be output
     """
     import pandas as pd
     embedding, contig_labels = run_embed_infomap(logger, model, data,
@@ -299,8 +444,8 @@ def cluster(logger, model, data, device, is_combined,
     else:
         from collections import defaultdict
         total_size = defaultdict(int)
-        for i, c in enumerate(contig_labels):
-            total_size[c] += len(contig_dict[data.index[i]])
+        for name, label in zip(data.index, contig_labels, strict=True):
+            total_size[label] += len(contig_dict[name])
         n_pre_bins = sum((total_size[bin_ix] >= minfasta for bin_ix in range(contig_labels.max() + 1)))
 
 

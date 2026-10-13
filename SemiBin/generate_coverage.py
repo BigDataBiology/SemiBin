@@ -1,19 +1,61 @@
+from __future__ import annotations
+import logging
 import os
 import subprocess
 import shutil
 import tempfile
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 from .atomicwrite import atomic_write
 from .utils import describe_returncode, format_stderr
 
-def calculate_coverage(depth_stream, bam_file, must_link_threshold, edge=75, is_combined=False,
-                       contig_threshold=1000, sep=None, sample_contig_threshold=None):
-    """
-    depth_stream : an iterable like the output of bedtools genomecov
-    bam_file : str filename
-    must_link_threshold : int
-    edge : int
-    is_combined : bool
+if TYPE_CHECKING:
+    import pandas as pd
 
+def calculate_coverage(depth_stream: Iterable[str],
+                       bam_file: str,
+                       must_link_threshold: int,
+                       edge: int = 75,
+                       is_combined: bool = False,
+                       contig_threshold: int = 1000,
+                       sep: str | None = None,
+                       sample_contig_threshold: dict[str, int] | None = None,
+                       ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
+    """Compute per-contig coverage statistics from per-base depth
+
+    Parameters
+    ----------
+    depth_stream : iterable of str
+        Lines in BED-graph format (contig, start, end, depth), such as the
+        output of ``bedtools genomecov -bga``. Lines for the same contig must
+        be consecutive.
+    bam_file : str
+        BAM filename (used to name the output columns and in error messages)
+    must_link_threshold : int
+        Contigs at least this long are split in two halves to generate
+        must-link constraints (only used if ``is_combined``)
+    edge : int, optional
+        Number of bases to ignore at each end of the contig (coverage at the
+        edges is less reliable)
+    is_combined : bool, optional
+        If True, compute only mean coverage (for both whole contigs and split
+        contigs), to be combined with k-mer features. Otherwise, compute mean
+        and variance of whole contigs.
+    contig_threshold : int, optional
+        Contigs shorter than this are ignored (used when ``sep`` is None)
+    sep : str, optional
+        Separator between sample name and contig name (multi-sample binning)
+    sample_contig_threshold : dict[str, int], optional
+        sample -> minimum contig length (used when ``sep`` is not None)
+
+    Returns
+    -------
+    contig_cov : pd.DataFrame
+        If ``is_combined``, one ``<bam_file>_cov`` column; otherwise
+        ``<bam_file>_mean`` and ``<bam_file>_var`` columns
+    split_contig_cov : pd.DataFrame or None
+        Coverage of the split contigs (``<contig>_1`` and ``<contig>_2``) if
+        ``is_combined``, otherwise None
     """
     import pandas as pd
     import numpy as np
@@ -21,25 +63,26 @@ def calculate_coverage(depth_stream, bam_file, must_link_threshold, edge=75, is_
 
     contigs = []
     mean_coverage = []
-    var = []
+    var_coverage = []
 
     split_contigs = []
     split_coverage = []
 
     for contig_name, lines in groupby(depth_stream, lambda ell: ell.split('\t', 1)[0]):
+        # Expand the run-length encoded BED-graph into per-base depth
         lengths = []
-        values = []
+        depths = []
         for line in lines:
             line_split = line.strip().split('\t')
             length = int(line_split[2]) - int(line_split[1])
-            value = int(float(line_split[3]))
+            depth = int(float(line_split[3]))
             lengths.append(length)
-            values.append(value)
+            depths.append(depth)
         depth_value = np.zeros(sum(lengths), dtype=int)
-        s = 0
-        for ell,v in zip(lengths, values, strict=True):
-            depth_value[s:s+ell] = v
-            s += ell
+        pos = 0
+        for length, depth in zip(lengths, depths, strict=True):
+            depth_value[pos:pos+length] = depth
+            pos += length
 
         if sep is None:
             cov_threshold = contig_threshold
@@ -53,19 +96,19 @@ def calculate_coverage(depth_stream, bam_file, must_link_threshold, edge=75, is_
                 raise KeyError(f"Error: {sample} not found (parsing {bam_file}, the original contig name was {contig_name} and using {sep} as separator)")
         if len(depth_value) < cov_threshold:
             continue
-        depth_value_ = depth_value[edge:-edge]
-        mean_coverage.append(depth_value_.mean())
-        var.append(depth_value_.var())
+        inner_depth = depth_value[edge:-edge]
+        mean_coverage.append(inner_depth.mean())
+        var_coverage.append(inner_depth.var())
         contigs.append(contig_name)
 
         if is_combined:
             if len(depth_value) >= must_link_threshold:
-                middle = len(depth_value_) // 2
+                middle = len(inner_depth) // 2
                 split_contigs.append(contig_name + '_1')
                 split_contigs.append(contig_name + '_2')
 
-                split_coverage.append(depth_value_[:middle].mean())
-                split_coverage.append(depth_value_[middle:].mean())
+                split_coverage.append(inner_depth[:middle].mean())
+                split_coverage.append(inner_depth[middle:].mean())
 
     if is_combined:
         contig_cov = pd.DataFrame(
@@ -78,21 +121,50 @@ def calculate_coverage(depth_stream, bam_file, must_link_threshold, edge=75, is_
     else:
         return pd.DataFrame({
             '{0}_mean'.format(bam_file): mean_coverage,
-            '{0}_var'.format(bam_file): var,
+            '{0}_var'.format(bam_file): var_coverage,
             }, index=contigs), None
 
 
-def generate_cov(bam_file: str, bam_index, out, threshold,
-                 is_combined, contig_threshold, logger, sep = None):
+def generate_cov(bam_file: str,
+                 bam_index: int,
+                 out: str,
+                 must_link_threshold: int,
+                 is_combined: bool,
+                 contig_threshold: int | dict[str, int],
+                 logger: logging.Logger,
+                 sep: str | None = None) -> str:
     """
-    Call bedtools and generate coverage file
+    Call bedtools and generate coverage file(s)
 
-    bam_file: bam file used
-    out: output
-    threshold: threshold of contigs that will be binned
-    is_combined: if using abundance feature in deep learning. True: use
-    contig_threshold: threshold of contigs for must-link constraints
-    sep: separator for multi-sample binning
+    Writes ``<bam basename>_<bam_index>_data_cov.csv`` (and, if
+    ``is_combined``, ``<bam basename>_<bam_index>_data_split_cov.csv``) to
+    ``out``.
+
+    Parameters
+    ----------
+    bam_file : str
+        Sorted BAM file
+    bam_index : int
+        Index of the BAM file in the input list (used to disambiguate output
+        filenames if two BAM files have the same basename)
+    out : str
+        Output directory
+    must_link_threshold : int
+        Contigs at least this long are split to generate must-link constraints
+    is_combined : bool
+        Whether coverage is to be combined with k-mer features as input to the
+        neural network (used when there are 5 or more samples)
+    contig_threshold : int or dict[str, int]
+        Minimum length of contigs to be binned. In multi-sample mode (``sep``
+        is not None), a dictionary sample -> minimum length
+    logger : logging.Logger
+    sep : str, optional
+        Separator for multi-sample binning
+
+    Returns
+    -------
+    bam_file : str
+        The input ``bam_file`` (so that callers can report progress)
     """
     import numpy as np
     logger.debug(f'Processing `{bam_file}`')
@@ -116,7 +188,7 @@ def generate_cov(bam_file: str, bam_index, out, threshold,
             contig_cov, must_link_contig_cov = calculate_coverage(
                                             bed_p.stdout,
                                             bam_file,
-                                            threshold,
+                                            must_link_threshold,
                                             is_combined=is_combined,
                                             sep=sep,
                                             contig_threshold=(contig_threshold if sep is None else 1000),
@@ -159,20 +231,28 @@ def generate_cov(bam_file: str, bam_index, out, threshold,
 
     return bam_file
 
-def combine_cov(cov_dir : str, bam_list, is_combined : bool): # bam_list : list[str] does not work on Python 3.7
+def combine_cov(cov_dir: str,
+                bam_list: list[str],
+                is_combined: bool) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """
-    generate cov/cov_split for every sample in one file
+    Combine the per-BAM coverage files (written by ``generate_cov``) into a
+    single table
 
     Parameters
     ----------
-    cov_dir : where coverage files are stored
-    bam_list : list of BAM files
-    is_combined : whether to process split files
+    cov_dir : str
+        Directory where coverage files are stored
+    bam_list : list of str
+        BAM files (in the same order as passed to ``generate_cov``)
+    is_combined : bool
+        Whether to also process split files
 
     Returns
     -------
-    cov : DataFrame
-    split_cov : DataFrame (if is_combined) or None (otherwise)
+    cov : pd.DataFrame
+        One column per BAM file
+    split_cov : pd.DataFrame or None
+        Coverage of split contigs if ``is_combined``, otherwise None
     """
     import pandas as pd
 
@@ -196,7 +276,43 @@ def combine_cov(cov_dir : str, bam_list, is_combined : bool): # bam_list : list[
         data_split_cov = None
     return data_cov, data_split_cov
 
-def generate_cov_from_abundances(abundances, output, contig_path, contig_threshold=1000, sep=None, sample_contig_threshold=None):
+def generate_cov_from_abundances(
+        abundances: list[str],
+        output: str,
+        contig_path: str,
+        contig_threshold: int = 1000,
+        sep: str | None = None,
+        sample_contig_threshold: dict[str, int] | None = None,
+        ) -> tuple[pd.DataFrame, pd.DataFrame] | pd.DataFrame:
+    """Build coverage features from pre-computed abundance files
+
+    The abundance files (e.g., from ``strobealign --aemb``) are expected to
+    contain abundances of the split contigs (``<contig>_1`` and
+    ``<contig>_2``); the abundance of the whole contig is computed as the
+    average of the two halves.
+
+    Parameters
+    ----------
+    abundances : list of str
+        Abundance files (tab-separated, no header: contig name, abundance), one
+        per sample
+    output : str
+        Output directory
+    contig_path : str
+        Contig FASTA file
+    contig_threshold : int, optional
+        Minimum length of contigs to be binned (used when ``sep`` is None)
+    sep : str, optional
+        Separator for multi-sample binning
+    sample_contig_threshold : dict[str, int], optional
+        sample -> minimum contig length (used when ``sep`` is not None)
+
+    Returns
+    -------
+    If ``sep`` is None, a tuple ``(cov, cov_split)`` (which are also written
+    to ``cov.csv`` and ``cov_split.csv`` in ``output``). Otherwise, only
+    ``cov_split`` (unnormalized), which is to be split by sample by the caller.
+    """
     import pandas as pd
     import numpy as np
     from .fasta import fasta_iter

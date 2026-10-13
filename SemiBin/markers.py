@@ -1,3 +1,4 @@
+from __future__ import annotations
 import tempfile
 from .utils import maybe_uncompress, fasta_iter, describe_returncode, format_stderr
 import os
@@ -6,11 +7,16 @@ import json
 import subprocess
 import shutil
 from collections import defaultdict
+from typing import IO
 
 _MARKER_CACHE_SCHEMA_VERSION = 1
 
 
-def _marker_cache_fingerprint(fasta_path, binned_length, orf_finder, prodigal_output_faa):
+def _marker_cache_fingerprint(
+        fasta_path: str,
+        binned_length: int,
+        orf_finder: str,
+        prodigal_output_faa: str | None) -> dict:
     '''Build a fingerprint of inputs that affect ``markers.hmmout``.
 
     Uses (size, mtime_ns) of the FASTA rather than a content hash to keep the
@@ -41,13 +47,42 @@ MARKER_HMM_PATH = os.path.join(os.path.dirname(__file__), 'marker.hmm')
 # Used as the denominator when estimating bin completeness.
 N_SINGLE_COPY_MARKERS = 107
 
-def get_marker(hmmout,
-               fasta_path = None,
-               min_contig_len = None,
+def get_marker(hmmout: str | IO[str],
+               fasta_path: str | None = None,
+               min_contig_len: int | None = None,
                multi_mode: bool = False,
-               orf_finder = None,
-               contig_to_marker = False):
+               orf_finder: str | None = None,
+               contig_to_marker: bool = False,
+               ) -> list[str] | dict[str, list[str]]:
     '''Parse HMM output file and return markers
+
+    Hits covering less than 40% of the HMM profile are discarded.
+
+    Parameters
+    ----------
+    hmmout : str or file-like
+        Output of ``hmmsearch --domtblout``
+    fasta_path : str, optional
+        Contig FASTA file (needed only if ``min_contig_len`` is given)
+    min_contig_len : int, optional
+        If given, hits on contigs shorter than this are discarded
+    multi_mode : bool, optional
+        If True, contig names are expected to be of the form
+        ``<bin>.<contig>`` and seeds are computed per bin
+    orf_finder : str, optional
+        ORF finder used to generate the ORFs (determines how ORF names are
+        mapped back to contig names)
+    contig_to_marker : bool, optional
+        If True, return the mapping of contigs to marker genes instead of seeds
+
+    Returns
+    -------
+    seeds : list of str or dict
+        - if ``contig_to_marker``: contig -> list of marker genes (a
+          ``defaultdict(list)``)
+        - if ``multi_mode``: bin -> list of seed contigs
+        - otherwise: list of seed contigs (each containing a copy of the
+          same marker gene, so they are presumably from different genomes)
 
     If no marker hits survive filtering, returns an empty result of the
     appropriate type for the mode (empty mapping for ``contig_to_marker``
@@ -66,11 +101,11 @@ def get_marker(hmmout,
     data['gene'] = data['gene'].map(lambda m: __normalize_marker_trans.get(m , m))
     qlen = data[['gene','qlen']].drop_duplicates().set_index('gene')['qlen']
 
-    def contig_name(ell):
+    def contig_name(orf_name: str) -> str:
         if orf_finder in ['prodigal', 'fast-naive']:
-            contig,_ = ell.rsplit( '_', 1)
+            contig,_ = orf_name.rsplit( '_', 1)
         else:
-            contig,_,_,_ = ell.rsplit( '_', 3)
+            contig,_,_,_ = orf_name.rsplit( '_', 3)
         return contig
 
     data = data.query('(qend - qstart) / qlen > 0.4').copy()
@@ -83,55 +118,82 @@ def get_marker(hmmout,
         return empty_result()
 
     if contig_to_marker:
-        marker = data['gene'].values
-        contig = data['contig'].values
-        sequence2markers = defaultdict(list)
-        for m, c in zip(marker, contig, strict=True):
-            sequence2markers[c].append(m)
-        return sequence2markers
+        markers = data['gene'].values
+        contigs = data['contig'].values
+        contig2markers = defaultdict(list)
+        for m, c in zip(markers, contigs, strict=True):
+            contig2markers[c].append(m)
+        return contig2markers
     else:
-        def extract_seeds(vs, sel):
-            vs = vs.sort_values()
-            median = vs.iloc[len(vs) //2]
+        def extract_seeds(gene_counts, hits):
+            '''Pick the contigs containing the marker gene with median count
+
+            gene_counts : pd.Series
+                gene -> number of contigs with a hit to that gene
+            hits : pd.DataFrame
+                marker hits (with ``gene`` and ``contig`` columns)
+            '''
+            gene_counts = gene_counts.sort_values()
+            median = gene_counts.iloc[len(gene_counts) //2]
 
             # the original version broke ties by picking the shortest query, so we
             # replicate that here:
-            candidates = vs.index[vs == median]
-            c = qlen.loc[candidates].idxmin()
-            r = list(sel.query('gene == @c')['contig'])
-            r.sort()
-            return r
+            candidates = gene_counts.index[gene_counts == median]
+            seed_gene = qlen.loc[candidates].idxmin()
+            seeds = list(hits.query('gene == @seed_gene')['contig'])
+            seeds.sort()
+            return seeds
 
 
         if multi_mode:
             data['bin'] = data['orf'].str.split(pat='.', n=0, expand=True)[0]
             counts = data.groupby(['bin', 'gene'])['orf'].count()
-            res = {}
-            for b,vs in counts.groupby(level=0):
-                cs = extract_seeds(vs.droplevel(0), data.query('bin == @b', local_dict={'b':b}))
-                res[b] = [c.split('.',1)[1] for c in cs]
-            return res
+            bin_seeds = {}
+            for b, bin_counts in counts.groupby(level=0):
+                seeds = extract_seeds(bin_counts.droplevel(0), data.query('bin == @b', local_dict={'b':b}))
+                bin_seeds[b] = [c.split('.',1)[1] for c in seeds]
+            return bin_seeds
         else:
             counts = data.groupby('gene')['orf'].count()
             return extract_seeds(counts, data)
 
-def estimate_seeds(fasta_path,
-                 binned_length,
-                 num_process,
+def estimate_seeds(fasta_path: str,
+                 binned_length: int,
+                 num_process: int,
                  multi_mode: bool = False,
-                 output = None,
+                 output: str | None = None,
                  orf_finder: str = 'prodigal',
-                 prodigal_output_faa = None):
-    '''Estimate number of bins from a FASTA file
+                 prodigal_output_faa: str | None = None,
+                 ) -> list[str] | dict[str, list[str]]:
+    '''Estimate seed contigs (and thus, the number of bins) from a FASTA file
+
+    Runs the ORF finder and ``hmmsearch`` against single-copy marker genes;
+    the contigs containing a copy of the marker gene with the median count
+    are used as seeds (see ``get_marker``).
 
     Parameters
-    fasta_path: path
-    binned_length: int (minimal contig length)
-    num_process: int (number of CPUs to use)
-    multi_mode: bool, optional (if True, treat input as resulting from concatenating multiple files)
+    ----------
+    fasta_path : str
+        Input contigs (FASTA, possibly compressed)
+    binned_length : int
+        Minimal contig length
+    num_process : int
+        Number of CPUs to use
+    multi_mode : bool, optional
+        If True, treat input as resulting from concatenating multiple bins
+        (contigs named ``<bin>.<contig>``) and return seeds per bin
+    output : str, optional
+        If given, ``markers.hmmout`` is saved to this directory (and reused on
+        later calls if the inputs have not changed)
+    orf_finder : str, optional
+        One of 'prodigal', 'fast-naive', or 'fraggenescan'
+    prodigal_output_faa : str, optional
+        Pre-computed ORFs to use instead of running the ORF finder
 
     Returns
     -------
+    seeds : list of str or dict
+        See ``get_marker``
     '''
     import logging
     from .orffinding import run_orffinder
