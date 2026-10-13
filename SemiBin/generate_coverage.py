@@ -1,6 +1,9 @@
 import os
 import subprocess
+import shutil
+import tempfile
 from .atomicwrite import atomic_write
+from .utils import describe_returncode, format_stderr
 
 def calculate_coverage(depth_stream, bam_file, must_link_threshold, edge=75, is_combined=False,
                        contig_threshold=1000, sep=None, sample_contig_threshold=None):
@@ -95,25 +98,42 @@ def generate_cov(bam_file: str, bam_index, out, threshold,
     logger.debug(f'Processing `{bam_file}`')
     bam_name = os.path.split(bam_file)[-1] + f'_{bam_index}'
 
-    bed_p = subprocess.Popen(
-        ['bedtools', 'genomecov',
-         '-bga',
-         '-ibam', bam_file],
-        universal_newlines=True,
-        stdout=subprocess.PIPE)
+    bedtools_path = shutil.which('bedtools')
+    if bedtools_path is None:
+        raise OSError('bedtools binary not found in PATH (it is required to compute coverage from BAM files). '
+                      'Please install bedtools.')
 
-    contig_cov, must_link_contig_cov = calculate_coverage(
-                                    bed_p.stdout,
-                                    bam_file,
-                                    threshold,
-                                    is_combined=is_combined,
-                                    sep=sep,
-                                    contig_threshold=(contig_threshold if sep is None else 1000),
-                                    sample_contig_threshold=(contig_threshold if sep is not None else None))
+    with tempfile.TemporaryFile() as bed_err:
+        bed_p = subprocess.Popen(
+            [bedtools_path, 'genomecov',
+             '-bga',
+             '-ibam', bam_file],
+            universal_newlines=True,
+            stdout=subprocess.PIPE,
+            stderr=bed_err)
 
-    if bed_p.wait() != 0:
-        raise OSError(f"Failure in running bedtools ({bam_file})")
-    elif len(contig_cov) == 0:
+        try:
+            contig_cov, must_link_contig_cov = calculate_coverage(
+                                            bed_p.stdout,
+                                            bam_file,
+                                            threshold,
+                                            is_combined=is_combined,
+                                            sep=sep,
+                                            contig_threshold=(contig_threshold if sep is None else 1000),
+                                            sample_contig_threshold=(contig_threshold if sep is not None else None))
+        except BaseException:
+            bed_p.kill()
+            raise
+        finally:
+            bed_p.stdout.close()
+            rc = bed_p.wait()
+
+        if rc != 0:
+            bed_err.seek(0)
+            err = format_stderr(bed_err.read())
+            raise OSError(f"Running `bedtools genomecov` {describe_returncode(rc)} (processing {bam_file}).{err}")
+
+    if len(contig_cov) == 0:
         logger.critical(f"Running `bedtools genomecov` did not return an error, but the result is an empty file (processing {bam_file}). "
                         "Please check your input files: SemiBin expects that they are sorted BAM files.")
         raise OSError(f"Running bedtools returned an empty file ({bam_file})")

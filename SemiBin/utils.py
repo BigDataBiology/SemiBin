@@ -34,6 +34,34 @@ def possibly_compressed_write(filename):
         if g is not f:
             g.close()
 
+def describe_returncode(rc):
+    '''Human-readable description of a (failed) subprocess return code'''
+    if rc < 0:
+        import signal
+        try:
+            sig = signal.Signals(-rc).name
+        except ValueError:
+            sig = f'signal {-rc}'
+        return f'was killed by {sig}'
+    return f'exited with return code {rc}'
+
+
+def format_stderr(data, max_lines=10):
+    '''Format the tail of a captured stderr for inclusion in an error message
+
+    data : str or bytes
+    Returns an empty string if there was no output
+    '''
+    if isinstance(data, bytes):
+        data = data.decode('utf-8', errors='replace')
+    lines = data.strip().splitlines()
+    if not lines:
+        return ''
+    if len(lines) > max_lines:
+        lines = ['[...]'] + lines[-max_lines:]
+    return '\nError output (stderr):\n' + '\n'.join('    ' + ell for ell in lines)
+
+
 def set_training_type(logger, args):
     if not args.self_supervised and not args.semi_supervised:
         logger.debug(

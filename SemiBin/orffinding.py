@@ -5,6 +5,8 @@ import sys
 import shutil
 import logging
 
+from .utils import describe_returncode, format_stderr
+
 
 def run_prodigal(fasta_path, num_process, output):
     from .fasta import fasta_iter
@@ -34,26 +36,37 @@ def run_prodigal(fasta_path, num_process, output):
             out.write(f'>{h}\n{seq}\n')
             cur += len(seq)
 
+    prodigal_path = shutil.which('prodigal')
+    if prodigal_path is None:
+        logger.error('prodigal binary not found in PATH. Please install prodigal '
+                     'or use a different ORF finder (`--orf-finder=fast-naive` or `--orf-finder=fraggenescan`)')
+        sys.exit(1)
+
+    processes = []
     try:
-        process = []
         logger.debug(f'Running prodigal on {next_ix} FASTA files')
         for index in range(next_ix):
-            with open(os.path.join(output, f'contig_{index}_log.txt') + '.out', 'w') as prodigal_out_log:
+            with open(os.path.join(output, f'contig_{index}_log.txt') + '.out', 'w') as prodigal_out_log, \
+                    open(os.path.join(output, f'contig_{index}_log.txt') + '.err', 'w') as prodigal_err_log:
                 p = subprocess.Popen(
-                        ['prodigal',
+                        [prodigal_path,
                          '-i', os.path.join(output, f'contig_{index}.fa'),
                          '-p', 'meta',
                          '-q',
                          '-m', # See https://github.com/BigDataBiology/SemiBin/issues/87
                          '-a', os.path.join(output, f'contig_{index}.faa')
                          ],
-                    stdout=prodigal_out_log)
-                process.append(p)
+                    stdout=prodigal_out_log,
+                    stderr=prodigal_err_log)
+                processes.append(p)
 
-        for p in process:
+        for index, p in enumerate(processes):
             rc = p.wait()
             if rc != 0:
-                logger.error(f"prodigal exited with return code {rc}")
+                with open(os.path.join(output, f'contig_{index}_log.txt') + '.err') as prodigal_err_log:
+                    err = format_stderr(prodigal_err_log.read())
+                logger.error(f'prodigal {describe_returncode(rc)} '
+                             f'(when processing chunk {index + 1} of {next_ix} of `{fasta_path}`).{err}')
                 sys.exit(1)
 
     except OSError as e:
@@ -62,6 +75,15 @@ def run_prodigal(fasta_path, num_process, output):
 
     else:
         logger.debug('All prodigal processes finished successfully')
+
+    finally:
+        # Ensure that no prodigal process is left running if we are exiting
+        # early (because one of them failed or we were interrupted)
+        for p in processes:
+            if p.poll() is None:
+                p.kill()
+        for p in processes:
+            p.wait()
 
     contig_output = os.path.join(output, 'contigs.faa')
     with open(contig_output, 'w') as f:

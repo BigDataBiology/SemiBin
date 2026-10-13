@@ -1,9 +1,10 @@
 import tempfile
-from .utils import maybe_uncompress, fasta_iter
+from .utils import maybe_uncompress, fasta_iter, describe_returncode, format_stderr
 import os
 import sys
 import json
 import subprocess
+import shutil
 
 _MARKER_CACHE_SCHEMA_VERSION = 1
 
@@ -121,6 +122,7 @@ def estimate_seeds(fasta_path,
     with tempfile.TemporaryDirectory() as tdir:
         fingerprint = _marker_cache_fingerprint(
                 fasta_path, binned_length, orf_finder, prodigal_output_faa)
+        input_fasta = fasta_path
         fasta_path = maybe_uncompress(fasta_path, tdir)
         if output is not None:
             os.makedirs(output, exist_ok=True)
@@ -151,13 +153,21 @@ def estimate_seeds(fasta_path,
         else:
             target_dir = tdir
 
+        # Check before running the ORF finder (which can take a while)
+        hmmsearch_path = shutil.which('hmmsearch')
+        if hmmsearch_path is None:
+            logger.error('hmmsearch binary not found in PATH (it is required to identify marker genes). '
+                         'Please install HMMER.')
+            sys.exit(1)
+
         contig_output = run_orffinder(fasta_path, num_process, tdir, orf_finder, prodigal_output_faa=prodigal_output_faa)
 
         hmm_output = os.path.join(target_dir, 'markers.hmmout')
         try:
-            with open(os.path.join(tdir, 'markers.hmmout.out'), 'w') as hmm_out_log:
+            with open(os.path.join(tdir, 'markers.hmmout.out'), 'w') as hmm_out_log, \
+                    open(os.path.join(tdir, 'markers.hmmout.err'), 'w') as hmm_err_log:
                 subprocess.check_call(
-                    ['hmmsearch',
+                    [hmmsearch_path,
                      '--domtblout',
                      hmm_output,
                      '--cut_tc',
@@ -166,11 +176,18 @@ def estimate_seeds(fasta_path,
                      contig_output,
                      ],
                     stdout=hmm_out_log,
+                    stderr=hmm_err_log,
                 )
-        except Exception as e:
+        except (OSError, subprocess.CalledProcessError) as e:
             if os.path.exists(hmm_output):
                 os.remove(hmm_output)
-            logger.error(f"Running hmmsearch failed: {e}")
+            if isinstance(e, subprocess.CalledProcessError):
+                with open(os.path.join(tdir, 'markers.hmmout.err')) as hmm_err_log:
+                    err = format_stderr(hmm_err_log.read())
+                logger.error(f'hmmsearch {describe_returncode(e.returncode)} '
+                             f'(when searching for marker genes in ORFs predicted from `{input_fasta}`).{err}')
+            else:
+                logger.error(f'Running hmmsearch failed: {e}')
             sys.exit(1)
 
         if output is not None:

@@ -13,6 +13,8 @@
 
 - Loading models saved in the old format (SemiBin2 versions before 2.2.0) failed with PyTorch>=2.6 even through the fallback path, as `torch.load()` now defaults to `weights_only=True`. The fallback now passes `weights_only=False` explicitly.
 - `multi_easy_bin` and `generate_sequence_features_multi` now check up front whether every sample has at least one contig as long as the must-link threshold. If some do not, the run aborts immediately with a message listing the affected samples (and suggesting to remove them or lower `--ml-threshold`), instead of failing later during training with an obscure error ([#159](https://github.com/BigDataBiology/SemiBin/issues/159), [#164](https://github.com/BigDataBiology/SemiBin/issues/164)). This mirrors the check that `single_easy_bin` has had since 2.4.1.
+- If one of the parallel `prodigal` processes failed, the others were left running after SemiBin exited. They are now killed (this also applies if SemiBin is interrupted).
+- Errors from external tools are now more informative: SemiBin checks that `bedtools` and `hmmsearch` are installed before calling them (previously, a missing `bedtools` led to a raw Python traceback), and when `prodigal`, `bedtools`, or `hmmsearch` fail, the error message now includes the exit status, the input being processed, and the tool's own error output.
 
 ## Version 2.5.0
 

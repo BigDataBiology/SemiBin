@@ -11,6 +11,11 @@ Unreleased
 	  clear message (listing the samples) when some samples have no contig
 	  long enough to reach the must-link threshold (previously the run
 	  failed later with an obscure error during training) (#159, #164)
+	* run_prodigal: Kill all remaining prodigal processes if one of them
+	  fails (previously, they could be left running)
+	* SemiBin: Check that bedtools and hmmsearch are available before
+	  calling them and include the external tool's error output (stderr)
+	  and exit status in error messages (prodigal, bedtools, hmmsearch)
 
 Version 2.5.0 Sep 15 2026 by BigDataBiology
 	* utils.concatenate_fasta: Add 'keep_full_header' argument to
