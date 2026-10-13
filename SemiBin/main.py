@@ -1583,7 +1583,7 @@ def multi_easy_binning(logger: logging.Logger, args: argparse.Namespace, device)
             bin_dir_name = 'output_recluster_bins' if args.recluster else 'output_prerecluster_bins'
         for bin_fname in os.listdir(os.path.join(args.output, 'samples', sample, bin_dir_name)):
             original_path = os.path.join(args.output, 'samples', sample, bin_dir_name, bin_fname)
-            new_file = '{0}_{1}'.format(sample, bin_fname)
+            new_file = f'{sample}_{bin_fname}'
             new_path = os.path.join(args.output, 'bins', new_file)
             shutil.copyfile(original_path, new_path)
 
