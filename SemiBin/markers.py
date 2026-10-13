@@ -5,6 +5,7 @@ import sys
 import json
 import subprocess
 import shutil
+from collections import defaultdict
 
 _MARKER_CACHE_SCHEMA_VERSION = 1
 
@@ -47,12 +48,21 @@ def get_marker(hmmout,
                orf_finder = None,
                contig_to_marker = False):
     '''Parse HMM output file and return markers
+
+    If no marker hits survive filtering, returns an empty result of the
+    appropriate type for the mode (empty mapping for ``contig_to_marker``
+    and ``multi_mode``, empty list otherwise)
     '''
     import pandas as pd
+    def empty_result():
+        if contig_to_marker:
+            return defaultdict(list)
+        return {} if multi_mode else []
+
     data = pd.read_table(hmmout, sep=r'\s+',  comment='#', header=None,
                          usecols=(0,3,5,15,16), names=['orf', 'gene', 'qlen', 'qstart', 'qend'])
     if not len(data):
-        return []
+        return empty_result()
     data['gene'] = data['gene'].map(lambda m: __normalize_marker_trans.get(m , m))
     qlen = data[['gene','qlen']].drop_duplicates().set_index('gene')['qlen']
 
@@ -69,9 +79,10 @@ def get_marker(hmmout,
         contig_len = {h:len(seq) for h,seq in fasta_iter(fasta_path)}
         data = data[data['contig'].map(lambda c: contig_len[c] >= min_contig_len)]
     data = data.drop_duplicates(['gene', 'contig'])
+    if not len(data):
+        return empty_result()
 
     if contig_to_marker:
-        from collections import defaultdict
         marker = data['gene'].values
         contig = data['contig'].values
         sequence2markers = defaultdict(list)

@@ -33,6 +33,41 @@ def test_get_marker():
     rs = get_marker(StringIO(HMMOUT_TEST_SINGLE), orf_finder='prodigal')
     assert rs == ['k119_224042']
 
+# Same hit as above, but only covering hmm positions 2-10 (of 125), so it is
+# removed by the alignment-coverage filter
+HMMOUT_TEST_LOW_COVERAGE = HMMOUT_TEST_SINGLE.replace(
+        '    2   125     2   122     1   122',
+        '    2    10     2   122     1   122')
+
+def test_get_marker_all_filtered():
+    rs = get_marker(StringIO(HMMOUT_TEST_LOW_COVERAGE), orf_finder='prodigal')
+    assert rs == []
+
+    rs = get_marker(StringIO(HMMOUT_TEST_LOW_COVERAGE.replace('k119_224042_1', 'bin000001.k119_224042_1')),
+                    orf_finder='prodigal', multi_mode=True)
+    assert rs == {}
+
+    rs = get_marker(StringIO(HMMOUT_TEST_LOW_COVERAGE), orf_finder='prodigal', contig_to_marker=True)
+    assert len(rs) == 0
+    assert rs['k119_224042'] == []
+
+
+def test_get_marker_all_filtered_by_length(tmp_path):
+    fasta = tmp_path / 'contigs.fa'
+    fasta.write_text('>k119_224042\n' + 'A' * 500 + '\n')
+    rs = get_marker(StringIO(HMMOUT_TEST_SINGLE), fasta_path=str(fasta),
+                    min_contig_len=1000, orf_finder='prodigal')
+    assert rs == []
+
+
+def test_get_marker_no_hits():
+    no_hits = '\n'.join(ell for ell in HMMOUT_TEST_SINGLE.splitlines() if ell.startswith('#'))
+    assert get_marker(StringIO(no_hits), orf_finder='prodigal') == []
+    assert get_marker(StringIO(no_hits), orf_finder='prodigal', multi_mode=True) == {}
+    rs = get_marker(StringIO(no_hits), orf_finder='prodigal', contig_to_marker=True)
+    assert rs['k119_224042'] == []
+
+
 def test_get_marker_multiple():
     rs = get_marker('test/data/concatenated.hmmout.gz', multi_mode=True, orf_finder='fraggenescan')
     rs

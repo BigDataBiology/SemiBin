@@ -15,6 +15,7 @@
 - `multi_easy_bin` and `generate_sequence_features_multi` now check up front whether every sample has at least one contig as long as the must-link threshold. If some do not, the run aborts immediately with a message listing the affected samples (and suggesting to remove them or lower `--ml-threshold`), instead of failing later during training with an obscure error ([#159](https://github.com/BigDataBiology/SemiBin/issues/159), [#164](https://github.com/BigDataBiology/SemiBin/issues/164)). This mirrors the check that `single_easy_bin` has had since 2.4.1.
 - If one of the parallel `prodigal` processes failed, the others were left running after SemiBin exited. They are now killed (this also applies if SemiBin is interrupted).
 - Errors from external tools are now more informative: SemiBin checks that `bedtools` and `hmmsearch` are installed before calling them (previously, a missing `bedtools` led to a raw Python traceback), and when `prodigal`, `bedtools`, or `hmmsearch` fail, the error message now includes the exit status, the input being processed, and the tool's own error output.
+- Fixed a crash (`IndexError`, or `KeyError` when reclustering bins) in marker-gene seed estimation when HMMER hits were found, but none passed the alignment-coverage or minimum-contig-length filters, which can happen on small or low-quality assemblies. This case is now handled like finding no marker genes at all. Similarly, `bin_long` no longer crashes if no marker genes are found.
 
 ### Documentation fixes
 

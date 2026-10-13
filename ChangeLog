@@ -16,6 +16,9 @@ Unreleased
 	* SemiBin: Check that bedtools and hmmsearch are available before
 	  calling them and include the external tool's error output (stderr)
 	  and exit status in error messages (prodigal, bedtools, hmmsearch)
+	* markers.get_marker: Fix crash when no marker hits survive the
+	  alignment-coverage or contig-length filters (and return the correct
+	  empty type in multi-sample/contig-to-marker modes)
 	* docs: Replace outdated conda+pip GPU installation instructions with
 	  a conda-only command (using pytorch-gpu from conda-forge)
 	* docs: Fix stale Python version and SemiBin1 references
