@@ -71,7 +71,7 @@ Please find more options and details below and [read the docs](https://semibin.r
 
 ## Advanced Installation
 
-SemiBin runs (and is continuously tested) on Python 3.10-3.14
+SemiBin runs (and is continuously tested) on Python 3.11-3.14
 
 ### pixi
 

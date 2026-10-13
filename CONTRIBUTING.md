@@ -43,13 +43,18 @@ python -m pytest test/test_bin.py                # a single test file
 python -m pytest test/test_bin.py -k test_name   # a single test
 ```
 
+Note that several unit tests call external tools (samtools, bedtools, hmmer,
+prodigal, fraggenescan). If you run `pytest` outside of a pixi environment
+(_e.g._, after a plain `pip install -e .`), you need to have these tools
+installed and on your `PATH` yourself, otherwise those tests will fail.
 
-Currently, we support Python 3.10 and above. You can run tests in a specific Python version using pixi:
+Currently, we support Python 3.11 and above. You can run tests in a specific Python version using pixi:
 
 ```bash
-pixi run -e test-py310 pytest
 pixi run -e test-py311 pytest
 pixi run -e test-py312 pytest
+pixi run -e test-py313 pytest
+pixi run -e test-py314 pytest
 ```
 
 Integration tests require an installed package plus the external tools, but you

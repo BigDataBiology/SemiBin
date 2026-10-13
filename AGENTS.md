@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-SemiBin is a metagenomic binning tool that uses siamese neural networks (PyTorch) to cluster contigs from metagenomic assemblies into genome bins. It supports both self-supervised (SemiBin2, default) and semi-supervised learning modes, with pre-trained models for 11 environments.
+SemiBin is a metagenomic binning tool that uses siamese neural networks (PyTorch) to cluster contigs from metagenomic assemblies into genome bins. It supports both self-supervised (SemiBin2, default) and semi-supervised learning modes, with pre-trained models for 12 environments.
 
 ## Common Commands
 
@@ -55,7 +55,7 @@ uv pip install -e .
 - `SemiBin/gtdb.py` — GTDB reference database integration
 
 ### Pre-trained models
-`SemiBin/models/*.pt` — 11 environment-specific models (human_gut, ocean, soil, etc.)
+`SemiBin/models/*.pt` — 12 environment-specific models (human_gut, ocean, soil, etc.)
 
 ### Key data flow
 1. **Feature generation**: contigs.fa + BAM → coverage features + k-mer features

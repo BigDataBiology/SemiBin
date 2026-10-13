@@ -16,6 +16,11 @@
 - If one of the parallel `prodigal` processes failed, the others were left running after SemiBin exited. They are now killed (this also applies if SemiBin is interrupted).
 - Errors from external tools are now more informative: SemiBin checks that `bedtools` and `hmmsearch` are installed before calling them (previously, a missing `bedtools` led to a raw Python traceback), and when `prodigal`, `bedtools`, or `hmmsearch` fail, the error message now includes the exit status, the input being processed, and the tool's own error output.
 
+### Documentation fixes
+
+- The instructions for installing with GPU support using conda no longer mix `conda` and `pip` (which did not work reliably, as conda would install its own Pytorch build over the pip one). Instead, they now install `pytorch-gpu` from conda-forge together with SemiBin.
+- Fixed stale references to Python 3.10 support (the minimum is now 3.11) and to SemiBin1 defaults in the subcommand reference.
+
 ## Version 2.5.0
 
 *Released September 15, 2026*

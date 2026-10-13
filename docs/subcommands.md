@@ -41,13 +41,13 @@ Starting in version 1.3, self-supervised learning is also supported, which shoul
 
 #### Optional arguments to control output
 
-* `--compression`: Whether to compress outputs to save space. Should be one of `none` (default if using `SemiBin`) / `gz` (default if using `SemiBin2`) / `xz` / `bz2`.
+* `--compression`: Whether to compress outputs to save space. Should be one of `gz` (default) / `xz` / `bz2` / `none`.
 * `--tag-output`: If passed an argument (_e.g._, `--tag-output=mysample`), then output bin files will include the tag. This can help distinguish results from multiple runs.
 
 #### Optional arguments to control computational resource usage
 
 * `-p/--processes/-t/--threads`: Number of CPUs used (`0`, the default, indicates that all CPUs should be used).
-* `--write-pre-reclustering-bins`/`--no-write-pre-reclustering-bins`: Whether to write pre-reclustering bins (defaults to true in SemiBin1; and false in SemiBin2).
+* `--write-pre-reclustering-bins`/`--no-write-pre-reclustering-bins`: Whether to write pre-reclustering bins (default: false).
 * `--engine`: device used to train the model (`auto`/`gpu`/`cpu`); `auto` (default) means that SemiBin with attempt to detect and use GPU and fallback to CPU if no GPU is found.
 * `--tmpdir`: set temporary directory.
 * `-r/--reference-db-data-dir`: GTDB reference directory (Default: `$HOME/.cache/SemiBin/mmseqs2-GTDB`). This is only useful if you are using the deprecated semi-supervised mode). In that case, SemiBin will lazily download GTDB if it is not found there. Note that a lot of disk space is used.

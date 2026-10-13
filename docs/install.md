@@ -1,6 +1,6 @@
 # Install
 
-SemiBin can run on Python 3.10-3.14.
+SemiBin can run on Python 3.11-3.14.
 
 ## Install with pixi
 
@@ -63,16 +63,17 @@ conda install -c conda-forge -c bioconda semibin
 
 ### With GPU support
 
-To get GPU support, you need to install Pytorch with GPU support as well, following the instructions on the [Pytorch website](https://pytorch.org/get-started/locally/). As of March 2025, it appears that you need to mix `conda` and `pip` and the following commands should work:
+To get GPU support, install the `pytorch-gpu` package from conda-forge together with SemiBin:
 
 ```bash
-conda create -n SemiBin python pip
+conda create -n SemiBin
 conda activate SemiBin
-pip install torch torchvision torchaudio
-conda install -c conda-forge -c bioconda semibin
+conda install -c conda-forge -c bioconda semibin "pytorch-gpu>=2.4"
 ```
 
-This will install SemiBin and all its dependencies. Pixi is—however—the recommended way to install SemiBin with GPU support.
+This requires a CUDA-compatible GPU and NVIDIA driver: conda detects the driver to choose a CUDA build of Pytorch, and the installation fails (with an error mentioning `__cuda`) if no driver is found. Keep the `>=2.4` version constraint: without it, conda may silently fall back to a very old build of Pytorch instead of failing. If you are installing on a machine without a GPU (_e.g._, the login node of a cluster) for use on a GPU node, set `CONDA_OVERRIDE_CUDA` (_e.g._, `CONDA_OVERRIDE_CUDA=12.0 conda install ...`).
+
+You can check that the GPU is visible to Pytorch with `python -c "import torch; print(torch.cuda.is_available())"`. Pixi is—however—the recommended way to install SemiBin with GPU support.
 
 ## Install from source
 
