@@ -135,12 +135,17 @@ def validate_normalize_args(logger: logging.Logger, args: argparse.Namespace) ->
                 expect_file(f)
 
     if hasattr(args, 'num_process'):
+        # get available cpus for the process 
+        # as long as python < 3.13 use os.sched_getaffinity
+        # for python >= 3.13 use avail_proc=os.process_cpu_count()
+        avail_proc = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else os.cpu_count()
         if args.num_process == 0:
-            args.num_process = multiprocessing.cpu_count()
+            args.num_process = avail_proc 
             logger.info(f'Setting number of CPUs to {args.num_process}')
 
-        if args.num_process > multiprocessing.cpu_count():
-            args.num_process = multiprocessing.cpu_count()
+        if args.num_process > avail_proc:
+            args.num_process = avail_proc
+            logger.info(f'number of CPUs reduced to {args.num_process}')
         os.environ['NUMEXPR_NUM_THREADS'] = str(args.num_process)
         os.environ['NUMEXPR_MAX_THREADS'] = str(args.num_process)
         os.environ['OMP_NUM_THREADS'] = str(args.num_process)
