@@ -1,6 +1,6 @@
 ## SemiBin Subcommand Reference
 
-See the [usage](usage) page for a more readable overview of how SemiBin can be used.
+See the [usage](usage.md) page for a more readable overview of how SemiBin can be used.
 This page exhaustively lists all the subcommands and their options.
 
 SemiBin works using a _subcommand_ interface.
@@ -308,7 +308,7 @@ The separator character cannot occur in any of your samples, so if any sample co
 
 ### split_contigs
 
-Split each contig into two halves for use with the `strobealign-aemb` abundance-estimation pipeline (see the [dedicated page](aemb)).
+Split each contig into two halves for use with the `strobealign-aemb` abundance-estimation pipeline (see the [dedicated page](aemb.md)).
 The output file `split_contigs.fna.gz` contains the split contigs (each contig split into two halves, named with `_1` and `_2` suffixes); contigs shorter than the minimum length are excluded.
 
 #### Required arguments

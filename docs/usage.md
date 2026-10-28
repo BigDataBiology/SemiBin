@@ -96,7 +96,7 @@ SemiBin2 single_easy_bin \
 
 The [Supplemental Tables 5 & 6 in the SemiBin1 manuscript](https://www.nature.com/articles/s41467-022-29843-y#MOESM1) contain a lot more information with respect to the computational trade-offs.
 
-If you have a lot of samples that are similar to each other while not fitting into any of our builtin trained models, you can also build your own model from a subset of them (see [[training a SemiBin model](training)])
+If you have a lot of samples that are similar to each other while not fitting into any of our builtin trained models, you can also build your own model from a subset of them (see [[training a SemiBin model](training.md)])
 
 ### Advanced single-sample binning workflows
 
@@ -371,8 +371,8 @@ This step is relatively fast.
 
 **Note⚠️**: This is generally not needed as semi-supervised mode is not recommended anymore!
 
-See the [semi-supervised mode](semi-supervised) page for more information.
+See the [semi-supervised mode](semi-supervised.md) page for more information.
 
 ## Running SemiBin with strobealign-aemb
 
-This has its own [dedicated page](aemb).
+This has its own [dedicated page](aemb.md).

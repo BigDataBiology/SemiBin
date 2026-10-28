@@ -2,7 +2,7 @@
 
 Semi-supervised mode was the original training mode in [SemiBin1](https://www.nature.com/articles/s41467-022-29843-y). It is not recommended anymore, as it is slower and uses more memory than the self-supervised mode introudced in [SemiBin2](https://academic.oup.com/bioinformatics/article/39/Supplement_1/i21/7210480).
 
-However, it is still available in SemiBin2 for backwards compatibility reasons. This page provides a guide on how to run SemiBin2 in semi-supervised mode, assuming you are already familiar with the basics of SemiBin2 (see the [usage](usage) page for a general overview).
+However, it is still available in SemiBin2 for backwards compatibility reasons. This page provides a guide on how to run SemiBin2 in semi-supervised mode, assuming you are already familiar with the basics of SemiBin2 (see the [usage](usage.md) page for a general overview).
 
 ## Easy modes
 
@@ -21,7 +21,7 @@ SemiBin2 single_easy_bin \
 
 ## Advanced single-sample binning workflows
 
-Generally, this follows the same steps as in the [self-supervised mode](self-supervised), but with a few differences.
+Generally, this follows the same steps as in the [self-supervised mode](usage.md#advanced-single-sample-binning-workflows), but with a few differences.
 
 1. `generate_data_single` or `generate_data_multi` (as in the self-supervised mode)
 2. `generate_cannot_links` (this is the extra step, compared to the self-supervised mode, _see below_)

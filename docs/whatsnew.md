@@ -176,7 +176,7 @@ This is a maintenance release with many small improvement rather than a single b
 ### Internal improvements and bugfixes
 - Respect the number of threads requested better ([#140](https://github.com/BigDataBiology/SemiBin/issues/140))
 - SemiBin: Better method to save the model which is more compatible with newer versions of PyTorch. Added a subcommand to update old models to the new format (`update_model`)
-- SemiBin: Switch to pixi for testing (and recommend it in the README/[installation](install) instructions)
+- SemiBin: Switch to pixi for testing (and recommend it in the README/[installation](install.md) instructions)
 - Convert to `pyproject.toml` instead of `setup.py`
 - Do not fail if no bins are produced ([#170](https://github.com/BigDataBiology/SemiBin/issues/170) &amp; [#173](https://github.com/BigDataBiology/SemiBin/issues/173))
 
@@ -241,7 +241,7 @@ This is a bugfix release for _version 2.0.0_.
 *Released Jan 17, 2023*
 
 Big change is the addition of a `SemiBin2` script, which is still experimental, but should be a slightly nicer interface.
-See [[upgrading to SemiBin2](semibin2)]
+See [[upgrading to SemiBin2](semibin2.md)]
 
 ### User-visible improvements
 
@@ -305,7 +305,7 @@ The previous arguments should continue to work, but going forward, the newer arg
 
 ### User visible improvements
 
-- Added _self-supervised learning mode_ (see [[Training SemiBin models](training)] for more details)
+- Added _self-supervised learning mode_ (see [[Training SemiBin models](training.md)] for more details)
 
 ### Bugfixes
 
