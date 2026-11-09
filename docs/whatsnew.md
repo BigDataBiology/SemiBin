@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bug fixes
+
+- `bin_long` concatenated the contigs into a temporary FASTA file and then ran the ORF finder (`prodigal`/`FragGeneScan`) and HMMER on it before closing the file. As those are separate processes, they only saw the bytes that had already been flushed to disk: on most filesystems the input was silently truncated, and on GPFS-style parallel filesystems the file appeared empty and the run aborted with `Running hmmsearch failed: ... 'contigs.faa' is empty or misformatted`. The file is now closed before marker gene detection starts.
+
 ## Version 2.6.0
 
 *Released October 14, 2026*

@@ -1,4 +1,9 @@
 Unreleased
+	* bin_long: Close the concatenated contigs FASTA file before running
+	  the ORF finder and HMMER. They are separate processes, so they used
+	  to read a partially flushed file: on most filesystems the input was
+	  silently truncated and on GPFS-style filesystems the run failed with
+	  "Running hmmsearch failed: ... contigs.faa is empty or misformatted"
 
 Version 2.6.0 Oct 14 2026 by BigDataBiology
 	* SemiBin: Require torch>=2.4 (older builds are incompatible with NumPy 2)
