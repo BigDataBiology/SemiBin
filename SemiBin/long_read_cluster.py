@@ -168,17 +168,22 @@ def cluster_long_read(logger: logging.Logger,
         with open(cfasta, 'wt') as concat_out:
             for h in contig_list:
                 concat_out.write(f'>{h}\n{contig_dict[h]}\n')
-            #  This is needed to create the markers.hmmout file
-            estimate_seeds(
-                cfasta,
-                binned_length,
-                args.num_process,
-                output=out,
-                orf_finder=args.orf_finder,
-                prodigal_output_faa=args.prodigal_output_faa)
 
-            contig2marker = get_marker(os.path.join(out, 'markers.hmmout'), orf_finder=args.orf_finder,
-                                       min_contig_len=binned_length, fasta_path=cfasta, contig_to_marker=True)
+        #  This is needed to create the markers.hmmout file. Note that the
+        #  FASTA file above has to be closed before the ORF finder and HMMER
+        #  are called: they are separate processes, so anything that is still
+        #  in this process' write buffer is invisible to them (some
+        #  filesystems even report the file as empty)
+        estimate_seeds(
+            cfasta,
+            binned_length,
+            args.num_process,
+            output=out,
+            orf_finder=args.orf_finder,
+            prodigal_output_faa=args.prodigal_output_faa)
+
+        contig2marker = get_marker(os.path.join(out, 'markers.hmmout'), orf_finder=args.orf_finder,
+                                   min_contig_len=binned_length, fasta_path=cfasta, contig_to_marker=True)
 
     output_bin_path = os.path.join(out, 'output_bins')
     if os.path.exists(output_bin_path):
