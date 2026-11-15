@@ -2,9 +2,19 @@
 
 ## Unreleased
 
+## Version 2.6.1
+
+*Released November 15, 2026*
+
+This is a bugfix release. It fixes `bin_long` running marker gene detection
+on a partially written FASTA file, which silently truncated its input on most
+filesystems and made the run fail on GPFS-style parallel filesystems. Thanks
+to Matthias Bernt for contributing the fix
+([#230](https://github.com/BigDataBiology/SemiBin/pull/230)).
+
 ### Bug fixes
 
-- `bin_long` concatenated the contigs into a temporary FASTA file and then ran the ORF finder (`prodigal`/`FragGeneScan`) and HMMER on it before closing the file. As those are separate processes, they only saw the bytes that had already been flushed to disk: on most filesystems the input was silently truncated, and on GPFS-style parallel filesystems the file appeared empty and the run aborted with `Running hmmsearch failed: ... 'contigs.faa' is empty or misformatted`. The file is now closed before marker gene detection starts.
+- `bin_long` concatenated the contigs into a temporary FASTA file and then ran the ORF finder (`prodigal`/`FragGeneScan`) and HMMER on it before closing the file. As those are separate processes, they only saw the bytes that had already been flushed to disk: on most filesystems the input was silently truncated, and on GPFS-style parallel filesystems the file appeared empty and the run aborted with `Running hmmsearch failed: ... 'contigs.faa' is empty or misformatted`. The file is now closed before marker gene detection starts ([#230](https://github.com/BigDataBiology/SemiBin/pull/230); thanks to [Matthias Bernt](https://github.com/bernt-matthias) for diagnosing and fixing this).
 
 ## Version 2.6.0
 
